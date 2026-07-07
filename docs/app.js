@@ -610,19 +610,28 @@ function answerValue(code) { state.valueAnswers[state.currentValueQuestion] = co
 function previousValue() { if (state.currentValueQuestion > 0) { state.currentValueQuestion--; saveSession(); render(); } }
 
 // ==================== BUILD PAYLOAD ====================
+// ==================== BUILD PAYLOAD ====================
 function buildPayload() {
+  // پاسخ‌های SJT: از کلیدهای S01, S02, ... به sjt_1, sjt_2, ... تبدیل شوند
   const sjt = {};
   state.strategyQuestions.forEach((q, i) => {
     if (state.strategyAnswers[i] !== undefined) {
-      sjt[q.id] = String.fromCharCode(65 + state.strategyAnswers[i]);
+      // q.id مثلاً "S01" است → عددش را استخراج کن
+      const num = parseInt(q.id.replace("S", ""), 10);
+      sjt[`sjt_${num}`] = String.fromCharCode(65 + state.strategyAnswers[i]);
     }
   });
+
+  // پاسخ‌های Conjoint: از کلیدهای V01, V02, ... به conj_1, conj_2, ... تبدیل شوند
   const conj = {};
   state.valueQuestions.forEach((q, i) => {
     if (state.valueAnswers[i] !== undefined) {
-      conj[q.id] = state.valueAnswers[i];
+      // q.id مثلاً "V01" است → عددش را استخراج کن
+      const num = parseInt(q.id.replace("V", ""), 10);
+      conj[`conj_${num}`] = state.valueAnswers[i];
     }
   });
+
   return {
     micro_motives: state.likedCodes,
     sjt_answers: sjt,
