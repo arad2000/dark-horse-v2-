@@ -774,24 +774,26 @@ function analyzeValueStyle(answers) {
 }
 
 // ==================== DISPLAY RESULTS ====================
-// ==================== DISPLAY RESULTS ====================
+// ==================== DISPLAY RESULTS (بازنویسی کامل برای ساختار جدید API) ====================
 function displayResults(data) {
-  const recs = data.discovered_majors || (data.discovery_result?.recommendations) || [];
-  const matched = recs.filter(r => {
-    const score = r.individuality_fit?.score || r.fit_score || 0;
-    return score >= 30;
-  }).sort((a, b) => {
-    const scoreA = a.individuality_fit?.score || a.fit_score || 0;
-    const scoreB = b.individuality_fit?.score || b.fit_score || 0;
-    return scoreB - scoreA;
-  });
+  // استخراج لیست رشته‌ها از ساختار جدید API
+  const items = data.discovery_result?.recommendations || [];
+  
+  // فیلتر رشته‌های با تطابق >= 30٪ و مرتب‌سازی نزولی
+  const matched = items
+    .filter(item => (item.fit_score || 0) >= 30)
+    .sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0));
 
+  // تحلیل سبک شخصی (بدون تغییر)
   const strategyStyle = state.strategyAnswers.length >= 15 ? analyzeStrategyStyle(state.strategyAnswers) : null;
   const valueStyle = state.valueAnswers.length >= 5 ? analyzeValueStyle(state.valueAnswers) : null;
 
   let html = `
     <h2>📊 نتایج</h2>
-    <p style="color:#b0a080;font-style:italic;margin-bottom:15px;">✨ این پیشنهادها بر اساس ویژگی‌هایی است که <strong>امروز</strong> در خودت کشف کردی. فردیت یک سفر است، نه یک مقصد — ممکن است در طول زمان تغییر کند و این کاملاً طبیعی است.</p>
+    <p style="color:#b0a080;font-style:italic;margin-bottom:15px;">
+      ✨ این پیشنهادها بر اساس ویژگی‌هایی است که <strong>امروز</strong> در خودت کشف کردی. 
+      فردیت یک سفر است، نه یک مقصد — ممکن است در طول زمان تغییر کند و این کاملاً طبیعی است.
+    </p>
     ${strategyStyle || valueStyle ? `
     <div style="background:#1a1a2e;border:1px solid #d4af37;border-radius:12px;padding:15px;margin:15px 0;text-align:right;font-size:0.85rem;">
       <p style="margin:0 0 10px 0;color:#f0c040;font-weight:bold;">🧠 تحلیل سبک شخصی تو</p>
@@ -799,30 +801,34 @@ function displayResults(data) {
       ${strategyStyle ? `<p style="margin:5px 0;"><span style="font-size:1.2rem;">${strategyStyle.icon}</span> <strong>سبک فکری:</strong> ${escapeHtml(strategyStyle.style)} (${strategyStyle.strength}٪) — ${escapeHtml(strategyStyle.description)}</p>` : ''}
       ${valueStyle ? `<p style="margin:5px 0;"><span style="font-size:1.2rem;">⚖️</span> <strong>ارزش‌های کلیدی:</strong> ${escapeHtml(valueStyle.summary)}</p>` : ''}
     </div>` : ''}
-    <p>بر اساس <strong>${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} رشته با فردیت تو هم‌راستا هستند:</p>`;
+    <p>بر اساس <strong>${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} رشته با فردیت تو هم‌راستا هستند:</p>
+  `;
 
   if (matched.length === 0) {
     html += `<p style="color:#f0c040;">با همین خرده‌انگیزه‌ها، هیچ رشته‌ای به آستانهٔ ۳۰٪ نرسیده است.</p>`;
   } else {
     matched.forEach(r => {
-      const fit = r.individuality_fit || {};
-      const score = fit.score || r.fit_score || 0;
-      const evidence = fit.evidence || r.evidence;
-      const raw = fit.raw_components || {};
-
-      // درصدهای سه‌لایه
+      // استخراج مستقیم از ساختار جدید
+      const score = r.fit_score || 0;
+      const raw = r.raw_components || {};
       const mPct = raw.m_score !== undefined ? raw.m_score : '?';
       const sPct = raw.s_score !== undefined ? raw.s_score : '?';
       const vPct = raw.v_score !== undefined ? raw.v_score : '?';
-
-      // تعداد جرقه‌های مشترک
-      const microMatch = evidence?.micro_motives_matched || [];
+      
+      // جرقه‌های مشترک (با fallback برای description خالی)
+      const microMatch = r.evidence?.micro_motives_matched || [];
       const matchCount = microMatch.length;
+      let sparkText = '';
+      if (microMatch.length > 0) {
+        const names = microMatch.slice(0, 3).map(m => escapeHtml(m.description || m.code)).join('، ');
+        sparkText = ` ${names}`;
+        if (microMatch.length > 3) sparkText += ` و ${microMatch.length - 3} جرقهٔ دیگر`;
+      }
 
       // توضیح شخصی‌سازی‌شده
+      const personalized = r.personalized_description || '';
       let alignmentBadge = '';
-      const personalized = fit.personalized_description;
-      if (personalized && personalized.trim() !== '') {
+      if (personalized.trim() !== '') {
         alignmentBadge = `
           <div style="background:#1a1a2e;border:1px solid #d4af37;border-radius:8px;padding:10px 12px;margin-top:10px;text-align:right;font-size:0.85rem;line-height:1.9;">
             <p style="margin:0;color:#f0c040;">💬 ${escapeHtml(personalized)}</p>
@@ -838,62 +844,73 @@ function displayResults(data) {
             🧩 خرده‌انگیزه‌ها: ${mPct}% &nbsp;|&nbsp;
             🧭 راهبردها: ${sPct}% &nbsp;|&nbsp;
             ⚖️ ارزش‌ها: ${vPct}%
-            ${matchCount > 0 ? ` &nbsp;|&nbsp; 🔥 ${matchCount} جرقهٔ مشترک` : ''}
           </p>
+          ${sparkText ? `<p style="font-size:0.85rem;color:#b0a080;">🔥 جرقه‌های مشترک:${sparkText}</p>` : ''}
           ${alignmentBadge}
         </div>`;
     });
   }
 
-  // ==================== نظرسنجی ====================
+  // ==================== نظرسنجی (بدون هیچ تغییری) ====================
   html += `
     <div id="feedbackSection" style="background:#1a1a2e;border:1px solid #d4af37;border-radius:12px;padding:15px;margin:30px 0 15px 0;text-align:right;">
       <p style="color:#f0c040;font-weight:bold;margin-bottom:10px;">💬 نظرت دربارهٔ اسب سیاه چیه؟</p>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۱. چقدر از تجربهٔ کلی این سفر اکتشافی راضی بودی؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q1">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q1', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q1-${i}">⭐</span>`).join('')}
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۲. چقدر نتایج با علایق و فردیت واقعی‌ات همخوانی داشت؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q2">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q2', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q2-${i}">⭐</span>`).join('')}
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۳. آیا این اپلیکیشن را به یک دوست معرفی می‌کنی؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q3">
         <button class="btn btn-sm" onclick="setFeedback('q3', 'yes')" id="btn-q3-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q3', 'maybe')" id="btn-q3-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q3', 'no')" id="btn-q3-no" style="padding:6px 16px;">خیر</button>
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۴. اگر می‌توانستی <strong>شانس قبولی خود را در دانشگاه‌های مختلف</strong> ببینی، چقدر برایت ارزشمند بود؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q4">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q4', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q4-${i}">⭐</span>`).join('')}
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۵. چقدر دوست داری <strong>آیندهٔ شغلی و بازار کار</strong> این رشته‌ها را ببینی؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q5">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q5', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q5-${i}">⭐</span>`).join('')}
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۶. آیا به انتخاب رشتهٔ سنتی (بر اساس رتبه) هم نیاز داری؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q6">
         <button class="btn btn-sm" onclick="setFeedback('q6', 'yes')" id="btn-q6-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q6', 'no')" id="btn-q6-no" style="padding:6px 16px;">خیر</button>
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۷. اگر سرویس <strong>کشف رشته‌های متناسب با فردیت</strong> (همین سفر اکتشافی) پولی بود، باز هم استفاده می‌کردی؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q7">
         <button class="btn btn-sm" onclick="setFeedback('q7', 'yes')" id="btn-q7-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q7', 'maybe')" id="btn-q7-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q7', 'no')" id="btn-q7-no" style="padding:6px 16px;">خیر</button>
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۸. اگر بخش <strong>آیندهٔ شغلی و بازار کار</strong> هر رشته (با هزینهٔ کم) ارائه شود، برایت ارزشمند است؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q8">
         <button class="btn btn-sm" onclick="setFeedback('q8', 'yes')" id="btn-q8-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q8', 'maybe')" id="btn-q8-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q8', 'no')" id="btn-q8-no" style="padding:6px 16px;">خیر</button>
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q10">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q10', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q10-${i}">⭐</span>`).join('')}
       </div>
+
       <p style="color:#b0a080;margin:15px 0 5px 0;">۱۰. چه پیشنهادی برای بهبود داری؟ (اختیاری)</p>
       <textarea id="feedback-q9" placeholder="اینجا بنویس..." style="width:100%;padding:10px;background:#0a0a0f;color:#fff;border:1px solid #333;border-radius:8px;min-height:60px;font-family:Vazirmatn;"></textarea>
+
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="submitFeedback()">📩 ثبت بازخورد</button>
       <p id="feedback-msg" style="color:#f0c040;margin-top:8px;display:none;">✅ ممنون از بازخوردت! نظرت ثبت شد.</p>
     </div>`;
