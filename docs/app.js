@@ -623,14 +623,21 @@ function buildPayload() {
   });
 
   // پاسخ‌های Conjoint: از کلیدهای V01, V02, ... به conj_1, conj_2, ... تبدیل شوند
-  const conj = {};
-  state.valueQuestions.forEach((q, i) => {
-    if (state.valueAnswers[i] !== undefined) {
-      // q.id مثلاً "V01" است → عددش را استخراج کن
-      const num = parseInt(q.id.replace("V", ""), 10);
-      conj[`conj_${num}`] = state.valueAnswers[i];
+  // پاسخ‌های Conjoint: تبدیل کدهای جدید (A1Q, B1Q, ...) به فرمت قدیمی (Q1A, Q1B, ...)
+const conj = {};
+state.valueQuestions.forEach((q, i) => {
+  if (state.valueAnswers[i] !== undefined) {
+    let val = state.valueAnswers[i];
+    // اگر فرمت جدید باشد: A1Q → Q1A, B12Q → Q12B
+    if (/^[AB]\d+Q$/.test(val)) {
+      const letter = val[0];
+      const number = val.slice(1, -1);
+      val = `Q${number}${letter}`;
     }
-  });
+    const num = parseInt(q.id.replace("V", ""), 10);
+    conj[`conj_${num}`] = val;
+  }
+});
 
   return {
     micro_motives: state.likedCodes,
