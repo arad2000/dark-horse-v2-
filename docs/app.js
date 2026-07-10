@@ -939,37 +939,47 @@ async function loadBranchResults() {
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    const rawBranches = data.branch_discovery_result?.branches || [];
+    
+    // ساختار جدید branch-discovery مستقیماً branches را در خود دارد
+    const rawBranches = data.branches || data.branch_discovery_result?.branches || [];
     const adaptedRecommendations = rawBranches.map(b => ({
       major_name_fa: b.branch_name_fa,
       major_id: b.branch_id,
       fit_score: b.fit_score,
       fit_level: b.fit_level,
       evidence: b.evidence,
+      raw_components: b.raw_components,
+      personalized_description: b.personalized_description,
       individuality_fit: {
         score: b.fit_score,
         level: b.fit_level,
         evidence: b.evidence,
-        personalized_description: b.personalized_description,
-        raw_components: b.raw_components
+        raw_components: b.raw_components,
+        personalized_description: b.personalized_description
       }
     }));
+    
     const fakeData = {
-      discovered_majors: adaptedRecommendations,
-      summary: data.branch_discovery_result?.summary || {}
+      discovery_result: {
+        recommendations: adaptedRecommendations,
+        total_matches: adaptedRecommendations.length
+      }
     };
+    
     displayResults(fakeData);
+    
     const backBtn = document.createElement('button');
     backBtn.className = 'btn';
     backBtn.style.cssText = 'width:100%;margin-top:20px;';
     backBtn.textContent = '🔙 بازگشت به نتایج رشته‌های دانشگاهی';
     backBtn.onclick = () => submitResults();
     document.getElementById('app').appendChild(backBtn);
-  } catch (e) {
+    
+  } catch(e) {
     console.error(e);
     app.innerHTML = `<h2>❌ خطا</h2><p>دریافت نتایج هدایت تحصیلی ممکن نشد.</p><button class="btn" onclick="submitResults()">🔙 بازگشت به نتایج دانشگاه</button>`;
   }
-}
+} 
 
 // ==================== مدیریت بازخورد ====================
 const feedback = {};
