@@ -929,9 +929,11 @@ function displayResults(data) {
 } 
 
 // ==================== BRANCH DISCOVERY ====================
+// ==================== BRANCH DISCOVERY (هدایت تحصیلی) ====================
 async function loadBranchResults() {
   const payload = buildPayload();
   app.innerHTML = `<h2>🏫 در حال تحلیل شاخه‌های دبیرستان...</h2><div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>`;
+
   try {
     const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', {
       method: 'POST',
@@ -939,9 +941,11 @@ async function loadBranchResults() {
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    
-    // ساختار جدید branch-discovery مستقیماً branches را در خود دارد
-    const rawBranches = data.branches || data.branch_discovery_result?.branches || [];
+
+    // استخراج مستقیم از ساختار جدید API
+    const rawBranches = data.branch_discovery_result?.branches || [];
+
+    // تبدیل به فرمتی که displayResults می‌فهمد
     const adaptedRecommendations = rawBranches.map(b => ({
       major_name_fa: b.branch_name_fa,
       major_id: b.branch_id,
@@ -950,6 +954,7 @@ async function loadBranchResults() {
       evidence: b.evidence,
       raw_components: b.raw_components,
       personalized_description: b.personalized_description,
+      // اضافه کردن individuality_fit برای سازگاری کامل
       individuality_fit: {
         score: b.fit_score,
         level: b.fit_level,
@@ -958,29 +963,31 @@ async function loadBranchResults() {
         personalized_description: b.personalized_description
       }
     }));
-    
+
+    // ساخت یک شیء مشابه پاسخ دانشگاهی
     const fakeData = {
       discovery_result: {
         recommendations: adaptedRecommendations,
         total_matches: adaptedRecommendations.length
       }
     };
-    
+
+    // استفاده از همان تابع نمایش نتایج
     displayResults(fakeData);
-    
+
+    // اضافه کردن دکمهٔ بازگشت
     const backBtn = document.createElement('button');
     backBtn.className = 'btn';
     backBtn.style.cssText = 'width:100%;margin-top:20px;';
     backBtn.textContent = '🔙 بازگشت به نتایج رشته‌های دانشگاهی';
     backBtn.onclick = () => submitResults();
     document.getElementById('app').appendChild(backBtn);
-    
+
   } catch(e) {
     console.error(e);
     app.innerHTML = `<h2>❌ خطا</h2><p>دریافت نتایج هدایت تحصیلی ممکن نشد.</p><button class="btn" onclick="submitResults()">🔙 بازگشت به نتایج دانشگاه</button>`;
   }
-} 
-
+}
 // ==================== مدیریت بازخورد ====================
 const feedback = {};
 function setFeedback(question, value) {
