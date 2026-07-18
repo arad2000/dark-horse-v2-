@@ -1008,6 +1008,26 @@ function setFeedback(question, value) {
 
 async function submitFeedback() {
   feedback['q9'] = document.getElementById('feedback-q9')?.value || '';
+  // ==================== مدیریت بازخورد (اصلاح‌شده) ====================
+const feedback = {};
+function setFeedback(question, value) {
+  feedback[question] = value;
+  if (typeof value === 'number') {
+    for (let i = 1; i <= 5; i++) {
+      const star = document.getElementById(`star-${question}-${i}`);
+      if (star) star.style.opacity = i <= value ? '1' : '0.3';
+    }
+  }
+  if (['q3','q6','q7','q8'].includes(question)) {
+    ['yes','maybe','no'].forEach(v => {
+      const btn = document.getElementById(`btn-${question}-${v}`);
+      if (btn) btn.style.border = v === value ? '2px solid #f0c040' : 'none';
+    });
+  }
+}
+
+async function submitFeedback() {
+  feedback['q9'] = document.getElementById('feedback-q9')?.value || '';
   const allFeedback = {
     session_id: state.sessionId || 'unknown',
     timestamp: new Date().toISOString(),
@@ -1016,33 +1036,47 @@ async function submitFeedback() {
     valueAnswers: state.valueAnswers.length,
     feedback: feedback
   };
+
+  // ذخیره محلی
+  let savedLocally = false;
   try {
     const existing = JSON.parse(localStorage.getItem('darkhorse_feedback_v2') || '[]');
     existing.push(allFeedback);
     localStorage.setItem('darkhorse_feedback_v2', JSON.stringify(existing));
+    savedLocally = true;
   } catch (e) {
     console.error('خطا در ذخیره محلی:', e);
   }
+
+  // تلاش برای ارسال به سرور
+  let serverSuccess = false;
   try {
     const res = await fetch(API_BASE + '/api/feedback/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(allFeedback)
     });
-    if (res.ok) {
-      document.getElementById('feedback-msg').style.display = 'block';
-      document.getElementById('feedback-msg').textContent = '✅ ممنون از بازخوردت! نظرت ثبت شد و برای مدیر ارسال گردید.';
-    } else {
-      document.getElementById('feedback-msg').style.display = 'block';
-      document.getElementById('feedback-msg').textContent = '⚠️ نظرت ثبت شد، اما نتواستیم به سرور ارسال کنیم.';
-    }
+    if (res.ok) serverSuccess = true;
   } catch (e) {
-    console.error('خطا در ارسال بازخورد به سرور:', e);
-    document.getElementById('feedback-msg').style.display = 'block';
-    document.getElementById('feedback-msg').textContent = '⚠️ نظرت ثبت شد (فقط روی دستگاه خودت).';
+    console.warn('ارسال به سرور ناموفق بود، اما داده محلی ذخیره شد.', e);
+  }
+
+  // نمایش پیام
+  const msgEl = document.getElementById('feedback-msg');
+  if (msgEl) {
+    msgEl.style.display = 'block';
+    if (savedLocally) {
+      if (serverSuccess) {
+        msgEl.textContent = '✅ ممنون از بازخوردت! نظرت با موفقیت به سرور ارسال شد.';
+      } else {
+        msgEl.textContent = '✅ بازخورد شما در دستگاه شما ذخیره شد. (ارسال به سرور ممکن نشد، اما داده‌ها از دست نمی‌روند.)';
+      }
+    } else {
+      msgEl.textContent = '⚠️ متأسفانه ذخیره‌سازی بازخورد با مشکل مواجه شد. لطفاً دوباره تلاش کنید.';
+      msgEl.style.color = '#ff6b6b';
+    }
   }
 }
-
 async function showAllFeedback() {
   try {
     const res = await fetch(API_BASE + '/api/feedback/all');
