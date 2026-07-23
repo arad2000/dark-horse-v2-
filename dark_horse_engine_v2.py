@@ -1,6 +1,6 @@
 """
-Dark Horse Engine V2.1 — با فرمول جدید S-Score (نرمالیزه با حداکثر وزن)
-و پشتیبانی از weight_map برای نمایش ویژگی‌های چندگانه
+Dark Horse Engine V2.1 — با فرمول جدید S-Score (نرمالیزه با حداکثر)
+و پشتیبانی از trait_map_v3 (هر گزینه چندین ویژگی)
 """
 
 import json
@@ -16,16 +16,16 @@ class DarkHorseEngineV2:
         self,
         motives_path: str = "micro_motives.json",
         majors_path: str = "majors_database_v2_final.json",
-        weight_map_path: str = "weight_map.json",  # ← فایل جدید weight_map
+        trait_map_path: str = "trait_map_v3.json",  # ← نسخه جدید (چند ویژگی)
         value_poles_path: str = "value_poles_v2.json"
     ):
         self.motives_map: Dict[str, str] = {}
         self.majors_db: Dict[str, Dict] = {}
-        self.weight_map: Dict[str, Dict[int, List[str]]] = {}  # ← ساختار جدید
+        self.trait_map: Dict[str, Dict[int, List[str]]] = {}  # S01 → {0: ["a","b"], ...}
         self.value_poles: Dict[str, str] = {}
-        self._load_data(motives_path, majors_path, weight_map_path, value_poles_path)
+        self._load_data(motives_path, majors_path, trait_map_path, value_poles_path)
 
-    def _load_data(self, motives_path, majors_path, weight_map_path, value_poles_path):
+    def _load_data(self, motives_path, majors_path, trait_map_path, value_poles_path):
         # بارگذاری میکروموتیوها
         try:
             self.motives_map = self._load_json(motives_path, key_field="code", value_field="description_fa")
@@ -42,17 +42,18 @@ class DarkHorseEngineV2:
             logger.error(f"خطا در بارگذاری رشته‌ها/شاخه‌ها: {e}")
             self.majors_db = {}
 
-        # بارگذاری weight_map (جایگزین trait_map)
+        # بارگذاری trait_map نسخه ۳ (چند ویژگی در هر گزینه)
         try:
-            with open(weight_map_path, "r", encoding="utf-8") as f:
-                raw_weight_map = json.load(f)
-                # تبدیل keyهای عددی به int
-                for q_key, options in raw_weight_map.items():
-                    self.weight_map[q_key] = {int(k): v for k, v in options.items()}
-            logger.info(f"✅ weight_map برای {len(self.weight_map)} سوال بارگذاری شد.")
+            with open(trait_map_path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+                self.trait_map = {
+                    q_key: {int(k): v for k, v in options.items()}
+                    for q_key, options in raw.items()
+                }
+            logger.info(f"✅ trait_map_v3 برای {len(self.trait_map)} سوال بارگذاری شد.")
         except Exception as e:
-            logger.error(f"خطا در بارگذاری weight_map: {e}")
-            self.weight_map = {}
+            logger.error(f"خطا در بارگذاری trait_map_v3: {e}")
+            self.trait_map = {}
 
         # بارگذاری value_poles
         try:
@@ -75,9 +76,6 @@ class DarkHorseEngineV2:
             return {item[key_field]: item for item in data if key_field in item}
         return data
 
-    # ════════════════════════════════════════════════════════════
-    #  لایه اول: محاسبه M-Score (خرده‌انگیزه‌ها)
-    # ════════════════════════════════════════════════════════════
     def _compute_m_score(self, user_motives: List[str], major_data: Dict) -> Tuple[float, List[Dict]]:
         if not user_motives:
             return 0.0, []
@@ -112,15 +110,10 @@ class DarkHorseEngineV2:
         return min(1.0, score), matched_details
 
     # ════════════════════════════════════════════════════════════
-    #  لایه دوم: محاسبه S-Score با فرمول جدید (نرمالیزه با حداکثر)
-    #  فرمول: s_score = (1/25) * sum(chosen_w / max_w)
+    #  لایه دوم: S-Score با فرمول جدید (نرمالیزه با حداکثر)
+    #  فرمول: S = (1/25) * Σ(chosen_w / max_w)
     # ════════════════════════════════════════════════════════════
     def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[float, List[str]]:
-        """
-        محاسبه S-Score با فرمول نرمالیزه:
-        برای هر سوال، وزن انتخاب‌شده را بر حداکثر وزن همان سوال تقسیم می‌کنیم.
-        نتیجه بین ۰ تا ۱ خواهد بود.
-        """
         if not strategy_weights or not strategy_answers:
             return 0.0, []
 
@@ -138,29 +131,26 @@ class DarkHorseEngineV2:
             max_w = max(row) if row else 1.0
             chosen_w = row[idx] if 0 <= idx < len(row) else 0.0
 
-            # ✅ فرمول جدید: نرمالیزه با حداکثر
+            # ✅ فرمول جدید ارزیاب: نرمالیزه با حداکثر
             normalized = chosen_w / max_w if max_w > 0 else 0.0
 
             total_score += normalized
             valid += 1
 
-            # ثبت ویژگی‌های برجسته (با استفاده از weight_map)
-            if normalized >= 0.7:  # بالای ۷۰٪ هم‌خوانی
+            # ثبت ویژگی‌های برجسته (با استفاده از trait_map_v3)
+            if normalized >= 0.7:
                 q_num = i + 1
                 question_key = f"S{str(q_num).zfill(2)}"
-                traits = self.weight_map.get(question_key, {}).get(idx, [])
+                traits = self.trait_map.get(question_key, {}).get(idx, [])
                 if traits:
                     trait_names = "، ".join(traits)
-                    highlights.append(f"سبک «{trait_names}» با این رشته هم‌خوانی بالایی دارد ({int(normalized * 100)}%)")
+                    highlights.append(f"سبک «{trait_names}» با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
                 else:
-                    highlights.append(f"گزینه {idx + 1} با این رشته هم‌خوانی بالایی دارد ({int(normalized * 100)}%)")
+                    highlights.append(f"گزینه {idx+1} با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
 
         final_score = (total_score / valid) if valid > 0 else 0.0
         return final_score, highlights  # بازه ۰ تا ۱
 
-    # ════════════════════════════════════════════════════════════
-    #  لایه سوم: محاسبه V-Score (ارزش‌ها)
-    # ════════════════════════════════════════════════════════════
     def _compute_v_score(self, value_choices: List[str], value_weights: Dict[str, float]) -> Tuple[float, List[str]]:
         if not value_choices or not value_weights:
             return 0.0, []
@@ -182,9 +172,6 @@ class DarkHorseEngineV2:
         score = min(1.0, total / valid) if valid > 0 else 0.0
         return score, highlights
 
-    # ════════════════════════════════════════════════════════════
-    #  ساخت شواهد و توضیحات شخصی‌سازی‌شده
-    # ════════════════════════════════════════════════════════════
     def _build_evidence(self, m_evidence, s_score, s_highlights, v_score, v_highlights):
         evidence = {"micro_motives_matched": m_evidence}
         if s_highlights:
@@ -223,7 +210,7 @@ class DarkHorseEngineV2:
             if row[idx] < 0.3:  # وزن پایین
                 q_num = i + 1
                 question_key = f"S{str(q_num).zfill(2)}"
-                trait_list = self.weight_map.get(question_key, {}).get(idx, [])
+                trait_list = self.trait_map.get(question_key, {}).get(idx, [])
                 if trait_list:
                     traits.extend(trait_list)
                 else:
@@ -272,7 +259,6 @@ class DarkHorseEngineV2:
         else:
             desc += "خرده‌انگیزه‌های شما با این رشته همسو هستند. راهبردهای شخصی و ارزش‌های شما در سطح متوسطی با این رشته هماهنگ‌اند. می‌توانید این مسیر را به عنوان یک گزینه در نظر بگیرید."
 
-        # اضافه کردن هشدارهای ناهماهنگی
         if not s_aligned:
             mis_traits = self._extract_s_misaligned_traits(strategy_answers, strategy_weights)
             if mis_traits:
@@ -322,7 +308,6 @@ class DarkHorseEngineV2:
                 s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
                 v_score, v_high = self._compute_v_score(value_choices, major_data.get("value_weights", {}))
 
-                # ✅ فرمول جدید: S-Score در بازه ۰ تا ۱ است (به لطف نرمالیزه‌سازی)
                 total = (0.60 * m_score) + (0.20 * s_score) + (0.20 * v_score)
                 final_score = round(total * 100, 1)
 
@@ -375,7 +360,8 @@ class DarkHorseEngineV2:
                 "scoring": "Total = 0.60×M + 0.20×S + 0.20×V",
                 "s_score_formula": "S = (1/25) * Σ(chosen_w / max_w)",
                 "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15%",
-                "version": "2.1"
+                "version": "2.1",
+                "trait_map_version": "v3 (چند ویژگی در هر گزینه)"
             },
             "next_step": "برای مشاهده شانس قبولی دانشگاه‌ها، اطلاعات سنجش خود را وارد کنید",
         }
