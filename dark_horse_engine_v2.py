@@ -1,5 +1,6 @@
 """
-Dark Horse Engine V2.0 — با دیباگ داخلی برای عیب‌یابی V-Score
+Dark Horse Engine V2.1 — با فرمول جدید S-Score (نرمالیزه با حداکثر وزن)
+و پشتیبانی از weight_map برای نمایش ویژگی‌های چندگانه
 """
 
 import json
@@ -14,17 +15,18 @@ class DarkHorseEngineV2:
     def __init__(
         self,
         motives_path: str = "micro_motives.json",
-        majors_path: str = "majors_database_v2.json",
-        trait_map_path: str = "trait_map_v2.json",
+        majors_path: str = "majors_database_v2_final.json",
+        weight_map_path: str = "weight_map.json",  # ← فایل جدید weight_map
         value_poles_path: str = "value_poles_v2.json"
     ):
         self.motives_map: Dict[str, str] = {}
         self.majors_db: Dict[str, Dict] = {}
-        self.trait_map: Dict[int, List[str]] = {}
+        self.weight_map: Dict[str, Dict[int, List[str]]] = {}  # ← ساختار جدید
         self.value_poles: Dict[str, str] = {}
-        self._load_data(motives_path, majors_path, trait_map_path, value_poles_path)
+        self._load_data(motives_path, majors_path, weight_map_path, value_poles_path)
 
-    def _load_data(self, motives_path, majors_path, trait_map_path, value_poles_path):
+    def _load_data(self, motives_path, majors_path, weight_map_path, value_poles_path):
+        # بارگذاری میکروموتیوها
         try:
             self.motives_map = self._load_json(motives_path, key_field="code", value_field="description_fa")
             logger.info(f"✅ {len(self.motives_map)} میکروموتیو بارگذاری شد.")
@@ -32,6 +34,7 @@ class DarkHorseEngineV2:
             logger.error(f"خطا در بارگذاری میکروموتیوها: {e}")
             self.motives_map = {}
 
+        # بارگذاری رشته‌ها
         try:
             self.majors_db = self._load_json(majors_path, key_field="id")
             logger.info(f"✅ {len(self.majors_db)} رشته/شاخه بارگذاری شد.")
@@ -39,15 +42,19 @@ class DarkHorseEngineV2:
             logger.error(f"خطا در بارگذاری رشته‌ها/شاخه‌ها: {e}")
             self.majors_db = {}
 
+        # بارگذاری weight_map (جایگزین trait_map)
         try:
-            with open(trait_map_path, "r", encoding="utf-8") as f:
-                raw_trait_map = json.load(f)
-                self.trait_map = {int(k): v for k, v in raw_trait_map.items()}
-            logger.info(f"✅ trait_map برای {len(self.trait_map)} سؤال بارگذاری شد.")
+            with open(weight_map_path, "r", encoding="utf-8") as f:
+                raw_weight_map = json.load(f)
+                # تبدیل keyهای عددی به int
+                for q_key, options in raw_weight_map.items():
+                    self.weight_map[q_key] = {int(k): v for k, v in options.items()}
+            logger.info(f"✅ weight_map برای {len(self.weight_map)} سوال بارگذاری شد.")
         except Exception as e:
-            logger.error(f"خطا در بارگذاری trait_map: {e}")
-            self.trait_map = {}
+            logger.error(f"خطا در بارگذاری weight_map: {e}")
+            self.weight_map = {}
 
+        # بارگذاری value_poles
         try:
             with open(value_poles_path, "r", encoding="utf-8") as f:
                 self.value_poles = json.load(f)
@@ -68,6 +75,9 @@ class DarkHorseEngineV2:
             return {item[key_field]: item for item in data if key_field in item}
         return data
 
+    # ════════════════════════════════════════════════════════════
+    #  لایه اول: محاسبه M-Score (خرده‌انگیزه‌ها)
+    # ════════════════════════════════════════════════════════════
     def _compute_m_score(self, user_motives: List[str], major_data: Dict) -> Tuple[float, List[Dict]]:
         if not user_motives:
             return 0.0, []
@@ -101,11 +111,20 @@ class DarkHorseEngineV2:
 
         return min(1.0, score), matched_details
 
+    # ════════════════════════════════════════════════════════════
+    #  لایه دوم: محاسبه S-Score با فرمول جدید (نرمالیزه با حداکثر)
+    #  فرمول: s_score = (1/25) * sum(chosen_w / max_w)
+    # ════════════════════════════════════════════════════════════
     def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[float, List[str]]:
+        """
+        محاسبه S-Score با فرمول نرمالیزه:
+        برای هر سوال، وزن انتخاب‌شده را بر حداکثر وزن همان سوال تقسیم می‌کنیم.
+        نتیجه بین ۰ تا ۱ خواهد بود.
+        """
         if not strategy_weights or not strategy_answers:
             return 0.0, []
 
-        total_weight = 0.0
+        total_score = 0.0
         valid = 0
         highlights = []
 
@@ -115,18 +134,33 @@ class DarkHorseEngineV2:
             idx = strategy_answers[i]
             if idx < 0 or idx >= len(row):
                 continue
-            total_weight += row[idx]
+
+            max_w = max(row) if row else 1.0
+            chosen_w = row[idx] if 0 <= idx < len(row) else 0.0
+
+            # ✅ فرمول جدید: نرمالیزه با حداکثر
+            normalized = chosen_w / max_w if max_w > 0 else 0.0
+
+            total_score += normalized
             valid += 1
-            if row[idx] > 0.7:
+
+            # ثبت ویژگی‌های برجسته (با استفاده از weight_map)
+            if normalized >= 0.7:  # بالای ۷۰٪ هم‌خوانی
                 q_num = i + 1
-                trait_name = "نامشخص"
-                if q_num in self.trait_map and idx < len(self.trait_map[q_num]):
-                    trait_name = self.trait_map[q_num][idx]
-                highlights.append(f"سبک «{trait_name}» با این رشته هم‌خوانی بالایی دارد")
+                question_key = f"S{str(q_num).zfill(2)}"
+                traits = self.weight_map.get(question_key, {}).get(idx, [])
+                if traits:
+                    trait_names = "، ".join(traits)
+                    highlights.append(f"سبک «{trait_names}» با این رشته هم‌خوانی بالایی دارد ({int(normalized * 100)}%)")
+                else:
+                    highlights.append(f"گزینه {idx + 1} با این رشته هم‌خوانی بالایی دارد ({int(normalized * 100)}%)")
 
-        score = min(1.0, total_weight / valid) if valid > 0 else 0.0
-        return score, highlights
+        final_score = (total_score / valid) if valid > 0 else 0.0
+        return final_score, highlights  # بازه ۰ تا ۱
 
+    # ════════════════════════════════════════════════════════════
+    #  لایه سوم: محاسبه V-Score (ارزش‌ها)
+    # ════════════════════════════════════════════════════════════
     def _compute_v_score(self, value_choices: List[str], value_weights: Dict[str, float]) -> Tuple[float, List[str]]:
         if not value_choices or not value_weights:
             return 0.0, []
@@ -142,11 +176,15 @@ class DarkHorseEngineV2:
             total += weight
             valid += 1
             if weight > 0.7:
-                highlights.append(f"ارزش {v}: هم‌راستایی قوی")
+                pole = self.value_poles.get(v.strip(), v)
+                highlights.append(f"ارزش «{pole}»: هم‌راستایی قوی")
 
         score = min(1.0, total / valid) if valid > 0 else 0.0
         return score, highlights
 
+    # ════════════════════════════════════════════════════════════
+    #  ساخت شواهد و توضیحات شخصی‌سازی‌شده
+    # ════════════════════════════════════════════════════════════
     def _build_evidence(self, m_evidence, s_score, s_highlights, v_score, v_highlights):
         evidence = {"micro_motives_matched": m_evidence}
         if s_highlights:
@@ -164,29 +202,39 @@ class DarkHorseEngineV2:
 
     @staticmethod
     def _get_fit_level(score: float) -> str:
-        if score >= 80: return "همخوانی بسیار بالا"
-        elif score >= 60: return "همخوانی بالا"
-        elif score >= 40: return "همخوانی متوسط"
-        else: return "همخوانی پایین"
+        if score >= 80:
+            return "همخوانی بسیار بالا"
+        elif score >= 60:
+            return "همخوانی بالا"
+        elif score >= 40:
+            return "همخوانی متوسط"
+        else:
+            return "همخوانی پایین"
 
     def _extract_s_misaligned_traits(self, strategy_answers, strategy_weights):
+        """استخراج ویژگی‌هایی که کاربر انتخاب کرده اما وزن کمی دارند"""
         traits = []
         for i, row in enumerate(strategy_weights):
-            if i >= len(strategy_answers): continue
-            ans = strategy_answers[i]
-            if ans < 0 or ans >= len(row): continue
-            if row[ans] < 0.3:
+            if i >= len(strategy_answers):
+                continue
+            idx = strategy_answers[i]
+            if idx < 0 or idx >= len(row):
+                continue
+            if row[idx] < 0.3:  # وزن پایین
                 q_num = i + 1
-                trait = "نامشخص"
-                if q_num in self.trait_map and ans < len(self.trait_map[q_num]):
-                    trait = self.trait_map[q_num][ans]
-                traits.append(trait)
+                question_key = f"S{str(q_num).zfill(2)}"
+                trait_list = self.weight_map.get(question_key, {}).get(idx, [])
+                if trait_list:
+                    traits.extend(trait_list)
+                else:
+                    traits.append(f"گزینه {idx+1}")
         return list(dict.fromkeys(traits))[:3]
 
     def _extract_v_misaligned_poles(self, value_choices, value_weights):
         poles = []
         for v in value_choices:
-            if not v or not v.strip() or not v.startswith('Q'): continue
+            if not v or not v.strip() or not v.startswith('Q'):
+                continue
             letter = v[-1]
             q_part = v[:-1]
             opposite_letter = "B" if letter == "A" else "A"
@@ -222,9 +270,9 @@ class DarkHorseEngineV2:
             elif v_aligned:
                 desc += "خرده‌انگیزه‌های شما با این رشته همسو نیستند، اما ارزش‌های بنیادین شما همخوانی خوبی با این حرفه دارد. این رشته می‌تواند از منظر معنا و رضایت درونی برایتان جذاب باشد، هرچند جرقه‌های روزمرهٔ آن را کمتر دوست داشته باشید."
         else:
-            logger.warning(f"Unexpected scenario for {major_name}: M={m_score:.2f}, S={s_score:.2f}, V={v_score:.2f}")
             desc += "خرده‌انگیزه‌های شما با این رشته همسو هستند. راهبردهای شخصی و ارزش‌های شما در سطح متوسطی با این رشته هماهنگ‌اند. می‌توانید این مسیر را به عنوان یک گزینه در نظر بگیرید."
 
+        # اضافه کردن هشدارهای ناهماهنگی
         if not s_aligned:
             mis_traits = self._extract_s_misaligned_traits(strategy_answers, strategy_weights)
             if mis_traits:
@@ -243,36 +291,43 @@ class DarkHorseEngineV2:
 
         return desc
 
-    # ======================= متد اصلی =======================
+    # ════════════════════════════════════════════════════════════
+    #  متد اصلی
+    # ════════════════════════════════════════════════════════════
     def discover_individuality(self, user_motives, sjt_answers, conjoint_choices):
+        # تبدیل پاسخ‌های SJT
         strategy_answers = []
         for i in range(1, 26):
             key = f"sjt_{i}"
             ans = (sjt_answers or {}).get(key, "").strip().upper()
             strategy_answers.append(ord(ans) - ord('A') if len(ans) == 1 and 'A' <= ans <= 'E' else -1)
 
+        # تبدیل پاسخ‌های ارزشی
         value_choices = []
         for i in range(1, 16):
             key = f"conj_{i}"
             val = (conjoint_choices or {}).get(key, "").strip().upper()
-            # val is expected to be a full code like 'Q1A' or 'Q1B'
             if val and val.startswith('Q'):
                 value_choices.append(val)
             else:
                 value_choices.append("")
 
-
         discovered = []
         for major_id, major_data in self.majors_db.items():
             try:
                 m_score, m_ev = self._compute_m_score(user_motives or [], major_data)
-                if m_score < 0.15: continue
+                if m_score < 0.15:
+                    continue
 
                 s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
                 v_score, v_high = self._compute_v_score(value_choices, major_data.get("value_weights", {}))
+
+                # ✅ فرمول جدید: S-Score در بازه ۰ تا ۱ است (به لطف نرمالیزه‌سازی)
                 total = (0.60 * m_score) + (0.20 * s_score) + (0.20 * v_score)
                 final_score = round(total * 100, 1)
-                if final_score < 30.0: continue
+
+                if final_score < 30.0:
+                    continue
 
                 evidence = self._build_evidence(m_ev, s_score, s_high, v_score, v_high)
                 personalized = self._generate_scenario_description(
@@ -289,7 +344,11 @@ class DarkHorseEngineV2:
                         "score": final_score,
                         "level": self._get_fit_level(final_score),
                         "market_demand_level": major_data.get("prestige_level", 2),
-                        "raw_components": {"m_score": round(m_score*100,1), "s_score": round(s_score*100,1), "v_score": round(v_score*100,1)},
+                        "raw_components": {
+                            "m_score": round(m_score * 100, 1),
+                            "s_score": round(s_score * 100, 1),
+                            "v_score": round(v_score * 100, 1)
+                        },
                         "evidence": evidence,
                         "personalized_description": personalized,
                     },
@@ -304,7 +363,19 @@ class DarkHorseEngineV2:
 
         return {
             "discovered_majors": discovered,
-            "summary": {"total_majors_analyzed": len(self.majors_db), "total_matches": len(discovered), "high_compatibility": high, "medium_compatibility": med, "low_compatibility": low},
-            "method": {"principle": "کشف فردیت — نسخه ۲.۰", "scoring": "Total = 0.60×M + 0.20×S + 0.20×V", "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15%", "version": "2.0"},
+            "summary": {
+                "total_majors_analyzed": len(self.majors_db),
+                "total_matches": len(discovered),
+                "high_compatibility": high,
+                "medium_compatibility": med,
+                "low_compatibility": low
+            },
+            "method": {
+                "principle": "کشف فردیت — نسخه ۲.۱ (فرمول جدید S-Score)",
+                "scoring": "Total = 0.60×M + 0.20×S + 0.20×V",
+                "s_score_formula": "S = (1/25) * Σ(chosen_w / max_w)",
+                "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15%",
+                "version": "2.1"
+            },
             "next_step": "برای مشاهده شانس قبولی دانشگاه‌ها، اطلاعات سنجش خود را وارد کنید",
         }
