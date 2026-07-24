@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>اسب سیاه | مسیرت را کشف کن</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="1024x1024" href="icon.png">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  
+  <!-- PWA Meta -->
+  <meta name="theme-color" content="#0a0a0f">
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Font -->
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+  
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-card: #1a1a2e;
+      --accent: #f0c040;
+      --accent-dim: #d4af37;
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0a080;
+      --font-main: 'Vazirmatn', sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 20px rgba(240, 192, 64, 0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container { max-width: 500px; width: 100%; padding: 20px; text-align: center; }
+    h1 { font-size: 1.8rem; color: var(--accent); margin-bottom: 8px; }
+    h2 { font-size: 1.4rem; color: var(--accent-dim); margin: 15px 0 10px; }
+    p { line-height: 2; margin-bottom: 12px; color: var(--text-primary); font-size: 0.95rem; }
+    .quote { font-style: italic; color: var(--text-secondary); margin: 15px 0; border-right: 3px solid var(--accent-dim); padding-right: 12px; }
+    
+    .card {
+      background: var(--bg-card);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      border-radius: var(--radius-md);
+      padding: 25px 18px;
+      margin: 15px 0;
+      box-shadow: var(--shadow-card);
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: #2a2a42;
+      color: #e0e0e0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      margin: 6px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg-primary);
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(240, 192, 64, 0.3);
+    }
+    .btn-primary:hover {
+      box-shadow: var(--shadow-glow);
+    }
+    
+    .btn-heart {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: var(--bg-primary);
+      font-weight: bold;
+      font-size: 1.1rem;
+      padding: 14px 32px;
+      box-shadow: 0 4px 15px rgba(240, 192, 64, 0.3);
+    }
+    
+    .btn-skip {
+      background: transparent;
+      color: #888;
+      border: 1px solid #333;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      width: 100%;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin: 15px 0;
+    }
+    @media (min-width: 420px) { .grid { grid-template-columns: 1fr 1fr; } }
+    
+    .option {
+      background: var(--bg-card);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 16px;
+      padding: 15px 12px;
+      cursor: pointer;
+      text-align: right;
+      transition: all 0.2s;
+      color: #ccc;
+    }
+    .option.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent);
+      color: var(--accent);
+    }
+    .option-icon { font-size: 1.8rem; display: block; margin-bottom: 4px; }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #2a2a3e;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .swipe-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 16px 0;
+      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    
+    .warning {
+      background: rgba(240, 192, 64, 0.05);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-top: 12px;
+      color: var(--accent);
+      font-size: 0.85rem;
+    }
+    
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container" id="app"></div>
+
+  <!-- Data -->
+  <script src="data.js"></script>
+  
+  <!-- App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
