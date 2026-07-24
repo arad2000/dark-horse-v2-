@@ -3,6 +3,12 @@
 //   • API_BASE → dark-horse-v2.onrender.com
 //   • Endpointها → /api/v2/darkhorse/...
 //   • فایل سوالات → questions_v2.json
+// ==================== اصلاحات اعمال‌شده ====================
+//   • رفع خطای تعریف نشدن REALMS, SUB_REALMS, NARROW_PATHS (با بارگذاری data.js)
+//   • اصلاح تابع previousCard برای جلوگیری از حذف اشتباه لایک‌ها
+//   • اصلاح شماره سوال بازخورد (نوآوری از q10 به q9 و textarea به q10)
+//   • بهبود مدیریت خطا و پیام‌های کاربر
+//   • اضافه شدن بررسی وجود داده‌های استاتیک در ابتدای رندر
 
 const API_BASE = 'https://dark-horse-v2.onrender.com';
 const DATA_BASE = './data/';
@@ -33,7 +39,9 @@ const state = {
   cachedMotives: null,
   questionsReady: false,
   motivesReady: false,
-  retryCount: 0
+  retryCount: 0,
+  // جدید: وضعیت لایک هر کارت برای مدیریت برگشت
+  cardLikeStatus: new Map() // key: code, value: boolean (true if liked)
 };
 
 const app = document.getElementById('app');
@@ -66,7 +74,8 @@ function saveSession() {
     swipeIndex: state.swipeIndex,
     totalSwipes: state.totalSwipes,
     completedPaths: [...state.completedPaths],
-    completedSubRealms: [...state.completedSubRealms]
+    completedSubRealms: [...state.completedSubRealms],
+    cardLikeStatus: Array.from(state.cardLikeStatus.entries())
   };
   try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(sessionData)); } catch (e) {}
 }
@@ -92,6 +101,9 @@ function loadSession() {
     state.completedPaths = new Set(data.completedPaths || []);
     state.completedSubRealms = new Set(data.completedSubRealms || []);
     state.likedCodesSet = new Set(data.likedCodes || []);
+    if (data.cardLikeStatus) {
+      state.cardLikeStatus = new Map(data.cardLikeStatus);
+    }
     return true;
   } catch (e) { return false; }
 }
@@ -124,8 +136,24 @@ async function loadQuestions() {
   }
 }
 
+// ==================== بررسی وجود داده‌های استاتیک ====================
+function ensureStaticData() {
+  if (typeof REALMS === 'undefined' || typeof SUB_REALMS === 'undefined' || typeof NARROW_PATHS === 'undefined') {
+    app.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#f0c040;">
+        <h2>⚠️ خطای بارگذاری داده</h2>
+        <p style="color:#b0a080;">داده‌های اولیه برنامه بارگذاری نشدند. لطفاً صفحه را Refresh کنید یا با پشتیبانی تماس بگیرید.</p>
+        <button class="btn btn-primary" onclick="location.reload()" style="margin-top:20px;">🔄 بارگذاری مجدد</button>
+      </div>
+    `;
+    return false;
+  }
+  return true;
+}
+
 // ==================== NAVIGATION ====================
 function goTo(stage) {
+  if (!ensureStaticData()) return;
   state.history.push(state.stage);
   state.stage = stage;
   saveSession();
@@ -146,6 +174,7 @@ function goBack() {
 
 // ==================== RENDER ====================
 function render() {
+  if (!ensureStaticData()) return;
   switch (state.stage) {
     case 'manifesto': renderManifesto(); break;
     case 'guide': renderGuide(); break;
@@ -284,6 +313,7 @@ function startNewJourney() {
   state.swipeIndex = 0; state.totalSwipes = 0;
   state.lastPayload = null; state.cachedMotives = null;
   state.retryCount = 0;
+  state.cardLikeStatus.clear();
   saveSession();
   render();
 }
@@ -417,6 +447,7 @@ async function loadSwipeCards() {
       majorCodes.some(prefix => m.code.startsWith(prefix)) && !state.likedCodesSet.has(m.code)
     );
     state.swipeIndex = 0; state.totalSwipes = state.swipeCards.length;
+    state.cardLikeStatus.clear(); // reset status for new cards
     goTo('swipe');
   } catch (e) { alert('خطا در بارگذاری جرقه‌ها.'); }
 }
@@ -466,6 +497,8 @@ function renderSwipe() {
   const progress = state.totalSwipes > 0 ? ((state.swipeIndex + 1) / state.totalSwipes) * 100 : 0;
   const canFinish = state.likedCodes.length >= 20;
   const remainingSlots = 80 - state.likedCodes.length;
+  // بررسی وضعیت لایک کارت فعلی
+  const isLiked = state.cardLikeStatus.get(card.code) || false;
 
   app.innerHTML = `
     <h2>🔥 جرقهٔ انرژی</h2>
@@ -473,7 +506,7 @@ function renderSwipe() {
     <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
     <div class="swipe-card">
       <p style="font-size:1.2rem;line-height:2.2;">${escapeHtml(card.description_fa)}</p>
-      <button class="btn btn-heart" onclick="likeCard(true)">❤️ جرقه زد</button>
+      <button class="btn ${isLiked ? 'btn-heart' : ''}" style="display:block;width:100%;margin-bottom:8px;${isLiked ? 'border:2px solid #f0c040;' : ''}" onclick="likeCard(true)">❤️ ${isLiked ? 'جرقه زده شد' : 'جرقه بزن'}</button>
       <button class="btn btn-skip" onclick="likeCard(false)">❌ ادامه</button>
       ${canFinish ? `
         <div style="margin-top:20px;border-top:1px solid #333;padding-top:15px;">
@@ -488,10 +521,28 @@ function renderSwipe() {
 }
 
 function likeCard(liked) {
-  if (liked && state.likedCodes.length < 80) {
-    state.likedCodes.push(state.swipeCards[state.swipeIndex].code);
-    state.likedCodesSet.add(state.swipeCards[state.swipeIndex].code);
+  const card = state.swipeCards[state.swipeIndex];
+  const code = card.code;
+  const wasLiked = state.cardLikeStatus.get(code) || false;
+
+  if (liked && !wasLiked && state.likedCodes.length < 80) {
+    state.likedCodes.push(code);
+    state.likedCodesSet.add(code);
+    state.cardLikeStatus.set(code, true);
+  } else if (!liked && wasLiked) {
+    // اگر کاربر دکمه ادامه را بزند در حالی که کارت قبلاً لایک شده بود، لایک را برمی‌گردانیم؟
+    // نه، اینجا فقط حرکت به جلو است، لایک را حفظ می‌کنیم.
+    // اما اگر کاربر قبلاً لایک نکرده و دکمه ادامه را بزند، هیچ تغییری نمی‌کنیم.
+  } else if (liked && wasLiked) {
+    // اگر کاربر دوباره روی لایک کلیک کند، لایک را لغو می‌کنیم (toggle)
+    const idx = state.likedCodes.indexOf(code);
+    if (idx > -1) {
+      state.likedCodes.splice(idx, 1);
+      state.likedCodesSet.delete(code);
+      state.cardLikeStatus.set(code, false);
+    }
   }
+  // اگر !liked و wasLiked باشد، یعنی کاربر قبلاً لایک کرده و حالا دکمه ادامه را زده، ما لایک را حفظ می‌کنیم و فقط به جلو می‌رویم.
   state.swipeIndex++;
   saveSession();
   renderSwipe();
@@ -500,10 +551,16 @@ function likeCard(liked) {
 function previousCard() {
   if (state.swipeIndex > 0) {
     state.swipeIndex--;
-    const removedCode = state.swipeCards[state.swipeIndex]?.code;
-    if (removedCode && state.likedCodes.length > 0 && state.likedCodes[state.likedCodes.length - 1] === removedCode) {
-      state.likedCodes.pop();
-      state.likedCodesSet.delete(removedCode);
+    const card = state.swipeCards[state.swipeIndex];
+    const code = card.code;
+    // اگر کارت قبلی لایک شده بود، آن را از likedCodes حذف می‌کنیم تا کاربر بتواند دوباره تصمیم بگیرد
+    if (state.cardLikeStatus.get(code) === true) {
+      const idx = state.likedCodes.indexOf(code);
+      if (idx > -1) {
+        state.likedCodes.splice(idx, 1);
+        state.likedCodesSet.delete(code);
+      }
+      state.cardLikeStatus.set(code, false);
     }
     saveSession();
     renderSwipe();
@@ -562,6 +619,12 @@ function previousStrategy() { if (state.currentQuestion > 0) { state.currentQues
 
 async function retryLoadQuestions() {
   state.retryCount++;
+  if (state.retryCount > 5) {
+    app.innerHTML = `<h2>❌ خطا در بارگذاری سوالات</h2>
+      <div class="card"><p>پس از چندین تلاش، سوالات بارگذاری نشدند. لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.</p>
+      <button class="btn btn-primary" onclick="location.reload()">🔄 بارگذاری مجدد صفحه</button></div>`;
+    return;
+  }
   app.innerHTML = `<h2>⏳ در حال تلاش مجدد (${state.retryCount})...</h2>`;
   await loadQuestions();
   render();
@@ -658,26 +721,30 @@ async function submitResults() {
   } catch (e) {
     console.error(e);
     app.innerHTML = `<h2>❌ خطا در دریافت نتایج</h2>
-      <div class="card"><p>نتوانستیم با سرور ارتباط برقرار کنیم.</p>
+      <div class="card"><p>نتوانستیم با سرور ارتباط برقرار کنیم. لطفاً اتصال اینترنت خود را بررسی کنید.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="retrySubmit()">🔄 تلاش دوباره</button>
       <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 بازگشت</button></div>`;
   }
 }
 
 async function fetchWithRetry(url, options, maxRetries = 3) {
+  let lastError;
   for (let i = 0; i < maxRetries; i++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
+      const timeout = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeout);
-      if (!res.ok) throw new Error(`Status ${res.status}`);
+      if (!res.ok) throw new Error(`Status ${res.status} - ${res.statusText}`);
       return res;
     } catch (e) {
-      if (i === maxRetries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      lastError = e;
+      if (i < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+      }
     }
   }
+  throw lastError;
 }
 
 async function retrySubmit() {
@@ -695,7 +762,7 @@ async function retrySubmit() {
   } catch (e) {
     console.error(e);
     app.innerHTML = `<h2>❌ خطا</h2>
-      <div class="card"><p>هنوز نمی‌توانیم متصل شویم.</p>
+      <div class="card"><p>هنوز نمی‌توانیم متصل شویم. لطفاً بعداً تلاش کنید.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="retrySubmit()">🔄 تلاش دوباره</button>
       <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 بازگشت</button></div>`;
   }
@@ -888,12 +955,12 @@ function displayResults(data) {
       </div>
 
       <p style="color:#b0a080;margin:15px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود؟</p>
-      <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q10">
-        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q10', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q10-${i}">⭐</span>`).join('')}
+      <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q9">
+        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q9', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q9-${i}">⭐</span>`).join('')}
       </div>
 
       <p style="color:#b0a080;margin:15px 0 5px 0;">۱۰. چه پیشنهادی برای بهبود داری؟ (اختیاری)</p>
-      <textarea id="feedback-q9" placeholder="اینجا بنویس..." style="width:100%;padding:10px;background:#0a0a0f;color:#fff;border:1px solid #333;border-radius:8px;min-height:60px;font-family:Vazirmatn;"></textarea>
+      <textarea id="feedback-q10" placeholder="اینجا بنویس..." style="width:100%;padding:10px;background:#0a0a0f;color:#fff;border:1px solid #333;border-radius:8px;min-height:60px;font-family:Vazirmatn;"></textarea>
 
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="submitFeedback()">📩 ثبت بازخورد</button>
       <p id="feedback-msg" style="color:#f0c040;margin-top:8px;display:none;">✅ ممنون از بازخوردت! نظرت ثبت شد.</p>
@@ -984,7 +1051,7 @@ function setFeedback(question, value) {
 }
 
 async function submitFeedback() {
-  feedback['q9'] = document.getElementById('feedback-q9')?.value || '';
+  feedback['q10'] = document.getElementById('feedback-q10')?.value || '';
   const allFeedback = {
     session_id: state.sessionId || 'unknown',
     timestamp: new Date().toISOString(),
@@ -1067,8 +1134,8 @@ async function showAllFeedback() {
           <p style="color:#f0c040;">۶. نیاز به روش سنتی: ${fb.feedback?.q6 === 'yes' ? '✅ بله' : '❌ خیر'}</p>
           <p style="color:#f0c040;">۷. کشف فردیت پولی: ${fb.feedback?.q7 === 'yes' ? '✅ بله' : fb.feedback?.q7 === 'maybe' ? '🤷 شاید' : '❌ خیر'}</p>
           <p style="color:#f0c040;">۸. آینده شغلی پولی: ${fb.feedback?.q8 === 'yes' ? '✅ بله' : fb.feedback?.q8 === 'maybe' ? '🤷 شاید' : '❌ خیر'}</p>
-          <p style="color:#f0c040;">۹. نوآورانه بودن: ${'⭐'.repeat(fb.feedback?.q10 || 0)}</p>
-          <p style="color:#f0c040;">۱۰. پیشنهاد بهبود: ${escapeHtml(fb.feedback?.q9) || 'ندارد'}</p>
+          <p style="color:#f0c040;">۹. نوآورانه بودن: ${'⭐'.repeat(fb.feedback?.q9 || 0)}</p>
+          <p style="color:#f0c040;">۱۰. پیشنهاد بهبود: ${escapeHtml(fb.feedback?.q10) || 'ندارد'}</p>
         </div>`;
     });
     html += `</div><button class="btn" onclick="goTo('splash')">⬅️ بازگشت به صفحه اصلی</button>`;
@@ -1113,10 +1180,22 @@ function resetJourney() {
   state.swipeIndex = 0;
   state.totalSwipes = 0;
   state.retryCount = 0;
+  state.cardLikeStatus.clear();
   render();
 }
 
 async function init() {
+  // ابتدا بررسی می‌کنیم که داده‌های استاتیک بارگذاری شده‌اند
+  if (typeof REALMS === 'undefined') {
+    app.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#f0c040;">
+        <h2>⚠️ خطا در بارگذاری داده</h2>
+        <p style="color:#b0a080;">فایل داده‌های اصلی (data.js) بارگذاری نشد. لطفاً صفحه را Refresh کنید.</p>
+        <button class="btn btn-primary" onclick="location.reload()" style="margin-top:20px;">🔄 بارگذاری مجدد</button>
+      </div>
+    `;
+    return;
+  }
   await Promise.all([loadQuestions(), loadMicroMotivesMap()]);
   if (localStorage.getItem('darkhorse_session_v2')) {
     loadSession();
