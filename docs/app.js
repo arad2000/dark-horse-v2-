@@ -734,28 +734,35 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
   }
 }
 
-// ==================== DISPLAY RESULTS (نسخه نهایی با پشتیبانی کامل) ====================
+// ==================== DISPLAY RESULTS (نسخه نهایی با پشتیبانی کامل از کهن‌الگو، مسیرهای جایگزین و نمایش توضیحات جرقه‌ها) ====================
 function displayResults(data, type) {
   // ===== ۱. استخراج آیتم‌ها =====
   let items = [];
   let isBranch = false;
   let bestBranch = null;
+  let rawData = data;
 
   // تشخیص نوع داده
   if (data.recommended_branches) {
     items = data.recommended_branches;
     isBranch = true;
     bestBranch = data.best_branch || null;
+    rawData = data;
   } else if (data.discovered_majors) {
     items = data.discovered_majors;
     isBranch = false;
+    rawData = data;
   } else if (data.branch_discovery_result?.branches) {
     items = data.branch_discovery_result.branches;
     isBranch = true;
     bestBranch = data.branch_discovery_result.best_branch || null;
+    rawData = data.branch_discovery_result;
   } else if (data.discovery_result?.recommendations) {
     items = data.discovery_result.recommendations;
     isBranch = false;
+    rawData = data.discovery_result;
+  } else if (Array.isArray(data)) {
+    items = data;
   } else {
     items = [];
   }
@@ -765,6 +772,19 @@ function displayResults(data, type) {
     // اگر آیتم دارای individuality_fit است
     const fit = item.individuality_fit || item;
     
+    // ===== استخراج کهن‌الگو از هر دو سطح =====
+    let archetypeData = null;
+    if (fit.archetype) {
+      archetypeData = fit.archetype;
+    } else if (item.archetype) {
+      archetypeData = item.archetype;
+    }
+    
+    // اگر archetype یک رشته باشد، به آبجکت تبدیل کن
+    if (typeof archetypeData === 'string') {
+      archetypeData = { archetype: archetypeData, identity_sentence: '' };
+    }
+    
     return {
       name: item.major_name_fa || item.branch_name_fa || fit.major_name_fa || fit.branch_name_fa || item.name || 'نامشخص',
       fit_score: fit.score || fit.fit_score || item.fit_score || 0,
@@ -772,12 +792,15 @@ function displayResults(data, type) {
       evidence: fit.evidence || item.evidence || {},
       personalized_description: fit.personalized_description || item.personalized_description || '',
       
-      // ===== فیلدهای جدید (از هر دو سطح) =====
-      archetype: fit.archetype || item.archetype || null,
+      // ===== فیلدهای جدید =====
+      archetype: archetypeData,
       alternative_paths: fit.alternative_paths || item.alternative_paths || [],
       warning: fit.warning || item.warning || null,
       count: fit.count || item.count || null,
-      avg_components: fit.avg_components || item.avg_components || null
+      avg_components: fit.avg_components || item.avg_components || null,
+      
+      // برای جرقه‌ها
+      micro_motives_matched: fit.evidence?.micro_motives_matched || item.evidence?.micro_motives_matched || []
     };
   });
 
@@ -786,7 +809,7 @@ function displayResults(data, type) {
     .filter(item => (item.fit_score || 0) >= 30)
     .sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0));
 
-  // ===== ۴. ادامه کد (همانند قبل) =====
+  // ===== ۴. تحلیل سبک شخصی =====
   const strategyStyle = state.strategyAnswers.length >= 15 ? analyzeStrategyStyle(state.strategyAnswers) : null;
   const valueStyle = state.valueAnswers.length >= 5 ? analyzeValueStyle(state.valueAnswers) : null;
 
@@ -832,10 +855,15 @@ function displayResults(data, type) {
       const sPct = raw.s_score !== undefined ? raw.s_score : (r.avg_components?.s_score || '?');
       const vPct = raw.v_score !== undefined ? raw.v_score : (r.avg_components?.v_score || '?');
 
-      const microMatch = r.evidence?.micro_motives_matched || [];
+      // ===== جرقه‌های مشترک با توضیحات =====
+      const microMatch = r.micro_motives_matched || [];
       let sparkText = '';
       if (microMatch.length > 0) {
-        const names = microMatch.slice(0, 3).map(m => escapeHtml(m.description || m.code)).join('، ');
+        // نمایش توضیحات به جای کد
+        const names = microMatch.slice(0, 3).map(m => {
+          // اگر description وجود دارد از آن استفاده کن، در غیر این صورت کد را نشان بده
+          return escapeHtml(m.description || m.code || m);
+        }).join('، ');
         sparkText = ` ${names}`;
         if (microMatch.length > 3) sparkText += ` و ${microMatch.length - 3} جرقهٔ دیگر`;
       }
@@ -857,8 +885,8 @@ function displayResults(data, type) {
 
       // ===== کهن‌الگو (برای رشته‌ها) =====
       if (!isBranch && r.archetype) {
-        const arch = typeof r.archetype === 'string' ? r.archetype : r.archetype.archetype || '';
-        const identity = typeof r.archetype === 'object' ? r.archetype.identity_sentence || '' : '';
+        const arch = r.archetype.archetype || '';
+        const identity = r.archetype.identity_sentence || '';
         html += `
           <div style="background:#1a1a2e;border:1px solid #d4af37;border-radius:8px;padding:10px 12px;margin-top:10px;text-align:right;font-size:0.85rem;line-height:1.9;">
             <p style="margin:0;color:#f0c040;">🧠 کهن‌الگوی شناختی: <strong>${escapeHtml(arch)}</strong></p>
@@ -959,7 +987,7 @@ function displayResults(data, type) {
         <button class="btn btn-sm" onclick="setFeedback('q8', 'maybe')" id="btn-q8-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q8', 'no')" id="btn-q8-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود？</p>
+      <p style="color:#b0a080;margin:15px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q10">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q10', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q10-${i}">⭐</span>`).join('')}
       </div>
@@ -971,7 +999,6 @@ function displayResults(data, type) {
 
   app.innerHTML = html;
 }
-
 // ==================== تحلیل سبک شخصی (بدون تغییر) ====================
 function analyzeStrategyStyle(answers) {
   const counts = [0,0,0,0,0];
