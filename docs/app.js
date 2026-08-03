@@ -734,7 +734,7 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
   }
 }
 
-// ==================== DISPLAY RESULTS (بازنویسی کامل) ====================
+// ==================== DISPLAY RESULTS (نسخه اصلاح‌شده با پشتیبانی از کهن‌الگو، مسیرهای جایگزین و هشدارها) ====================
 function displayResults(data, type) {
   let items = [];
   let fallbackName = 'رشتهٔ پیشنهادی';
@@ -748,7 +748,23 @@ function displayResults(data, type) {
     fallbackName = 'شاخهٔ پیشنهادی';
     isBranch = true;
   } else {
-    items = [];
+    // تلاش برای تشخیص خودکار
+    if (data.recommended_branches) {
+      items = data.recommended_branches;
+      isBranch = true;
+      fallbackName = 'شاخهٔ پیشنهادی';
+    } else if (data.discovered_majors) {
+      items = data.discovered_majors;
+      isBranch = false;
+      fallbackName = 'رشتهٔ پیشنهادی';
+    } else {
+      items = [];
+    }
+  }
+
+  // اگر آیتم‌ها مستقیم از موتور باشند (بدون wrapper)
+  if (Array.isArray(data) && data.length > 0) {
+    items = data;
   }
 
   const matched = items
@@ -773,6 +789,16 @@ function displayResults(data, type) {
     </div>` : ''}
     <p>بر اساس <strong>${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
   `;
+
+  // ===== نمایش بهترین شاخه (فقط برای هدایت تحصیلی) =====
+  if (isBranch && data.best_branch) {
+    const bestName = data.best_branch;
+    html += `
+      <div style="background:#1a1a2e;border:2px solid #f0c040;border-radius:12px;padding:15px;margin:15px 0;text-align:center;">
+        <p style="color:#f0c040;font-size:1.2rem;font-weight:bold;">🏆 بهترین شاخهٔ پیشنهادی: <span style="font-size:1.4rem;">${escapeHtml(bestName)}</span></p>
+        <p style="color:#b0a080;font-size:0.85rem;">این شاخه بیشترین هماهنگی را با انگیزه‌ها، راهبردها و ارزش‌های شما دارد.</p>
+      </div>`;
+  }
 
   if (matched.length === 0) {
     html += `<p style="color:#f0c040;">با همین خرده‌انگیزه‌ها، هیچ ${isBranch ? 'شاخه‌ای' : 'رشته‌ای'} به آستانهٔ ۳۰٪ نرسیده است.</p>`;
@@ -814,8 +840,47 @@ function displayResults(data, type) {
             ⚖️ ارزش‌ها: ${vPct}%
           </p>
           ${sparkText ? `<p style="font-size:0.85rem;color:#b0a080;">🔥 جرقه‌های مشترک:${sparkText}</p>` : ''}
-          ${alignmentBadge}
-        </div>`;
+          ${alignmentBadge}`;
+
+      // ===== بخش جدید: کهن‌الگو (فقط برای رشته‌ها) =====
+      if (!isBranch && r.archetype) {
+        html += `
+          <div style="background:#1a1a2e;border:1px solid #d4af37;border-radius:8px;padding:10px 12px;margin-top:10px;text-align:right;font-size:0.85rem;line-height:1.9;">
+            <p style="margin:0;color:#f0c040;">🧠 کهن‌الگوی شناختی: <strong>${escapeHtml(r.archetype.archetype)}</strong></p>
+            ${r.archetype.identity_sentence ? `<p style="margin:5px 0 0 0;color:#b0a080;font-size:0.8rem;">📖 ${escapeHtml(r.archetype.identity_sentence)}</p>` : ''}
+          </div>`;
+      }
+
+      // ===== بخش جدید: مسیرهای جایگزین (برای رشته‌ها و شاخه‌ها) =====
+      if (r.alternative_paths && r.alternative_paths.length > 0) {
+        const altNames = r.alternative_paths.map(p => 
+          isBranch ? p.branch_name : p.major_name
+        ).filter(Boolean);
+        if (altNames.length > 0) {
+          html += `
+            <div style="margin-top:10px;font-size:0.8rem;color:#b0a080;background:#0a0a0f;padding:8px 12px;border-radius:8px;border:1px solid #333;">
+              🔄 مسیرهای جایگزین: ${altNames.map(n => `<span style="color:#d4af37;">${escapeHtml(n)}</span>`).join('، ')}
+            </div>`;
+        }
+      }
+
+      // ===== بخش جدید: هشدار (برای شاخه‌ها) =====
+      if (isBranch && r.warning) {
+        html += `
+          <div style="margin-top:10px;font-size:0.85rem;color:#ff6b6b;background:#1a1a2e;padding:8px 12px;border-radius:8px;border:1px solid #ff6b6b;">
+            ⚠️ ${escapeHtml(r.warning)}
+          </div>`;
+      }
+
+      // ===== بخش جدید: شاخص‌های اضافی (برای شاخه‌ها) =====
+      if (isBranch && r.count) {
+        html += `
+          <div style="margin-top:8px;font-size:0.75rem;color:#888;">
+            📌 تعداد کدهای تحلیل‌شده در این شاخه: ${r.count}
+          </div>`;
+      }
+
+      html += `</div>`;
     });
   }
 
@@ -826,7 +891,6 @@ function displayResults(data, type) {
         ⬅️ بازگشت به انتخاب نوع تحلیل
       </button>`;
 
-  // اگر هر دو نتیجه کش شده باشند، دکمه‌های جابه‌جایی نمایش داده می‌شوند
   if (type === 'majors' && state.branchesResult) {
     html += `
       <button class="btn btn-primary" style="width:100%;" onclick="displayResults(state.branchesResult, 'branches')">
