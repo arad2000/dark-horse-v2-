@@ -734,7 +734,7 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
   }
 }
 
-// ==================== DISPLAY RESULTS (نسخه نهایی با پشتیبانی کامل از کهن‌الگو، مسیرهای جایگزین و نمایش توضیحات جرقه‌ها) ====================
+// ==================== DISPLAY RESULTS (نسخه نهایی با UI/UX بهبودیافته) ====================
 function displayResults(data, type) {
   // ===== ۱. استخراج آیتم‌ها =====
   let items = [];
@@ -742,7 +742,6 @@ function displayResults(data, type) {
   let bestBranch = null;
   let rawData = data;
 
-  // تشخیص نوع داده
   if (data.recommended_branches) {
     items = data.recommended_branches;
     isBranch = true;
@@ -767,44 +766,32 @@ function displayResults(data, type) {
     items = [];
   }
 
-  // ===== ۲. نرمال‌سازی هر آیتم =====
+  // ===== ۲. نرمال‌سازی =====
   const normalized = items.map(item => {
-    // اگر آیتم دارای individuality_fit است
     const fit = item.individuality_fit || item;
-    
-    // ===== استخراج کهن‌الگو از هر دو سطح =====
     let archetypeData = null;
-    if (fit.archetype) {
-      archetypeData = fit.archetype;
-    } else if (item.archetype) {
-      archetypeData = item.archetype;
-    }
-    
-    // اگر archetype یک رشته باشد، به آبجکت تبدیل کن
+    if (fit.archetype) archetypeData = fit.archetype;
+    else if (item.archetype) archetypeData = item.archetype;
     if (typeof archetypeData === 'string') {
       archetypeData = { archetype: archetypeData, identity_sentence: '' };
     }
-    
     return {
       name: item.major_name_fa || item.branch_name_fa || fit.major_name_fa || fit.branch_name_fa || item.name || 'نامشخص',
       fit_score: fit.score || fit.fit_score || item.fit_score || 0,
       raw_components: fit.raw_components || item.raw_components || {},
       evidence: fit.evidence || item.evidence || {},
       personalized_description: fit.personalized_description || item.personalized_description || '',
-      
-      // ===== فیلدهای جدید =====
       archetype: archetypeData,
+      fulfillment_source: fit.fulfillment_source || fit.archetype?.fulfillment_source || null,
       alternative_paths: fit.alternative_paths || item.alternative_paths || [],
       warning: fit.warning || item.warning || null,
       count: fit.count || item.count || null,
       avg_components: fit.avg_components || item.avg_components || null,
-      
-      // برای جرقه‌ها
       micro_motives_matched: fit.evidence?.micro_motives_matched || item.evidence?.micro_motives_matched || []
     };
   });
 
-  // ===== ۳. فیلتر =====
+  // ===== ۳. فیلتر و مرتب‌سازی =====
   const matched = normalized
     .filter(item => (item.fit_score || 0) >= 30)
     .sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0));
@@ -814,22 +801,22 @@ function displayResults(data, type) {
   const valueStyle = state.valueAnswers.length >= 5 ? analyzeValueStyle(state.valueAnswers) : null;
 
   let html = `
-    <h2>📊 نتایج ${isBranch ? 'هدایت تحصیلی' : 'انتخاب رشته'}</h2>
-    <p style="color:#b0a080;font-style:italic;margin-bottom:15px;">
+    <h2 style="text-align:center;color:#f0c040;font-size:1.8rem;">📊 نتایج ${isBranch ? 'هدایت تحصیلی' : 'انتخاب رشته'}</h2>
+    <p style="color:#b0a080;font-style:italic;text-align:center;margin-bottom:20px;">
       ✨ این پیشنهادها بر اساس ویژگی‌هایی است که <strong>امروز</strong> در خودت کشف کردی. 
-      فردیت یک سفر است، نه یک مقصد — ممکن است در طول زمان تغییر کند و این کاملاً طبیعی است.
+      فردیت یک سفر است، نه یک مقصد.
     </p>
     ${strategyStyle || valueStyle ? `
-    <div style="background:#1a1a2e;border:1px solid #d4af37;border-radius:12px;padding:15px;margin:15px 0;text-align:right;font-size:0.85rem;">
+    <div style="background:linear-gradient(135deg,#1a1a2e,#2a1a3e);border:1px solid #d4af37;border-radius:12px;padding:18px;margin:15px 0;text-align:right;font-size:0.9rem;">
       <p style="margin:0 0 10px 0;color:#f0c040;font-weight:bold;">🧠 تحلیل سبک شخصی تو</p>
-      <p style="margin:5px 0;font-size:0.75rem;color:#888;">برگرفته از پاسخ‌های تو به ۲۵ سوال راهبردی (سبک فکری) و ۱۵ سوال ارزشی (ترجیحات)</p>
       ${strategyStyle ? `<p style="margin:5px 0;"><span style="font-size:1.2rem;">${strategyStyle.icon}</span> <strong>سبک فکری:</strong> ${escapeHtml(strategyStyle.style)} (${strategyStyle.strength}٪) — ${escapeHtml(strategyStyle.description)}</p>` : ''}
       ${valueStyle ? `<p style="margin:5px 0;"><span style="font-size:1.2rem;">⚖️</span> <strong>ارزش‌های کلیدی:</strong> ${escapeHtml(valueStyle.summary)}</p>` : ''}
     </div>` : ''}
-    <p>بر اساس <strong>${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
+
+    <p style="text-align:center;color:#b0a080;">بر اساس <strong style="color:#f0c040;">${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
   `;
 
-  // ===== بهترین شاخه =====
+  // ===== بهترین شاخه (برای هدایت تحصیلی) =====
   if (isBranch) {
     let bestName = bestBranch;
     if (!bestName && matched.length > 0) {
@@ -838,167 +825,192 @@ function displayResults(data, type) {
     }
     if (bestName) {
       html += `
-        <div style="background:#1a1a2e;border:2px solid #f0c040;border-radius:12px;padding:15px;margin:15px 0;text-align:center;">
-          <p style="color:#f0c040;font-size:1.2rem;font-weight:bold;">🏆 بهترین شاخهٔ پیشنهادی: <span style="font-size:1.4rem;">${escapeHtml(bestName)}</span></p>
-          <p style="color:#b0a080;font-size:0.85rem;">این شاخه بیشترین هماهنگی را با انگیزه‌ها، راهبردها و ارزش‌های شما دارد.</p>
+        <div style="background:linear-gradient(135deg,#1a1a2e,#2a1a3e);border:2px solid #f0c040;border-radius:12px;padding:18px;margin:20px 0;text-align:center;">
+          <p style="color:#f0c040;font-size:1.4rem;font-weight:bold;">🏆 بهترین شاخهٔ پیشنهادی: <span style="font-size:1.6rem;">${escapeHtml(bestName)}</span></p>
+          <p style="color:#b0a080;font-size:0.9rem;">این شاخه بیشترین هماهنگی را با انگیزه‌ها، راهبردها و ارزش‌های شما دارد.</p>
         </div>`;
     }
   }
 
   if (matched.length === 0) {
-    html += `<p style="color:#f0c040;">با همین خرده‌انگیزه‌ها، هیچ ${isBranch ? 'شاخه‌ای' : 'رشته‌ای'} به آستانهٔ ۳۰٪ نرسیده است.</p>`;
+    html += `<p style="color:#f0c040;text-align:center;">با همین خرده‌انگیزه‌ها، هیچ ${isBranch ? 'شاخه‌ای' : 'رشته‌ای'} به آستانهٔ ۳۰٪ نرسیده است.</p>`;
   } else {
     matched.forEach(r => {
       const score = r.fit_score || 0;
       const raw = r.raw_components || {};
-      const mPct = raw.m_score !== undefined ? raw.m_score : (r.avg_components?.m_score || '?');
-      const sPct = raw.s_score !== undefined ? raw.s_score : (r.avg_components?.s_score || '?');
-      const vPct = raw.v_score !== undefined ? raw.v_score : (r.avg_components?.v_score || '?');
+      const mPct = raw.m_score !== undefined ? raw.m_score : (r.avg_components?.m_score || 0);
+      const sPct = raw.s_score !== undefined ? raw.s_score : (r.avg_components?.s_score || 0);
+      const vPct = raw.v_score !== undefined ? raw.v_score : (r.avg_components?.v_score || 0);
 
-      // ===== جرقه‌های مشترک با توضیحات =====
+      // ===== جرقه‌های مشترک =====
       const microMatch = r.micro_motives_matched || [];
       let sparkText = '';
       if (microMatch.length > 0) {
-        // نمایش توضیحات به جای کد
-        const names = microMatch.slice(0, 3).map(m => {
-          // اگر description وجود دارد از آن استفاده کن، در غیر این صورت کد را نشان بده
-          return escapeHtml(m.description || m.code || m);
-        }).join('، ');
-        sparkText = ` ${names}`;
+        const names = microMatch.slice(0, 3).map(m => escapeHtml(m.description || m.code || m)).join('، ');
+        sparkText = names;
         if (microMatch.length > 3) sparkText += ` و ${microMatch.length - 3} جرقهٔ دیگر`;
       }
 
-      const personalized = r.personalized_description || '';
+      // ===== هشدار (در بالای کارت) =====
+      let warningHtml = '';
+      if (r.warning) {
+        warningHtml = `
+          <div style="background:#2a1a1a;border:1px solid #ff6b6b;border-radius:8px;padding:10px 14px;margin-bottom:12px;">
+            <span style="color:#ff6b6b;font-weight:bold;">⚠️ ${escapeHtml(r.warning)}</span>
+          </div>`;
+      }
 
       html += `
-        <div class="card" style="text-align:right;">
-          <h3 style="color:#f0c040;">${escapeHtml(r.name)}</h3>
-          <div class="progress-bar"><div class="progress-fill" style="width:${score}%"></div></div>
-          <p style="margin-top:8px;">🔹 <strong>${score}%</strong> تطابق کلی</p>
-          <p style="font-size:0.85rem;color:#b0a080;">
-            🧩 خرده‌انگیزه‌ها: ${mPct}% &nbsp;|&nbsp;
-            🧭 راهبردها: ${sPct}% &nbsp;|&nbsp;
-            ⚖️ ارزش‌ها: ${vPct}%
-          </p>
-          ${sparkText ? `<p style="font-size:0.85rem;color:#b0a080;">🔥 جرقه‌های مشترک:${sparkText}</p>` : ''}
-          ${personalized ? `<div style="background:#1a1a2e;border:1px solid #d4af37;border-radius:8px;padding:10px 12px;margin-top:10px;text-align:right;font-size:0.85rem;line-height:1.9;"><p style="margin:0;color:#f0c040;">💬 ${escapeHtml(personalized)}</p></div>` : ''}`;
+        <div class="card" style="text-align:right;padding:20px;margin:20px 0;border-radius:12px;background:linear-gradient(145deg,#1a1a2e,#0a0a12);border:1px solid #333;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+          ${warningHtml}
+          
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:1.8rem;color:#f0c040;">${isBranch ? '📚' : '🎓'}</span>
+              <h3 style="color:#f0c040;font-size:1.4rem;margin:0;">${escapeHtml(r.name)}</h3>
+            </div>
+            <div style="background:#d4af37;color:#000;font-weight:bold;padding:4px 14px;border-radius:20px;font-size:0.9rem;">
+              ${score}%
+            </div>
+          </div>
 
-      // ===== کهن‌الگو (برای رشته‌ها) =====
-      if (!isBranch && r.archetype) {
-        const arch = r.archetype.archetype || '';
-        const identity = r.archetype.identity_sentence || '';
-        html += `
-          <div style="background:#1a1a2e;border:1px solid #d4af37;border-radius:8px;padding:10px 12px;margin-top:10px;text-align:right;font-size:0.85rem;line-height:1.9;">
-            <p style="margin:0;color:#f0c040;">🧠 کهن‌الگوی شناختی: <strong>${escapeHtml(arch)}</strong></p>
-            ${identity ? `<p style="margin:5px 0 0 0;color:#b0a080;font-size:0.8rem;">📖 ${escapeHtml(identity)}</p>` : ''}
-          </div>`;
-      }
+          <!-- نوارهای پیشرفت M, S, V -->
+          <div style="margin:12px 0;">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#b0a080;">
+              <span>🔥 انگیزه (M)</span> <span>${mPct}%</span>
+            </div>
+            <div style="background:#333;height:6px;border-radius:4px;margin-bottom:6px;">
+              <div style="background:#ff6b6b;width:${mPct}%;height:6px;border-radius:4px;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#b0a080;">
+              <span>🧭 راهبرد (S)</span> <span>${sPct}%</span>
+            </div>
+            <div style="background:#333;height:6px;border-radius:4px;margin-bottom:6px;">
+              <div style="background:#4ecdc4;width:${sPct}%;height:6px;border-radius:4px;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#b0a080;">
+              <span>⚖️ ارزش (V)</span> <span>${vPct}%</span>
+            </div>
+            <div style="background:#333;height:6px;border-radius:4px;">
+              <div style="background:#ffe66d;width:${vPct}%;height:6px;border-radius:4px;"></div>
+            </div>
+          </div>
 
-      // ===== مسیرهای جایگزین =====
-      if (r.alternative_paths && r.alternative_paths.length > 0) {
-        const altNames = r.alternative_paths.map(p => {
-          if (typeof p === 'string') return p;
-          return p.branch_name || p.major_name || p.name || '';
-        }).filter(Boolean);
-        if (altNames.length > 0) {
-          html += `
-            <div style="margin-top:10px;font-size:0.8rem;color:#b0a080;background:#0a0a0f;padding:8px 12px;border-radius:8px;border:1px solid #333;">
-              🔄 مسیرهای جایگزین: ${altNames.map(n => `<span style="color:#d4af37;">${escapeHtml(n)}</span>`).join('، ')}
-            </div>`;
-        }
-      }
+          ${sparkText ? `<p style="font-size:0.85rem;color:#b0a080;margin:8px 0;">🔥 جرقه‌های مشترک: ${sparkText}</p>` : ''}
+          
+          ${r.personalized_description ? `
+            <div style="background:#0a0a0f;border:1px solid #d4af37;border-radius:8px;padding:12px;margin:10px 0;font-size:0.9rem;line-height:1.9;">
+              <p style="margin:0;color:#b0a080;">💬 ${escapeHtml(r.personalized_description)}</p>
+            </div>` : ''}
 
-      // ===== هشدار (برای شاخه‌ها) =====
-      if (isBranch && r.warning) {
-        html += `
-          <div style="margin-top:10px;font-size:0.85rem;color:#ff6b6b;background:#1a1a2e;padding:8px 12px;border-radius:8px;border:1px solid #ff6b6b;">
-            ⚠️ ${escapeHtml(r.warning)}
-          </div>`;
-      }
+          <!-- کهن‌الگو (با طراحی برجسته) -->
+          ${!isBranch && r.archetype ? `
+            <div style="background:linear-gradient(135deg,#1a1a2e,#2a1a3e);border:1px solid #d4af37;border-radius:8px;padding:14px;margin:12px 0;text-align:center;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:1.2rem;color:#f0c040;">
+                <span>🧠</span> <strong>کهن‌الگوی شناختی</strong>
+              </div>
+              <div style="font-size:1.3rem;font-weight:bold;color:#fff;margin:6px 0;">${escapeHtml(r.archetype.archetype || '')}</div>
+              ${r.archetype.identity_sentence ? `<div style="font-size:0.9rem;color:#b0a080;">📖 ${escapeHtml(r.archetype.identity_sentence)}</div>` : ''}
+            </div>` : ''}
 
-      if (isBranch && r.count) {
-        html += `
-          <div style="margin-top:8px;font-size:0.75rem;color:#888;">
-            📌 تعداد کدهای تحلیل‌شده در این شاخه: ${r.count}
-          </div>`;
-      }
+          <!-- منبع رضایت عمیق -->
+          ${!isBranch && r.fulfillment_source ? `
+            <div style="background:#0a0a0f;border:1px solid #d4af37;border-radius:8px;padding:12px;margin:10px 0;">
+              <div style="display:flex;align-items:center;gap:6px;color:#f0c040;font-weight:bold;margin-bottom:4px;">
+                <span>🌟</span> منبع رضایت عمیق
+              </div>
+              <div style="color:#b0a080;font-size:0.9rem;line-height:1.7;">${escapeHtml(r.fulfillment_source)}</div>
+            </div>` : ''}
 
-      html += `</div>`;
+          <!-- مسیرهای جایگزین (به‌صورت برچسب‌های قابل کلیک) -->
+          ${r.alternative_paths && r.alternative_paths.length > 0 ? `
+            <div style="margin:10px 0;">
+              <div style="font-size:0.85rem;color:#b0a080;margin-bottom:6px;">🔄 مسیرهای جایگزین:</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                ${r.alternative_paths.map(p => {
+                  const name = p.branch_name || p.major_name || p.name || '';
+                  return name ? `<span style="background:#1a1a2e;border:1px solid #d4af37;padding:4px 14px;border-radius:20px;font-size:0.85rem;color:#f0c040;cursor:default;">${escapeHtml(name)}</span>` : '';
+                }).filter(Boolean).join('')}
+              </div>
+            </div>` : ''}
+
+          ${isBranch && r.count ? `<div style="font-size:0.75rem;color:#888;margin-top:8px;">📌 تعداد کدهای تحلیل‌شده: ${r.count}</div>` : ''}
+        </div>`;
     });
   }
 
   // ==================== دکمه‌های ناوبری ====================
   html += `
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
-      <button class="btn" style="width:100%;" onclick="goTo('choice')">
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:25px;">
+      <button class="btn" style="width:100%;padding:12px;" onclick="goTo('choice')">
         ⬅️ بازگشت به انتخاب نوع تحلیل
       </button>
       ${!isBranch && state.branchesResult ? `
-        <button class="btn btn-primary" style="width:100%;" onclick="displayResults(state.branchesResult, 'branches')">
+        <button class="btn btn-primary" style="width:100%;padding:12px;" onclick="displayResults(state.branchesResult, 'branches')">
           🏫 مشاهدهٔ نتایج هدایت تحصیلی (شاخه‌های دبیرستان)
         </button>` : ''}
       ${isBranch && state.majorsResult ? `
-        <button class="btn btn-primary" style="width:100%;" onclick="displayResults(state.majorsResult, 'majors')">
+        <button class="btn btn-primary" style="width:100%;padding:12px;" onclick="displayResults(state.majorsResult, 'majors')">
           🎓 مشاهدهٔ نتایج رشته‌های دانشگاهی
         </button>` : ''}
-      <button class="btn" style="width:100%;margin-top:5px;" onclick="resetJourney()">🔄 شروع مجدد</button>
+      <button class="btn" style="width:100%;padding:12px;" onclick="resetJourney()">🔄 شروع مجدد</button>
     </div>`;
 
   // ==================== بخش نظرسنجی ====================
   html += `
-    <div id="feedbackSection" style="background:#1a1a2e;border:1px solid #d4af37;border-radius:12px;padding:15px;margin:30px 0 15px 0;text-align:right;">
-      <p style="color:#f0c040;font-weight:bold;margin-bottom:10px;">💬 نظرت دربارهٔ اسب سیاه چیه؟</p>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۱. چقدر از تجربهٔ کلی این سفر اکتشافی راضی بودی؟</p>
+    <div id="feedbackSection" style="background:#1a1a2e;border:1px solid #d4af37;border-radius:12px;padding:20px;margin:30px 0 15px 0;text-align:right;">
+      <p style="color:#f0c040;font-weight:bold;margin-bottom:15px;font-size:1.1rem;">💬 نظرت دربارهٔ اسب سیاه چیه؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۱. چقدر از تجربهٔ کلی این سفر اکتشافی راضی بودی؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q1">
-        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q1', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q1-${i}">⭐</span>`).join('')}
+        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q1', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q1-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۲. چقدر نتایج با علایق و فردیت واقعی‌ات همخوانی داشت؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۲. چقدر نتایج با علایق و فردیت واقعی‌ات همخوانی داشت؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q2">
-        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q2', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q2-${i}">⭐</span>`).join('')}
+        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q2', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q2-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۳. آیا این اپلیکیشن را به یک دوست معرفی می‌کنی؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۳. آیا این اپلیکیشن را به یک دوست معرفی می‌کنی؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q3">
         <button class="btn btn-sm" onclick="setFeedback('q3', 'yes')" id="btn-q3-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q3', 'maybe')" id="btn-q3-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q3', 'no')" id="btn-q3-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۴. اگر می‌توانستی <strong>شانس قبولی خود را در دانشگاه‌های مختلف</strong> ببینی، چقدر برایت ارزشمند بود؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۴. اگر می‌توانستی <strong>شانس قبولی خود را در دانشگاه‌های مختلف</strong> ببینی، چقدر برایت ارزشمند بود؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q4">
-        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q4', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q4-${i}">⭐</span>`).join('')}
+        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q4', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q4-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۵. چقدر دوست داری <strong>آیندهٔ شغلی و بازار کار</strong> این رشته‌ها را ببینی؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۵. چقدر دوست داری <strong>آیندهٔ شغلی و بازار کار</strong> این رشته‌ها را ببینی؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q5">
-        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q5', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q5-${i}">⭐</span>`).join('')}
+        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q5', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q5-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۶. آیا به انتخاب رشتهٔ سنتی (بر اساس رتبه) هم نیاز داری؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۶. آیا به انتخاب رشتهٔ سنتی (بر اساس رتبه) هم نیاز داری؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q6">
         <button class="btn btn-sm" onclick="setFeedback('q6', 'yes')" id="btn-q6-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q6', 'no')" id="btn-q6-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۷. اگر سرویس <strong>کشف رشته‌های متناسب با فردیت</strong> (همین سفر اکتشافی) پولی بود، باز هم استفاده می‌کردی؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۷. اگر سرویس <strong>کشف رشته‌های متناسب با فردیت</strong> (همین سفر اکتشافی) پولی بود، باز هم استفاده می‌کردی؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q7">
         <button class="btn btn-sm" onclick="setFeedback('q7', 'yes')" id="btn-q7-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q7', 'maybe')" id="btn-q7-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q7', 'no')" id="btn-q7-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۸. اگر بخش <strong>آیندهٔ شغلی و بازار کار</strong> هر رشته (با هزینهٔ کم) ارائه شود، برایت ارزشمند است؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۸. اگر بخش <strong>آیندهٔ شغلی و بازار کار</strong> هر رشته (با هزینهٔ کم) ارائه شود، برایت ارزشمند است؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q8">
         <button class="btn btn-sm" onclick="setFeedback('q8', 'yes')" id="btn-q8-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q8', 'maybe')" id="btn-q8-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q8', 'no')" id="btn-q8-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود؟</p>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q10">
-        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q10', ${i})" style="font-size:1.5rem;cursor:pointer;opacity:0.3;" id="star-q10-${i}">⭐</span>`).join('')}
+        ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q10', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q10-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:15px 0 5px 0;">۱۰. چه پیشنهادی برای بهبود داری؟ (اختیاری)</p>
-      <textarea id="feedback-q9" placeholder="اینجا بنویس..." style="width:100%;padding:10px;background:#0a0a0f;color:#fff;border:1px solid #333;border-radius:8px;min-height:60px;font-family:Vazirmatn;"></textarea>
-      <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="submitFeedback()">📩 ثبت بازخورد</button>
+      <p style="color:#b0a080;margin:12px 0 5px 0;">۱۰. چه پیشنهادی برای بهبود داری؟ (اختیاری)</p>
+      <textarea id="feedback-q9" placeholder="اینجا بنویس..." style="width:100%;padding:12px;background:#0a0a0f;color:#fff;border:1px solid #333;border-radius:8px;min-height:60px;font-family:Vazirmatn;"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:15px;padding:12px;" onclick="submitFeedback()">📩 ثبت بازخورد</button>
       <p id="feedback-msg" style="color:#f0c040;margin-top:8px;display:none;">✅ ممنون از بازخوردت! نظرت ثبت شد.</p>
     </div>`;
 
   app.innerHTML = html;
-}
+}   
 // ==================== تحلیل سبک شخصی (بدون تغییر) ====================
 function analyzeStrategyStyle(answers) {
   const counts = [0,0,0,0,0];
