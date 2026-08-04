@@ -20,7 +20,7 @@ class DarkHorseEngineV2:
     def __init__(
         self,
         motives_path: str = "micro_motives.json",
-        majors_path: str = "majors_database_v2_v3.json",
+        majors_path: str = "majors_database_v2.json",
         trait_map_path: str = "trait_map_v3.json",
         value_poles_path: str = "value_poles_v2.json",
         school_branches_path: str = "school_branches_v2.json"
