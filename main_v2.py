@@ -32,11 +32,11 @@ async def lifespan(app: FastAPI):
     # موتور اصلی (برای رشته‌های دانشگاهی)
     try:
         app.state.engine = DarkHorseEngineV2(
-            motives_path="micro_motives.json",
+            motives_path="docs/data/micro_motives.json",
             majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",          # ← اصلاح شد
+            trait_map_path="trait_map_v3.json",
             value_poles_path="value_poles_v2.json",
-            school_branches_path="school_branches_v2.json"  # ← اضافه شد
+            school_branches_path="school_branches_v2.json"
         )
         logger.info("✅ DarkHorseEngineV2 آماده است.")
     except Exception as e:
@@ -44,14 +44,13 @@ async def lifespan(app: FastAPI):
         app.state.engine = None
 
     # موتور شاخه‌ها (برای هدایت تحصیلی)
-    # از همان موتور استفاده می‌کنیم چون متد recommend_school_branch دارد
     try:
         app.state.branch_engine = DarkHorseEngineV2(
-            motives_path="micro_motives.json",
-            majors_path="majors_database_v2.json",       # ← دیتابیس رشته‌ها (برای استخراج شاخه‌ها)
+            motives_path="docs/data/micro_motives.json",
+            majors_path="majors_database_v2.json",
             trait_map_path="trait_map_v3.json",
             value_poles_path="value_poles_v2.json",
-            school_branches_path="school_branches_v2.json"  # ← فایل شاخه‌ها
+            school_branches_path="school_branches_v2.json"
         )
         logger.info("✅ BranchEngineV2 آماده است.")
     except Exception as e:
@@ -98,7 +97,6 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "personalized_description": fit.get("personalized_description", ""),
             }
             
-            # ===== اضافه کردن فیلدهای جدید =====
             if fit.get("archetype"):
                 rec["archetype"] = fit["archetype"]
             
@@ -136,7 +134,6 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
     if engine is None:
         raise HTTPException(503, detail="موتور شاخه‌ها V2.0 در دسترس نیست")
     try:
-        # ===== استفاده از متد recommend_school_branch (نه discover_individuality) =====
         result = await asyncio.to_thread(
             engine.recommend_school_branch,
             request.micro_motives,
@@ -144,7 +141,6 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             request.conjoint_choices or {}
         )
         
-        # ===== ساختار خروجی برای فرانت‌اند =====
         branches = []
         for branch in result.get("recommended_branches", []):
             branch_item = {
@@ -155,7 +151,6 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "evidence": branch.get("evidence", {}),
             }
             
-            # ===== فیلدهای جدید =====
             if branch.get("warning"):
                 branch_item["warning"] = branch["warning"]
             
@@ -170,7 +165,7 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             "session_id": str(uuid.uuid4()),
             "branch_discovery_result": {
                 "total_matches": len(branches),
-                "best_branch": result.get("best_branch"),  # ← اضافه شد
+                "best_branch": result.get("best_branch"),
                 "branches": branches,
                 "method": result.get("method", {}),
                 "summary": result.get("summary", {}),
