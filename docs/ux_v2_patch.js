@@ -56,6 +56,12 @@
         document.querySelectorAll('.btn-skip').forEach(btn => {
           if (/❌/.test(btn.textContent || '') || /ادامه/.test(btn.textContent || '')) btn.textContent = '❌ جذبم نکرد';
         });
+        document.querySelectorAll('.swipe-card').forEach(card => {
+          card.innerHTML = card.innerHTML
+            .replace(/حداقل ۲۰\s*-\s*حداکثر ۸۰/g, 'حداقل ۲۰ · پیشنهاد ۳۰ تا ۴۰ · سقف ۸۰')
+            .replace(/هرچه جرقه‌های بیشتری بزنی، خودِ واقعی‌ات را دقیق‌تر کشف می‌کنی/g, '۳۰ تا ۴۰ جرقه معمولاً برای ساختن تصویر دقیق‌تر کافی است؛ انتخاب بیشتر هم امکان‌پذیر است.')
+            .replace(/هرچه بیشتر بزنی، دقیق‌تر کشف می‌شوی/g, '۳۰ تا ۴۰ جرقه معمولاً برای ساختن تصویر دقیق‌تر کافی است؛ انتخاب بیشتر هم امکان‌پذیر است.');
+        });
       });
     };
     patched.__dhPatched = true;
