@@ -220,6 +220,9 @@
     patchValueIntro();
     patchValueCompletion();
     patchResultsUI();
+    if (typeof window.render === 'function' && state && state.stage !== 'manifesto') {
+      setTimeout(() => window.render(), 0);
+    }
   }
 
   install();
