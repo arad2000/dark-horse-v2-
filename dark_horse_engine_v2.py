@@ -115,7 +115,7 @@ class DarkHorseEngineV2:
         if not matched:
             return 0.0, []
 
-        denom = len(major_set)  # مخرج واقعی
+        denom = len(major_set)
         score = len(matched) / denom
 
         matched_details = []
@@ -147,7 +147,6 @@ class DarkHorseEngineV2:
 
         denom_limit = branch_data.get("m_score_denom_limit", 30)
         denom = min(len(branch_set), denom_limit)
-
         score = len(matched) / denom
 
         matched_details = []
@@ -218,39 +217,87 @@ class DarkHorseEngineV2:
         return score, highlights
 
     # ──────────────────────────────────────────────────────────────
-    # ❌ متد _generate_archetype_and_identity به‌کلی حذف شده است.
-    # موتور فقط از فیلدهای دیتابیس استفاده می‌کند.
+    # ابزارهای فاصله برای مسیرهای جایگزین
     # ──────────────────────────────────────────────────────────────
+    @staticmethod
+    def _strategy_profile_vector(strategy_weights: List[List[float]], question_count: int = 25,
+                                 option_count: int = 5) -> List[float]:
+        """کل ماتریس Strategy را حفظ می‌کند: 25 سؤال × 5 گزینه = 125 بُعد ثابت."""
+        vector: List[float] = []
+        for q_idx in range(question_count):
+            row = strategy_weights[q_idx] if q_idx < len(strategy_weights) else []
+            for opt_idx in range(option_count):
+                try:
+                    vector.append(float(row[opt_idx]) if opt_idx < len(row) else 0.0)
+                except (TypeError, ValueError):
+                    vector.append(0.0)
+        return vector
+
+    @staticmethod
+    def _rms_distance(a: List[float], b: List[float]) -> float:
+        """فاصله RMS-Euclidean؛ برای بردارهای با طول ثابت، مقیاس را کنترل می‌کند."""
+        n = max(len(a), len(b))
+        if n == 0:
+            return 0.0
+        total_sq = 0.0
+        for i in range(n):
+            av = a[i] if i < len(a) else 0.0
+            bv = b[i] if i < len(b) else 0.0
+            total_sq += (av - bv) ** 2
+        return sqrt(total_sq / n)
+
+    @staticmethod
+    def _hybrid_profile_distance(value_a: List[float], value_b: List[float],
+                                 strategy_a: List[float], strategy_b: List[float],
+                                 value_weight: float = 0.60,
+                                 strategy_weight: float = 0.40) -> Tuple[float, float, float]:
+        """فاصله ترکیبی غیرخطی: ریشه مجموع مربعات وزنیِ میانگین فاصله‌ها."""
+        v_dist = DarkHorseEngineV2._rms_distance(value_a, value_b)
+        s_dist = DarkHorseEngineV2._rms_distance(strategy_a, strategy_b)
+        total_dist = sqrt(
+            value_weight * (v_dist ** 2) +
+            strategy_weight * (s_dist ** 2)
+        )
+        return total_dist, v_dist, s_dist
 
     # ── مسیرهای جایگزین برای رشته‌های دانشگاهی ──
     def _find_alternative_paths(self, major_id: str, top_n: int = 3) -> List[Dict]:
         target = self.majors_db.get(major_id)
         if not target:
             return []
+
         target_vw = target.get("value_weights", {})
         target_sw = target.get("strategy_weights", [])
         target_v_vec = [target_vw.get(f"Q{i}{l}", 0.0) for i in range(1, 16) for l in ["A", "B"]]
-        target_s_vec = [max(row) if row else 0.0 for row in target_sw]
+        target_s_vec = self._strategy_profile_vector(target_sw)
 
         distances = []
         for other_id, other_data in self.majors_db.items():
             if other_id == major_id:
                 continue
+
             other_vw = other_data.get("value_weights", {})
             other_sw = other_data.get("strategy_weights", [])
             other_v_vec = [other_vw.get(f"Q{i}{l}", 0.0) for i in range(1, 16) for l in ["A", "B"]]
-            other_s_vec = [max(row) if row else 0.0 for row in other_sw]
+            other_s_vec = self._strategy_profile_vector(other_sw)
 
-            v_dist = sqrt(sum((a-b)**2 for a,b in zip(target_v_vec, other_v_vec)) / len(target_v_vec))
-            s_dist = sqrt(sum((a-b)**2 for a,b in zip(target_s_vec, other_s_vec)) / len(target_s_vec))
-            total_dist = 0.6*v_dist + 0.4*s_dist
+            total_dist, v_dist, s_dist = self._hybrid_profile_distance(
+                target_v_vec, other_v_vec,
+                target_s_vec, other_s_vec,
+                value_weight=0.60,
+                strategy_weight=0.40
+            )
 
             distances.append({
                 "major_id": other_id,
                 "major_name": other_data.get("name", ""),
                 "distance": round(total_dist, 3),
-                "group": other_data.get("group", "")
+                "value_distance": round(v_dist, 3),
+                "strategy_distance": round(s_dist, 3),
+                "group": other_data.get("group", ""),
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
             })
+
         distances.sort(key=lambda x: x["distance"])
         return distances[:top_n]
 
@@ -258,29 +305,38 @@ class DarkHorseEngineV2:
     def _find_branch_alternative_paths(self, branch_name: str, top_n: int = 3) -> List[Dict]:
         if branch_name not in self.school_branches:
             return []
+
         target = self.school_branches[branch_name]
         target_vw = target.get("value_weights", {})
         target_sw = target.get("strategy_weights", [])
         target_v_vec = [target_vw.get(f"Q{i}{l}", 0.0) for i in range(1, 16) for l in ["A", "B"]]
-        target_s_vec = [max(row) if row else 0.0 for row in target_sw]
+        target_s_vec = self._strategy_profile_vector(target_sw)
 
         distances = []
         for other_name, other_data in self.school_branches.items():
             if other_name == branch_name:
                 continue
+
             other_vw = other_data.get("value_weights", {})
             other_sw = other_data.get("strategy_weights", [])
             other_v_vec = [other_vw.get(f"Q{i}{l}", 0.0) for i in range(1, 16) for l in ["A", "B"]]
-            other_s_vec = [max(row) if row else 0.0 for row in other_sw]
+            other_s_vec = self._strategy_profile_vector(other_sw)
 
-            v_dist = sqrt(sum((a-b)**2 for a,b in zip(target_v_vec, other_v_vec)) / len(target_v_vec))
-            s_dist = sqrt(sum((a-b)**2 for a,b in zip(target_s_vec, other_s_vec)) / len(target_s_vec))
-            total_dist = 0.6*v_dist + 0.4*s_dist
+            total_dist, v_dist, s_dist = self._hybrid_profile_distance(
+                target_v_vec, other_v_vec,
+                target_s_vec, other_s_vec,
+                value_weight=0.60,
+                strategy_weight=0.40
+            )
 
             distances.append({
                 "branch_name": other_name,
-                "distance": round(total_dist, 3)
+                "distance": round(total_dist, 3),
+                "value_distance": round(v_dist, 3),
+                "strategy_distance": round(s_dist, 3),
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
             })
+
         distances.sort(key=lambda x: x["distance"])
         return distances[:top_n]
 
@@ -431,13 +487,12 @@ class DarkHorseEngineV2:
                     value_choices, major_data.get("value_weights", {})
                 )
 
-                # ===== ✅ استخراج از دیتابیس (بدون تولید داخلی) =====
-                archetype = major_data.get("archetype")  # ممکن است None باشد
-                fulfillment_source = major_data.get("fulfillment_source")  # ممکن است None باشد
+                archetype = major_data.get("archetype")
+                fulfillment_source = major_data.get("fulfillment_source")
 
                 archetype_info = {
-                    "archetype": archetype,  # اگر در دیتابیس نباشد، None برمی‌گردد
-                    "fulfillment_source": fulfillment_source,  # اگر در دیتابیس نباشد، None برمی‌گردد
+                    "archetype": archetype,
+                    "fulfillment_source": fulfillment_source,
                     "dominant_traits": [],
                     "dominant_values": []
                 }
@@ -461,7 +516,7 @@ class DarkHorseEngineV2:
                         "personalized_description": personalized,
                         "archetype": archetype_info,
                         "alternative_paths": alt_paths,
-                        "fulfillment_source": fulfillment_source,  # دسترسی مستقیم
+                        "fulfillment_source": fulfillment_source,
                     },
                 })
             except Exception as e:
@@ -486,10 +541,11 @@ class DarkHorseEngineV2:
                 "principle": "کشف فردیت — انتخاب رشته دانشگاهی",
                 "scoring": "Total = 0.55×M + 0.30×V + 0.15×S",
                 "s_score_formula": "S = (1/25) * Σ(chosen_w / max_w)",
+                "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
                 "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15%",
-                "version": "3.0-final",
+                "version": "3.1-alternative-paths",
                 "trait_map_version": "v3 (چند ویژگی در هر گزینه)",
-                "features": ["کهن‌الگو و منبع رضایت از دیتابیس", "مسیرهای جایگزین", "سناریوهای ۸ گانه"]
+                "features": ["کهن‌الگو و منبع رضایت از دیتابیس", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy", "سناریوهای ۸ گانه"]
             },
             "next_step": "برای مشاهده شانس قبولی دانشگاه‌ها، اطلاعات سنجش خود را وارد کنید",
         }
@@ -518,16 +574,9 @@ class DarkHorseEngineV2:
         branch_scores = []
 
         for branch_name, branch_data in self.school_branches.items():
-            # ===== M-Score مستقیم از کدهای شاخه با مخرج ۳۰ =====
             m_score, m_ev = self._compute_branch_m_score(user_motives, branch_data)
-
-            # ===== S-Score از راهبردهای شاخه =====
             s_score, s_high = self._compute_s_score(strategy_answers, branch_data.get("strategy_weights", []))
-
-            # ===== V-Score از ارزش‌های شاخه =====
             v_score, v_high = self._compute_v_score(value_choices, branch_data.get("value_weights", {}))
-
-            # ===== فرمول هدایت تحصیلی =====
             total = (0.60 * m_score) + (0.20 * v_score) + (0.20 * s_score)
 
             branch_info = {
@@ -548,21 +597,17 @@ class DarkHorseEngineV2:
                 }
             }
 
-            # ===== مسیرهای جایگزین برای هر شاخه =====
             alternative_paths = self._find_branch_alternative_paths(branch_name, top_n=3)
             if alternative_paths:
                 branch_info["alternative_paths"] = alternative_paths
 
-            # ===== هشدار برای M پایین =====
             if m_score < 0.15:
                 branch_info["warning"] = "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
 
             branch_scores.append(branch_info)
 
-        # مرتب‌سازی بر اساس امتیاز
         branch_scores.sort(key=lambda x: x["average_score"], reverse=True)
 
-        # انتخاب بهترین شاخه (فقط از بین شاخه‌هایی با M ≥ ۱۵%)
         best_branch = None
         for branch in branch_scores:
             if branch["avg_components"]["m_score"] >= 15:
@@ -580,9 +625,10 @@ class DarkHorseEngineV2:
                 "principle": "هدایت تحصیلی — توصیه شاخه دبیرستانی",
                 "scoring": "Total = 0.60×M + 0.20×S + 0.20×V",
                 "m_denom_limit": "30",
+                "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
                 "filter": "بهترین شاخه فقط از بین شاخه‌های با M ≥ 15% انتخاب می‌شود",
-                "features": ["M-Score مستقیم از شاخه", "S و V از شاخه", "مسیرهای جایگزین"],
-                "version": "3.0-branch-recommendation"
+                "features": ["M-Score مستقیم از شاخه", "S و V از شاخه", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy"],
+                "version": "3.1-branch-recommendation"
             },
             "next_step": "بر اساس این نتایج، شاخه‌ای که بیشترین امتیاز را دارد و همخوانی انگیزه‌ی بالایی دارد، مناسب‌ترین گزینه برای شماست."
         }
