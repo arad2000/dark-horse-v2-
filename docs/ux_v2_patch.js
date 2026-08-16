@@ -10,7 +10,7 @@
     const original = window.sparkChipHTML;
     if (original.__dhPatched) return;
     const patched = function () {
-      const n = window.state && Array.isArray(state.likedCodes) ? state.likedCodes.length : 0;
+      const n = Array.isArray(state.likedCodes) ? state.likedCodes.length : 0;
       const hint = n < 20
         ? `${20 - n} جرقه تا حداقل`
         : n < 30
@@ -32,7 +32,7 @@
     if (original.__dhPatched) return;
     const patched = async function () {
       await original();
-      if (window.state && state.stage === 'swipe' && Array.isArray(state.swipeCards) && state.swipeCards.length > 1) {
+      if (state.stage === 'swipe' && Array.isArray(state.swipeCards) && state.swipeCards.length > 1) {
         for (let i = state.swipeCards.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [state.swipeCards[i], state.swipeCards[j]] = [state.swipeCards[j], state.swipeCards[i]];
@@ -90,7 +90,7 @@
       original();
       safeAfterRender(() => {
         const h2 = document.querySelector('h2');
-        const q = window.state && state.strategyQuestions ? state.strategyQuestions[state.currentQuestion] : null;
+        const q = state.strategyQuestions ? state.strategyQuestions[state.currentQuestion] : null;
         if (!h2 || !q || !/راهبرد/.test(h2.textContent || '')) return;
         h2.innerHTML = `🧭 وقتی این اتفاق می‌افتد، معمولاً چه می‌کنی؟<span style="display:block;font-size:.78rem;color:#8a7a55;font-weight:400;margin-top:6px">موقعیت ${q.number} از ${state.strategyQuestions.length}</span>`;
       });
