@@ -9984,13 +9984,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_eng_v2_focused|vw_cluster_v1_compute+process+physical",
     "micro_motive_codes": [
-      "SW-001",
-      "SW-002",
-      "SW-003",
-      "SW-004",
-      "SW-005",
-      "SW-006",
-      "SW-007"
+      "CS-001",
+      "CS-002",
+      "CS-003",
+      "CS-004",
+      "CS-005",
+      "CS-006",
+      "CS-009"
     ],
     "strategy_weights": [
       [
@@ -17408,13 +17408,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_eng_v2_focused",
     "micro_motive_codes": [
-      "TEX-001",
-      "TEX-002",
-      "TEX-003",
-      "TEX-004",
-      "TEX-005",
-      "TEX-006",
-      "TEX-007"
+      "WOOD-001",
+      "WOOD-002",
+      "WOOD-003",
+      "WOOD-004",
+      "WOOD-005",
+      "WOOD-006",
+      "WOOD-007"
     ],
     "strategy_weights": [
       [
@@ -22972,13 +22972,13 @@
     "name": "فناوری اطلاعات و علوم داده (پایه)",
     "group": "علوم پایه",
     "micro_motive_codes": [
-      "CSCI-001",
-      "CSCI-002",
-      "CSCI-003",
-      "CSCI-004",
-      "CSCI-005",
-      "CSCI-007",
-      "CSCI-008"
+      "IT-001",
+      "IT-005",
+      "IT-006",
+      "DS-001",
+      "DS-003",
+      "DS-005",
+      "DS-006"
     ],
     "strategy_weights": [
       [
