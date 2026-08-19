@@ -1,5 +1,5 @@
 /* Dark Horse PWA Service Worker — cache shell only, network-first for API */
-const CACHE = 'darkhorse-shell-v1';
+const CACHE = 'darkhorse-shell-v3';
 const SHELL = [
   './',
   './index.html',
