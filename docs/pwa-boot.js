@@ -1,46 +1,48 @@
-/* Dark Horse PWA boot — register SW + install CTA */
-(function () {
-  if (!('serviceWorker' in navigator)) return;
-
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js').catch(function (err) {
-      console.warn('SW register failed', err);
-    });
-  });
-
-  var deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', function (e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    showInstallBar();
-  });
-
-  function showInstallBar() {
-    if (document.getElementById('dh-install-bar')) return;
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
-    var bar = document.createElement('div');
-    bar.id = 'dh-install-bar';
-    bar.className = 'dh-install-bar';
-    bar.innerHTML =
-      '<p>برای تجربه بهتر، «اسب سیاه» را مثل اپ روی گوشی نصب کن.</p>' +
-      '<div class="row">' +
-      '<button type="button" class="btn btn-primary" id="dh-install-yes">نصب اپ</button>' +
-      '<button type="button" class="btn" id="dh-install-no">الان نه</button>' +
-      '</div>';
-    var app = document.getElementById('app');
-    if (app) app.appendChild(bar);
-    else document.body.appendChild(bar);
-
-    document.getElementById('dh-install-yes').onclick = function () {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.finally(function () {
-        deferredPrompt = null;
-        bar.remove();
+/* pwa-boot.js — ثبت SW + اجبار آپدیت */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      try { reg.update(); } catch (e) {}
+      setInterval(() => { try { reg.update(); } catch (e) {} }, 60 * 1000);
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            // نسخه جدید آماده — یک‌بار رفرش نرم
+            console.log('DH SW updated');
+          }
+        });
       });
-    };
-    document.getElementById('dh-install-no').onclick = function () {
-      bar.remove();
-    };
-  }
-})();
+      console.log('SW ثبت شد');
+    }).catch((err) => console.log('SW خطا:', err));
+  });
+  // وقتی SW جدید کنترل را گرفت
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (document.getElementById('dh-install-btn')) return;
+  const installBtn = document.createElement('button');
+  installBtn.id = 'dh-install-btn';
+  installBtn.textContent = 'نصب اپ اسب سیاه';
+  installBtn.style.cssText = 'position:fixed;bottom:76px;left:12px;right:12px;max-width:280px;margin:auto;background:#d4af77;color:#111;padding:12px 16px;border:none;border-radius:12px;z-index:10001;font-family:inherit;font-weight:700;';
+  installBtn.onclick = () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.remove();
+  };
+  document.body.appendChild(installBtn);
+});

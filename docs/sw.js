@@ -1,5 +1,5 @@
-/* Dark Horse PWA Service Worker — cache shell only, network-first for API */
-const CACHE = 'darkhorse-shell-v4';
+/* Dark Horse PWA Service Worker v5 — network-first for app code */
+const CACHE = 'darkhorse-shell-v5';
 const SHELL = [
   './',
   './index.html',
@@ -34,19 +34,28 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Never cache API / cross-origin analytics
   if (url.origin.includes('onrender.com') || url.pathname.includes('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // HTML: network first, fallback cache
-  if (event.request.mode === 'navigate' || (event.request.headers.get('accept') || '').includes('text/html')) {
+  const path = url.pathname || '';
+  const isAppCode =
+    path.endsWith('.js') ||
+    path.endsWith('.css') ||
+    path.endsWith('.html') ||
+    path.endsWith('/') ||
+    event.request.mode === 'navigate';
+
+  // کد اپ: اول شبکه، بعد کش (آپدیت سریع)
+  if (isAppCode) {
     event.respondWith(
       fetch(event.request)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(event.request, copy));
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(event.request, copy));
+          }
           return res;
         })
         .catch(() => caches.match(event.request).then((r) => r || caches.match('./index.html')))
@@ -54,16 +63,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache first, then network
+  // بقیه (آیکون و ...): کش اول
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
       return fetch(event.request).then((res) => {
-        if (!res || res.status !== 200 || res.type === 'opaque') return res;
+        if (!res || res.status !== 200) return res;
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(event.request, copy));
         return res;
-      }).catch(() => cached);
+      });
     })
   );
 });
