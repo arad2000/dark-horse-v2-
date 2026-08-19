@@ -64,7 +64,7 @@
     nav.innerHTML =
       '<button type="button" data-tab="home"><span class="ico">🏠</span><span>خانه</span></button>' +
       '<button type="button" data-tab="journey"><span class="ico">🗺️</span><span>سفر</span></button>' +
-      '<button type="button" data-tab="profile"><span class="ico">👤</span><span>من</span></button>';
+      '<button type="button" data-tab="profile"><span class="ico">👤</span><span>پروفایل</span></button>';
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('button[data-tab]');
       if (!btn) return;
@@ -137,12 +137,12 @@
           '<p class="dh-cta-desc">جرقه‌هایت را پیدا کن؛ مسیر را با معیار خودت ببین.</p>' +
           '<button class="btn btn-primary dh-cta-main" id="dh-start-journey">شروع سفر</button>' +
           (installed ? '' :
-            '<button class="btn dh-cta-sec" id="dh-install-home">نصب روی صفحه اصلی</button>') +
+            '<button class="btn dh-cta-sec" id="dh-install-home"><span style="margin-left:6px">⬇️</span>نصب اپ روی گوشی</button>') +
         '</div>' +
 
         '<div class="dh-mini-grid">' +
-          '<button type="button" class="dh-mini" id="dh-mini-profile"><span>👤</span>پروفایل</button>' +
           '<button type="button" class="dh-mini" id="dh-mini-quote"><span>✨</span>پیام دیگر</button>' +
+          '<button type="button" class="dh-mini" id="dh-mini-install"><span>⬇️</span>نصب اپ</button>' +
         '</div>' +
       '</div>';
 
@@ -152,8 +152,18 @@
       if (window.DHInstall) DHInstall.show();
       else alert('از منوی مرورگر Install را بزن');
     };
-    $('dh-mini-profile').onclick = function () { switchTab('profile'); };
     $('dh-mini-quote').onclick = function () { shuffleExtraQuote(); };
+    var miniInst = $('dh-mini-install');
+    if (miniInst) {
+      if ((window.DHInstall && DHInstall.isStandalone && DHInstall.isStandalone()) || window.__dhIsInstalled) {
+        miniInst.style.display = 'none';
+      } else {
+        miniInst.onclick = function () {
+          if (window.DHInstall) DHInstall.show();
+          else alert('از منوی مرورگر گزینه Install / افزودن به صفحه اصلی را بزن.');
+        };
+      }
+    }
   }
 
   function shuffleExtraQuote() {

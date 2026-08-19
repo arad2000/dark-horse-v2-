@@ -98,7 +98,7 @@
     var body, btnLabel;
     if (mode === 'auto' && deferredPrompt) {
       body = 'روی گوشی مثل یک اپ واقعی نصب کن — بدون فروشگاه.';
-      btnLabel = '⬇ دانلود و نصب';
+      btnLabel = '⬇ نصب روی گوشی';
     } else if (isIOS()) {
       body = 'Safari → Share → افزودن به صفحه اصلی';
       btnLabel = 'راهنما';
@@ -133,12 +133,48 @@
         });
         return;
       }
-      if (isIOS()) {
-        alert('در Safari: Share → Add to Home Screen / افزودن به صفحه اصلی');
-      } else {
-        alert('منوی ⋮ مرورگر → Install app / نصب برنامه');
-      }
+      // راهنمای بصری به‌جای alert خشک
+      showManualGuide();
     };
+  }
+
+
+  function showManualGuide() {
+    var old = document.getElementById('dh-install-guide');
+    if (old) old.remove();
+    var g = document.createElement('div');
+    g.id = 'dh-install-guide';
+    g.setAttribute('role', 'dialog');
+    g.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:10050',
+      'background:rgba(0,0,0,0.72)', 'display:flex',
+      'align-items:flex-end', 'justify-content:center',
+      'padding:16px', 'padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))'
+    ].join(';');
+    var ios = isIOS();
+    var steps = ios
+      ? '<ol style="margin:0;padding-right:18px;line-height:1.9;color:#e8dcc0;font-size:0.92rem;">' +
+          '<li>دکمه <b>Share</b> (مربع با فلش) پایین Safari را بزن</li>' +
+          '<li>گزینه <b>Add to Home Screen</b> / افزودن به صفحه اصلی را انتخاب کن</li>' +
+          '<li>Add را بزن — آیکن اسب سیاه روی صفحه اصلی می‌آید</li>' +
+        '</ol>'
+      : '<ol style="margin:0;padding-right:18px;line-height:1.9;color:#e8dcc0;font-size:0.92rem;">' +
+          '<li>منوی <b>⋮</b> مرورگر (بالا یا پایین) را باز کن</li>' +
+          '<li>گزینه <b>Install app</b> / نصب برنامه / افزودن به صفحه اصلی را بزن</li>' +
+          '<li>تأیید کن — اپ مثل برنامه واقعی باز می‌شود</li>' +
+        '</ol>';
+    g.innerHTML =
+      '<div style="width:100%;max-width:420px;background:#1a1a2e;border:1px solid rgba(212,175,55,0.35);border-radius:18px;padding:20px 18px 16px;box-shadow:0 12px 40px rgba(0,0,0,0.5);">' +
+        '<div style="font-weight:800;color:#f0c040;font-size:1.05rem;margin-bottom:8px;">نصب اسب سیاه روی گوشی</div>' +
+        '<div style="font-size:0.88rem;color:#b0a080;margin-bottom:12px;">' +
+          (ios ? 'در آیفون باید از منوی Share استفاده کنی:' : 'اگر دکمه نصب خودکار نیامد، این مسیر را برو:') +
+        '</div>' +
+        steps +
+        '<button type="button" id="dh-guide-ok" style="width:100%;margin-top:16px;background:#d4af37;color:#111;border:none;border-radius:12px;padding:12px;font-weight:800;font-family:inherit;font-size:0.95rem;">متوجه شدم</button>' +
+      '</div>';
+    document.body.appendChild(g);
+    document.getElementById('dh-guide-ok').onclick = function () { g.remove(); };
+    g.addEventListener('click', function (e) { if (e.target === g) g.remove(); });
   }
 
   window.DHInstall = {
