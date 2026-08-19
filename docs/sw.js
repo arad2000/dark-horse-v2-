@@ -1,5 +1,5 @@
 /* Dark Horse PWA Service Worker v5 — network-first for app code */
-const CACHE = 'darkhorse-shell-v5';
+const CACHE = 'darkhorse-shell-v6';
 const SHELL = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const SHELL = [
   './shell.css',
   './quotes_darkhorse.js',
   './auth_api_client.js',
+  './pwa-boot.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',

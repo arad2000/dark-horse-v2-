@@ -113,6 +113,7 @@
           '<p style="margin:0 0 12px;color:#cbb98a;line-height:1.8;font-size:0.95rem;">آماده‌ای جرقه‌های واقعی خودت را پیدا کنی؟</p>' +
           '<button class="btn btn-primary" style="width:100%;" id="dh-start-journey">شروع / ادامه سفر اکتشافی</button>' +
           '<button class="btn" style="width:100%;margin-top:8px;" id="dh-to-profile">پروفایل و اشتراک</button>' +
+          '<button class="btn" style="width:100%;margin-top:8px;border-color:#d4af37;color:#f0c040;" id="dh-install-home">⬇ نصب اپ روی گوشی</button>' +
         '</div>' +
       '</div>';
 
@@ -120,6 +121,11 @@
     var b2 = $('dh-to-profile');
     if (b1) b1.onclick = function () { startJourneyFromShell(); };
     if (b2) b2.onclick = function () { switchTab('profile'); };
+    var b3 = $('dh-install-home');
+    if (b3) b3.onclick = function () {
+      if (window.DHInstall) DHInstall.show();
+      else alert('از منوی مرورگر گزینه Install / افزودن به صفحه اصلی را بزن');
+    };
   }
 
   function startJourneyFromShell() {
