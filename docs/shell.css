@@ -1,0 +1,177 @@
+/* shell.css — حس اپ واقعی */
+:root {
+  --dh-tab-h: 64px;
+  --dh-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  padding-bottom: calc(var(--dh-tab-h) + var(--dh-safe-bottom) + 8px) !important;
+}
+
+#dh-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  height: calc(var(--dh-tab-h) + var(--dh-safe-bottom));
+  padding-bottom: var(--dh-safe-bottom);
+  background: rgba(12, 12, 18, 0.96);
+  border-top: 1px solid rgba(212, 175, 55, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+#dh-tabbar button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #8a7a55;
+  font-family: inherit;
+  font-size: 0.72rem;
+  padding: 8px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#dh-tabbar button .ico {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+#dh-tabbar button.active {
+  color: #f0c040;
+}
+
+#dh-tabbar button.active .ico {
+  transform: translateY(-1px);
+}
+
+/* خانه */
+.dh-home-wrap {
+  padding: 8px 4px 24px;
+  text-align: right;
+}
+
+.dh-home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.dh-home-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #f0c040;
+}
+
+.dh-home-sub {
+  color: #8a7a55;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.dh-quote-card {
+  background: linear-gradient(145deg, #1a1a2e 0%, #12121c 100%);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 16px;
+  padding: 18px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+}
+
+.dh-quote-card .label {
+  color: #f0c040;
+  font-size: 0.78rem;
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+
+.dh-quote-card .line {
+  color: #e8e0d0;
+  font-size: 0.98rem;
+  line-height: 1.95;
+  margin: 0 0 10px;
+}
+
+.dh-quote-card .foot {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  color: #6a6048;
+}
+
+.dh-action-card {
+  background: #1a1a2e;
+  border-radius: 14px;
+  border: 1px solid #2a2a3e;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.dh-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dh-chip {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(240,192,64,0.1);
+  color: #d4af37;
+  border: 1px solid rgba(240,192,64,0.25);
+}
+
+/* پروفایل */
+.dh-profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4af37, #8a7020);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 auto 12px;
+}
+
+.dh-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.dh-stat {
+  background: #12121c;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #2a2a3e;
+}
+
+.dh-stat .n {
+  font-size: 1.3rem;
+  color: #f0c040;
+  font-weight: 700;
+}
+
+.dh-stat .l {
+  font-size: 0.75rem;
+  color: #8a7a55;
+  margin-top: 4px;
+}
+
+/* مخفی کردن تب‌بار در مراحل عمیق اختیاری — فعلاً همیشه هست */

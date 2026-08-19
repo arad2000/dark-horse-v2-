@@ -1,11 +1,15 @@
 /* Dark Horse PWA Service Worker — cache shell only, network-first for API */
-const CACHE = 'darkhorse-shell-v3';
+const CACHE = 'darkhorse-shell-v4';
 const SHELL = [
   './',
   './index.html',
   './app.js',
   './data.js',
   './ux_v2_patch.js',
+  './shell.js',
+  './shell.css',
+  './quotes_darkhorse.js',
+  './auth_api_client.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
