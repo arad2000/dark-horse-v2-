@@ -743,37 +743,103 @@ function renderSwipe() {
 
   const card = state.swipeCards[state.swipeIndex];
   const progress = state.totalSwipes > 0 ? ((state.swipeIndex + 1) / state.totalSwipes) * 100 : 0;
-  const canFinish = state.likedCodes.length >= 20;
-  const remainingSlots = 80 - state.likedCodes.length;
+  const n = state.likedCodes.length;
 
-  app.innerHTML = `
+  // اگر اسکلت سوایپ هست فقط محتوا را عوض کن (بدون رفرش کل صفحه)
+  if (document.getElementById('dh-swipe-card') && state.stage === 'swipe') {
+    updateSwipeCardInPlace();
+    return;
+  }
+
+  app.innerHTML = progressHTML('swipe') + `
     <h2>🔥 جرقهٔ انرژی</h2>
-    <div style="color:#f0c040;">💛 <strong>${state.likedCodes.length}</strong> جرقه <span style="font-size:0.8rem;color:#888;">(حداقل ۲۰ - حداکثر ۸۰)</span></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-    <div class="swipe-card">
-      <p style="font-size:1.2rem;line-height:2.2;">${escapeHtml(card.description_fa)}</p>
-      <button class="btn btn-heart" onclick="likeCard(true)">❤️ جرقه زد</button>
-      <button class="btn btn-skip" onclick="likeCard(false)">❌ ادامه</button>
-      ${canFinish ? `
-        <div style="margin-top:20px;border-top:1px solid #333;padding-top:15px;">
-          <p style="color:#b0a080;">🌟 حداقل جرقه‌ها را داری! اما هرچه بیشتر بزنی، دقیق‌تر کشف می‌شوی.</p>
-          <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="finishSwipe()">🚀 ورود به لایهٔ دوم</button>
-          <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 جرقه‌های بیشتر (تا ${remainingSlots} جرقهٔ دیگر)</button>
-        </div>` : `
-        <p style="color:#f0c040;margin-top:15px;">⚠️ <strong>${20 - state.likedCodes.length}</strong> جرقهٔ دیگر لازم داری</p>
-        <button class="btn" style="width:100%;margin-top:10px;" onclick="goBack()">🔙 بازگشت به قلمروها</button>`}
-      ${state.swipeIndex > 0 ? `<button class="btn" style="margin-top:15px;width:100%;" onclick="previousCard()">⬅️ جرقهٔ قبل</button>` : ''}
+    <div style="color:#f0c040;">💛 <strong id="dh-spark-count">${n}</strong> جرقه <span style="font-size:0.8rem;color:#888;">(حداقل ۲۰ - حداکثر ۸۰)</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="dh-swipe-progress-fill" style="width:${progress}%"></div></div>
+    <div class="swipe-card" id="dh-swipe-card">
+      <p id="dh-swipe-text" style="font-size:1.2rem;line-height:2.2;">${escapeHtml(card.description_fa || '')}</p>
+      <button type="button" class="btn btn-heart" id="dh-btn-heart" onclick="likeCard(true, this)">❤️ جرقه زد</button>
+      <button type="button" class="btn btn-skip" id="dh-btn-skip" onclick="likeCard(false, this)">❌ جذبم نکرد</button>
+      <div id="dh-spark-need" style="margin-top:12px;"></div>
+      <div id="dh-prev-wrap"></div>
     </div>`;
+  updateSwipeChrome();
 }
 
-function likeCard(liked) {
-  if (liked && state.likedCodes.length < 80) {
-    state.likedCodes.push(state.swipeCards[state.swipeIndex].code);
-    state.likedCodesSet.add(state.swipeCards[state.swipeIndex].code);
+function updateSwipeChrome() {
+  const n = state.likedCodes.length;
+  const countEl = document.getElementById('dh-spark-count');
+  if (countEl) countEl.textContent = String(n);
+  const progress = state.totalSwipes > 0 ? ((state.swipeIndex + 1) / state.totalSwipes) * 100 : 0;
+  const fill = document.getElementById('dh-swipe-progress-fill');
+  if (fill) fill.style.width = progress + '%';
+  const need = document.getElementById('dh-spark-need');
+  if (need) {
+    if (n >= 20) {
+      need.innerHTML = `<p style="color:#b0a080;">🌟 حداقل جرقه‌ها را داری! اما هرچه بیشتر بزنی، دقیق‌تر کشف می‌شوی.</p>
+        <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="finishSwipe()">🚀 ورود به لایهٔ دوم</button>
+        <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 جرقه‌های بیشتر (تا ${80 - n} جرقهٔ دیگر)</button>`;
+    } else {
+      need.innerHTML = `<p style="color:#f0c040;margin-top:8px;">⚠️ <strong>${20 - n}</strong> جرقهٔ دیگر لازم داری</p>
+        <button class="btn" style="width:100%;margin-top:10px;" onclick="goBack()">🔙 بازگشت به قلمروها</button>`;
+    }
   }
-  state.swipeIndex++;
-  saveSession();
-  renderSwipe();
+  const prevWrap = document.getElementById('dh-prev-wrap');
+  if (prevWrap) {
+    prevWrap.innerHTML = state.swipeIndex > 0
+      ? `<button class="btn" style="margin-top:15px;width:100%;" onclick="previousCard()">⬅️ جرقهٔ قبل</button>`
+      : '';
+  }
+}
+
+function updateSwipeCardInPlace() {
+  const card = state.swipeCards[state.swipeIndex];
+  const textEl = document.getElementById('dh-swipe-text');
+  const box = document.getElementById('dh-swipe-card');
+  if (!card || !textEl) {
+    // اسکلت نیست — رندر کامل
+    const tmp = document.getElementById('dh-swipe-card');
+    if (tmp) tmp.remove();
+    renderSwipe();
+    return;
+  }
+  textEl.textContent = card.description_fa || card.description || '';
+  if (box) {
+    box.classList.remove('dh-card-swap');
+    void box.offsetWidth;
+    box.classList.add('dh-card-swap');
+  }
+  updateSwipeChrome();
+}
+
+let __dhLikeBusy = false;
+function likeCard(liked, btnEl) {
+  if (__dhLikeBusy) return;
+  if (state.swipeIndex >= state.swipeCards.length) return;
+  __dhLikeBusy = true;
+
+  const btn = btnEl || (liked ? document.getElementById('dh-btn-heart') : document.getElementById('dh-btn-skip'));
+  if (btn) btn.classList.add('dh-pulse');
+
+  window.setTimeout(function () {
+    if (liked && state.likedCodes.length < 80) {
+      const c = state.swipeCards[state.swipeIndex];
+      if (c && c.code) {
+        state.likedCodes.push(c.code);
+        state.likedCodesSet.add(c.code);
+      }
+    }
+    state.swipeIndex++;
+    saveSession();
+    if (btn) btn.classList.remove('dh-pulse');
+
+    if (state.swipeIndex >= state.swipeCards.length || state.likedCodes.length >= 80) {
+      __dhLikeBusy = false;
+      renderSwipe();
+      return;
+    }
+    updateSwipeCardInPlace();
+    __dhLikeBusy = false;
+  }, 280);
 }
 
 function previousCard() {
@@ -785,7 +851,8 @@ function previousCard() {
       state.likedCodesSet.delete(removedCode);
     }
     saveSession();
-    renderSwipe();
+    if (document.getElementById('dh-swipe-card')) updateSwipeCardInPlace();
+    else renderSwipe();
   }
 }
 
@@ -1129,8 +1196,17 @@ function displayResults(data, type) {
       const sPct = raw.s_score !== undefined ? raw.s_score : (r.avg_components?.s_score || 0);
       const vPct = raw.v_score !== undefined ? raw.v_score : (r.avg_components?.v_score || 0);
 
+
       // ===== جرقه‌های مشترک =====
       const microMatch = r.micro_motives_matched || [];
+      let motiveMatched = microMatch.length;
+      const mRatio = (r.raw_components && (r.raw_components.M ?? r.raw_components.m));
+      if (!motiveMatched && mRatio != null) motiveMatched = Math.round(Number(mRatio) * 7);
+      if (motiveMatched < 0) motiveMatched = 0;
+      if (motiveMatched > 7) motiveMatched = 7;
+      const motiveDenom = 7;
+      const motiveCountHtml = `<div class="dh-motive-count">جرقه‌های این رشته: ${motiveMatched} از ${motiveDenom}${motiveMatched < motiveDenom ? ' (کامل لایک نشده)' : ' (کامل)'}</div>`;
+
       let sparkText = '';
       if (microMatch.length > 0) {
         const names = microMatch.slice(0, 3).map(m => escapeHtml(m.description || m.code || m)).join('، ');
@@ -1183,7 +1259,7 @@ function displayResults(data, type) {
             </div>
           </div>
 
-          ${sparkText ? `<p style="font-size:0.85rem;color:#b0a080;margin:8px 0;">🔥 جرقه‌های مشترک: ${sparkText}</p>` : ''}
+          ${motiveCountHtml}${sparkText ? `<p style="font-size:0.85rem;color:#b0a080;margin:8px 0;">🔥 جرقه‌های مشترک: ${sparkText}</p>` : ''}
           
           ${r.personalized_description ? `
             <div style="background:#0a0a0f;border:1px solid #d4af37;border-radius:8px;padding:12px;margin:10px 0;font-size:0.9rem;line-height:1.9;">
