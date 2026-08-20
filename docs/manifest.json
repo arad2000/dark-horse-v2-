@@ -1,9 +1,10 @@
 {
+  "id": "/dark-horse-v2-/",
   "name": "اسب سیاه | مسیرت را کشف کن",
   "short_name": "اسب سیاه",
   "description": "کشف مسیر تحصیلی بر اساس انگیزه‌های واقعی تو — نه فقط رتبه",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/dark-horse-v2-/",
+  "scope": "/dark-horse-v2-/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0a0a0f",
@@ -12,24 +13,27 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/dark-horse-v2-/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "/dark-horse-v2-/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "/dark-horse-v2-/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "categories": ["education", "lifestyle"],
+  "categories": [
+    "education",
+    "lifestyle"
+  ],
   "prefer_related_applications": false
 }
