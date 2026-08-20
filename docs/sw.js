@@ -1,5 +1,5 @@
-/* Dark Horse PWA SW v14 — docs folder */
-const CACHE = 'darkhorse-shell-v14';
+/* Dark Horse PWA SW v15 — tabbar fix */
+const CACHE = 'darkhorse-shell-v15';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',
