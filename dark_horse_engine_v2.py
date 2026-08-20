@@ -458,8 +458,10 @@ class DarkHorseEngineV2:
 
     # ── استخراج ویژگی‌ها و ارزش‌های غالب (برای archetype_info) ──
     def _extract_dominant_traits(self, strategy_answers: List[int], strategy_weights: List[List[float]],
-                                  threshold: float = 0.7) -> List[str]:
-        dominant = []
+                                  threshold: float = 0.7, top_n: int = 2) -> List[str]:
+        # به‌جای برگرداندن هر صفتی که از آستانه رد شود (که تا ۸ مورد می‌شد و شلوغ بود)،
+        # صفات را بر اساس قدرت واقعی (normalized) رتبه‌بندی می‌کنیم و فقط قوی‌ترین‌ها را نگه می‌داریم.
+        trait_strength: Dict[str, float] = {}
         for i, row in enumerate(strategy_weights):
             if i >= len(strategy_answers):
                 continue
@@ -473,20 +475,25 @@ class DarkHorseEngineV2:
                 q_num = i + 1
                 question_key = f"S{str(q_num).zfill(2)}"
                 traits = self.trait_map.get(question_key, {}).get(idx, [])
-                dominant.extend(traits)
-        return list(dict.fromkeys(dominant))[:8]
+                for t in traits:
+                    trait_strength[t] = max(trait_strength.get(t, 0.0), normalized)
+
+        ranked = sorted(trait_strength.items(), key=lambda x: -x[1])
+        return [t for t, _ in ranked[:top_n]]
 
     def _extract_dominant_values(self, value_choices: List[str], value_weights: Dict[str, float],
-                                  threshold: float = 0.7) -> List[str]:
-        dominant = []
+                                  threshold: float = 0.7, top_n: int = 2) -> List[str]:
+        value_strength: Dict[str, float] = {}
         for v in value_choices:
             if not v or not v.strip():
                 continue
             weight = value_weights.get(v.strip(), 0.0)
             if weight > threshold:
                 pole = self.value_poles.get(v.strip(), v)
-                dominant.append(pole)
-        return list(dict.fromkeys(dominant))[:8]
+                value_strength[pole] = max(value_strength.get(pole, 0.0), weight)
+
+        ranked = sorted(value_strength.items(), key=lambda x: -x[1])
+        return [v for v, _ in ranked[:top_n]]
 
     @staticmethod
     def _get_fit_level(score: float) -> str:
