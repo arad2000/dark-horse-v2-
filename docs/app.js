@@ -712,8 +712,10 @@ async function loadSwipeCards() {
       state.cachedMotives = all;
     }
     state.swipeCards = all.filter(m =>
-      majorCodes.some(prefix => m.code.startsWith(prefix)) && !state.likedCodesSet.has(m.code)
+      majorCodes.some(prefix => m.code && m.code.startsWith(prefix)) && !state.likedCodesSet.has(m.code)
     );
+    // پشت‌سرهم بودن جرقه‌های یک رشته (مثلاً MED-001..007)
+    state.swipeCards.sort((a, b) => String(a.code).localeCompare(String(b.code), 'en'));
     state.swipeIndex = 0; state.totalSwipes = state.swipeCards.length;
     goTo('swipe');
   } catch (e) { alert('خطا در بارگذاری جرقه‌ها.'); }
@@ -1157,8 +1159,19 @@ function displayResults(data, type) {
   });
 
   // ===== ۳. فیلتر و مرتب‌سازی =====
+  // فقط رشته‌هایی که هم Total≥30 و هم خرده‌انگیزه واقعی (M≥15) دارند
+  // بدون این فیلتر، رشته فقط با راهبرد/ارزش تا ~۴۵٪ می‌آمد
   const matched = normalized
-    .filter(item => (item.fit_score || 0) >= 30)
+    .filter(item => {
+      const total = item.fit_score || 0;
+      if (total < 30) return false;
+      const m = (item.raw_components && (item.raw_components.m_score ?? item.raw_components.M)) ;
+      const mVal = m != null ? Number(m) : 0;
+      // m_score از موتور ۰–۱۰۰ است
+      if (mVal < 15) return false;
+      // اگر evidence خالی است ولی m گزارش شده، همان m را قبول کن
+      return true;
+    })
     .sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0));
 
   // ===== ۴. تحلیل سبک شخصی =====
@@ -1225,8 +1238,13 @@ function displayResults(data, type) {
       // ===== جرقه‌های مشترک =====
       const microMatch = r.micro_motives_matched || [];
       let motiveMatched = microMatch.length;
-      const mRatio = (r.raw_components && (r.raw_components.M ?? r.raw_components.m));
-      if (!motiveMatched && mRatio != null) motiveMatched = Math.round(Number(mRatio) * 7);
+      // m_score موتور = درصد ۰–۱۰۰ ؛ برای ۷ جرقه استاندارد
+      const mPct = (r.raw_components && (r.raw_components.m_score ?? r.raw_components.M));
+      if (mPct != null && Number(mPct) > 0) {
+        const fromPct = Math.round((Number(mPct) / 100) * 7);
+        // اگر evidence کوتاه‌تر بود ولی درصد بالاتر، از درصد استفاده کن
+        if (fromPct > motiveMatched) motiveMatched = fromPct;
+      }
       if (motiveMatched < 0) motiveMatched = 0;
       if (motiveMatched > 7) motiveMatched = 7;
       const motiveDenom = 7;
@@ -1234,9 +1252,8 @@ function displayResults(data, type) {
 
       let sparkText = '';
       if (microMatch.length > 0) {
-        const names = microMatch.slice(0, 3).map(m => escapeHtml(m.description || m.code || m)).join('، ');
-        sparkText = names;
-        if (microMatch.length > 3) sparkText += ` و ${microMatch.length - 3} جرقهٔ دیگر`;
+        // همهٔ جرقه‌های مشترک را نشان بده (نه فقط ۳ تا)
+        sparkText = microMatch.map(m => escapeHtml(m.description || m.code || m)).join(' · ');
       }
 
       // ===== هشدار (در بالای کارت) =====
