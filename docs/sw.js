@@ -1,5 +1,5 @@
-/* Dark Horse PWA SW v20 — app syntax fix */
-const CACHE = 'darkhorse-shell-v20';
+/* Dark Horse SW v21 — UI premium + frontend strengthen */
+const CACHE = 'darkhorse-shell-v21';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',

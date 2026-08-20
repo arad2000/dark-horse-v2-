@@ -258,3 +258,232 @@ html.dh-installed #dh-install-home {
 }
 
 .dh-build-v{font-size:0.7rem;color:#8a7a55;font-weight:600;margin-right:6px;}
+
+
+/* ========== UI Premium v21 — حس اپ آموزشی ========== */
+:root {
+  --dh-gold: #f0c040;
+  --dh-gold-dim: #d4af37;
+  --dh-bg: #0c0c12;
+  --dh-card: #14141c;
+  --dh-border: rgba(212, 175, 55, 0.28);
+  --dh-text: #e8e0d0;
+  --dh-muted: #8a7a55;
+}
+
+body {
+  background: radial-gradient(ellipse at top, #16141f 0%, var(--dh-bg) 55%) !important;
+  color: var(--dh-text);
+}
+
+#app, .container {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+/* هدر پیشرفت */
+.dh-progress-wrap, .dh-edu-header {
+  background: rgba(20, 20, 28, 0.92);
+  border: 1px solid var(--dh-border);
+  border-radius: 16px;
+  padding: 12px 14px 10px;
+  margin: 8px 0 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+}
+.dh-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  color: var(--dh-muted);
+}
+.dh-progress-labels .on {
+  color: var(--dh-gold);
+  font-weight: 700;
+}
+.dh-brand-mini {
+  font-weight: 800;
+  color: var(--dh-gold-dim);
+  letter-spacing: 0.02em;
+}
+.dh-progress-track {
+  height: 6px;
+  background: #1e1e2a;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dh-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #b8962e, var(--dh-gold), #ffe08a);
+  border-radius: 99px;
+  transition: width 0.35s ease;
+  box-shadow: 0 0 12px rgba(240,192,64,0.45);
+}
+.dh-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 4px;
+}
+.dh-step {
+  flex: 1;
+  text-align: center;
+  font-size: 0.65rem;
+  color: #5a5040;
+}
+.dh-step i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: 0 auto 5px;
+  border-radius: 50%;
+  background: #2a2a38;
+  border: 1.5px solid #3a3a4a;
+}
+.dh-step.active { color: var(--dh-gold); font-weight: 700; }
+.dh-step.active i {
+  background: var(--dh-gold);
+  border-color: var(--dh-gold);
+  box-shadow: 0 0 10px rgba(240,192,64,0.6);
+}
+.dh-step.done { color: #a89050; }
+.dh-step.done i {
+  background: #a89050;
+  border-color: #a89050;
+}
+
+/* کارت‌ها و دکمه‌ها */
+.card {
+  background: var(--dh-card) !important;
+  border: 1px solid var(--dh-border) !important;
+  border-radius: 18px !important;
+  padding: 16px !important;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.28);
+}
+.btn, button.btn {
+  min-height: 48px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.btn-primary, button.btn-primary {
+  background: linear-gradient(135deg, #d4af37, #f0c040) !important;
+  color: #1a1408 !important;
+  border: none !important;
+  box-shadow: 0 6px 20px rgba(212,175,55,0.35);
+}
+.btn-primary:active, button.btn-primary:active {
+  transform: scale(0.98);
+}
+.btn:not(.btn-primary) {
+  background: #1a1a24 !important;
+  border: 1px solid #333 !important;
+  color: var(--dh-text) !important;
+}
+
+/* گزینه‌های قلمرو / مسیر */
+.option {
+  background: #12121a !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  padding: 14px !important;
+  transition: border-color 0.15s ease, transform 0.12s ease, background 0.15s ease;
+}
+.option.selected {
+  border-color: var(--dh-gold) !important;
+  background: rgba(240,192,64,0.08) !important;
+  box-shadow: 0 0 0 1px rgba(240,192,64,0.25);
+}
+.option:active:not(.dh-path-done) {
+  transform: scale(0.985);
+}
+.dh-path-done {
+  opacity: 0.4 !important;
+  pointer-events: none !important;
+  filter: grayscale(0.75);
+  border-color: #2a2a32 !important;
+}
+.dh-path-done strong { color: #777 !important; }
+
+/* جرقه */
+.dh-spark-chip {
+  background: linear-gradient(135deg, rgba(240,192,64,0.12), rgba(20,20,28,0.9));
+  border: 1px solid rgba(240,192,64,0.35);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin: 8px 0 12px;
+}
+.dh-spark-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--dh-gold);
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+.dh-spark-hint {
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--dh-muted);
+}
+.dh-spark-bar {
+  height: 5px;
+  background: #1e1e2a;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dh-spark-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #d4af37, #f0c040);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+/* تب‌بار */
+#dh-tabbar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  transform: none !important;
+  z-index: 2147483000 !important;
+  background: rgba(10, 10, 16, 0.97) !important;
+  border-top: 1px solid rgba(212, 175, 55, 0.28) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+#dh-tabbar button.active {
+  color: var(--dh-gold) !important;
+}
+
+/* عناوین */
+h2 {
+  letter-spacing: -0.01em;
+}
+.dh-stage-hint {
+  color: var(--dh-muted) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.7 !important;
+}
+
+/* نتایج */
+.dh-motive-count {
+  display: inline-block;
+  margin: 8px 0 4px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: rgba(240,192,64,0.12);
+  border: 1px solid rgba(240,192,64,0.35);
+  color: var(--dh-gold);
+}
