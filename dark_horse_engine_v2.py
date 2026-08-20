@@ -530,10 +530,10 @@ class DarkHorseEngineV2:
         for major_id, major_data in self.majors_db.items():
             try:
                 m_score, m_ev = self._compute_m_score(user_motives or [], major_data)
-                # توجه: قبلاً اینجا رشته‌هایی با m_score < 0.15 به‌طور کامل حذف می‌شدند.
-                # این باگی حیاتی بود چون دقیقاً همان سناریوی «اسب سیاه واقعی» را حذف می‌کرد:
-                # کاربری که خرده‌انگیزه‌های روزمرهٔ این رشته را ندارد ولی راهبرد/ارزش‌هایش کاملاً همسوست.
-                # حالا مثل recommend_school_branch، رشته حذف نمی‌شود؛ فقط هشدار مناسب اضافه می‌شود (پایین‌تر).
+                # فیلتر سخت خرده‌انگیزه: بدون همپوشانی واقعی جرقه، رشته نباید فقط با S/V بیاید.
+                # (حذف قبلی این شرط باعث ظاهر شدن رشته‌ها تا ~۳۰–۴۵٪ فقط از روی راهبرد/ارزش شد.)
+                if m_score < 0.15:
+                    continue
 
                 s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
                 v_score, v_high = self._compute_v_score(value_choices, major_data.get("value_weights", {}))
@@ -551,8 +551,8 @@ class DarkHorseEngineV2:
                     evidence["value_alignment"] = v_high
 
                 warnings = []
-                if m_score < 0.15:
-                    warnings.append("خرده‌انگیزه‌های روزمرهٔ شما با این رشته همپوشانی کمی دارد؛ اما اگر راهبردها و ارزش‌های بنیادین‌تان با آن هم‌راستا باشد، این می‌تواند یک مسیر «اسب سیاه» غیرمنتظره برای شما باشد.")
+                if 0.15 <= m_score < 0.35:
+                    warnings.append("همپوشانی خرده‌انگیزه با این رشته نسبتاً کم است؛ با احتیاط بررسی کن و به راهبرد/ارزش هم نگاه کن.")
                 if s_score < 0.4:
                     warnings.append("راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.")
                 if v_score < 0.4:
@@ -628,7 +628,7 @@ class DarkHorseEngineV2:
                 "scoring": "Total = 0.55×M + 0.30×V + 0.15×S",
                 "s_score_formula": "S = (1/25) * Σ(chosen_w / max_w)",
                 "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
-                "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15%",
+                "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15% (سخت)",
                 "version": "3.1-alternative-paths",
                 "trait_map_version": "v3 (چند ویژگی در هر گزینه)",
                 "features": ["کهن‌الگو و منبع رضایت از دیتابیس", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy", "سناریوهای ۸ گانه"]
