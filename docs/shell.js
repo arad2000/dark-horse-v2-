@@ -6,6 +6,7 @@
 
   var LOCAL_USER_KEY = 'dh_local_user_v1';
   var LOCAL_QUOTA_KEY = 'dh_local_quota_v1';
+  var LOCAL_RESULT_KEY = 'dh_last_result_v1';
   window.__dhInJourney = false;
 
   function $(id) { return document.getElementById(id); }
@@ -19,6 +20,48 @@
     catch (e) { return { used: 0, premium: false }; }
   }
   function saveQuota(q) { localStorage.setItem(LOCAL_QUOTA_KEY, JSON.stringify(q)); }
+
+
+  function loadLastResult() {
+    try { return JSON.parse(localStorage.getItem(LOCAL_RESULT_KEY) || 'null'); } catch (e) { return null; }
+  }
+  function saveLastResult(summary) {
+    try { localStorage.setItem(LOCAL_RESULT_KEY, JSON.stringify(summary)); } catch (e) {}
+  }
+  function extractResultSummary(data, type) {
+    var items = [];
+    var kind = type || 'majors';
+    if (!data) return null;
+    if (data.discovery_result && data.discovery_result.recommendations) {
+      items = data.discovery_result.recommendations;
+      kind = 'majors';
+    } else if (data.branch_discovery_result && data.branch_discovery_result.branches) {
+      items = data.branch_discovery_result.branches;
+      kind = 'branches';
+    } else if (data.recommendations) {
+      items = data.recommendations;
+    } else if (data.recommended_branches) {
+      items = data.recommended_branches;
+      kind = 'branches';
+    }
+    var tops = (items || []).slice(0, 5).map(function (it) {
+      var fit = it.individuality_fit || it;
+      return {
+        name: it.major_name_fa || it.branch_name_fa || it.name || '—',
+        score: fit.score || fit.fit_score || it.fit_score || 0
+      };
+    });
+    var sparks = 0;
+    try {
+      if (typeof state !== 'undefined' && state.likedCodes) sparks = state.likedCodes.length;
+    } catch (e) {}
+    return {
+      at: Date.now(),
+      kind: kind,
+      sparks: sparks,
+      tops: tops
+    };
+  }
 
   function getDisplayUser() {
     try {
@@ -190,20 +233,22 @@
     if (!root) return;
     var u = getDisplayUser();
     var q = localQuota();
+    var last = loadLastResult();
 
     if (!u) {
       root.innerHTML =
-        '<div class="card" style="text-align:right;margin-top:8px;">' +
-        '<h2 style="text-align:center;color:#f0c040;">ورود به حساب</h2>' +
-        '<p style="color:#b0a080;line-height:1.9;">نام و موبایل برای ذخیره مسیر و سهمیه.</p>' +
+        '<div class="dh-home-wrap">' +
+        '<div class="card" style="text-align:right;margin-top:4px;">' +
+        '<h2 style="text-align:center;color:#f0c040;">پروفایل</h2>' +
+        '<p style="color:#b0a080;line-height:1.9;">با نام و موبایل، نتیجه و سهمیه‌ات روی همین گوشی می‌ماند.</p>' +
         '<label style="display:block;margin:8px 0 4px;">نام</label>' +
         '<input id="dh-p-name" placeholder="مثلاً سارا" style="width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#12121c;color:#eee;font-size:16px;">' +
         '<label style="display:block;margin:8px 0 4px;">موبایل</label>' +
         '<input id="dh-p-phone" inputmode="numeric" placeholder="09xxxxxxxxx" style="width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#12121c;color:#eee;font-size:16px;">' +
         '<p id="dh-p-err" style="color:#f66;min-height:1.2em;font-size:0.85rem;"></p>' +
-        '<button class="btn btn-primary" style="width:100%;" id="dh-p-save">ادامه</button>' +
+        '<button class="btn btn-primary" style="width:100%;" id="dh-p-save">ثبت پروفایل</button>' +
         '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
-        '</div>';
+        '</div></div>';
       $('dh-p-home').onclick = function () { switchTab('home'); };
       $('dh-p-save').onclick = function () {
         var name = (($('dh-p-name') || {}).value || '').trim();
@@ -220,21 +265,57 @@
     var initial = (u.name || '؟').trim().charAt(0);
     var premium = !!(u.is_premium || q.premium);
     var remain = premium ? '∞' : (canRunTest() ? '1' : '0');
+    var used = q.used || 0;
+
+    var lastHtml = '';
+    if (last && last.tops && last.tops.length) {
+      var when = '';
+      try {
+        when = new Date(last.at).toLocaleDateString('fa-IR', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      } catch (e) { when = ''; }
+      var kindLabel = last.kind === 'branches' ? 'شاخه دبیرستان' : 'رشته دانشگاهی';
+      var rows = last.tops.map(function (t, i) {
+        var sc = (typeof t.score === 'number') ? (t.score > 1 ? t.score : Math.round(t.score * 1000) / 10) : t.score;
+        if (sc <= 1 && sc > 0) sc = Math.round(sc * 1000) / 10;
+        return '<div class="dh-last-row">' +
+          '<span class="dh-last-rank">' + (i + 1) + '</span>' +
+          '<span class="dh-last-name">' + escape(t.name) + '</span>' +
+          '<span class="dh-last-score">' + escape(String(sc)) + '٪</span>' +
+          '</div>';
+      }).join('');
+      lastHtml =
+        '<div class="dh-last-card">' +
+          '<div class="dh-last-title">آخرین کشف تو</div>' +
+          '<div class="dh-last-meta">' + escape(kindLabel) + (when ? ' · ' + escape(when) : '') +
+            (last.sparks ? ' · ' + last.sparks + ' جرقه' : '') + '</div>' +
+          rows +
+        '</div>';
+    } else {
+      lastHtml =
+        '<div class="dh-last-card dh-last-empty">' +
+          '<div class="dh-last-title">هنوز سفری تمام نشده</div>' +
+          '<p style="margin:8px 0 0;color:#8a7a55;font-size:0.88rem;line-height:1.7;">یک‌بار سفر اکتشافی را تا نتیجه برو؛ خلاصه اینجا می‌ماند.</p>' +
+        '</div>';
+    }
 
     root.innerHTML =
-      '<div class="card" style="text-align:right;margin-top:8px;">' +
+      '<div class="dh-home-wrap">' +
+      '<div class="card" style="text-align:right;margin-top:4px;padding-bottom:18px;">' +
       '<div class="dh-profile-avatar">' + escape(initial) + '</div>' +
       '<h2 style="text-align:center;margin:0;color:#f0c040;">' + escape(u.name) + '</h2>' +
-      '<p style="text-align:center;color:#8a7a55;margin:6px 0 0;">' + escape(u.phone || '') + '</p>' +
+      '<p style="text-align:center;color:#8a7a55;margin:6px 0 0;font-size:0.9rem;">' + escape(u.phone || '') + '</p>' +
       '<div class="dh-stat-grid">' +
         '<div class="dh-stat"><div class="n">' + escape(String(remain)) + '</div><div class="l">اکتشاف باقی</div></div>' +
-        '<div class="dh-stat"><div class="n">' + (premium ? '✓' : '—') + '</div><div class="l">اشتراک</div></div>' +
+        '<div class="dh-stat"><div class="n">' + (premium ? '✓' : String(used)) + '</div><div class="l">' + (premium ? 'اشتراک' : 'مصرف‌شده') + '</div></div>' +
       '</div>' +
-      '<button class="btn btn-primary" style="width:100%;" id="dh-p-prem">' + (premium ? 'اشتراک فعال' : 'فعال‌سازی اشتراک (تستی)') + '</button>' +
-      '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-journey">رفتن به سفر</button>' +
-      '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-out">خروج</button>' +
+      lastHtml +
+      '<button class="btn btn-primary" style="width:100%;margin-top:14px;" id="dh-p-journey">' +
+        (last && last.tops && last.tops.length ? 'سفر دوباره' : 'شروع اولین سفر') + '</button>' +
+      '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-prem">' +
+        (premium ? 'اشتراک فعال است' : 'فعال‌سازی اشتراک (تستی)') + '</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
-      '</div>';
+      '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
+      '</div></div>';
 
     $('dh-p-home').onclick = function () { switchTab('home'); };
     $('dh-p-journey').onclick = function () { startJourneyFromShell(); };
@@ -282,6 +363,8 @@
     window.displayResults = function (data, type) {
       orig(data, type);
       try {
+        var summary = extractResultSummary(data, type);
+        if (summary && summary.tops && summary.tops.length) saveLastResult(summary);
         var q = localQuota();
         if (!q.premium && (q.used || 0) < 1) {
           q.used = (q.used || 0) + 1;
