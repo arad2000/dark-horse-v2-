@@ -1,5 +1,5 @@
-/* Dark Horse PWA SW v15 — tabbar fix */
-const CACHE = 'darkhorse-shell-v15';
+/* Dark Horse PWA SW v16 — CRITICAL tabbar + cache bust */
+const CACHE = 'darkhorse-shell-v16';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',
@@ -11,7 +11,7 @@ self.addEventListener('install', (e) => {
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -21,11 +21,11 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request));
     return;
   }
+  // همیشه شبکه برای کد؛ کش فقط آفلاین
   const path = url.pathname || '';
-  const isCode = path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.html') || path.endsWith('/') || e.request.mode === 'navigate';
-  if (isCode) {
+  if (path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.html') || path.endsWith('/') || e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request).then((res) => {
+      fetch(e.request, { cache: 'no-store' }).then((res) => {
         if (res && res.status === 200) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
@@ -36,12 +36,12 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request).then((res) => {
+    fetch(e.request).then((res) => {
       if (res && res.status === 200) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
       }
       return res;
-    }))
+    }).catch(() => caches.match(e.request))
   );
 });

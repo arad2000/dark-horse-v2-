@@ -194,17 +194,11 @@ html.dh-installed #dh-install-home {
   color: #d4af37; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
 }
 
-/* حس اپ بین‌المللی + موبایل ایرانی */
+/* محتوا محدود؛ تب‌بار تمام‌عرض */
 .container, #app {
   max-width: 480px;
   margin-left: auto;
   margin-right: auto;
-}
-#dh-tabbar {
-  max-width: 480px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
 }
 .btn, button.btn {
   min-height: 48px;
@@ -221,3 +215,46 @@ html.dh-installed #dh-install-home {
 .dh-brand-sub { margin-top: 4px; font-size: 0.78rem; color: #b0a080; line-height: 1.65; }
 .dh-date { color: #c4b48a !important; font-size: 0.88rem !important; opacity: 1 !important; margin-top: 6px !important; }
 .dh-greet { margin-top: 10px !important; }
+
+
+/* ===== FIX v16: تب‌بار همیشه ۳ دکمه کامل ===== */
+#dh-tabbar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-around !important;
+  align-items: stretch !important;
+  height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+  z-index: 2147483000 !important;
+  background: rgba(10, 10, 16, 0.98) !important;
+  border-top: 1px solid rgba(212, 175, 55, 0.28) !important;
+}
+#dh-tabbar button {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  width: auto !important;
+  overflow: visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+#dh-install-banner {
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 2147482000 !important;
+}
+
+.dh-build-v{font-size:0.7rem;color:#8a7a55;font-weight:600;margin-right:6px;}

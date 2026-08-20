@@ -163,7 +163,7 @@
         '<div class="dh-home-top">' +
           '<div>' +
             '<div class="dh-brand">' +
-              '<div class="dh-brand-name">اسب سیاه</div>' +
+              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v16</span></div>' +
               '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
             '</div>' +
             '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
