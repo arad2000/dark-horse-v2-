@@ -1147,9 +1147,10 @@ function displayResults(data, type) {
       archetypeData = { archetype: archetypeData, identity_sentence: '' };
     }
     return {
-      name: item.major_name_fa || item.branch_name_fa || fit.major_name_fa || fit.branch_name_fa || item.name || 'نامشخص',
-      fit_score: fit.score || fit.fit_score || item.fit_score || 0,
-      raw_components: fit.raw_components || item.raw_components || {},
+      name: item.major_name_fa || item.branch_name_fa || fit.major_name_fa || fit.branch_name_fa || item.name || item.branch_name || 'نامشخص',
+      // شاخه‌ها average_score می‌دهند نه score — بدون این، همه صفر می‌شدند
+      fit_score: fit.score || fit.fit_score || item.fit_score || item.average_score || 0,
+      raw_components: fit.raw_components || item.raw_components || item.avg_components || {},
       evidence: fit.evidence || item.evidence || {},
       personalized_description: fit.personalized_description || item.personalized_description || '',
       archetype: archetypeData,
@@ -1216,20 +1217,30 @@ function displayResults(data, type) {
     <p style="text-align:center;color:#b0a080;">بر اساس <strong style="color:#f0c040;">${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
   `;
 
-  // ===== بهترین شاخه (برای هدایت تحصیلی) =====
+  // ===== بهترین شاخه (فقط اگر در لیست matched باشد) =====
   if (isBranch) {
-    let bestName = bestBranch;
-    // matched از قبل بر اساس fit_score نزولی مرتب شده (ترکیب M+S+V)، پس آیتم اول
-    // همان بهترین گزینهٔ کلی است. فیلتر قدیمی m_score>=15 اینجا حذف شد چون دوباره
-    // همان تعصب علیه شاخه‌های «اسب سیاه» (M پایین، S/V بالا) را وارد می‌کرد.
-    if (!bestName && matched.length > 0) {
-      bestName = matched[0].name;
+    let bestName = null;
+    let bestScore = null;
+    // فقط از بین شاخه‌هایی که از آستانه ۳۰٪ عبور کرده‌اند
+    if (matched.length > 0) {
+      // اگر موتور best_branch داده و در matched هست، همان
+      if (bestBranch) {
+        const found = matched.find(m => m.name === bestBranch);
+        if (found) {
+          bestName = found.name;
+          bestScore = found.fit_score;
+        }
+      }
+      if (!bestName) {
+        bestName = matched[0].name;
+        bestScore = matched[0].fit_score;
+      }
     }
     if (bestName) {
       html += `
         <div style="background:linear-gradient(135deg,#1a1a2e,#2a1a3e);border:2px solid #f0c040;border-radius:12px;padding:18px;margin:20px 0;text-align:center;">
-          <p style="color:#f0c040;font-size:1.4rem;font-weight:bold;">🏆 بهترین شاخهٔ پیشنهادی: <span style="font-size:1.6rem;">${escapeHtml(bestName)}</span></p>
-          <p style="color:#b0a080;font-size:0.9rem;">این شاخه بیشترین هماهنگی را با انگیزه‌ها، راهبردها و ارزش‌های شما دارد.</p>
+          <p style="color:#f0c040;font-size:1.4rem;font-weight:bold;">🏆 بیشترین همخوانی: <span style="font-size:1.6rem;">${escapeHtml(bestName)}</span></p>
+          <p style="color:#b0a080;font-size:0.9rem;">امتیاز ${bestScore != null ? escapeHtml(String(bestScore)) + '٪ · ' : ''}نقطه شروع بررسی است، نه تصمیم نهایی.</p>
         </div>`;
     }
   }
