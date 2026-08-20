@@ -86,10 +86,11 @@
 
   function greeting() {
     var h = new Date().getHours();
-    if (h < 12) return 'صبح بخیر';
-    if (h < 17) return 'روز بخیر';
-    if (h < 21) return 'عصر بخیر';
-    return 'شب خوش';
+    if (h >= 5 && h < 9) return 'صبح بخیر';
+    if (h >= 9 && h < 12) return 'وقت بخیر';
+    if (h >= 12 && h < 15) return 'ظهر بخیر';
+    if (h >= 15 && h < 19) return 'عصر بخیر';
+    return 'شب بخیر';
   }
 
   function faDate() {
@@ -161,6 +162,10 @@
       '<div class="dh-home-wrap">' +
         '<div class="dh-home-top">' +
           '<div>' +
+            '<div class="dh-brand">' +
+              '<div class="dh-brand-name">اسب سیاه</div>' +
+              '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
+            '</div>' +
             '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
             '<p class="dh-date">' + escape(faDate()) + '</p>' +
           '</div>' +
@@ -183,11 +188,14 @@
 
         '<div class="dh-mini-grid dh-mini-one">' +
           '<button type="button" class="dh-mini" id="dh-mini-quote"><span>✨</span>یک پیام تازه دیگر</button>' +
+          '<button type="button" class="dh-mini" id="dh-home-exit" style="color:#c09090;"><span>⎋</span>خروج از اپ</button>' +
         '</div>' +
       '</div>';
 
     $('dh-start-journey').onclick = function () { startJourneyFromShell(); };
     $('dh-mini-quote').onclick = function () { shuffleExtraQuote(); };
+    var hx = $('dh-home-exit');
+    if (hx) hx.onclick = function () { exitApp(); };
   }
 
   function shuffleExtraQuote() {
@@ -266,6 +274,12 @@
       return;
     }
     prompt('کپی کن:', text);
+  }
+
+  function exitApp() {
+    if (!confirm('از اسب سیاه خارج می‌شوی؟')) return;
+    try { window.close(); } catch (e) {}
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#cbb98a;font-family:Vazirmatn,sans-serif;text-align:center;padding:24px;line-height:2;"><div><div style="color:#f0c040;font-size:1.2rem;margin-bottom:8px;">اسب سیاه</div>این زبانه را ببند یا با دکمه Home از اپ خارج شو.</div></div>';
   }
 
   function renderProfile() {
@@ -359,6 +373,7 @@
         (premium ? 'اشتراک فعال است' : 'فعال‌سازی اشتراک (تستی)') + '</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
+      '<button class="btn" style="width:100%;margin-top:8px;color:#c08080;border-color:#543;" id="dh-p-exit">خروج از اپ</button>' +
       '</div></div>';
 
     $('dh-p-home').onclick = function () { switchTab('home'); };
@@ -369,6 +384,8 @@
       localStorage.removeItem(LOCAL_USER_KEY);
       renderProfile();
     };
+    var ex = $('dh-p-exit');
+    if (ex) ex.onclick = function () { exitApp(); };
     $('dh-p-prem').onclick = function () {
       if (premium) return;
       var qq = localQuota();
