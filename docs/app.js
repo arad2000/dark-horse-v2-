@@ -325,7 +325,7 @@ async function loadQuestions() {
 // چون trait_map_v3.json نشان داده در سؤالات مختلف، همان index معنی متفاوتی دارد.
 async function loadTraitMap() {
   try {
-    const res = await fetch(DATA_BASE + 'trait_map_v3.json');
+    const res = await fetch('./trait_map_v3.json');
     const data = await res.json();
     state.traitMap = data;
     state.traitMapReady = true;
