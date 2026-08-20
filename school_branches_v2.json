@@ -68,13 +68,6 @@
       "BIOT-005",
       "BIOT-006",
       "BIOT-007",
-      "BIOT-008",
-      "BIOT-009",
-      "BIOT-010",
-      "BIOT-011",
-      "BIOT-012",
-      "BIOT-013",
-      "BIOT-014",
       "CHEM-001",
       "CHEM-002",
       "CHEM-003",
@@ -375,7 +368,14 @@
       "VIRO-004",
       "VIRO-005",
       "VIRO-006",
-      "VIRO-007"
+      "VIRO-007",
+      "BIOTM-001",
+      "BIOTM-002",
+      "BIOTM-003",
+      "BIOTM-004",
+      "BIOTM-005",
+      "BIOTM-006",
+      "BIOTM-007"
     ],
     "strategy_weights": [
       [
