@@ -1,5 +1,5 @@
-/* Dark Horse PWA SW v10 */
-const CACHE = 'darkhorse-shell-v10';
+/* Dark Horse PWA SW v12 */
+const CACHE = 'darkhorse-shell-v12';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',

@@ -85,11 +85,13 @@
   }
 
   function greeting() {
+    // ساعت محلی دستگاه کاربر (ایران معمولاً Asia/Tehran)
     var h = new Date().getHours();
-    if (h < 12) return 'صبح بخیر';
-    if (h < 17) return 'روز بخیر';
-    if (h < 21) return 'عصر بخیر';
-    return 'شب خوش';
+    if (h >= 5 && h < 9) return 'صبح بخیر';
+    if (h >= 9 && h < 12) return 'وقت بخیر';
+    if (h >= 12 && h < 15) return 'ظهر بخیر';
+    if (h >= 15 && h < 19) return 'عصر بخیر';
+    return 'شب بخیر';  // ۱۹ تا ۵
   }
 
   function faDate() {
@@ -161,6 +163,10 @@
       '<div class="dh-home-wrap">' +
         '<div class="dh-home-top">' +
           '<div>' +
+            '<div class="dh-brand">' +
+              '<div class="dh-brand-name">اسب سیاه</div>' +
+              '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
+            '</div>' +
             '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
             '<p class="dh-date">' + escape(faDate()) + '</p>' +
           '</div>' +
@@ -176,18 +182,21 @@
 
         '<div class="dh-cta-card">' +
           '<p class="dh-cta-title">سفر اکتشافی</p>' +
-          '<p class="dh-cta-desc">جرقه‌هایت را پیدا کن؛ مسیر را با معیار خودت ببین.</p>' +
+          '<p class="dh-cta-desc">بدون فشار رتبه و حرف دیگران — اول ببین چه چیزی به تو انرژی می‌دهد.</p>' +
           '<button class="btn btn-primary dh-cta-main" id="dh-start-journey">شروع سفر</button>' +
           
         '</div>' +
 
         '<div class="dh-mini-grid dh-mini-one">' +
           '<button type="button" class="dh-mini" id="dh-mini-quote"><span>✨</span>یک پیام تازه دیگر</button>' +
+          '<button type="button" class="dh-mini dh-mini-exit" id="dh-home-exit"><span>⎋</span>خروج از اپ</button>' +
         '</div>' +
       '</div>';
 
     $('dh-start-journey').onclick = function () { startJourneyFromShell(); };
     $('dh-mini-quote').onclick = function () { shuffleExtraQuote(); };
+    var hx = $('dh-home-exit');
+    if (hx) hx.onclick = function () { exitApp(); };
   }
 
   function shuffleExtraQuote() {
@@ -225,6 +234,65 @@
     }
   }
 
+
+  function buildShareText(last, userName) {
+    if (!last || !last.tops || !last.tops.length) {
+      return 'دارم با «اسب سیاه» مسیر تحصیلی‌ام را بر اساس جرقه‌های خودم کشف می‌کنم — نه فقط رتبه.\n#اسب‌سیاه #شهررؤیاها';
+    }
+    var kind = last.kind === 'branches' ? 'شاخه‌های نزدیک' : 'رشته‌های نزدیک';
+    var lines = last.tops.slice(0, 3).map(function (t, i) {
+      var sc = t.score;
+      if (typeof sc === 'number' && sc <= 1) sc = Math.round(sc * 1000) / 10;
+      else if (typeof sc === 'number') sc = Math.round(sc * 10) / 10;
+      return (i + 1) + ') ' + t.name + ' — ' + sc + '٪';
+    }).join('\n');
+    var who = userName ? (userName + ' · ') : '';
+    return who + 'از سفر اکتشافی «اسب سیاه» برگشتم.\n' +
+      kind + ' من:\n' + lines + '\n\n' +
+      'مسیر را با جرقه‌های خودم دیدم، نه فقط با رتبه.\n' +
+      'https://arad2000.github.io/dark-horse-v2-/\n' +
+      '#اسب‌سیاه #هدایت_تحصیلی #شهررؤیاها';
+  }
+
+  function shareLastResult() {
+    var last = loadLastResult();
+    var u = getDisplayUser();
+    var text = buildShareText(last, u && u.name);
+    if (navigator.share) {
+      navigator.share({
+        title: 'اسب سیاه',
+        text: text,
+        url: 'https://arad2000.github.io/dark-horse-v2-/'
+      }).catch(function () {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        alert('متن نتیجه کپی شد؛ در تلگرام یا ایتا بچسبان.');
+      }).catch(function () {
+        prompt('کپی کن:', text);
+      });
+      return;
+    }
+    prompt('کپی کن:', text);
+  }
+
+
+  function exitApp() {
+    var ok = confirm('از اسب سیاه خارج می‌شوی؟');
+    if (!ok) return;
+    // تلاش برای بستن پنجره/اپ
+    try { window.close(); } catch (e) {}
+    try {
+      if (window.navigator && navigator.app && navigator.app.exitApp) navigator.app.exitApp();
+    } catch (e) {}
+    // اگر بسته نشد (مرورگر): به صفحه خالی راهنما
+    document.body.innerHTML =
+      '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0f;color:#cbb98a;font-family:Vazirmatn,sans-serif;text-align:center;padding:24px;line-height:2;">' +
+      '<div><div style="color:#f0c040;font-size:1.2rem;margin-bottom:8px;">اسب سیاه</div>' +
+      'می‌توانی این زبانه را ببندی.<br>اگر از آیکون نصب‌شده باز کرده‌ای، از دکمهٔ Home گوشی خارج شو.</div></div>';
+  }
+
   function renderProfile() {
     ensureTabbar();
     setActiveTab('profile');
@@ -240,7 +308,7 @@
         '<div class="dh-home-wrap">' +
         '<div class="card" style="text-align:right;margin-top:4px;">' +
         '<h2 style="text-align:center;color:#f0c040;">پروفایل</h2>' +
-        '<p style="color:#b0a080;line-height:1.9;">با نام و موبایل، نتیجه و سهمیه‌ات روی همین گوشی می‌ماند.</p>' +
+        '<p style="color:#b0a080;line-height:1.9;">نام و موبایل فقط برای ذخیره روی همین دستگاه است؛ بدون اجبار به پیامک.</p>' +
         '<label style="display:block;margin:8px 0 4px;">نام</label>' +
         '<input id="dh-p-name" placeholder="مثلاً سارا" style="width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#12121c;color:#eee;font-size:16px;">' +
         '<label style="display:block;margin:8px 0 4px;">موبایل</label>' +
@@ -311,18 +379,24 @@
       lastHtml +
       '<button class="btn btn-primary" style="width:100%;margin-top:14px;" id="dh-p-journey">' +
         (last && last.tops && last.tops.length ? 'سفر دوباره' : 'شروع اولین سفر') + '</button>' +
+      (last && last.tops && last.tops.length ? '<button class="btn" style="width:100%;margin-top:8px;border-color:rgba(212,175,55,0.45);color:#f0c040;" id="dh-p-share">اشتراک‌گذاری نتیجه</button>' : '') +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-prem">' +
         (premium ? 'اشتراک فعال است' : 'فعال‌سازی اشتراک (تستی)') + '</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
+      '<button class="btn" style="width:100%;margin-top:8px;color:#c08080;border-color:#543;" id="dh-p-exit">خروج از اپ</button>' +
       '</div></div>';
 
     $('dh-p-home').onclick = function () { switchTab('home'); };
     $('dh-p-journey').onclick = function () { startJourneyFromShell(); };
+    var sh = $('dh-p-share');
+    if (sh) sh.onclick = function () { shareLastResult(); };
     $('dh-p-out').onclick = function () {
       localStorage.removeItem(LOCAL_USER_KEY);
       renderProfile();
     };
+    var ex = $('dh-p-exit');
+    if (ex) ex.onclick = function () { exitApp(); };
     $('dh-p-prem').onclick = function () {
       if (premium) return;
       var qq = localQuota();

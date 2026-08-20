@@ -193,3 +193,26 @@ html.dh-installed #dh-install-home {
 .dh-last-score {
   color: #d4af37; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
 }
+
+/* برند + تاریخ خواناتر */
+.dh-brand { margin-bottom: 10px; }
+.dh-brand-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f0c040;
+  letter-spacing: -0.01em;
+}
+.dh-brand-sub {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: #b0a080;
+  line-height: 1.65;
+}
+.dh-date {
+  color: #c4b48a !important;
+  font-size: 0.88rem !important;
+  opacity: 1 !important;
+  margin-top: 6px !important;
+}
+.dh-greet { margin-top: 10px !important; }
+.dh-mini-exit { color: #c09090 !important; border-color: #543 !important; }
