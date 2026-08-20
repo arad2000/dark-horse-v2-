@@ -64,7 +64,7 @@
     nav.innerHTML =
       '<button type="button" data-tab="home"><span class="ico">🏠</span><span>خانه</span></button>' +
       '<button type="button" data-tab="journey"><span class="ico">🗺️</span><span>سفر</span></button>' +
-      '<button type="button" data-tab="profile"><span class="ico">👤</span><span>پروفایل</span></button>';
+      '<button type="button" data-tab="profile"><span class="ico">👤</span><span>من</span></button>';
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('button[data-tab]');
       if (!btn) return;
@@ -102,8 +102,7 @@
     var name = (u && u.name) ? u.name : 'مسافر';
     var premium = !!(u && u.is_premium) || q.premium;
     var quotaText = premium ? 'اشتراک فعال' : (canRunTest() ? '۱ اکتشاف رایگان' : 'سهمیه تمام');
-    var installed = (window.DHInstall && DHInstall.isStandalone && DHInstall.isStandalone()) || window.__dhIsInstalled;
-
+    
     var lines = bundle.map(function (item, idx) {
       return '<div class="dh-q-line dh-fade-in" style="animation-delay:' + (idx * 0.12) + 's">' +
         '<span class="dh-q-num">' + (idx + 1) + '</span>' +
@@ -136,34 +135,18 @@
           '<p class="dh-cta-title">سفر اکتشافی</p>' +
           '<p class="dh-cta-desc">جرقه‌هایت را پیدا کن؛ مسیر را با معیار خودت ببین.</p>' +
           '<button class="btn btn-primary dh-cta-main" id="dh-start-journey">شروع سفر</button>' +
-          (installed ? '' :
-            '<button class="btn dh-cta-sec" id="dh-install-home"><span style="margin-left:6px">⬇️</span>نصب اپ روی گوشی</button>') +
+          
         '</div>' +
 
         '<div class="dh-mini-grid">' +
+          '<button type="button" class="dh-mini" id="dh-mini-profile"><span>👤</span>پروفایل</button>' +
           '<button type="button" class="dh-mini" id="dh-mini-quote"><span>✨</span>پیام دیگر</button>' +
-          '<button type="button" class="dh-mini" id="dh-mini-install"><span>⬇️</span>نصب اپ</button>' +
         '</div>' +
       '</div>';
 
     $('dh-start-journey').onclick = function () { startJourneyFromShell(); };
-    var inst = $('dh-install-home');
-    if (inst) inst.onclick = function () {
-      if (window.DHInstall) DHInstall.show();
-      else alert('از منوی مرورگر Install را بزن');
-    };
+    $('dh-mini-profile').onclick = function () { switchTab('profile'); };
     $('dh-mini-quote').onclick = function () { shuffleExtraQuote(); };
-    var miniInst = $('dh-mini-install');
-    if (miniInst) {
-      if ((window.DHInstall && DHInstall.isStandalone && DHInstall.isStandalone()) || window.__dhIsInstalled) {
-        miniInst.style.display = 'none';
-      } else {
-        miniInst.onclick = function () {
-          if (window.DHInstall) DHInstall.show();
-          else alert('از منوی مرورگر گزینه Install / افزودن به صفحه اصلی را بزن.');
-        };
-      }
-    }
   }
 
   function shuffleExtraQuote() {
