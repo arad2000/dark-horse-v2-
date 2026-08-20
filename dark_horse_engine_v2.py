@@ -31,6 +31,7 @@ class DarkHorseEngineV2:
         self.value_poles: Dict[str, str] = {}
         self.school_branches: Dict[str, Dict] = {}
         self._load_data(motives_path, majors_path, trait_map_path, value_poles_path, school_branches_path)
+        self._validate_schema_consistency()
 
     def _load_data(self, motives_path, majors_path, trait_map_path, value_poles_path, school_branches_path):
         try:
@@ -86,6 +87,41 @@ class DarkHorseEngineV2:
                 return {item[key_field]: item.get(value_field, "") for item in data if key_field in item}
             return {item[key_field]: item for item in data if key_field in item}
         return data
+
+    def _validate_schema_consistency(self) -> None:
+        """
+        اعتبارسنجی هم‌ترازی موقعیتی بین strategy_weights (majors_database) و trait_map_v3.
+        این دو فایل با فرض ترتیب یکسان S01..S25 به‌هم متصل می‌شوند، بدون شناسهٔ صریح مشترک.
+        هرگونه ناهماهنگی اینجا لاگ می‌شود تا به‌جای خطای خاموش در runtime، در بارگذاری دیده شود.
+        """
+        expected_keys = {f"S{i:02d}" for i in range(1, 26)}
+        trait_keys = set(self.trait_map.keys())
+        if trait_keys != expected_keys:
+            missing = expected_keys - trait_keys
+            extra = trait_keys - expected_keys
+            logger.warning(
+                f"⚠️ trait_map_v3 با سؤالات مورد انتظار (S01..S25) هم‌تراز نیست. "
+                f"موارد گم‌شده: {sorted(missing) or '—'} | موارد اضافه: {sorted(extra) or '—'}"
+            )
+
+        bad_rows = 0
+        no_prestige = 0
+        for major_id, major_data in self.majors_db.items():
+            sw = major_data.get("strategy_weights", [])
+            if len(sw) != 25:
+                bad_rows += 1
+                logger.warning(
+                    f"⚠️ رشته/شاخه '{major_data.get('name', major_id)}' به‌جای ۲۵ سطر strategy_weights، "
+                    f"{len(sw)} سطر دارد — احتمال جابه‌جایی نگاشت با trait_map."
+                )
+            if "prestige_level" not in major_data:
+                no_prestige += 1
+
+        if no_prestige and no_prestige == len(self.majors_db):
+            logger.warning(
+                f"⚠️ هیچ‌کدام از {len(self.majors_db)} رشته فیلد 'prestige_level' ندارند؛ "
+                f"market_demand_level برای همه None خواهد بود."
+            )
 
     def _get_branch_denom_limit(self, branch_name: str) -> Optional[int]:
         if branch_name in self.school_branches:
@@ -420,6 +456,38 @@ class DarkHorseEngineV2:
 
         return desc
 
+    # ── استخراج ویژگی‌ها و ارزش‌های غالب (برای archetype_info) ──
+    def _extract_dominant_traits(self, strategy_answers: List[int], strategy_weights: List[List[float]],
+                                  threshold: float = 0.7) -> List[str]:
+        dominant = []
+        for i, row in enumerate(strategy_weights):
+            if i >= len(strategy_answers):
+                continue
+            idx = strategy_answers[i]
+            if idx < 0 or idx >= len(row):
+                continue
+            max_w = max(row) if row else 1.0
+            chosen_w = row[idx]
+            normalized = chosen_w / max_w if max_w > 0 else 0.0
+            if normalized >= threshold:
+                q_num = i + 1
+                question_key = f"S{str(q_num).zfill(2)}"
+                traits = self.trait_map.get(question_key, {}).get(idx, [])
+                dominant.extend(traits)
+        return list(dict.fromkeys(dominant))[:8]
+
+    def _extract_dominant_values(self, value_choices: List[str], value_weights: Dict[str, float],
+                                  threshold: float = 0.7) -> List[str]:
+        dominant = []
+        for v in value_choices:
+            if not v or not v.strip():
+                continue
+            weight = value_weights.get(v.strip(), 0.0)
+            if weight > threshold:
+                pole = self.value_poles.get(v.strip(), v)
+                dominant.append(pole)
+        return list(dict.fromkeys(dominant))[:8]
+
     @staticmethod
     def _get_fit_level(score: float) -> str:
         if score >= 80:
@@ -455,8 +523,10 @@ class DarkHorseEngineV2:
         for major_id, major_data in self.majors_db.items():
             try:
                 m_score, m_ev = self._compute_m_score(user_motives or [], major_data)
-                if m_score < 0.15:
-                    continue
+                # توجه: قبلاً اینجا رشته‌هایی با m_score < 0.15 به‌طور کامل حذف می‌شدند.
+                # این باگی حیاتی بود چون دقیقاً همان سناریوی «اسب سیاه واقعی» را حذف می‌کرد:
+                # کاربری که خرده‌انگیزه‌های روزمرهٔ این رشته را ندارد ولی راهبرد/ارزش‌هایش کاملاً همسوست.
+                # حالا مثل recommend_school_branch، رشته حذف نمی‌شود؛ فقط هشدار مناسب اضافه می‌شود (پایین‌تر).
 
                 s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
                 v_score, v_high = self._compute_v_score(value_choices, major_data.get("value_weights", {}))
@@ -474,6 +544,8 @@ class DarkHorseEngineV2:
                     evidence["value_alignment"] = v_high
 
                 warnings = []
+                if m_score < 0.15:
+                    warnings.append("خرده‌انگیزه‌های روزمرهٔ شما با این رشته همپوشانی کمی دارد؛ اما اگر راهبردها و ارزش‌های بنیادین‌تان با آن هم‌راستا باشد، این می‌تواند یک مسیر «اسب سیاه» غیرمنتظره برای شما باشد.")
                 if s_score < 0.4:
                     warnings.append("راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.")
                 if v_score < 0.4:
@@ -493,8 +565,12 @@ class DarkHorseEngineV2:
                 archetype_info = {
                     "archetype": archetype,
                     "fulfillment_source": fulfillment_source,
-                    "dominant_traits": [],
-                    "dominant_values": []
+                    "dominant_traits": self._extract_dominant_traits(
+                        strategy_answers, major_data.get("strategy_weights", [])
+                    ),
+                    "dominant_values": self._extract_dominant_values(
+                        value_choices, major_data.get("value_weights", {})
+                    )
                 }
 
                 alt_paths = self._find_alternative_paths(major_id, top_n=3)
@@ -506,7 +582,10 @@ class DarkHorseEngineV2:
                     "individuality_fit": {
                         "score": final_score,
                         "level": self._get_fit_level(final_score),
-                        "market_demand_level": major_data.get("prestige_level", 2),
+                        # توجه: فیلد prestige_level در majors_database_v2.json فعلاً وجود ندارد.
+                        # قبلاً اینجا مقدار ثابت ۲ برای همهٔ ۱۶۰ رشته برمی‌گشت (داده جعلی).
+                        # تا زمانی که این فیلد به دیتابیس اضافه شود، None برمی‌گردد.
+                        "market_demand_level": major_data.get("prestige_level"),
                         "raw_components": {
                             "m_score": round(m_score * 100, 1),
                             "s_score": round(s_score * 100, 1),
