@@ -64,7 +64,7 @@
     nav.innerHTML =
       '<button type="button" data-tab="home"><span class="ico">🏠</span><span>خانه</span></button>' +
       '<button type="button" data-tab="journey"><span class="ico">🗺️</span><span>سفر</span></button>' +
-      '<button type="button" data-tab="profile"><span class="ico">👤</span><span>من</span></button>';
+      '<button type="button" data-tab="profile"><span class="ico">👤</span><span>پروفایل</span></button>';
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('button[data-tab]');
       if (!btn) return;
@@ -138,14 +138,12 @@
           
         '</div>' +
 
-        '<div class="dh-mini-grid">' +
-          '<button type="button" class="dh-mini" id="dh-mini-profile"><span>👤</span>پروفایل</button>' +
-          '<button type="button" class="dh-mini" id="dh-mini-quote"><span>✨</span>پیام دیگر</button>' +
+        '<div class="dh-mini-grid dh-mini-one">' +
+          '<button type="button" class="dh-mini" id="dh-mini-quote"><span>✨</span>یک پیام تازه دیگر</button>' +
         '</div>' +
       '</div>';
 
     $('dh-start-journey').onclick = function () { startJourneyFromShell(); };
-    $('dh-mini-profile').onclick = function () { switchTab('profile'); };
     $('dh-mini-quote').onclick = function () { shuffleExtraQuote(); };
   }
 
