@@ -324,15 +324,25 @@ async function loadQuestions() {
 // این فایل جایگزین فرضِ نادرستِ «موقعیت index معنی ثابت دارد» می‌شود —
 // چون trait_map_v3.json نشان داده در سؤالات مختلف، همان index معنی متفاوتی دارد.
 async function loadTraitMap() {
-  try {
-    const res = await fetch('./trait_map_v3.json');
-    const data = await res.json();
-    state.traitMap = data;
-    state.traitMapReady = true;
-  } catch (e) {
-    console.error('خطا در بارگذاری نقشهٔ صفات:', e);
-    state.traitMapReady = false;
+  const candidates = [DATA_BASE + 'trait_map_v3.json', './trait_map_v3.json'];
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data && typeof data === 'object' && (data.S01 || data.s01)) {
+        state.traitMap = data;
+        state.traitMapReady = true;
+        console.log('trait_map loaded from', url);
+        return;
+      }
+    } catch (e) {
+      console.warn('trait_map try failed', url, e);
+    }
   }
+  console.error('نقشهٔ صفات بارگذاری نشد');
+  state.traitMapReady = false;
+  state.traitMap = {};
 }
 
 // ==================== NAVIGATION ====================
@@ -1239,7 +1249,6 @@ function displayResults(data, type) {
       const microMatch = r.micro_motives_matched || [];
       let motiveMatched = microMatch.length;
       // m_score موتور = درصد ۰–۱۰۰ ؛ برای ۷ جرقه استاندارد
-      const mPct = (r.raw_components && (r.raw_components.m_score ?? r.raw_components.M));
       if (mPct != null && Number(mPct) > 0) {
         const fromPct = Math.round((Number(mPct) / 100) * 7);
         // اگر evidence کوتاه‌تر بود ولی درصد بالاتر، از درصد استفاده کن
