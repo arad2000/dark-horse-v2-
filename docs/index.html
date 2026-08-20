@@ -14,6 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="اسب سیاه">
   <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="mobile-pwa.css">
   <link rel="stylesheet" href="shell.css">
@@ -209,15 +210,15 @@
   <div class="container" id="app"></div>
 
   <!-- Data -->
-  <script src="data.js"></script>
+  <script defer src="data.js"></script>
   
   <!-- App Logic -->
-  <script src="app.js"></script>
+  <script defer src="app.js"></script>
   <!-- Safe UX V2 polish layer; app.js remains untouched. -->
-  <script src="ux_v2_patch.js"></script>
-  <script src="quotes_darkhorse.js"></script>
-  <script src="auth_api_client.js"></script>
-  <script src="shell.js"></script>
-  <script src="pwa-boot.js"></script>
+  <script defer src="ux_v2_patch.js"></script>
+  <script defer src="quotes_darkhorse.js"></script>
+  <script defer src="auth_api_client.js"></script>
+  <script defer src="shell.js"></script>
+  <script defer src="pwa-boot.js"></script>
 </body>
 </html>

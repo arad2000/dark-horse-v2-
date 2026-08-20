@@ -1,38 +1,85 @@
-/* Dark Horse PWA SW v17 — restore yellow icons */
-const CACHE = 'darkhorse-shell-v17';
+/* Dark Horse PWA SW v18 — FAST open (cache-first) */
+const CACHE = 'darkhorse-shell-v18';
 const SHELL = [
-  './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
-  './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',
-  './pwa-boot.js', './manifest.json',
-  './icon-192.png', './icon-512.png', './icon.png', './apple-touch-icon.png'
+  './',
+  './index.html',
+  './app.js',
+  './data.js',
+  './ux_v2_patch.js',
+  './shell.js',
+  './shell.css',
+  './mobile-pwa.css',
+  './quotes_darkhorse.js',
+  './auth_api_client.js',
+  './pwa-boot.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './icon.png',
+  './apple-touch-icon.png'
 ];
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
-});
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((cache) => cache.addAll(SHELL))
+      .then(() => self.skipWaiting())
   );
 });
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // API همیشه شبکه
   if (url.origin.includes('onrender.com') || url.pathname.includes('/api/')) {
-    e.respondWith(fetch(e.request));
+    event.respondWith(fetch(req));
     return;
   }
-  const path = url.pathname || '';
-  if (path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.html') || path.endsWith('.png') || path.endsWith('/') || e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request, { cache: 'no-store' }).then((res) => {
-        if (res && res.status === 200) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
+
+  // فقط same-origin
+  if (url.origin !== self.location.origin) {
+    return; // مثلا فونت CDN — مرورگر عادی
+  }
+
+  // استاتیک اپ: اول کش (سریع)، بعد در پس‌زمینه تازه کن
+  event.respondWith(
+    caches.open(CACHE).then((cache) =>
+      cache.match(req).then((cached) => {
+        const networkFetch = fetch(req)
+          .then((res) => {
+            if (res && res.status === 200 && (res.type === 'basic' || res.type === 'cors')) {
+              cache.put(req, res.clone());
+            }
+            return res;
+          })
+          .catch(() => cached);
+
+        // اگر در کش هست همان را فوری برگردان
+        if (cached) {
+          networkFetch.catch(() => {});
+          return cached;
         }
-        return res;
-      }).catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html')))
-    );
-    return;
+        // اولین بار: از شبکه
+        return networkFetch;
+      })
+    )
+  );
+});
+
+// پیام برای اجبار آپدیت از صفحه (اختیاری)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
-  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
