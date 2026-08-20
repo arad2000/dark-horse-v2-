@@ -7664,13 +7664,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_med_v1|med_value_v1",
     "micro_motive_codes": [
-      "BIOT-008",
-      "BIOT-009",
-      "BIOT-010",
-      "BIOT-011",
-      "BIOT-012",
-      "BIOT-013",
-      "BIOT-014"
+      "BIOTM-001",
+      "BIOTM-002",
+      "BIOTM-003",
+      "BIOTM-004",
+      "BIOTM-005",
+      "BIOTM-006",
+      "BIOTM-007"
     ],
     "strategy_weights": [
       [
