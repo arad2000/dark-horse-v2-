@@ -194,25 +194,24 @@ html.dh-installed #dh-install-home {
   color: #d4af37; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
 }
 
-/* برند + تاریخ خواناتر */
-.dh-brand { margin-bottom: 10px; }
-.dh-brand-name {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #f0c040;
-  letter-spacing: -0.01em;
+/* حس اپ بین‌المللی + موبایل ایرانی */
+.container, #app {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
-.dh-brand-sub {
-  margin-top: 4px;
-  font-size: 0.78rem;
-  color: #b0a080;
-  line-height: 1.65;
+#dh-tabbar {
+  max-width: 480px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
 }
-.dh-date {
-  color: #c4b48a !important;
-  font-size: 0.88rem !important;
-  opacity: 1 !important;
-  margin-top: 6px !important;
+.btn, button.btn {
+  min-height: 48px;
+  border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
-.dh-greet { margin-top: 10px !important; }
-.dh-mini-exit { color: #c09090 !important; border-color: #543 !important; }
+.card {
+  border-radius: 16px;
+}
