@@ -1,5 +1,5 @@
-/* Dark Horse SW v23 — spark game + parents */
-const CACHE = 'darkhorse-shell-v23';
+/* Dark Horse SW v25 — spark game + parents */
+const CACHE = 'darkhorse-shell-v25';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',

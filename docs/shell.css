@@ -710,3 +710,81 @@ h2 {
   text-align: center;
   line-height: 1.6;
 }
+
+
+/* داستان زنده اسب‌های سیاه */
+.dh-story-live-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.dh-story-pill {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(240,192,64,0.15);
+  border: 1px solid rgba(240,192,64,0.4);
+  color: #f0c040;
+}
+.dh-story-count {
+  font-size: 0.75rem;
+  color: #8a8478;
+  font-variant-numeric: tabular-nums;
+}
+.dh-story-today {
+  font-size: 0.82rem;
+  color: #9a9080;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.dh-story-hero {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(240,192,64,0.28);
+  background: linear-gradient(165deg, rgba(40,32,12,0.45), rgba(18,18,28,0.98));
+  margin-bottom: 12px;
+}
+.dh-story-name {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f0e6c8;
+}
+.dh-story-en {
+  font-size: 0.8rem;
+  color: #a09070;
+  margin-top: 2px;
+  direction: ltr;
+  text-align: right;
+}
+.dh-story-role {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #f0c040;
+}
+.dh-story-lesson {
+  margin: 12px 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #e8e0d0;
+  font-weight: 600;
+}
+.dh-story-body {
+  font-size: 0.9rem;
+  line-height: 1.85;
+  color: #c8c0b0;
+}
+.dh-story-tip {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: #d0c8b8;
+}
+.dh-story-actions {
+  display: flex;
+  gap: 8px;
+}

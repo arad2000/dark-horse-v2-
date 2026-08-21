@@ -11,7 +11,7 @@ const DATA_BASE = './data/';
 // ==================== GLOBAL STATE ====================
 const state = {
   sessionId: null,
-  stage: 'manifesto',
+  stage: 'splash',
   history: [],
   selectedRealms: [],
   selectedSubRealms: [],
@@ -122,7 +122,7 @@ function progressHTML(stageId) {
   const ids = STAGE_FLOW.map(x => x.id);
   let idx = ids.indexOf(stageId);
   if (idx < 0) idx = 0;
-  const uniqueSteps = ['manifesto','guide','splash','realm','subRealm','narrowPath','swipe','strategies','values','choice','results'];
+  const uniqueSteps = ['splash','realm','subRealm','narrowPath','swipe','strategies','values','choice','results'];
   const stepMeta = [
     { id: 'realm', label: 'محله' },
     { id: 'swipe', label: 'جرقه' },
@@ -236,7 +236,7 @@ function loadSession() {
     state.valueAnswers = data.valueAnswers || [];
     state.currentQuestion = data.currentQuestion || 0;
     state.currentValueQuestion = data.currentValueQuestion || 0;
-    state.stage = data.stage || 'manifesto';
+    state.stage = data.stage || 'splash';
     state.history = data.history || [];
     state.swipeIndex = data.swipeIndex || 0;
     state.totalSwipes = data.totalSwipes || 0;
@@ -397,8 +397,8 @@ function render() {
   try {
     ensureUXStyles();
     switch (state.stage) {
-      case 'manifesto': renderManifesto(); break;
-      case 'guide': renderGuide(); break;
+      case 'manifesto': state.stage='splash'; renderSplash(); break;
+      case 'guide': state.stage='splash'; renderSplash(); break;
       case 'splash': renderSplash(); break;
       case 'realm': renderRealm(); break;
       case 'subRealm': renderSubRealm(); break;
@@ -413,8 +413,8 @@ function render() {
       case 'results': break;
       default:
         console.warn('unknown stage', state.stage);
-        state.stage = 'manifesto';
-        renderManifesto();
+        state.stage = 'splash';
+        renderSplash();
     }
   } catch (e) {
     console.error('render failed', state.stage, e);
@@ -474,7 +474,7 @@ function renderManifesto() {
           نتیجه، پیشنهاد بر اساس فردیت توست — نه حکم نهایی بر اساس یک عدد.
         </p>
       </div>
-      <button class="btn btn-primary" style="margin-top:20px;width:100%;" onclick="goTo('guide')">شروع سفر اکتشافی</button>
+      <button class="btn btn-primary" style="margin-top:20px;width:100%;" onclick="goTo('splash')">شروع سفر اکتشافی</button>
     </div>`;
 }
 
@@ -569,7 +569,6 @@ function renderSplash() {
         <p><strong style="color:#f0c040;">کدام یک از این محله‌ها، هنوز هم قلبت را به تپش می‌اندازد؟</strong></p>
         ${actionButtonHTML}
       </div>
-      <button class="btn" style="margin-top:12px;width:100%;" onclick="goTo('guide')">بازگشت</button>
     </div>`;
 }
 
@@ -1751,7 +1750,7 @@ async function copyAllFeedbackServer() {
 // ==================== RESET & INIT ====================
 function resetJourney() {
   fullResetState();
-  state.stage = 'manifesto';
+  state.stage = 'splash';
   render();
 }
 window.resetJourney = resetJourney;
@@ -1777,7 +1776,8 @@ async function init() {
   } else {
     window.__dhHasSavedSession = false;
   }
-  state.stage = 'manifesto';
+  // صفحهٔ مانیفست و راهنما حذف شد؛ خانهٔ شل + داستان/جرقه‌یاب آن نقش را پوشش می‌دهد
+  state.stage = 'splash';
   state.history = [];
   render();
 }

@@ -163,7 +163,7 @@
         '<div class="dh-home-top">' +
           '<div>' +
             '<div class="dh-brand">' +
-              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v18</span></div>' +
+              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v20</span></div>' +
               '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
             '</div>' +
             '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
@@ -249,8 +249,8 @@
     setActiveTab('journey');
     try {
       if (typeof state !== 'undefined') {
-        if (window.__dhHasSavedSession && !window.__dhJourneyFinished) state.stage = 'splash';
-        else state.stage = 'manifesto';
+        // مانیفست/راهنما حذف شد — همیشه از شهر رؤیاها
+        state.stage = 'splash';
         state.history = [];
       }
       if (typeof render === 'function') render();
