@@ -26,25 +26,10 @@
     window.sparkChipHTML = patched;
   }
 
-  function patchSwipeLoading() {
-    if (typeof window.loadSwipeCards !== 'function') return;
-    const original = window.loadSwipeCards;
-    if (original.__dhPatched) return;
-    const patched = async function () {
-      await original();
-      if (state.stage === 'swipe' && Array.isArray(state.swipeCards) && state.swipeCards.length > 1) {
-        for (let i = state.swipeCards.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [state.swipeCards[i], state.swipeCards[j]] = [state.swipeCards[j], state.swipeCards[i]];
-        }
-        state.swipeIndex = 0;
-        state.totalSwipes = state.swipeCards.length;
-        if (typeof window.render === 'function') window.render();
-      }
-    };
-    patched.__dhPatched = true;
-    window.loadSwipeCards = patched;
-  }
+  // IMPORTANT: spark-card order is part of the assessment presentation.
+  // Do not shuffle, reseed, or otherwise reorder the cards in the UX layer.
+  // The underlying app.js remains the single source of truth for sampling,
+  // identity/code mapping, progress and response collection.
 
   function patchSwipeLabels() {
     if (typeof window.renderSwipe !== 'function') return;
@@ -219,7 +204,6 @@
 
   function install() {
     patchSparkChip();
-    patchSwipeLoading();
     patchSwipeLabels();
     patchStrategyIntro();
     patchStrategyQuestion();
