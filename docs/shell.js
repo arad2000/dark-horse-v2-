@@ -163,7 +163,7 @@
         '<div class="dh-home-top">' +
           '<div>' +
             '<div class="dh-brand">' +
-              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v16</span></div>' +
+              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v17</span></div>' +
               '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
             '</div>' +
             '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
@@ -183,7 +183,15 @@
           '<p class="dh-cta-title">سفر اکتشافی</p>' +
           '<p class="dh-cta-desc">بدون فشار رتبه و حرف دیگران — اول ببین چه چیزی به تو انرژی می‌دهد.</p>' +
           '<button class="btn btn-primary dh-cta-main" id="dh-start-journey">شروع سفر</button>' +
-          
+        '</div>' +
+
+        '<div class="dh-feature-row">' +
+          '<button type="button" class="dh-feature" id="dh-open-spark">' +
+            '<span class="dh-f-ico">⚡</span><span class="dh-f-t">جرقه‌یاب</span>' +
+            '<span class="dh-f-d">بازی کوتاه کشف</span></button>' +
+          '<button type="button" class="dh-feature" id="dh-open-parents">' +
+            '<span class="dh-f-ico">🤝</span><span class="dh-f-t">والدین</span>' +
+            '<span class="dh-f-d">سخنی با خانواده</span></button>' +
         '</div>' +
 
         '<div class="dh-mini-grid dh-mini-one">' +
@@ -196,6 +204,16 @@
     $('dh-mini-quote').onclick = function () { shuffleExtraQuote(); };
     var hx = $('dh-home-exit');
     if (hx) hx.onclick = function () { exitApp(); };
+    var sp = $('dh-open-spark');
+    if (sp) sp.onclick = function () {
+      if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
+      else alert('ماژول جرقه‌یاب بارگذاری نشده. صفحه را یک‌بار تازه کن.');
+    };
+    var pr = $('dh-open-parents');
+    if (pr) pr.onclick = function () {
+      if (window.DHParents && DHParents.open) DHParents.open();
+      else alert('بخش والدین بارگذاری نشده. صفحه را یک‌بار تازه کن.');
+    };
   }
 
   function shuffleExtraQuote() {
@@ -451,7 +469,8 @@
     switchTab: switchTab,
     renderHome: renderHome,
     renderProfile: renderProfile,
-    startJourney: startJourneyFromShell
+    startJourney: startJourneyFromShell,
+    setActiveTab: setActiveTab
   };
 
   if (document.readyState === 'loading') {

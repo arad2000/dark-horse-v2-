@@ -487,3 +487,149 @@ h2 {
   border: 1px solid rgba(240,192,64,0.35);
   color: var(--dh-gold);
 }
+
+
+/* ——— جذابیت v17: جرقه‌یاب + والدین ——— */
+.dh-feature-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0 4px;
+}
+.dh-feature {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(240,192,64,0.28);
+  background: linear-gradient(160deg, rgba(26,26,46,0.95), rgba(14,14,22,0.98));
+  color: var(--text-primary, #e0e0e0);
+  text-align: right;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.dh-feature:active { transform: scale(0.98); }
+.dh-feature:hover { border-color: rgba(240,192,64,0.55); }
+.dh-f-ico { font-size: 1.15rem; }
+.dh-f-t { font-weight: 700; font-size: 0.95rem; color: #f0c040; }
+.dh-f-d { font-size: 0.75rem; color: #9a9080; }
+
+.dh-back-link {
+  background: none;
+  border: none;
+  color: #9a9080;
+  font-size: 0.88rem;
+  margin-bottom: 10px;
+  cursor: pointer;
+  padding: 6px 0;
+  font-family: inherit;
+}
+.dh-spark-title, .dh-par-title {
+  font-size: 1.35rem;
+  margin-bottom: 6px;
+  color: #f0e6c8;
+}
+.dh-spark-desc, .dh-par-lead {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: #b0a080;
+  margin-bottom: 14px;
+}
+.dh-spark-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.dh-spark-time {
+  min-width: 2rem;
+  font-weight: 700;
+  color: #f0c040;
+  font-variant-numeric: tabular-nums;
+}
+.dh-spark-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.dh-spark-track i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #d4af37, #f0c040);
+  border-radius: 99px;
+  transition: width 0.35s linear;
+}
+.dh-spark-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dh-spark-card {
+  text-align: right;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #14141e;
+  color: #e0e0e0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dh-spark-card.on {
+  border-color: rgba(240,192,64,0.65);
+  background: rgba(240,192,64,0.12);
+  box-shadow: 0 0 0 1px rgba(240,192,64,0.2);
+}
+.dh-spark-hint {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #7a7368;
+  text-align: center;
+}
+.dh-spark-result {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(240,192,64,0.25);
+  background: #151520;
+  line-height: 1.8;
+}
+.dh-spark-msg { margin-top: 10px; color: #c8c0b0; font-size: 0.92rem; }
+
+.dh-par-card {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #151520;
+}
+.dh-par-card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  color: #f0c040;
+}
+.dh-par-card p, .dh-par-list {
+  font-size: 0.88rem;
+  line-height: 1.85;
+  color: #c8c0b0;
+}
+.dh-par-card.warn {
+  border-color: rgba(196,100,80,0.35);
+  background: rgba(60,24,20,0.35);
+}
+.dh-par-card.warn h3 { color: #e09080; }
+.dh-par-card.good {
+  border-color: rgba(240,192,64,0.35);
+  background: rgba(40,32,12,0.4);
+}
+.dh-par-list {
+  padding-right: 18px;
+  margin: 0;
+}
+.dh-par-list li { margin-bottom: 10px; }

@@ -1,8 +1,9 @@
-/* Dark Horse SW v21 — UI premium + frontend strengthen */
-const CACHE = 'darkhorse-shell-v21';
+/* Dark Horse SW v22 — spark game + parents */
+const CACHE = 'darkhorse-shell-v22';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',
+  './spark_game.js', './parents.js',
   './pwa-boot.js', './manifest.json',
   './icon-192.png', './icon-512.png', './icon.png', './apple-touch-icon.png'
 ];
