@@ -163,7 +163,7 @@
         '<div class="dh-home-top">' +
           '<div>' +
             '<div class="dh-brand">' +
-              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v17</span></div>' +
+              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v18</span></div>' +
               '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
             '</div>' +
             '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
@@ -185,10 +185,13 @@
           '<button class="btn btn-primary dh-cta-main" id="dh-start-journey">شروع سفر</button>' +
         '</div>' +
 
-        '<div class="dh-feature-row">' +
+        '<div class="dh-feature-row dh-feature-3">' +
           '<button type="button" class="dh-feature" id="dh-open-spark">' +
             '<span class="dh-f-ico">⚡</span><span class="dh-f-t">جرقه‌یاب</span>' +
-            '<span class="dh-f-d">بازی کوتاه کشف</span></button>' +
+            '<span class="dh-f-d">بازی + نشان</span></button>' +
+          '<button type="button" class="dh-feature" id="dh-open-stories">' +
+            '<span class="dh-f-ico">📖</span><span class="dh-f-t">داستان‌ها</span>' +
+            '<span class="dh-f-d">ایده‌های کتاب</span></button>' +
           '<button type="button" class="dh-feature" id="dh-open-parents">' +
             '<span class="dh-f-ico">🤝</span><span class="dh-f-t">والدین</span>' +
             '<span class="dh-f-d">سخنی با خانواده</span></button>' +
@@ -213,6 +216,11 @@
     if (pr) pr.onclick = function () {
       if (window.DHParents && DHParents.open) DHParents.open();
       else alert('بخش والدین بارگذاری نشده. صفحه را یک‌بار تازه کن.');
+    };
+    var st = $('dh-open-stories');
+    if (st) st.onclick = function () {
+      if (window.DHStories && DHStories.open) DHStories.open();
+      else alert('بخش داستان‌ها بارگذاری نشده. صفحه را یک‌بار تازه کن.');
     };
   }
 
