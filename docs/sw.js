@@ -1,9 +1,9 @@
-/* Dark Horse SW v25 — spark game + parents */
-const CACHE = 'darkhorse-shell-v25';
+/* Dark Horse SW v26 — spark game + parents */
+const CACHE = 'darkhorse-shell-v26';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',
-  './spark_game.js', './parents.js', './stories.js',
+  './spark_game.js', './parents.js', './stories.js', './poems.js',
   './pwa-boot.js', './manifest.json',
   './icon-192.png', './icon-512.png', './icon.png', './apple-touch-icon.png'
 ];

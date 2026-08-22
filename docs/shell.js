@@ -163,7 +163,7 @@
         '<div class="dh-home-top">' +
           '<div>' +
             '<div class="dh-brand">' +
-              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v20</span></div>' +
+              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v21</span></div>' +
               '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
             '</div>' +
             '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
@@ -185,16 +185,19 @@
           '<button class="btn btn-primary dh-cta-main" id="dh-start-journey">شروع سفر</button>' +
         '</div>' +
 
-        '<div class="dh-feature-row dh-feature-3">' +
+        '<div class="dh-feature-row dh-feature-4">' +
           '<button type="button" class="dh-feature" id="dh-open-spark">' +
             '<span class="dh-f-ico">⚡</span><span class="dh-f-t">جرقه‌یاب</span>' +
             '<span class="dh-f-d">بازی + نشان</span></button>' +
           '<button type="button" class="dh-feature" id="dh-open-stories">' +
             '<span class="dh-f-ico">📖</span><span class="dh-f-t">داستان‌ها</span>' +
-            '<span class="dh-f-d">ایده‌های کتاب</span></button>' +
+            '<span class="dh-f-d">اسب سیاه</span></button>' +
+          '<button type="button" class="dh-feature" id="dh-open-poems">' +
+            '<span class="dh-f-ico">🪶</span><span class="dh-f-t">سخن بزرگان</span>' +
+            '<span class="dh-f-d">شعر فارسی</span></button>' +
           '<button type="button" class="dh-feature" id="dh-open-parents">' +
             '<span class="dh-f-ico">🤝</span><span class="dh-f-t">والدین</span>' +
-            '<span class="dh-f-d">سخنی با خانواده</span></button>' +
+            '<span class="dh-f-d">خانواده</span></button>' +
         '</div>' +
 
         '<div class="dh-mini-grid dh-mini-one">' +
@@ -221,6 +224,11 @@
     if (st) st.onclick = function () {
       if (window.DHStories && DHStories.open) DHStories.open();
       else alert('بخش داستان‌ها بارگذاری نشده. صفحه را یک‌بار تازه کن.');
+    };
+    var po = $('dh-open-poems');
+    if (po) po.onclick = function () {
+      if (window.DHPoems && DHPoems.open) DHPoems.open();
+      else alert('بخش سخن بزرگان بارگذاری نشده. صفحه را یک‌بار تازه کن.');
     };
   }
 

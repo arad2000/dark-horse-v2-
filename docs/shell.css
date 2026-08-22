@@ -788,3 +788,57 @@ h2 {
   display: flex;
   gap: 8px;
 }
+
+
+/* سخن بزرگان */
+.dh-feature-4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.dh-poem-card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(240,192,64,0.22);
+  background: linear-gradient(165deg, rgba(28,24,40,0.95), rgba(18,18,28,0.98));
+  margin-bottom: 10px;
+}
+.dh-poem-label {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #c0a860;
+  margin-bottom: 8px;
+}
+.dh-poem-line {
+  font-size: 1.05rem;
+  line-height: 2;
+  color: #f0e8d8;
+  text-align: center;
+  margin: 4px 0;
+}
+.dh-poem-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.dh-poem-poet {
+  color: #f0c040;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.dh-poem-tag {
+  font-size: 0.72rem;
+  color: #8a8478;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.dh-poem-live-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
