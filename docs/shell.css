@@ -842,3 +842,187 @@ h2 {
   align-items: center;
   margin-bottom: 6px;
 }
+
+
+/* ===== Home v22 — ماکت حرفه‌ای ===== */
+.dh-home-v22 { padding-bottom: 12px; }
+.dh-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 8px;
+}
+.dh-top-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+.dh-logo-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #f0c040;
+  text-align: center;
+}
+.dh-logo-sub {
+  font-size: 0.68rem;
+  color: #8a8478;
+  text-align: center;
+  margin-top: 2px;
+}
+.dh-logo-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 30%, #2a2418, #121018);
+  border: 1px solid rgba(240,192,64,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(240,192,64,0.15);
+}
+.dh-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #c8c0b0;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.dh-hello { text-align: center; margin-bottom: 18px; }
+.dh-hello-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #f5f0e6;
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+.dh-hello-sub {
+  margin: 0;
+  color: #9a9285;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.dh-hero-journey {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(40,34,22,0.95), rgba(18,16,28,0.98));
+  border: 1px solid rgba(240,192,64,0.28);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(240,192,64,0.08);
+  margin-bottom: 12px;
+}
+.dh-hero-text { flex: 1; text-align: right; }
+.dh-hero-text h2 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  color: #f0c040;
+}
+.dh-hero-text p {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  color: #b0a890;
+  line-height: 1.6;
+}
+.dh-hero-cta {
+  width: auto !important;
+  min-width: 120px;
+  padding: 10px 22px !important;
+  border-radius: 999px !important;
+  font-size: 0.95rem !important;
+}
+.dh-compass {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(240,192,64,0.12), transparent 70%);
+  animation: dh-compass-soft 6s ease-in-out infinite;
+}
+@keyframes dh-compass-soft {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+.dh-progress-card,
+.dh-spark-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(22,20,32,0.92);
+  border: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 12px;
+}
+.dh-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.dh-progress-title { font-size: 0.95rem; color: #e8e0d0; font-weight: 600; }
+.dh-progress-sub { font-size: 0.78rem; color: #8a8478; margin-top: 3px; }
+.dh-progress-ico { opacity: 0.7; }
+.dh-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.dh-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c9a227, #f0c040);
+  transition: width 0.6s ease;
+}
+.dh-progress-pct {
+  text-align: left;
+  font-size: 0.8rem;
+  color: #f0c040;
+  margin-top: 6px;
+  font-weight: 600;
+}
+.dh-spark-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.dh-spark-label { color: #c0a860; font-size: 0.85rem; font-weight: 600; }
+.dh-spark-marks { color: rgba(240,192,64,0.45); font-size: 1.4rem; line-height: 1; }
+.dh-spark-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.9;
+  color: #e8e2d6;
+}
+.dh-spark-author {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: #8a8478;
+  text-align: left;
+}
+.dh-feature-soft .dh-feature {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.06);
+}
+.dh-chip-line { text-align: center; margin: 8px 0 0; }
+#dh-tabbar button .ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+#dh-tabbar button .ico svg { display: block; }
+#dh-tabbar button.active { color: #f0c040; }
+#dh-tabbar button.active .ico { color: #f0c040; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dh-compass { animation: none; }
+}

@@ -1,5 +1,5 @@
 /**
- * shell.js v2 — خانه زنده‌تر + پروفایل + تب‌ها
+ * shell.js v22 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
  */
 (function () {
   'use strict';
@@ -106,9 +106,9 @@
     var nav = document.createElement('nav');
     nav.id = 'dh-tabbar';
     nav.innerHTML =
-      '<button type="button" data-tab="home"><span class="ico">🏠</span><span>خانه</span></button>' +
-      '<button type="button" data-tab="journey"><span class="ico">🗺️</span><span>سفر</span></button>' +
-      '<button type="button" data-tab="profile"><span class="ico">👤</span><span>پروفایل</span></button>';
+      '<button type="button" data-tab="home"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg></span><span>خانه</span></button>' +
+      '<button type="button" data-tab="journey"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>سفر</span></button>' +
+      '<button type="button" data-tab="profile"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span><span>پروفایل</span></button>';
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('button[data-tab]');
       if (!btn) return;
@@ -135,81 +135,145 @@
     return bundle;
   }
 
+
+  function journeyProgressPct() {
+    try {
+      if (typeof state !== 'undefined' && state && state.stage) {
+        var order = ['realms', 'motives', 'sjt', 'conjoint', 'results'];
+        var idx = order.indexOf(state.stage);
+        if (idx >= 0) return Math.round((idx / (order.length - 1)) * 100);
+      }
+      var raw = localStorage.getItem('dh_journey_progress_v1');
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (typeof o.pct === 'number') return Math.max(0, Math.min(100, Math.round(o.pct)));
+      }
+      var last = loadLastResult();
+      if (last && last.tops && last.tops.length) return 100;
+    } catch (e) {}
+    return 0;
+  }
+
+  function todaySparkQuote() {
+    var fallback = {
+      t: 'هیچ راهی به سوی موفقیت وجود ندارد، موفقیت خود یک راه است.',
+      a: 'وینستون چرچیل'
+    };
+    try {
+      if (window.DHQuote && DHQuote.todayBundle) {
+        var b = DHQuote.todayBundle();
+        if (b && b[0] && b[0].t) return { t: b[0].t, a: b[0].tag || b[0].a || 'اسب سیاه' };
+      }
+      if (window.DH_QUOTES && DH_QUOTES.length) {
+        var i = new Date().getDate() % DH_QUOTES.length;
+        var q = DH_QUOTES[i];
+        return { t: q.t || q.text || fallback.t, a: q.tag || q.a || 'اسب سیاه' };
+      }
+    } catch (e) {}
+    return fallback;
+  }
+
   function renderHome() {
     ensureTabbar();
     setActiveTab('home');
     window.__dhInJourney = false;
 
-    var bundle = getBundle();
     var u = getDisplayUser();
     var q = localQuota();
     var name = (u && u.name) ? u.name : 'مسافر';
     var premium = !!(u && u.is_premium) || q.premium;
     var quotaText = premium ? 'اشتراک فعال' : (canRunTest() ? '۱ اکتشاف رایگان' : 'سهمیه تمام');
-    
-    var lines = bundle.map(function (item, idx) {
-      return '<div class="dh-q-line dh-fade-in" style="animation-delay:' + (idx * 0.12) + 's">' +
-        '<span class="dh-q-num">' + (idx + 1) + '</span>' +
-        '<p>' + escape(item.t) + '</p>' +
-        '<span class="dh-q-tag">' + escape(item.tag) + '</span>' +
-        '</div>';
-    }).join('');
+    var pct = journeyProgressPct();
+    var spark = todaySparkQuote();
+    var progressLabel = pct >= 100 ? 'سفر قبلی کامل شده' : (pct > 0 ? 'پیشرفت در آخرین سفر' : 'هنوز سفری شروع نشده');
 
     var root = $('app');
     if (!root) return;
 
     root.innerHTML =
-      '<div class="dh-home-wrap">' +
-        '<div class="dh-home-top">' +
-          '<div>' +
-            '<div class="dh-brand">' +
-              '<div class="dh-brand-name">اسب سیاه <span class="dh-build-v">v21</span></div>' +
-              '<div class="dh-brand-sub">سامانه کشف فردیت · هدایت تحصیلی و انتخاب رشته</div>' +
+      '<div class="dh-home-wrap dh-home-v22">' +
+        '<header class="dh-topbar">' +
+          '<button type="button" class="dh-icon-btn" id="dh-bell" aria-label="اعلان">🔔</button>' +
+          '<div class="dh-top-brand">' +
+            '<div class="dh-logo-mark" aria-hidden="true">' +
+              '<svg viewBox="0 0 64 64" width="36" height="36">' +
+                '<defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5d76e"/><stop offset="100%" stop-color="#c9a227"/></linearGradient></defs>' +
+                '<path fill="url(#hg)" d="M12 44c4-14 14-24 28-26 2 6 1 12-2 16 6 1 10 5 12 10-8 2-16 1-22-2-3 4-8 6-14 6 0-2-1-3-2-4z"/>' +
+                '<path fill="none" stroke="url(#hg)" stroke-width="2" d="M10 50c8-2 18-1 28 2"/>' +
+              '</svg>' +
             '</div>' +
-            '<p class="dh-greet">' + greeting() + '، <b>' + escape(name) + '</b></p>' +
-            '<p class="dh-date">' + escape(faDate()) + '</p>' +
+            '<div>' +
+              '<div class="dh-logo-title">DARK HORSE</div>' +
+              '<div class="dh-logo-sub">مسیرت را کشف کن</div>' +
+            '</div>' +
           '</div>' +
-          '<span class="dh-chip">' + escape(quotaText) + '</span>' +
-        '</div>' +
+          '<button type="button" class="dh-icon-btn" id="dh-menu" aria-label="منو">☰</button>' +
+        '</header>' +
 
-        '<div class="dh-quote-hero">' +
-          '<div class="dh-quote-label">✦ پیام‌های امروز</div>' +
-          '<div class="dh-quote-sub">با الهام از روح کتاب اسب سیاه · هر روز تازه</div>' +
-          lines +
-          '<div class="dh-quote-foot">تاد رز و اگی اوگاس · بازنویسی برای اپ</div>' +
-        '</div>' +
+        '<section class="dh-hello">' +
+          '<h1 class="dh-hello-title">' + greeting() + ' ' + escape(name) + '! <span class="dh-wave">👋</span></h1>' +
+          '<p class="dh-hello-sub">امروز، یک قدم به نسخه بهتر خودت نزدیک‌تر شو.</p>' +
+        '</section>' +
 
-        '<div class="dh-cta-card">' +
-          '<p class="dh-cta-title">سفر اکتشافی</p>' +
-          '<p class="dh-cta-desc">بدون فشار رتبه و حرف دیگران — اول ببین چه چیزی به تو انرژی می‌دهد.</p>' +
-          '<button class="btn btn-primary dh-cta-main" id="dh-start-journey">شروع سفر</button>' +
-        '</div>' +
+        '<section class="dh-hero-journey">' +
+          '<div class="dh-hero-text">' +
+            '<h2>سفر اکتشافی</h2>' +
+            '<p>پرسش‌ها را پاسخ بده و مسیرت را کشف کن</p>' +
+            '<button type="button" class="btn btn-primary dh-hero-cta" id="dh-start-journey">شروع سفر</button>' +
+          '</div>' +
+          '<div class="dh-hero-visual" aria-hidden="true">' +
+            '<div class="dh-compass">' +
+              '<svg viewBox="0 0 80 80" width="72" height="72">' +
+                '<circle cx="40" cy="40" r="34" fill="none" stroke="rgba(240,192,64,0.35)" stroke-width="2"/>' +
+                '<circle cx="40" cy="40" r="26" fill="rgba(240,192,64,0.08)" stroke="rgba(240,192,64,0.5)" stroke-width="1.5"/>' +
+                '<path d="M40 14 L46 40 L40 66 L34 40 Z" fill="#f0c040"/>' +
+                '<circle cx="40" cy="40" r="4" fill="#0a0a0f" stroke="#f0c040"/>' +
+              '</svg>' +
+            '</div>' +
+          '</div>' +
+        '</section>' +
 
-        '<div class="dh-feature-row dh-feature-4">' +
+        '<section class="dh-progress-card">' +
+          '<div class="dh-progress-head">' +
+            '<div>' +
+              '<div class="dh-progress-title">آخرین مسیر شما</div>' +
+              '<div class="dh-progress-sub">' + escape(progressLabel) + '</div>' +
+            '</div>' +
+            '<span class="dh-progress-ico" aria-hidden="true">📈</span>' +
+          '</div>' +
+          '<div class="dh-progress-bar"><div class="dh-progress-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="dh-progress-pct">' + pct + '٪</div>' +
+        '</section>' +
+
+        '<section class="dh-spark-card">' +
+          '<div class="dh-spark-head">' +
+            '<span class="dh-spark-label">جرقه‌ی امروز</span>' +
+            '<span class="dh-spark-marks">❝</span>' +
+          '</div>' +
+          '<p class="dh-spark-text">' + escape(spark.t) + '</p>' +
+          '<div class="dh-spark-author">' + escape(spark.a) + '</div>' +
+        '</section>' +
+
+        '<section class="dh-feature-row dh-feature-4 dh-feature-soft">' +
           '<button type="button" class="dh-feature" id="dh-open-spark">' +
             '<span class="dh-f-ico">⚡</span><span class="dh-f-t">جرقه‌یاب</span>' +
-            '<span class="dh-f-d">بازی + نشان</span></button>' +
+            '<span class="dh-f-d">کشف انگیزه‌ها</span></button>' +
           '<button type="button" class="dh-feature" id="dh-open-stories">' +
             '<span class="dh-f-ico">📖</span><span class="dh-f-t">داستان‌ها</span>' +
-            '<span class="dh-f-d">اسب سیاه</span></button>' +
+            '<span class="dh-f-d">الهام از مسیرها</span></button>' +
           '<button type="button" class="dh-feature" id="dh-open-poems">' +
             '<span class="dh-f-ico">🪶</span><span class="dh-f-t">سخن بزرگان</span>' +
-            '<span class="dh-f-d">شعر فارسی</span></button>' +
+            '<span class="dh-f-d">حکمت برای امروز</span></button>' +
           '<button type="button" class="dh-feature" id="dh-open-parents">' +
             '<span class="dh-f-ico">🤝</span><span class="dh-f-t">والدین</span>' +
-            '<span class="dh-f-d">خانواده</span></button>' +
-        '</div>' +
+            '<span class="dh-f-d">همراهی بهتر</span></button>' +
+        '</section>' +
 
-        '<div class="dh-mini-grid dh-mini-one">' +
-          '<button type="button" class="dh-mini" id="dh-mini-quote"><span>✨</span>یک پیام تازه دیگر</button>' +
-          '<button type="button" class="dh-mini" id="dh-home-exit" style="color:#c09090;"><span>⎋</span>خروج از اپ</button>' +
-        '</div>' +
+        '<p class="dh-chip-line"><span class="dh-chip">' + escape(quotaText) + '</span></p>' +
       '</div>';
 
-    $('dh-start-journey').onclick = function () { startJourneyFromShell(); };
-    $('dh-mini-quote').onclick = function () { shuffleExtraQuote(); };
-    var hx = $('dh-home-exit');
-    if (hx) hx.onclick = function () { exitApp(); };
+    var sj = $('dh-start-journey');
+    if (sj) sj.onclick = function () { startJourneyFromShell(); };
     var sp = $('dh-open-spark');
     if (sp) sp.onclick = function () {
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
@@ -229,6 +293,10 @@
     if (po) po.onclick = function () {
       if (window.DHPoems && DHPoems.open) DHPoems.open();
       else alert('بخش سخن بزرگان بارگذاری نشده. صفحه را یک‌بار تازه کن.');
+    };
+    var menu = $('dh-menu');
+    if (menu) menu.onclick = function () {
+      if (window.DHShell && DHShell.renderProfile) DHShell.renderProfile();
     };
   }
 
