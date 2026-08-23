@@ -1,5 +1,5 @@
 /**
- * shell.js v22 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
+ * shell.js v23 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
  */
 (function () {
   'use strict';
@@ -102,19 +102,22 @@
   }
 
   function ensureTabbar() {
-    if ($('dh-tabbar')) return;
-    var nav = document.createElement('nav');
-    nav.id = 'dh-tabbar';
-    nav.innerHTML =
-      '<button type="button" data-tab="home"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg></span><span>خانه</span></button>' +
-      '<button type="button" data-tab="journey"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>سفر</span></button>' +
-      '<button type="button" data-tab="profile"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span><span>پروفایل</span></button>';
-    nav.addEventListener('click', function (e) {
-      var btn = e.target.closest('button[data-tab]');
-      if (!btn) return;
-      switchTab(btn.getAttribute('data-tab'));
-    });
-    document.body.appendChild(nav);
+    var nav = $('dh-tabbar');
+    var html =
+      '<button type="button" data-tab="home" aria-label="خانه"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg></span><span class="lbl">خانه</span></button>' +
+      '<button type="button" data-tab="journey" aria-label="سفر"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="lbl">سفر</span></button>' +
+      '<button type="button" data-tab="profile" aria-label="پروفایل"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span><span class="lbl">پروفایل</span></button>';
+    if (!nav) {
+      nav = document.createElement('nav');
+      nav.id = 'dh-tabbar';
+      nav.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-tab]');
+        if (!btn) return;
+        switchTab(btn.getAttribute('data-tab'));
+      });
+      document.body.appendChild(nav);
+    }
+    nav.innerHTML = html;
   }
 
   function setActiveTab(tab) {
@@ -138,18 +141,30 @@
 
   function journeyProgressPct() {
     try {
-      if (typeof state !== 'undefined' && state && state.stage) {
-        var order = ['realms', 'motives', 'sjt', 'conjoint', 'results'];
-        var idx = order.indexOf(state.stage);
-        if (idx >= 0) return Math.round((idx / (order.length - 1)) * 100);
+      var stageId = null;
+      if (typeof state !== 'undefined' && state && state.stage) stageId = state.stage;
+      if (!stageId) {
+        var raw = localStorage.getItem('darkhorse_session_v2');
+        if (raw) {
+          var data = JSON.parse(raw);
+          stageId = data.stage || null;
+        }
       }
-      var raw = localStorage.getItem('dh_journey_progress_v1');
-      if (raw) {
-        var o = JSON.parse(raw);
-        if (typeof o.pct === 'number') return Math.max(0, Math.min(100, Math.round(o.pct)));
+      if (!stageId) {
+        var last = loadLastResult();
+        if (last && last.tops && last.tops.length) return 100;
+        return 0;
       }
-      var last = loadLastResult();
-      if (last && last.tops && last.tops.length) return 100;
+      // همان منطق progressHTML در app.js
+      var uniqueSteps = ['realm', 'swipe', 'strategies', 'values', 'choice', 'results'];
+      var u = uniqueSteps.indexOf(stageId);
+      if (stageId === 'introSwipe') u = uniqueSteps.indexOf('swipe');
+      if (stageId === 'introStrategies') u = uniqueSteps.indexOf('strategies');
+      if (stageId === 'introValues') u = uniqueSteps.indexOf('values');
+      if (['manifesto', 'guide', 'splash'].indexOf(stageId) >= 0) return 0;
+      if (['subRealm', 'narrowPath'].indexOf(stageId) >= 0) u = 0;
+      if (u < 0) u = 0;
+      return Math.round((u / (uniqueSteps.length - 1)) * 100);
     } catch (e) {}
     return 0;
   }
@@ -179,24 +194,39 @@
     window.__dhInJourney = false;
 
     var u = getDisplayUser();
-    var q = localQuota();
     var name = (u && u.name) ? u.name : 'مسافر';
-    var premium = !!(u && u.is_premium) || q.premium;
-    var quotaText = premium ? 'اشتراک فعال' : (canRunTest() ? '۱ اکتشاف رایگان' : 'سهمیه تمام');
     var pct = journeyProgressPct();
-    var spark = todaySparkQuote();
-    var progressLabel = pct >= 100 ? 'سفر قبلی کامل شده' : (pct > 0 ? 'پیشرفت در آخرین سفر' : 'هنوز سفری شروع نشده');
+    var progressLabel = pct >= 100
+      ? 'سفر قبلی کامل شده'
+      : (pct > 0 ? 'هم‌تراز با نوار پیشرفت سفر اکتشافی' : 'هنوز سفری شروع نشده');
+
+    var bundle = [];
+    try {
+      if (window.DHQuote && DHQuote.todayBundle) bundle = DHQuote.todayBundle() || [];
+    } catch (e) {}
+    if (!bundle.length && window.DH_QUOTES && DH_QUOTES.length) {
+      var di = new Date().getDate() % DH_QUOTES.length;
+      bundle = [DH_QUOTES[di], DH_QUOTES[(di + 1) % DH_QUOTES.length], DH_QUOTES[(di + 2) % DH_QUOTES.length]];
+    }
+    var lines = (bundle || []).slice(0, 3).map(function (item, idx) {
+      var t = item.t || item.text || '';
+      var tag = item.tag || item.a || '';
+      return '<div class="dh-q-line">' +
+        '<span class="dh-q-num">' + (idx + 1) + '</span>' +
+        '<div class="dh-q-body"><p>' + escape(t) + '</p>' +
+        (tag ? '<span class="dh-q-tag">' + escape(tag) + '</span>' : '') +
+        '</div></div>';
+    }).join('');
 
     var root = $('app');
     if (!root) return;
 
     root.innerHTML =
-      '<div class="dh-home-wrap dh-home-v22">' +
-        '<header class="dh-topbar">' +
-          '<button type="button" class="dh-icon-btn" id="dh-bell" aria-label="اعلان">🔔</button>' +
+      '<div class="dh-home-wrap dh-home-v23">' +
+        '<header class="dh-topbar dh-topbar-clean">' +
           '<div class="dh-top-brand">' +
             '<div class="dh-logo-mark" aria-hidden="true">' +
-              '<svg viewBox="0 0 64 64" width="36" height="36">' +
+              '<svg viewBox="0 0 64 64" width="40" height="40">' +
                 '<defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5d76e"/><stop offset="100%" stop-color="#c9a227"/></linearGradient></defs>' +
                 '<path fill="url(#hg)" d="M12 44c4-14 14-24 28-26 2 6 1 12-2 16 6 1 10 5 12 10-8 2-16 1-22-2-3 4-8 6-14 6 0-2-1-3-2-4z"/>' +
                 '<path fill="none" stroke="url(#hg)" stroke-width="2" d="M10 50c8-2 18-1 28 2"/>' +
@@ -207,12 +237,12 @@
               '<div class="dh-logo-sub">مسیرت را کشف کن</div>' +
             '</div>' +
           '</div>' +
-          '<button type="button" class="dh-icon-btn" id="dh-menu" aria-label="منو">☰</button>' +
         '</header>' +
 
         '<section class="dh-hello">' +
-          '<h1 class="dh-hello-title">' + greeting() + ' ' + escape(name) + '! <span class="dh-wave">👋</span></h1>' +
+          '<h1 class="dh-hello-title">' + greeting() + '، <b>' + escape(name) + '</b></h1>' +
           '<p class="dh-hello-sub">امروز، یک قدم به نسخه بهتر خودت نزدیک‌تر شو.</p>' +
+          '<p class="dh-date">' + escape(faDate()) + '</p>' +
         '</section>' +
 
         '<section class="dh-hero-journey">' +
@@ -239,19 +269,18 @@
               '<div class="dh-progress-title">آخرین مسیر شما</div>' +
               '<div class="dh-progress-sub">' + escape(progressLabel) + '</div>' +
             '</div>' +
-            '<span class="dh-progress-ico" aria-hidden="true">📈</span>' +
+            '<span class="dh-progress-pct-big">' + pct + '٪</span>' +
           '</div>' +
           '<div class="dh-progress-bar"><div class="dh-progress-fill" style="width:' + pct + '%"></div></div>' +
-          '<div class="dh-progress-pct">' + pct + '٪</div>' +
         '</section>' +
 
-        '<section class="dh-spark-card">' +
-          '<div class="dh-spark-head">' +
-            '<span class="dh-spark-label">جرقه‌ی امروز</span>' +
-            '<span class="dh-spark-marks">❝</span>' +
+        '<section class="dh-messages-card">' +
+          '<div class="dh-messages-head">' +
+            '<span class="dh-messages-label">✦ پیام‌های امروز</span>' +
+            '<span class="dh-messages-sub">با الهام از روح کتاب اسب سیاه</span>' +
           '</div>' +
-          '<p class="dh-spark-text">' + escape(spark.t) + '</p>' +
-          '<div class="dh-spark-author">' + escape(spark.a) + '</div>' +
+          (lines || '<p class="dh-messages-empty">پیام‌ها در حال آماده‌سازی…</p>') +
+          '<div class="dh-quote-foot">تاد رز و اگی اوگاس · بازنویسی برای اپ</div>' +
         '</section>' +
 
         '<section class="dh-feature-row dh-feature-4 dh-feature-soft">' +
@@ -268,8 +297,6 @@
             '<span class="dh-f-ico">🤝</span><span class="dh-f-t">والدین</span>' +
             '<span class="dh-f-d">همراهی بهتر</span></button>' +
         '</section>' +
-
-        '<p class="dh-chip-line"><span class="dh-chip">' + escape(quotaText) + '</span></p>' +
       '</div>';
 
     var sj = $('dh-start-journey');
@@ -293,10 +320,6 @@
     if (po) po.onclick = function () {
       if (window.DHPoems && DHPoems.open) DHPoems.open();
       else alert('بخش سخن بزرگان بارگذاری نشده. صفحه را یک‌بار تازه کن.');
-    };
-    var menu = $('dh-menu');
-    if (menu) menu.onclick = function () {
-      if (window.DHShell && DHShell.renderProfile) DHShell.renderProfile();
     };
   }
 

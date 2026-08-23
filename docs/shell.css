@@ -1026,3 +1026,140 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
   .dh-compass { animation: none; }
 }
+
+
+/* ===== Home v23 fixes ===== */
+.dh-topbar-clean { justify-content: center; }
+.dh-topbar-clean .dh-top-brand { justify-content: center; }
+.dh-hello-title {
+  font-size: 1.55rem !important;
+  font-weight: 700;
+  color: #f5f0e6 !important;
+  line-height: 1.45;
+}
+.dh-hello-sub {
+  font-size: 1rem !important;
+  color: #b0a890 !important;
+  line-height: 1.8;
+  margin-top: 6px;
+}
+.dh-date {
+  margin-top: 10px !important;
+  font-size: 0.92rem !important;
+  color: #9a9285 !important;
+  opacity: 1 !important;
+}
+.dh-hero-text h2 { font-size: 1.25rem !important; }
+.dh-hero-text p { font-size: 0.95rem !important; line-height: 1.7; }
+.dh-hero-cta { font-size: 1rem !important; padding: 12px 26px !important; }
+.dh-progress-title { font-size: 1.05rem !important; }
+.dh-progress-sub { font-size: 0.88rem !important; }
+.dh-progress-pct-big {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f0c040;
+}
+.dh-messages-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(22,20,32,0.92);
+  border: 1px solid rgba(240,192,64,0.18);
+  margin-bottom: 14px;
+  text-align: right;
+}
+.dh-messages-head { margin-bottom: 12px; }
+.dh-messages-label {
+  display: block;
+  color: #f0c040;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.dh-messages-sub {
+  display: block;
+  margin-top: 4px;
+  color: #8a8478;
+  font-size: 0.88rem;
+}
+.dh-q-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 12px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.dh-q-line:last-of-type { border-bottom: none; }
+.dh-q-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(240,192,64,0.15);
+  color: #f0c040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.dh-q-body p {
+  margin: 0;
+  font-size: 1rem !important;
+  line-height: 1.85 !important;
+  color: #e8e2d6 !important;
+}
+.dh-q-tag {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #a09070;
+}
+.dh-quote-foot {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #6a6558;
+  text-align: center;
+}
+.dh-f-t { font-size: 0.95rem !important; }
+.dh-f-d { font-size: 0.78rem !important; }
+
+/* تب‌بار: فقط یک آیکون SVG */
+#dh-tabbar button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: #8a8478;
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 6px 8px;
+}
+#dh-tabbar button .ico {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+#dh-tabbar button .ico::before,
+#dh-tabbar button .ico::after {
+  content: none !important;
+  display: none !important;
+}
+#dh-tabbar button .ico svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+#dh-tabbar button .lbl {
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+#dh-tabbar button.active {
+  color: #f0c040;
+}
