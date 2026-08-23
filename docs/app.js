@@ -696,6 +696,9 @@ function renderNarrowPath() {
     <p class="dh-stage-hint">اینجا دیگر خبری از کلیشه نیست؛ فقط کارهایی که ممکن است دوست داشته باشی انجام بدهی</p>
     <p style="color:#b0a080;">کدام مسیر، یک‌جور کشش بی‌دلیل در تو ایجاد می‌کند؟</p>
     <div class="grid" id="pathGrid">`;
+  if (!(state.completedPaths instanceof Set)) {
+    state.completedPaths = new Set(state.completedPaths || []);
+  }
   paths.forEach(p => {
     const isComplete = state.completedPaths.has(p.id);
     html += `<div class="option dh-path-card ${state.selectedNarrowPaths.includes(p.id) ? 'selected' : ''} ${isComplete ? 'dh-path-done' : ''}" 
@@ -768,18 +771,26 @@ function findNarrowPath(id) {
 }
 
 function updateCompletionStatus() {
-  // مسیرهایی که جرقه‌شان تمام شده یا کاربر از آن‌ها گذشته، خاموش شوند
+  // مسیرهایی که جرقه‌شان تمام شده، خاموش شوند
+  if (!(state.completedPaths instanceof Set)) {
+    state.completedPaths = new Set(state.completedPaths || []);
+  }
+  if (!(state.completedSubRealms instanceof Set)) {
+    state.completedSubRealms = new Set(state.completedSubRealms || []);
+  }
   const deckDone = state.swipeCards.length > 0 && state.swipeIndex >= state.swipeCards.length;
-  state.selectedNarrowPaths.forEach(pathId => {
-    if (deckDone) state.completedPaths.add(pathId);
-  });
-  // زیرقلمروهایی که همه مسیرهایشان کامل است
-  state.selectedSubRealms.forEach(subId => {
+  if (deckDone) {
+    (state.selectedNarrowPaths || []).forEach(pathId => {
+      state.completedPaths.add(pathId);
+    });
+  }
+  (state.selectedSubRealms || []).forEach(subId => {
     const allPaths = NARROW_PATHS[subId] || [];
     if (allPaths.length > 0 && allPaths.every(p => state.completedPaths.has(p.id))) {
       state.completedSubRealms.add(subId);
     }
   });
+  try { saveSession(); } catch (e) {}
 }
 
 /** وقتی کاربر وارد لایهٔ بعد می‌شود، مسیرهای انتخاب‌شده را کامل‌شده علامت بزن */
@@ -802,15 +813,15 @@ function renderSwipe() {
     app.innerHTML = progressHTML('swipe') + `<div class="dh-hero dh-celebrate"><div class="dh-stars">✦ · ✦ · ✦</div><h2 style="color:#f0c040">آتش‌دان پر شد</h2><p class="dh-stage-hint">به اندازهٔ کافی از خودت علامت گذاشتی</p></div><div class="card"><p style="text-align:center;color:#cbb98a">داره می‌برتت سمت لایهٔ راهبرد...</p></div>`;
     return;
   }
-  if (state.swipeIndex >= state.swipeCards.length && state.likedCodes.length < 20) {
-    const remaining = 20 - state.likedCodes.length;
-    app.innerHTML = progressHTML('swipe') + `<h2>🔥 جرقه‌های انرژی</h2>` + sparkChipHTML() + `<div style="color:#f0c040;margin:12px 0;"></div>
+  if (state.swipeIndex >= state.swipeCards.length) {
+    updateCompletionStatus();
+    if (state.likedCodes.length < 20) {
+      const remaining = 20 - state.likedCodes.length;
+      app.innerHTML = progressHTML('swipe') + `<h2>🔥 جرقه‌های انرژی</h2>` + sparkChipHTML() + `<div style="color:#f0c040;margin:12px 0;"></div>
       <div class="card"><p style="color:#f0c040;">⚠️ هنوز ${remaining} جرقهٔ دیگر نیاز داری.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="goBack()">🔙 بازگشت به قلمروها</button></div>`;
-    return;
-  }
-  if (state.swipeIndex >= state.swipeCards.length && state.likedCodes.length >= 20) {
-    updateCompletionStatus();
+      return;
+    }
     app.innerHTML = progressHTML('swipe') + `<h2>🔥 جرقه‌های انرژی</h2>` + sparkChipHTML() + `<div style="color:#f0c040;margin:12px 0;"></div>
       <div class="card"><p style="color:#b0a080;">🌟 شما به حداقل جرقه‌ها رسیدید! اما هرچه جرقه‌های بیشتری بزنی، خودِ واقعی‌ات را دقیق‌تر کشف می‌کنی.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="finishSwipe()">🚀 ورود به لایهٔ دوم</button>
