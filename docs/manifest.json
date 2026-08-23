@@ -1,8 +1,8 @@
 {
   "id": "/dark-horse-v2-/",
-  "name": "اسب سیاه — کشف فردیت و هدایت تحصیلی",
+  "name": "اسب سیاه — هدایت تحصیلی و انتخاب رشته",
   "short_name": "اسب سیاه",
-  "description": "سامانه کشف فردیت برای هدایت تحصیلی و انتخاب رشته دانشگاهی؛ بر اساس انگیزه‌ها، راهبردها و ارزش‌های تو — نه فقط رتبه.",
+  "description": "سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی بر اساس کشف فردیت، انگیزه‌ها، راهبردها و ارزش‌ها — نه فقط رتبه.",
   "start_url": "/dark-horse-v2-/",
   "scope": "/dark-horse-v2-/",
   "display": "standalone",
@@ -31,9 +31,6 @@
       "purpose": "maskable"
     }
   ],
-  "categories": [
-    "education",
-    "lifestyle"
-  ],
+  "categories": ["education", "lifestyle"],
   "prefer_related_applications": false
 }

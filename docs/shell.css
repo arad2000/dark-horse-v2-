@@ -1163,3 +1163,71 @@ h2 {
 #dh-tabbar button.active {
   color: #f0c040;
 }
+
+
+/* ===== v24: session + brand + larger feature text ===== */
+.dh-topbar-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.dh-top-brand-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.dh-brand-text { text-align: center; }
+.dh-logo-title {
+  font-size: 0.95rem !important;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  color: #f0c040 !important;
+}
+.dh-logo-sub {
+  font-size: 0.95rem !important;
+  color: #e8e0d0 !important;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.dh-system-tagline {
+  margin: 10px 0 0;
+  padding: 8px 14px;
+  max-width: 92%;
+  font-size: 0.92rem !important;
+  line-height: 1.6;
+  color: #c8b890 !important;
+  background: rgba(240,192,64,0.08);
+  border: 1px solid rgba(240,192,64,0.22);
+  border-radius: 999px;
+  text-align: center;
+}
+.dh-feature {
+  padding: 14px 10px !important;
+}
+.dh-f-ico { font-size: 1.45rem !important; }
+.dh-f-t {
+  font-size: 1.02rem !important;
+  font-weight: 700 !important;
+  color: #efe8dc !important;
+}
+.dh-f-d {
+  font-size: 0.86rem !important;
+  color: #a09888 !important;
+  margin-top: 4px;
+}
+.dh-hero-secondary {
+  display: block;
+  width: auto;
+  margin-top: 10px;
+  font-size: 0.9rem !important;
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: #b0a890 !important;
+}
+.dh-hello-title { font-size: 1.6rem !important; }
+.dh-hello-sub { font-size: 1.02rem !important; }
+.dh-date { font-size: 0.95rem !important; }

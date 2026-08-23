@@ -1,5 +1,5 @@
 /**
- * shell.js v23 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
+ * shell.js v24 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
  */
 (function () {
   'use strict';
@@ -139,6 +139,18 @@
   }
 
 
+  function hasUnfinishedJourney() {
+    try {
+      var raw = localStorage.getItem('darkhorse_session_v2');
+      if (!raw) return false;
+      var data = JSON.parse(raw);
+      if (!data || data.journeyFinished) return false;
+      var st = data.stage;
+      return st && ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+        'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(st) >= 0;
+    } catch (e) { return false; }
+  }
+
   function journeyProgressPct() {
     try {
       var stageId = null;
@@ -192,13 +204,16 @@
     ensureTabbar();
     setActiveTab('home');
     window.__dhInJourney = false;
+    try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}
 
     var u = getDisplayUser();
     var name = (u && u.name) ? u.name : 'مسافر';
     var pct = journeyProgressPct();
+    var canContinue = hasUnfinishedJourney();
     var progressLabel = pct >= 100
       ? 'سفر قبلی کامل شده'
-      : (pct > 0 ? 'هم‌تراز با نوار پیشرفت سفر اکتشافی' : 'هنوز سفری شروع نشده');
+      : (canContinue ? 'می‌توانی از همین‌جا ادامه بدهی' : 'هنوز سفری شروع نشده');
+    var ctaLabel = canContinue ? 'ادامه سفر' : 'شروع سفر';
 
     var bundle = [];
     try {
@@ -222,21 +237,22 @@
     if (!root) return;
 
     root.innerHTML =
-      '<div class="dh-home-wrap dh-home-v23">' +
-        '<header class="dh-topbar dh-topbar-clean">' +
-          '<div class="dh-top-brand">' +
+      '<div class="dh-home-wrap dh-home-v24">' +
+        '<header class="dh-topbar dh-topbar-center">' +
+          '<div class="dh-top-brand dh-top-brand-center">' +
             '<div class="dh-logo-mark" aria-hidden="true">' +
-              '<svg viewBox="0 0 64 64" width="40" height="40">' +
+              '<svg viewBox="0 0 64 64" width="42" height="42">' +
                 '<defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5d76e"/><stop offset="100%" stop-color="#c9a227"/></linearGradient></defs>' +
                 '<path fill="url(#hg)" d="M12 44c4-14 14-24 28-26 2 6 1 12-2 16 6 1 10 5 12 10-8 2-16 1-22-2-3 4-8 6-14 6 0-2-1-3-2-4z"/>' +
                 '<path fill="none" stroke="url(#hg)" stroke-width="2" d="M10 50c8-2 18-1 28 2"/>' +
               '</svg>' +
             '</div>' +
-            '<div>' +
+            '<div class="dh-brand-text">' +
               '<div class="dh-logo-title">DARK HORSE</div>' +
-              '<div class="dh-logo-sub">مسیرت را کشف کن</div>' +
+              '<div class="dh-logo-sub">اسب سیاه</div>' +
             '</div>' +
           '</div>' +
+          '<p class="dh-system-tagline">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</p>' +
         '</header>' +
 
         '<section class="dh-hello">' +
@@ -248,8 +264,9 @@
         '<section class="dh-hero-journey">' +
           '<div class="dh-hero-text">' +
             '<h2>سفر اکتشافی</h2>' +
-            '<p>پرسش‌ها را پاسخ بده و مسیرت را کشف کن</p>' +
-            '<button type="button" class="btn btn-primary dh-hero-cta" id="dh-start-journey">شروع سفر</button>' +
+            '<p>بر اساس انگیزه‌ها، راهبردها و ارزش‌های خودت — نه فقط رتبه.</p>' +
+            '<button type="button" class="btn btn-primary dh-hero-cta" id="dh-start-journey">' + ctaLabel + '</button>' +
+            (canContinue ? '<button type="button" class="btn dh-hero-secondary" id="dh-restart-journey">شروع از نو</button>' : '') +
           '</div>' +
           '<div class="dh-hero-visual" aria-hidden="true">' +
             '<div class="dh-compass">' +
@@ -301,6 +318,23 @@
 
     var sj = $('dh-start-journey');
     if (sj) sj.onclick = function () { startJourneyFromShell(); };
+    var rs = $('dh-restart-journey');
+    if (rs) rs.onclick = function () {
+      if (!confirm('سفر فعلی پاک شود و از اول شروع کنی؟')) return;
+      try {
+        if (typeof fullResetState === 'function') fullResetState();
+        else localStorage.removeItem('darkhorse_session_v2');
+        window.__dhHasSavedSession = false;
+        window.__dhJourneyFinished = false;
+      } catch (e) {}
+      if (typeof startNewJourney === 'function') {
+        window.__dhInJourney = true;
+        setActiveTab('journey');
+        startNewJourney();
+      } else {
+        startJourneyFromShell();
+      }
+    };
     var sp = $('dh-open-spark');
     if (sp) sp.onclick = function () {
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
@@ -323,21 +357,6 @@
     };
   }
 
-  function shuffleExtraQuote() {
-    if (!window.DH_QUOTES || !DH_QUOTES.length) return;
-    var q = DH_QUOTES[Math.floor(Math.random() * DH_QUOTES.length)];
-    var hero = document.querySelector('.dh-quote-hero');
-    if (!hero) return;
-    var note = document.getElementById('dh-extra-q');
-    if (!note) {
-      note = document.createElement('div');
-      note.id = 'dh-extra-q';
-      note.className = 'dh-q-line dh-fade-in';
-      hero.appendChild(note);
-    }
-    note.innerHTML = '<span class="dh-q-num">+</span><p>' + escape(q.t) + '</p><span class="dh-q-tag">' + escape(q.tag) + '</span>';
-  }
-
   function startJourneyFromShell() {
     if (!canRunTest()) {
       switchTab('profile');
@@ -347,17 +366,56 @@
     window.__dhInJourney = true;
     setActiveTab('journey');
     try {
+      // قبل از هر چیز وضعیت فعلی را ذخیره کن
+      if (typeof saveSession === 'function') {
+        try { saveSession(); } catch (e1) {}
+      }
+
+      var data = null;
+      try {
+        var raw = localStorage.getItem('darkhorse_session_v2');
+        if (raw) data = JSON.parse(raw);
+      } catch (e2) { data = null; }
+
+      var unfinished = data && !data.journeyFinished && data.stage &&
+        ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+         'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(data.stage) >= 0;
+
+      if (unfinished) {
+        // ادامه از همان نقطه
+        if (typeof loadSession === 'function') {
+          loadSession();
+        } else if (typeof dhResumeFromSplash === 'function') {
+          window.__dhSavedSession = data;
+          window.__dhHasSavedSession = true;
+          window.__dhJourneyFinished = false;
+          dhResumeFromSplash();
+          return;
+        }
+        if (typeof state !== 'undefined') {
+          if (!state.stage || ['splash', 'manifesto', 'guide', 'results'].indexOf(state.stage) >= 0) {
+            state.stage = data.stage || 'realm';
+          }
+        }
+        if (typeof render === 'function') render();
+        return;
+      }
+
+      // سفر تازه
+      if (typeof startNewJourney === 'function') {
+        startNewJourney();
+        return;
+      }
       if (typeof state !== 'undefined') {
-        // مانیفست/راهنما حذف شد — همیشه از شهر رؤیاها
-        state.stage = 'splash';
+        state.stage = 'realm';
         state.history = [];
       }
+      if (typeof saveSession === 'function') saveSession();
       if (typeof render === 'function') render();
     } catch (e) {
       console.error(e);
     }
   }
-
 
   function buildShareText(last, userName) {
     if (!last || !last.tops || !last.tops.length) {
@@ -524,7 +582,11 @@
   }
 
   function switchTab(tab) {
-    if (tab === 'home') renderHome();
+    if (tab === 'home') {
+      try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}
+      window.__dhInJourney = false;
+      renderHome();
+    }
     else if (tab === 'profile') renderProfile();
     else if (tab === 'journey') startJourneyFromShell();
   }
