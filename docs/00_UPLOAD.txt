@@ -1,7 +1,3 @@
-فقط صفحه خانه (ماکت ارزیاب)
-docs:
-  shell.js
-  shell.css
-  sw.js
-به app.js و بقیه دست نزن.
-آیکون‌های PNG ارزیاب را عوض نکن (از icon-192.png استفاده می‌شود).
+نسخه قبلی خانه + فقط آیکون اسب بالای DARK HORSE
+docs: shell.js shell.css sw.js
+آیکون PNG ارزیاب را عوض نکن (icon-192.png).
