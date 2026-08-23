@@ -1,13 +1,3 @@
-v24 — ذخیره جلسه + برند + فونت
-==============================
-docs جایگزین:
-  shell.js
-  shell.css
-  sw.js
-  manifest.json
-  index.html (اگر در زیپ بود)
-
-آیکون PNG را عوض نکن.
-
-بعد از آپلود: Hard Refresh
-تست: وسط سفر برو خانه → درصد بماند → «ادامه سفر» از همان جا
+v25
+shell.js shell.css sw.js → docs/
+Hard Refresh
