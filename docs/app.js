@@ -1431,8 +1431,8 @@ function displayResults(data, type) {
 
       let sparkText = '';
       if (microMatch.length > 0) {
-        // همهٔ جرقه‌های مشترک را نشان بده (نه فقط ۳ تا)
-        sparkText = microMatch.map(m => escapeHtml(m.description || m.code || m)).join(' · ');
+        // فقط ۲–۳ جرقهٔ شاخص (نه همه)
+        sparkText = microMatch.slice(0, 3).map(m => escapeHtml(m.description || m.code || m)).join(' · ');
       }
 
       // ===== هشدار (در بالای کارت) =====
@@ -1812,30 +1812,54 @@ function resetJourney() {
 }
 window.resetJourney = resetJourney;
 
+// با خروج/بستن اپ، سشن وسط سفر حفظ شود
+function persistSessionOnExit() {
+  try {
+    if (typeof state !== 'undefined' && state && !state.journeyFinished) {
+      if (typeof saveSession === 'function') saveSession();
+    }
+  } catch (e) {}
+}
+window.addEventListener('pagehide', persistSessionOnExit);
+window.addEventListener('beforeunload', persistSessionOnExit);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') persistSessionOnExit();
+});
+
+
 
 async function init() {
   await Promise.all([loadQuestions(), loadMicroMotivesMap(), loadTraitMap()]);
-  // همیشه از صفحه اول (مانیفست) شروع کن
-  // نشست قبلی فقط وقتی «ادامه سفر» زده شود استفاده می‌شود
   const saved = localStorage.getItem('darkhorse_session_v2');
+  let restored = false;
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      // فقط داده‌ها را در state نگذار تا صفحه اول دیده شود
-      // فلگ برای نمایش دکمه ادامه در اسپلش
       window.__dhSavedSession = data;
       window.__dhJourneyFinished = !!data.journeyFinished;
-      // فقط سفر ناتمام به‌عنوان «ادامه» پیشنهاد شود
       window.__dhHasSavedSession = !data.journeyFinished;
+      // سفر ناتمام: کامل در state بارگذاری شود تا با رفرش/خروج پاک نشود
+      if (!data.journeyFinished && data.stage) {
+        const mid = ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+          'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
+        if (mid.indexOf(data.stage) >= 0) {
+          restored = loadSession();
+          window.__dhShouldResumeJourney = true;
+        }
+      }
     } catch (e) {
       window.__dhHasSavedSession = false;
+      window.__dhShouldResumeJourney = false;
     }
   } else {
     window.__dhHasSavedSession = false;
+    window.__dhShouldResumeJourney = false;
   }
-  // صفحهٔ مانیفست و راهنما حذف شد؛ خانهٔ شل + داستان/جرقه‌یاب آن نقش را پوشش می‌دهد
-  state.stage = 'splash';
-  state.history = [];
+  // اگر سفر ناتمام بازیابی شد، stage را روی splash نگذار (داده می‌ماند)
+  if (!restored) {
+    state.stage = 'splash';
+    state.history = [];
+  }
   render();
 }
 init();

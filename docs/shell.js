@@ -644,13 +644,38 @@
     window.__dh_shell_quota_patched = true;
   }
 
+  function tryAutoResumeJourney() {
+    try {
+      var raw = localStorage.getItem('darkhorse_session_v2');
+      if (!raw) return false;
+      var data = JSON.parse(raw);
+      if (!data || data.journeyFinished) return false;
+      var mid = ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+        'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
+      if (mid.indexOf(data.stage) < 0) return false;
+      window.__dhInJourney = true;
+      setActiveTab('journey');
+      if (typeof loadSession === 'function') loadSession();
+      if (typeof render === 'function') render();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function boot() {
     ensureTabbar();
     patchRender();
     patchConsumeOnResults();
+    // اگر سفر ناتمام است، از همان‌جا ادامه بده (خروج از اپ = از دست رفتن پیشرفت نباشد)
+    if (tryAutoResumeJourney()) return;
     renderHome();
-    setTimeout(function () { if (!window.__dhInJourney) renderHome(); }, 150);
-    setTimeout(function () { if (!window.__dhInJourney) renderHome(); }, 600);
+    setTimeout(function () {
+      if (!window.__dhInJourney && !tryAutoResumeJourney()) renderHome();
+    }, 200);
+    setTimeout(function () {
+      if (!window.__dhInJourney && !tryAutoResumeJourney()) renderHome();
+    }, 700);
   }
 
   window.DHShell = {
