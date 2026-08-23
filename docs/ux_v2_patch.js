@@ -202,6 +202,60 @@
     window.displayResults = patched;
   }
 
+  function installVisualSystem() {
+    if (document.getElementById('dh-visual-polish-v1')) return;
+    const style = document.createElement('style');
+    style.id = 'dh-visual-polish-v1';
+    style.textContent = `
+      /* V21.1 visual polish: semantic tab icons, clearer hierarchy, typography and contrast. */
+      #dh-tabbar button { font-size: .80rem !important; color: #a99d88 !important; min-height: 56px !important; }
+      #dh-tabbar button.active { color: #f0c040 !important; }
+      #dh-tabbar button .ico { font-size: 0 !important; width: 24px; height: 24px; line-height: 24px; display: inline-flex; align-items: center; justify-content: center; }
+      #dh-tabbar button .ico::before { content: ''; display: block; width: 22px; height: 22px; background-repeat: no-repeat; background-position: center; background-size: 22px 22px; opacity: .90; }
+      #dh-tabbar button.active .ico::before { opacity: 1; }
+      #dh-tabbar button[data-tab="home"] .ico::before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F0C040' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 10 9-7 9 7'/%3E%3Cpath d='M5 9v11h14V9'/%3E%3Cpath d='M9 20v-6h6v6'/%3E%3C/svg%3E");
+      }
+      #dh-tabbar button[data-tab="journey"] .ico::before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F0C040' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3Cpath d='M9.5 4.8 12 3l2.5 1.8'/%3E%3C/svg%3E");
+      }
+      #dh-tabbar button[data-tab="profile"] .ico::before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F0C040' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='3.5'/%3E%3Cpath d='M5 20c.8-3.3 3.2-5 7-5s6.2 1.7 7 5'/%3E%3C/svg%3E");
+      }
+      #dh-tabbar button:not(.active) .ico::before { filter: saturate(.7) brightness(.76); }
+      #dh-tabbar button.active { box-shadow: inset 0 2px 0 #d4af37; }
+
+      .dh-home-wrap { display: flex !important; flex-direction: column !important; }
+      .dh-home-top { order: 0 !important; }
+      .dh-cta-card { order: 1 !important; border-color: rgba(212,175,55,.42) !important; box-shadow: 0 10px 30px rgba(0,0,0,.22); }
+      .dh-quote-hero { order: 2 !important; }
+      .dh-feature-row { order: 3 !important; }
+      .dh-mini-grid { order: 4 !important; }
+      .dh-feature-row { opacity: .94; }
+
+      .dh-brand-name { font-size: 1.42rem !important; }
+      .dh-brand-sub { font-size: .82rem !important; color: #b8ad97 !important; }
+      .dh-greet { font-size: 1.10rem !important; }
+      .dh-date { font-size: .84rem !important; color: #b8ad97 !important; }
+      .dh-chip { font-size: .76rem !important; }
+      .dh-quote-label { font-size: .95rem !important; }
+      .dh-quote-sub { font-size: .82rem !important; color: #a99d88 !important; }
+      .dh-q-line p { font-size: 1rem !important; line-height: 1.95 !important; }
+      .dh-q-tag { font-size: .76rem !important; color: #a99d88 !important; }
+      .dh-quote-foot { font-size: .74rem !important; color: #8f8268 !important; }
+      .dh-cta-title { font-size: 1.08rem !important; }
+      .dh-cta-desc { font-size: .92rem !important; color: #b8ad97 !important; }
+      .dh-feature .dh-f-t { font-size: .84rem !important; }
+      .dh-feature .dh-f-d { font-size: .74rem !important; color: #a99d88 !important; }
+      .dh-mini { font-size: .88rem !important; color: #d0c29e !important; }
+      .dh-stat .l { font-size: .80rem !important; color: #a99d88 !important; }
+      .dh-last-meta { font-size: .80rem !important; color: #a99d88 !important; }
+      .dh-last-name { font-size: .92rem !important; }
+      .dh-last-score { font-size: .88rem !important; }
+    `;
+    document.head.appendChild(style);
+  }
+
   function install() {
     patchSparkChip();
     patchSwipeLabels();
@@ -210,6 +264,7 @@
     patchValueIntro();
     patchValueCompletion();
     patchResultsUI();
+    installVisualSystem();
     if (typeof window.render === 'function' && state && state.stage !== 'manifesto') {
       setTimeout(() => window.render(), 0);
     }
