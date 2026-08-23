@@ -1,5 +1,5 @@
 /**
- * shell.js v25 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
+ * shell.js v24 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
  */
 (function () {
   'use strict';
@@ -215,20 +215,18 @@
       : (canContinue ? 'می‌توانی از همین‌جا ادامه بدهی' : 'هنوز سفری شروع نشده');
     var ctaLabel = canContinue ? 'ادامه سفر' : 'شروع سفر';
 
-    // پیام‌ها: ابتدا ۳ تا، با دکمه «بیشتر» تا ۶
-    var allMsgs = [];
+    var bundle = [];
     try {
-      if (window.DHQuote && DHQuote.todayBundle) allMsgs = DHQuote.todayBundle() || [];
+      if (window.DHQuote && DHQuote.todayBundle) bundle = DHQuote.todayBundle() || [];
     } catch (e) {}
-    if (!allMsgs.length && window.DH_QUOTES && DH_QUOTES.length) {
+    if (!bundle.length && window.DH_QUOTES && DH_QUOTES.length) {
       var di = new Date().getDate() % DH_QUOTES.length;
-      for (var k = 0; k < Math.min(6, DH_QUOTES.length); k++) {
-        allMsgs.push(DH_QUOTES[(di + k) % DH_QUOTES.length]);
+      for (var qi = 0; qi < Math.min(6, DH_QUOTES.length); qi++) {
+        bundle.push(DH_QUOTES[(di + qi) % DH_QUOTES.length]);
       }
     }
     var showMore = !!window.__dhShowMoreQuotes;
-    var visible = allMsgs.slice(0, showMore ? 6 : 3);
-    var lines = visible.map(function (item, idx) {
+    var lines = (bundle || []).slice(0, showMore ? 6 : 3).map(function (item, idx) {
       var t = item.t || item.text || '';
       var tag = item.tag || item.a || '';
       return '<div class="dh-q-line">' +
@@ -238,17 +236,16 @@
         '</div></div>';
     }).join('');
     var moreBtn = '';
-    if (allMsgs.length > 3) {
-      moreBtn = showMore
-        ? '<button type="button" class="dh-msg-more" id="dh-msg-toggle">نمایش کمتر</button>'
-        : '<button type="button" class="dh-msg-more" id="dh-msg-toggle">پیام‌های بیشتر</button>';
+    if ((bundle || []).length > 3) {
+      moreBtn = '<button type="button" class="dh-msg-more" id="dh-msg-toggle">' +
+        (showMore ? 'نمایش کمتر' : 'پیام‌های بیشتر') + '</button>';
     }
 
     var root = $('app');
     if (!root) return;
 
     root.innerHTML =
-      '<div class="dh-home-wrap dh-home-v25">' +
+      '<div class="dh-home-wrap dh-home-v24">' +
         '<header class="dh-topbar dh-topbar-center">' +
           '<div class="dh-top-brand dh-top-brand-center">' +
             '<div class="dh-logo-mark" aria-hidden="true">' +
@@ -263,14 +260,12 @@
               '<div class="dh-logo-sub">اسب سیاه</div>' +
             '</div>' +
           '</div>' +
+          '<p class="dh-system-tagline">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</p>' +
         '</header>' +
 
-        '<p class="dh-corner-greet">' + greeting() + '، ' + escape(name) + '</p>' +
-
-        '<section class="dh-identity">' +
+        '<section class="dh-hello">' +
           '<h1 class="dh-identity-title">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی بر اساس فردیت</h1>' +
-          '<p class="dh-identity-sub">کشف مسیر با انگیزه‌ها، راهبردها و ارزش‌های خودت — نه فقط رتبه</p>' +
-          '<p class="dh-date">' + escape(faDate()) + '</p>' +
+          '<p class="dh-greet-date">' + greeting() + '، ' + escape(name) + ' · ' + escape(faDate()) + '</p>' +
         '</section>' +
 
         '<section class="dh-hero-journey">' +
@@ -331,6 +326,11 @@
 
     var sj = $('dh-start-journey');
     if (sj) sj.onclick = function () { startJourneyFromShell(); };
+    var mt = $('dh-msg-toggle');
+    if (mt) mt.onclick = function () {
+      window.__dhShowMoreQuotes = !window.__dhShowMoreQuotes;
+      renderHome();
+    };
     var rs = $('dh-restart-journey');
     if (rs) rs.onclick = function () {
       if (!confirm('سفر فعلی پاک شود و از اول شروع کنی؟')) return;
@@ -347,11 +347,6 @@
       } else {
         startJourneyFromShell();
       }
-    };
-    var mt = $('dh-msg-toggle');
-    if (mt) mt.onclick = function () {
-      window.__dhShowMoreQuotes = !window.__dhShowMoreQuotes;
-      renderHome();
     };
     var sp = $('dh-open-spark');
     if (sp) sp.onclick = function () {
