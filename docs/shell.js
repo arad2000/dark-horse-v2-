@@ -333,7 +333,7 @@
     if (rs) rs.onclick = function () {
       if (!confirm('سفر فعلی پاک شود و از اول شروع کنی؟')) return;
       try {
-        if (typeof fullResetState === 'function') fullResetState();
+        if (typeof fullResetState === 'function') fullResetState(true);
         else localStorage.removeItem('darkhorse_session_v2');
         window.__dhHasSavedSession = false;
         window.__dhJourneyFinished = false;
@@ -415,7 +415,7 @@
 
       // سفر تازه → صفحه شهر رؤیاها (splash)، نه پرش مستقیم به محله‌ها
       if (typeof fullResetState === 'function') {
-        fullResetState();
+        fullResetState(true);
       } else {
         try { localStorage.removeItem('darkhorse_session_v2'); } catch (e3) {}
       }

@@ -254,7 +254,19 @@ function clearSession() {
   window.__dhJourneyFinished = false;
 }
 
-function fullResetState() {
+/** قبل از دیدن نتایج، سشن وسط سفر نباید پاک/عوض شود */
+function isPreResultsInProgress() {
+  if (state.journeyFinished) return false;
+  const st = state.stage;
+  return ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+    'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(st) >= 0;
+}
+
+function fullResetState(force) {
+  if (!force && isPreResultsInProgress()) {
+    console.warn('blocked fullResetState: journey not finished to results yet');
+    return false;
+  }
   clearSession();
   state.sessionId = null;
   state.history = [];
@@ -282,7 +294,14 @@ function fullResetState() {
 
 function startNewJourney() {
   try {
-    fullResetState();
+    if (isPreResultsInProgress()) {
+      if (!confirm('سفر هنوز به نتیجه نرسیده. اگر از نو شروع کنی، پیشرفت فعلی پاک می‌شود. مطمئنی؟')) {
+        try { if (typeof loadSession === 'function') loadSession(); } catch (e) {}
+        if (typeof render === 'function') render();
+        return;
+      }
+    }
+    fullResetState(true);
     if (typeof REALMS === 'undefined' || !REALMS || !REALMS.length) {
       app.innerHTML = `<div class="card" style="margin:20px;text-align:right;">
         <h2 style="color:#f0c040">دادهٔ شهر رؤیاها لود نشد</h2>
@@ -600,11 +619,15 @@ function dhResumeFromSplash() {
     state.completedSubRealms = new Set(data.completedSubRealms || []);
     state.journeyFinished = false;
     state.stage = data.stage || 'realm';
-    if (['manifesto','guide','splash','results','choice'].includes(state.stage)) {
+    // choice و stages میانی را به realm برنگردان — کاربر باید قبل از نتایج همان‌جا بماند
+    if (['manifesto', 'guide', 'splash'].indexOf(state.stage) >= 0) {
+      state.stage = 'realm';
+    }
+    if (state.stage === 'results' && data.journeyFinished) {
       state.stage = 'realm';
     }
   } catch (e) {
-    fullResetState();
+    fullResetState(true);
     state.stage = 'realm';
   }
   saveSession();
@@ -749,11 +772,31 @@ async function loadSwipeCards() {
       all = await res.json();
       state.cachedMotives = all;
     }
+    // ترتیب پیشوندها = ترتیب انتخاب مسیرهای باریک (نه قاطی الفبایی بین رشته‌ها)
+    const orderedPrefixes = [];
+    state.selectedNarrowPaths.forEach(pathId => {
+      const path = findNarrowPath(pathId);
+      (path && path.majorCodes ? path.majorCodes : []).forEach(prefix => {
+        if (prefix && orderedPrefixes.indexOf(prefix) === -1) orderedPrefixes.push(prefix);
+      });
+    });
+    if (orderedPrefixes.length === 0) {
+      majorCodes.forEach(prefix => {
+        if (prefix && orderedPrefixes.indexOf(prefix) === -1) orderedPrefixes.push(prefix);
+      });
+    }
     state.swipeCards = all.filter(m =>
-      majorCodes.some(prefix => m.code && m.code.startsWith(prefix)) && !state.likedCodesSet.has(m.code)
+      orderedPrefixes.some(prefix => m.code && m.code.startsWith(prefix)) && !state.likedCodesSet.has(m.code)
     );
-    // پشت‌سرهم بودن جرقه‌های یک رشته (مثلاً MED-001..007)
-    state.swipeCards.sort((a, b) => String(a.code).localeCompare(String(b.code), 'en'));
+    // داخل هر رشته پشت‌سرهم (مثلاً MED-001..007)، بین رشته‌ها به ترتیب انتخاب مسیر
+    state.swipeCards.sort((a, b) => {
+      const ia = orderedPrefixes.findIndex(p => a.code && a.code.startsWith(p));
+      const ib = orderedPrefixes.findIndex(p => b.code && b.code.startsWith(p));
+      const pa = ia < 0 ? 999 : ia;
+      const pb = ib < 0 ? 999 : ib;
+      if (pa !== pb) return pa - pb;
+      return String(a.code || '').localeCompare(String(b.code || ''), 'en', { numeric: true });
+    });
     state.swipeIndex = 0; state.totalSwipes = state.swipeCards.length;
     goTo('swipe');
   } catch (e) { alert('خطا در بارگذاری جرقه‌ها.'); }
@@ -1760,7 +1803,10 @@ async function copyAllFeedbackServer() {
 
 // ==================== RESET & INIT ====================
 function resetJourney() {
-  fullResetState();
+  if (isPreResultsInProgress()) {
+    if (!confirm('هنوز نتایج را ندیده‌ای. سفر فعلی پاک شود؟')) return;
+  }
+  fullResetState(true);
   state.stage = 'splash';
   render();
 }
