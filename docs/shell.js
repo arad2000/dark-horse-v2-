@@ -260,7 +260,6 @@
               '<div class="dh-logo-sub">اسب سیاه</div>' +
             '</div>' +
           '</div>' +
-          '<p class="dh-system-tagline">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</p>' +
         '</header>' +
 
         '<section class="dh-hello">' +
@@ -271,7 +270,6 @@
         '<section class="dh-hero-journey">' +
           '<div class="dh-hero-text">' +
             '<h2>سفر اکتشافی</h2>' +
-            '<p>بر اساس انگیزه‌ها، راهبردها و ارزش‌های خودت — نه فقط رتبه.</p>' +
             '<button type="button" class="btn btn-primary dh-hero-cta" id="dh-start-journey">' + ctaLabel + '</button>' +
             (canContinue ? '<button type="button" class="btn dh-hero-secondary" id="dh-restart-journey">شروع از نو</button>' : '') +
           '</div>' +
@@ -340,13 +338,16 @@
         window.__dhHasSavedSession = false;
         window.__dhJourneyFinished = false;
       } catch (e) {}
-      if (typeof startNewJourney === 'function') {
-        window.__dhInJourney = true;
-        setActiveTab('journey');
-        startNewJourney();
-      } else {
-        startJourneyFromShell();
+      window.__dhInJourney = true;
+      setActiveTab('journey');
+      if (typeof state !== 'undefined') {
+        state.stage = 'splash';
+        state.history = [];
       }
+      if (typeof saveSession === 'function') {
+        try { saveSession(); } catch (e) {}
+      }
+      if (typeof render === 'function') render();
     };
     var sp = $('dh-open-spark');
     if (sp) sp.onclick = function () {
@@ -379,7 +380,6 @@
     window.__dhInJourney = true;
     setActiveTab('journey');
     try {
-      // قبل از هر چیز وضعیت فعلی را ذخیره کن
       if (typeof saveSession === 'function') {
         try { saveSession(); } catch (e1) {}
       }
@@ -395,7 +395,6 @@
          'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(data.stage) >= 0;
 
       if (unfinished) {
-        // ادامه از همان نقطه
         if (typeof loadSession === 'function') {
           loadSession();
         } else if (typeof dhResumeFromSplash === 'function') {
@@ -414,16 +413,23 @@
         return;
       }
 
-      // سفر تازه
-      if (typeof startNewJourney === 'function') {
-        startNewJourney();
-        return;
+      // سفر تازه → صفحه شهر رؤیاها (splash)، نه پرش مستقیم به محله‌ها
+      if (typeof fullResetState === 'function') {
+        fullResetState();
+      } else {
+        try { localStorage.removeItem('darkhorse_session_v2'); } catch (e3) {}
       }
+      window.__dhHasSavedSession = false;
+      window.__dhJourneyFinished = false;
+      window.__dhSavedSession = null;
       if (typeof state !== 'undefined') {
-        state.stage = 'realm';
+        state.stage = 'splash';
         state.history = [];
+        state.journeyFinished = false;
       }
-      if (typeof saveSession === 'function') saveSession();
+      if (typeof saveSession === 'function') {
+        try { saveSession(); } catch (e4) {}
+      }
       if (typeof render === 'function') render();
     } catch (e) {
       console.error(e);
