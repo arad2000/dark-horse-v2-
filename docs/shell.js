@@ -212,8 +212,7 @@
     var canContinue = hasUnfinishedJourney();
     var progressLabel = pct >= 100
       ? 'سفر قبلی کامل شده'
-      : (canContinue ? 'می‌توانی از همین‌جا ادامه بدهی' : 'هنوز سفری شروع نشده');
-    var ctaLabel = canContinue ? 'ادامه سفر' : 'شروع سفر';
+      : (canContinue ? 'پیشرفت مسیر' : 'هنوز سفری شروع نشده');
 
     var bundle = [];
     try {
@@ -226,109 +225,94 @@
       }
     }
     var showMore = !!window.__dhShowMoreQuotes;
-    var lines = (bundle || []).slice(0, showMore ? 6 : 3).map(function (item, idx) {
-      var t = item.t || item.text || '';
-      var tag = item.tag || item.a || '';
-      return '<div class="dh-q-line">' +
-        '<span class="dh-q-num">' + (idx + 1) + '</span>' +
-        '<div class="dh-q-body"><p>' + escape(t) + '</p>' +
-        (tag ? '<span class="dh-q-tag">' + escape(tag) + '</span>' : '') +
-        '</div></div>';
-    }).join('');
-    var moreBtn = '';
-    if ((bundle || []).length > 3) {
-      moreBtn = '<button type="button" class="dh-msg-more" id="dh-msg-toggle">' +
-        (showMore ? 'نمایش کمتر' : 'پیام‌های بیشتر') + '</button>';
-    }
+    var visible = (bundle || []).slice(0, showMore ? 6 : 1);
+    var quote0 = visible[0] || { t: 'هیچ راهی به سوی موفقیت وجود ندارد، موفقیت خود یک راه است.', tag: 'وینستون چرچیل' };
+    var moreQuotes = showMore ? (bundle || []).slice(1, 6) : [];
 
     var root = $('app');
     if (!root) return;
 
     root.innerHTML =
-      '<div class="dh-home-wrap dh-home-v24">' +
-        '<header class="dh-topbar dh-topbar-center">' +
-          '<div class="dh-top-brand dh-top-brand-center">' +
-            '<div class="dh-logo-mark" aria-hidden="true">' +
-              '<svg viewBox="0 0 64 64" width="42" height="42">' +
-                '<defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5d76e"/><stop offset="100%" stop-color="#c9a227"/></linearGradient></defs>' +
-                '<path fill="url(#hg)" d="M12 44c4-14 14-24 28-26 2 6 1 12-2 16 6 1 10 5 12 10-8 2-16 1-22-2-3 4-8 6-14 6 0-2-1-3-2-4z"/>' +
-                '<path fill="none" stroke="url(#hg)" stroke-width="2" d="M10 50c8-2 18-1 28 2"/>' +
-              '</svg>' +
-            '</div>' +
-            '<div class="dh-brand-text">' +
-              '<div class="dh-logo-title">DARK HORSE</div>' +
-              '<div class="dh-logo-sub">اسب سیاه</div>' +
-            '</div>' +
+      '<div class="dh-home-wrap dh-home-mock">' +
+
+        '<header class="dh-m-header">' +
+          '<div class="dh-m-header-text">' +
+            '<div class="dh-m-title">اسب سیاه</div>' +
+            '<div class="dh-m-sub">سامانه هدایت تحصیلی و انتخاب رشته<br>بر اساس فردیت</div>' +
+          '</div>' +
+          '<div class="dh-m-logo" aria-hidden="true">' +
+            '<img src="icon-192.png" alt="" class="dh-m-logo-img" onerror="this.style.display=\'none\'">' +
           '</div>' +
         '</header>' +
 
-        '<section class="dh-hello">' +
-          '<h1 class="dh-identity-title">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی بر اساس فردیت</h1>' +
-          '<p class="dh-greet-date">' + greeting() + '، ' + escape(name) + ' · ' + escape(faDate()) + '</p>' +
+        '<p class="dh-m-greet">' + greeting() + '، ' + escape(name) + ' · ' + escape(faDate()) + '</p>' +
+
+        '<section class="dh-m-hero">' +
+          '<div class="dh-m-hero-body">' +
+            '<h2 class="dh-m-hero-title">سفر اکتشافی تو شروع می‌شود</h2>' +
+            '<p class="dh-m-hero-desc">مسیرت را بر اساس خودت کشف کن.</p>' +
+            '<button type="button" class="btn btn-primary dh-m-cta" id="dh-start-journey">شروع سفر</button>' +
+          '</div>' +
+          '<div class="dh-m-hero-star" aria-hidden="true">✦</div>' +
         '</section>' +
 
-        '<section class="dh-hero-journey">' +
-          '<div class="dh-hero-text">' +
-            '<h2>سفر اکتشافی</h2>' +
-            '<button type="button" class="btn btn-primary dh-hero-cta" id="dh-start-journey">' + ctaLabel + '</button>' +
-            (canContinue ? '<button type="button" class="btn dh-hero-secondary" id="dh-restart-journey">شروع از نو</button>' : '') +
-          '</div>' +
-          '<div class="dh-hero-visual" aria-hidden="true">' +
-            '<div class="dh-compass">' +
-              '<svg viewBox="0 0 80 80" width="72" height="72">' +
-                '<circle cx="40" cy="40" r="34" fill="none" stroke="rgba(240,192,64,0.35)" stroke-width="2"/>' +
-                '<circle cx="40" cy="40" r="26" fill="rgba(240,192,64,0.08)" stroke="rgba(240,192,64,0.5)" stroke-width="1.5"/>' +
-                '<path d="M40 14 L46 40 L40 66 L34 40 Z" fill="#f0c040"/>' +
-                '<circle cx="40" cy="40" r="4" fill="#0a0a0f" stroke="#f0c040"/>' +
-              '</svg>' +
-            '</div>' +
-          '</div>' +
-        '</section>' +
-
-        '<section class="dh-progress-card">' +
-          '<div class="dh-progress-head">' +
+        '<section class="dh-m-progress">' +
+          '<div class="dh-m-progress-top">' +
             '<div>' +
-              '<div class="dh-progress-title">آخرین مسیر شما</div>' +
-              '<div class="dh-progress-sub">' + escape(progressLabel) + '</div>' +
+              '<div class="dh-m-progress-title">آخرین مسیر شما</div>' +
+              '<div class="dh-m-progress-sub">' + escape(progressLabel) + '</div>' +
             '</div>' +
-            '<span class="dh-progress-pct-big">' + pct + '٪</span>' +
+            '<span class="dh-m-pct">' + pct + '٪</span>' +
           '</div>' +
-          '<div class="dh-progress-bar"><div class="dh-progress-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="dh-m-bar"><div class="dh-m-bar-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="dh-m-progress-actions">' +
+            (canContinue
+              ? '<button type="button" class="btn btn-primary dh-m-btn-continue" id="dh-continue-journey">ادامه سفر</button>'
+              : '') +
+            (canContinue
+              ? '<button type="button" class="dh-m-btn-restart" id="dh-restart-journey">شروع از نو</button>'
+              : '') +
+          '</div>' +
         '</section>' +
 
-        '<section class="dh-messages-card">' +
-          '<div class="dh-messages-head">' +
-            '<span class="dh-messages-label">✦ پیام‌های امروز</span>' +
-            '<span class="dh-messages-sub">با الهام از روح کتاب اسب سیاه</span>' +
+        '<section class="dh-m-quote">' +
+          '<div class="dh-m-quote-head">' +
+            '<span class="dh-m-quote-badge">' + (showMore ? 'همه پیام‌ها' : '۳ پیام') + '</span>' +
+            '<button type="button" class="dh-m-quote-more" id="dh-msg-toggle">' +
+              (showMore ? 'نمایش کمتر' : 'مشاهده همه') +
+            '</button>' +
           '</div>' +
-          (lines || '<p class="dh-messages-empty">پیام‌ها در حال آماده‌سازی…</p>') +
-          moreBtn +
-          '<div class="dh-quote-foot">تاد رز و اگی اوگاس · بازنویسی برای اپ</div>' +
+          '<div class="dh-m-quote-card">' +
+            '<span class="dh-m-quote-marks">“</span>' +
+            '<p class="dh-m-quote-text">' + escape(quote0.t || quote0.text || '') + '</p>' +
+            '<div class="dh-m-quote-author">' + escape(quote0.tag || quote0.a || '') + '</div>' +
+          '</div>' +
+          (moreQuotes.length
+            ? moreQuotes.map(function (q) {
+                return '<div class="dh-m-quote-card dh-m-quote-extra">' +
+                  '<p class="dh-m-quote-text">' + escape(q.t || q.text || '') + '</p>' +
+                  '<div class="dh-m-quote-author">' + escape(q.tag || q.a || '') + '</div>' +
+                '</div>';
+              }).join('')
+            : '') +
         '</section>' +
 
-        '<section class="dh-feature-row dh-feature-4 dh-feature-soft">' +
-          '<button type="button" class="dh-feature" id="dh-open-spark">' +
-            '<span class="dh-f-ico">⚡</span><span class="dh-f-t">جرقه‌یاب</span>' +
-            '<span class="dh-f-d">کشف انگیزه‌ها</span></button>' +
-          '<button type="button" class="dh-feature" id="dh-open-stories">' +
-            '<span class="dh-f-ico">📖</span><span class="dh-f-t">داستان‌ها</span>' +
-            '<span class="dh-f-d">الهام از مسیرها</span></button>' +
-          '<button type="button" class="dh-feature" id="dh-open-poems">' +
-            '<span class="dh-f-ico">🪶</span><span class="dh-f-t">سخن بزرگان</span>' +
-            '<span class="dh-f-d">حکمت برای امروز</span></button>' +
-          '<button type="button" class="dh-feature" id="dh-open-parents">' +
-            '<span class="dh-f-ico">🤝</span><span class="dh-f-t">والدین</span>' +
-            '<span class="dh-f-d">همراهی بهتر</span></button>' +
+        '<section class="dh-m-features">' +
+          '<div class="dh-m-features-label">امکانات بیشتر</div>' +
+          '<div class="dh-m-features-grid">' +
+            '<button type="button" class="dh-m-feat" id="dh-open-spark"><span class="dh-m-feat-ico">⚡</span><span class="dh-m-feat-t">جرقه‌یاب</span></button>' +
+            '<button type="button" class="dh-m-feat" id="dh-open-stories"><span class="dh-m-feat-ico">📖</span><span class="dh-m-feat-t">داستان‌ها</span></button>' +
+            '<button type="button" class="dh-m-feat" id="dh-open-poems"><span class="dh-m-feat-ico">🪶</span><span class="dh-m-feat-t">سخن بزرگان</span></button>' +
+            '<button type="button" class="dh-m-feat" id="dh-open-parents"><span class="dh-m-feat-ico">👥</span><span class="dh-m-feat-t">والدین</span></button>' +
+          '</div>' +
         '</section>' +
+
       '</div>';
 
     var sj = $('dh-start-journey');
     if (sj) sj.onclick = function () { startJourneyFromShell(); };
-    var mt = $('dh-msg-toggle');
-    if (mt) mt.onclick = function () {
-      window.__dhShowMoreQuotes = !window.__dhShowMoreQuotes;
-      renderHome();
-    };
+    var cj = $('dh-continue-journey');
+    if (cj) cj.onclick = function () { startJourneyFromShell(); };
     var rs = $('dh-restart-journey');
     if (rs) rs.onclick = function () {
       if (!confirm('سفر فعلی پاک شود و از اول شروع کنی؟')) return;
@@ -345,9 +329,14 @@
         state.history = [];
       }
       if (typeof saveSession === 'function') {
-        try { saveSession(); } catch (e) {}
+        try { saveSession(); } catch (e2) {}
       }
       if (typeof render === 'function') render();
+    };
+    var mt = $('dh-msg-toggle');
+    if (mt) mt.onclick = function () {
+      window.__dhShowMoreQuotes = !window.__dhShowMoreQuotes;
+      renderHome();
     };
     var sp = $('dh-open-spark');
     if (sp) sp.onclick = function () {
