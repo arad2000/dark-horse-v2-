@@ -1,0 +1,356 @@
+/* Dark Horse Home v25 — visual-only layer
+ * Does not alter Journey state, scoring, sampling, or navigation logic.
+ */
+
+.dh-home-v24 {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 8px 28px;
+  text-align: right;
+}
+
+.dh-home-v24 .dh-topbar {
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.dh-home-v24 .dh-top-brand-center {
+  gap: 7px !important;
+}
+
+.dh-home-v24 .dh-logo-mark {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 18px !important;
+  background: radial-gradient(circle at 35% 25%, #2a2418, #0b0a0f 72%);
+  border: 1px solid rgba(240,192,64,.42);
+  box-shadow: 0 8px 28px rgba(240,192,64,.12), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.dh-home-v24 .dh-logo-horse {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dh-home-v24 .dh-logo-title {
+  font-size: .86rem;
+  letter-spacing: .18em;
+  font-weight: 800;
+  color: #f3ce5e;
+}
+
+.dh-home-v24 .dh-logo-sub {
+  font-size: .72rem;
+  color: #a99d88;
+}
+
+.dh-home-v24 .dh-hello {
+  margin: 0 8px 18px;
+  text-align: center;
+}
+
+.dh-home-v24 .dh-identity-title {
+  max-width: 370px;
+  margin: 0 auto 5px;
+  color: #f5f0e6;
+  font-size: 1.06rem;
+  line-height: 1.75;
+  font-weight: 700;
+}
+
+.dh-home-subtitle {
+  margin: 0 0 10px;
+  color: #b8ad97;
+  font-size: .78rem;
+  line-height: 1.6;
+}
+
+.dh-home-v24 .dh-greet-date {
+  margin: 0;
+  color: #cfc5b4;
+  font-size: .84rem;
+  line-height: 1.8;
+}
+
+.dh-home-v24 .dh-hero-journey {
+  position: relative;
+  overflow: hidden;
+  min-height: 178px;
+  padding: 22px 18px;
+  margin-bottom: 12px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 18% 80%, rgba(240,192,64,.13), transparent 31%),
+    linear-gradient(145deg, #1d1820 0%, #0e0c14 72%);
+  border: 1px solid rgba(240,192,64,.34);
+  box-shadow: 0 14px 38px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.dh-home-v24 .dh-hero-journey::after {
+  content: '';
+  position: absolute;
+  inset: auto -20% -62% 15%;
+  height: 190px;
+  border-radius: 50%;
+  border: 1px solid rgba(240,192,64,.14);
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+
+.dh-home-v24 .dh-hero-text {
+  position: relative;
+  z-index: 2;
+}
+
+.dh-home-v24 .dh-hero-text h2 {
+  margin: 0 0 8px;
+  color: #f5f0e6;
+  font-size: 1.28rem;
+  font-weight: 800;
+}
+
+.dh-home-v24 .dh-hero-text h2::after {
+  content: '  ✦';
+  color: #f0c040;
+  font-size: .8rem;
+}
+
+.dh-home-v24 .dh-hero-cta {
+  min-width: 126px;
+  min-height: 48px;
+  margin: 0 !important;
+  padding: 11px 24px !important;
+  border-radius: 999px !important;
+  font-size: .94rem !important;
+  box-shadow: 0 10px 24px rgba(240,192,64,.18) !important;
+}
+
+.dh-home-v24 .dh-hero-secondary {
+  min-height: 44px;
+  margin: 6px 0 0 !important;
+  padding: 8px 14px !important;
+  color: #c9b986 !important;
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(240,192,64,.18) !important;
+}
+
+.dh-home-v24 .dh-hero-visual {
+  position: absolute;
+  left: 10px;
+  bottom: 4px;
+  opacity: .92;
+  transform: scale(.88);
+}
+
+.dh-home-v24 .dh-compass {
+  width: 90px;
+  height: 90px;
+}
+
+.dh-home-v24 .dh-progress-card {
+  margin-bottom: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(22,20,32,.97), rgba(14,13,20,.97));
+  border: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 10px 26px rgba(0,0,0,.22);
+}
+
+.dh-home-v24 .dh-progress-title {
+  color: #e9e2d4;
+  font-size: .96rem;
+  font-weight: 700;
+}
+
+.dh-home-v24 .dh-progress-sub {
+  color: #a99d88;
+  font-size: .78rem;
+}
+
+.dh-home-v24 .dh-progress-pct-big {
+  color: #f0c040;
+  font-size: 1.16rem;
+  font-weight: 800;
+}
+
+.dh-home-v24 .dh-progress-bar {
+  height: 8px;
+  margin-top: 12px;
+  background: rgba(255,255,255,.08);
+  border-radius: 99px;
+}
+
+.dh-home-v24 .dh-progress-fill {
+  background: linear-gradient(90deg, #c9a227, #f6d97a);
+  box-shadow: 0 0 12px rgba(240,192,64,.22);
+}
+
+.dh-home-v24 .dh-messages-card {
+  margin-bottom: 14px;
+  padding: 17px 15px 13px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 8% 75%, rgba(240,192,64,.08), transparent 28%),
+    linear-gradient(145deg, #17141d, #0e0d13);
+  border: 1px solid rgba(240,192,64,.16);
+  box-shadow: 0 10px 28px rgba(0,0,0,.22);
+}
+
+.dh-home-v24 .dh-messages-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.dh-home-v24 .dh-messages-label {
+  color: #f0c040;
+  font-size: .94rem;
+  font-weight: 800;
+}
+
+.dh-home-v24 .dh-messages-sub {
+  color: #8e8577;
+  font-size: .7rem;
+}
+
+.dh-home-v24 .dh-q-line {
+  padding: 11px 0;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.dh-home-v24 .dh-q-line p {
+  color: #eee7db;
+  font-size: .92rem;
+  line-height: 1.9;
+}
+
+.dh-home-v24 .dh-q-num {
+  width: 25px;
+  height: 25px;
+  background: rgba(240,192,64,.12);
+  border: 1px solid rgba(240,192,64,.14);
+}
+
+.dh-home-v24 .dh-q-tag {
+  color: #a99d88;
+  font-size: .72rem;
+}
+
+.dh-home-v24 .dh-msg-more {
+  margin-top: 6px;
+  border: 0;
+  background: transparent;
+  color: #f0c040;
+  font-family: inherit;
+  font-size: .78rem;
+  cursor: pointer;
+}
+
+.dh-home-v24 .dh-quote-foot {
+  color: #776e61;
+  font-size: .67rem;
+}
+
+.dh-home-v24 .dh-feature-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.dh-home-v24 .dh-feature {
+  position: relative;
+  min-height: 112px;
+  padding: 16px 12px;
+  border-radius: 17px;
+  border: 1px solid rgba(255,255,255,.07);
+  background: linear-gradient(145deg, #15141d, #0e0d13);
+  color: #f1ebdf;
+  box-shadow: 0 8px 22px rgba(0,0,0,.16);
+  text-align: center;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.dh-home-v24 .dh-feature:hover,
+.dh-home-v24 .dh-feature:active {
+  transform: translateY(-1px);
+  border-color: rgba(240,192,64,.24);
+  box-shadow: 0 10px 24px rgba(240,192,64,.08);
+}
+
+.dh-home-v24 .dh-feature:first-child {
+  grid-column: 1 / -1;
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  align-items: center;
+  text-align: right;
+  gap: 12px;
+}
+
+.dh-home-v24 .dh-feature:last-child {
+  grid-column: 1 / -1;
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  align-items: center;
+  text-align: right;
+  gap: 12px;
+}
+
+.dh-home-v24 .dh-f-ico {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  color: #f0c040;
+  background: radial-gradient(circle, rgba(240,192,64,.14), rgba(240,192,64,.03) 65%, transparent 70%);
+  border: 1px solid rgba(240,192,64,.16);
+  font-size: 1.55rem;
+}
+
+.dh-home-v24 .dh-feature:first-child .dh-f-ico,
+.dh-home-v24 .dh-feature:last-child .dh-f-ico {
+  width: 58px;
+  height: 58px;
+}
+
+.dh-home-v24 .dh-f-t {
+  display: block;
+  color: #f3eee5;
+  font-size: .92rem;
+  font-weight: 800;
+}
+
+.dh-home-v24 .dh-f-d {
+  display: block;
+  margin-top: 4px;
+  color: #9e9688;
+  font-size: .72rem;
+  line-height: 1.7;
+}
+
+.dh-home-v24 .dh-feature::after {
+  content: '›';
+  color: #d4af37;
+  font-size: 1.35rem;
+  font-weight: 300;
+  align-self: center;
+}
+
+@media (max-width: 380px) {
+  .dh-home-v24 { padding-left: 5px; padding-right: 5px; }
+  .dh-home-v24 .dh-feature { min-height: 102px; }
+  .dh-home-v24 .dh-feature:first-child,
+  .dh-home-v24 .dh-feature:last-child { grid-template-columns: 48px 1fr auto; }
+  .dh-home-v24 .dh-f-ico { width: 48px; height: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dh-home-v24 .dh-feature { transition: none; }
+}
