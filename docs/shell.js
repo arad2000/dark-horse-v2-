@@ -238,9 +238,6 @@
     var name = (u && u.name) ? u.name : 'مسافر';
     var pct = journeyProgressPct();
     var canContinue = hasUnfinishedJourney();
-    var living = (typeof homeLivingLine === 'function')
-      ? homeLivingLine(pct, canContinue)
-      : 'مسیر متفاوت تو از اینجا شروع می‌شود.';
     var progressLabel = pct >= 100 ? 'سفر قبلی کامل شده'
       : (canContinue ? 'آخرین مسیر شما' : 'هنوز سفری شروع نشده');
 
@@ -259,152 +256,124 @@
     var root = $('app');
     if (!root) return;
 
-    var heroUrl = 'home-v25-assets/hero-journey.svg';
-    try {
-      if ((location.pathname || '').indexOf('/dark-horse-v2-') >= 0) {
-        heroUrl = '/dark-horse-v2-/home-v25-assets/hero-journey.svg';
-      }
-    } catch (e0) {}
-
-    function ic(kind) {
-      var paths = {
-        star: '<path d="M12 2l2.2 5.5L20 9l-4.5 3.5L17 19l-5-3-5 3 1.5-6.5L4 9l5.8-1.5L12 2z" fill="#F6D97A"/>',
-        bolt: '<path d="M13 2 5 14h6l-1 8 8-12h-6z" fill="none" stroke="#F6D97A" stroke-width="1.8" stroke-linejoin="round"/>',
-        book: '<path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z" fill="none" stroke="#F6D97A" stroke-width="1.6"/><path d="M4 5.5v16.5M8 6h8" fill="none" stroke="#F6D97A" stroke-width="1.6"/>',
-        quill: '<path d="M20 4c-7 0-13 4-13 10 0 3 2 6 5 6 5 0 9-7 8-16Z" fill="none" stroke="#F6D97A" stroke-width="1.6"/><path d="M4 21c3-5 7-8 13-11" fill="none" stroke="#F6D97A" stroke-width="1.6"/>',
-        parents: '<circle cx="8" cy="7" r="3" fill="none" stroke="#7ec8a3" stroke-width="1.6"/><circle cx="17" cy="8" r="2.5" fill="none" stroke="#7ec8a3" stroke-width="1.6"/><path d="M2.5 20c.6-4.2 2.5-6.5 5.5-6.5S12.9 15.8 13.5 20" fill="none" stroke="#7ec8a3" stroke-width="1.6"/><path d="M13 14.5c1-.7 2.2-1 3.5-1 2.5 0 4.2 2 5 5.5" fill="none" stroke="#7ec8a3" stroke-width="1.6"/>',
-        chev: '<path d="m10 6 6 6-6 6" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round"/>'
-      };
-      return '<span class="dh-lux-ic dh-lux-ic-' + kind + '"><svg viewBox="0 0 24 24">' + (paths[kind] || '') + '</svg></span>';
-    }
-
+    var HERO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDcwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgc2xpY2UiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0ic2t5IiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzA2MDgwZiIvPjxzdG9wIG9mZnNldD0iNTUlIiBzdG9wLWNvbG9yPSIjMTIxMDFhIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMWExNDIwIi8+PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9InJvYWQiIHgxPSIwLjUiIHkxPSIwIiB4Mj0iMC41IiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI0Y2RDk3QSIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjRDRBRjM3Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjOEI2OTE0IiBzdG9wLW9wYWNpdHk9IjAuNCIvPjwvbGluZWFyR3JhZGllbnQ+PHJhZGlhbEdyYWRpZW50IGlkPSJnbG93IiBjeD0iNTUlIiBjeT0iMzglIiByPSI0MCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGNkQ5N0EiIHN0b3Atb3BhY2l0eT0iMC4zNSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI0Q0QUYzNyIgc3RvcC1vcGFjaXR5PSIwIi8+PC9yYWRpYWxHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNzAwIiBmaWxsPSJ1cmwoI3NreSkiLz48ZWxsaXBzZSBjeD0iNjgwIiBjeT0iMjYwIiByeD0iMjgwIiByeT0iMTIwIiBmaWxsPSJ1cmwoI2dsb3cpIi8+PHBhdGggZD0iTTAgMzgwIFEyMDAgMzIwIDQwMCAzNjAgVDgwMCAzNDAgVDEyMDAgMzgwIFY3MDAgSDBaIiBmaWxsPSIjMGEwYjEyIi8+PHBhdGggZD0iTTAgNDUwIFEyNTAgMzkwIDUwMCA0NzAgVDEyMDAgNDQwIFY3MDAgSDBaIiBmaWxsPSIjMDcwODBlIi8+PHBhdGggZD0iTTUyMCA3MDAgQzU2MCA1ODAgNzIwIDUyMCA3ODAgNDIwIEM4MjAgMzYwIDc2MCAzMDAgNzAwIDI2MCBDNzgwIDI5MCA4MjAgMzUwIDc4MCA0MjAgQzc0MCA1MDAgNjIwIDU2MCA1ODAgNzAwWiIgZmlsbD0idXJsKCNyb2FkKSIgb3BhY2l0eT0iMC45NSIvPjxwYXRoIGQ9Ik02MDAgNzAwIEM2NDAgNjAwIDcyMCA1NDAgODAwIDQ2MCIgc3Ryb2tlPSIjRjZEOTdBIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjE4MCIgY3k9IjEyMCIgcj0iMS41IiBmaWxsPSIjRjZEOTdBIiBvcGFjaXR5PSIwLjYiLz48Y2lyY2xlIGN4PSIzMjAiIGN5PSI5MCIgcj0iMSIgZmlsbD0iI0Y2RDk3QSIgb3BhY2l0eT0iMC41Ii8+PGNpcmNsZSBjeD0iOTAwIiBjeT0iMTEwIiByPSIxLjIiIGZpbGw9IiNGNkQ5N0EiIG9wYWNpdHk9IjAuNTUiLz48Y2lyY2xlIGN4PSIxMDUwIiBjeT0iMTUwIiByPSIxIiBmaWxsPSIjRjZEOTdBIiBvcGFjaXR5PSIwLjQ1Ii8+PGNpcmNsZSBjeD0iNTAwIiBjeT0iNzAiIHI9IjEuMyIgZmlsbD0iI0Y2RDk3QSIgb3BhY2l0eT0iMC41Ii8+PC9zdmc+';
     var ringOff = (301.6 * (1 - Math.min(100, Math.max(0, pct)) / 100)).toFixed(1);
 
     root.innerHTML =
-      '<div class="dh-home-wrap dh-lux">' +
+      '<div class="dh-home-wrap dh-mk">' +
 
-        /* —— برند —— */
-        '<header class="dh-lux-brand">' +
-          '<div class="dh-lux-logo-wrap">' +
-            '<img class="dh-lux-logo" src="icon-192.png" alt="اسب سیاه" width="88" height="88">' +
+        '<header class="dh-mk-brand">' +
+          '<div class="dh-mk-logo-glow">' +
+            '<img src="icon-192.png" alt="" class="dh-mk-logo" width="92" height="92">' +
           '</div>' +
-          '<div class="dh-lux-word">DARK HORSE</div>' +
-          '<div class="dh-lux-fa"><i></i><span>اسب سیاه</span><i></i></div>' +
-          '<p class="dh-lux-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی<br><b>بر اساس فردیت</b></p>' +
+          '<div class="dh-mk-word">DARK HORSE</div>' +
+          '<div class="dh-mk-fa"><span class="dh-mk-dash"></span> اسب سیاه <span class="dh-mk-dash"></span></div>' +
+          '<p class="dh-mk-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی<br><strong>بر اساس فردیت</strong></p>' +
         '</header>' +
 
-        /* —— سلام —— */
-        '<section class="dh-lux-hello">' +
-          '<h1 class="dh-lux-name">سلام ' + escape(name) + '</h1>' +
-          '<p class="dh-lux-date">' + escape(faDate()) + '</p>' +
+        '<section class="dh-mk-hello">' +
+          '<h1 class="dh-mk-name">سلام ' + escape(name) + '</h1>' +
+          '<p class="dh-mk-date">' + escape(faDate()) + '</p>' +
         '</section>' +
 
-        /* —— سفر اکتشافی (Hero) —— */
-        '<section class="dh-lux-hero">' +
-          '<div class="dh-lux-hero-bg" style="background-image:url(\'' + heroUrl + '\')"></div>' +
-          '<div class="dh-lux-hero-veil"></div>' +
-          '<div class="dh-lux-hero-content">' +
-            '<div class="dh-lux-hero-row">' +
-              ic('star') +
+        '<section class="dh-mk-hero">' +
+          '<div class="dh-mk-hero-img" style="background-image:url(\'' + HERO + '\')"></div>' +
+          '<div class="dh-mk-hero-shade"></div>' +
+          '<div class="dh-mk-hero-inner">' +
+            '<div class="dh-mk-hero-head">' +
+              '<span class="dh-mk-star" aria-hidden="true">' +
+                '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="rgba(246,217,122,0.12)" stroke="rgba(246,217,122,0.45)" stroke-width="1.5"/>' +
+                '<path d="M24 8l3.5 9.5H38l-8 5.8 3 9.7L24 27.2 15 33l3-9.7-8-5.8h10.5z" fill="#F6D97A"/></svg>' +
+              '</span>' +
               '<div>' +
-                '<div class="dh-lux-hero-title">سفر اکتشافی</div>' +
-                '<div class="dh-lux-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div>' +
+                '<div class="dh-mk-hero-title">سفر اکتشافی</div>' +
+                '<div class="dh-mk-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div>' +
               '</div>' +
             '</div>' +
-            '<button type="button" class="dh-lux-cta" id="dh-start-journey">' +
+            '<button type="button" class="dh-mk-cta" id="dh-start-journey">' +
               (canContinue ? 'ادامه سفر' : 'شروع سفر') +
-              '<span class="dh-lux-cta-arrow">›</span>' +
+              '<span>›</span>' +
             '</button>' +
           '</div>' +
         '</section>' +
 
-        /* —— پیشرفت —— */
-        '<section class="dh-lux-progress">' +
-          '<div class="dh-lux-ring-box">' +
-            '<svg viewBox="0 0 120 120" class="dh-lux-ring">' +
-              '<circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>' +
-              '<circle class="dh-lux-ring-val" cx="60" cy="60" r="48" fill="none" stroke="#D4AF37" stroke-width="8" ' +
-                'stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="' + ringOff + '" transform="rotate(-90 60 60)"/>' +
+        '<section class="dh-mk-progress">' +
+          '<div class="dh-mk-ring">' +
+            '<svg viewBox="0 0 120 120">' +
+              '<circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="9"/>' +
+              '<circle cx="60" cy="60" r="48" fill="none" stroke="#D4AF37" stroke-width="9" stroke-linecap="round" ' +
+                'stroke-dasharray="301.6" stroke-dashoffset="' + ringOff + '" transform="rotate(-90 60 60)"/>' +
             '</svg>' +
-            '<div class="dh-lux-ring-txt">' + pct + '%</div>' +
+            '<span>' + pct + '%</span>' +
           '</div>' +
-          '<div class="dh-lux-prog-body">' +
-            '<div class="dh-lux-prog-title">' + escape(progressLabel) + '</div>' +
-            '<div class="dh-lux-bar"><i style="width:' + pct + '%"></i></div>' +
+          '<div class="dh-mk-prog-text">' +
+            '<div class="dh-mk-prog-title">' + escape(progressLabel) + '</div>' +
+            '<div class="dh-mk-bar"><i style="width:' + pct + '%"></i></div>' +
             (canContinue
-              ? '<button type="button" class="dh-lux-link" id="dh-continue-journey">ادامه سفر ‹</button>'
-              : '<p class="dh-lux-prog-hint">' + escape(living) + '</p>') +
+              ? '<button type="button" class="dh-mk-cont" id="dh-continue-journey">ادامه سفر ‹</button>'
+              : '') +
           '</div>' +
         '</section>' +
 
-        /* —— پیام امروز —— */
-        '<section class="dh-lux-quote">' +
-          '<div class="dh-lux-quote-top">' +
-            '<span class="dh-lux-quill-art" aria-hidden="true">🪶</span>' +
-            '<span class="dh-lux-quote-label">پیام امروز</span>' +
-            '<span class="dh-lux-marks">”</span>' +
+        '<section class="dh-mk-quote">' +
+          '<div class="dh-mk-quote-head">' +
+            '<span class="dh-mk-ink" aria-hidden="true">' +
+              '<svg viewBox="0 0 40 48"><ellipse cx="20" cy="40" rx="12" ry="5" fill="#2a2430"/><path d="M10 38c0-8 4-14 10-22 6 8 10 14 10 22" fill="#3d3548"/><path d="M18 8c2-4 6-6 8-4 1 4-2 10-6 16-3-5-5-10-2-12z" fill="#F6D97A"/><path d="M22 4l2 8" stroke="#D4AF37" stroke-width="1.2"/></svg>' +
+            '</span>' +
+            '<span class="dh-mk-quote-label">پیام امروز</span>' +
+            '<span class="dh-mk-qq">”</span>' +
           '</div>' +
-          '<p class="dh-lux-quote-text">' + escape(quote.t) + '</p>' +
-          '<div class="dh-lux-quote-by">' + escape(quote.tag) + '</div>' +
+          '<p class="dh-mk-quote-body">' + escape(quote.t) + '</p>' +
+          '<div class="dh-mk-quote-by">' + escape(quote.tag) + '</div>' +
         '</section>' +
 
-        /* —— کشف بیشتر —— */
-        '<section class="dh-lux-more">' +
-          '<div class="dh-lux-divider"><i></i><span>کشف بیشتر</span><i></i></div>' +
+        '<section class="dh-mk-features">' +
+          '<div class="dh-mk-sep"><i></i><span>کشف بیشتر</span><i></i></div>' +
 
-          '<button type="button" class="dh-lux-row dh-lux-row-spark" id="dh-open-spark">' +
-            ic('bolt') +
-            '<div class="dh-lux-row-txt">' +
-              '<strong>جرقه‌یاب</strong>' +
-              '<span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span>' +
-            '</div>' +
-            ic('chev') +
+          '<button type="button" class="dh-mk-feat dh-mk-feat-main" id="dh-open-spark">' +
+            '<span class="dh-mk-orb dh-mk-orb-gold"><svg viewBox="0 0 24 24"><path d="M13 2L5 14h6l-1 8 8-12h-6z" fill="#F6D97A"/></svg></span>' +
+            '<div class="dh-mk-feat-txt"><strong>جرقه‌یاب</strong><span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span></div>' +
+            '<span class="dh-mk-chev">›</span>' +
           '</button>' +
 
-          '<div class="dh-lux-duo">' +
-            '<button type="button" class="dh-lux-tile" id="dh-open-stories">' +
-              ic('book') +
+          '<div class="dh-mk-grid2">' +
+            '<button type="button" class="dh-mk-card" id="dh-open-stories">' +
+              '<span class="dh-mk-orb dh-mk-orb-gold"><svg viewBox="0 0 24 24"><path d="M4 5a3 3 0 013-3h13v16H7a3 3 0 00-3 3V5z" fill="none" stroke="#F6D97A" stroke-width="1.8"/><path d="M4 5v16M8 6h8" stroke="#F6D97A" stroke-width="1.6"/></svg></span>' +
               '<strong>داستان‌ها</strong>' +
               '<span>روایت مسیرهای واقعی برای الهام گرفتن</span>' +
             '</button>' +
-            '<button type="button" class="dh-lux-tile" id="dh-open-poems">' +
-              ic('quill') +
+            '<button type="button" class="dh-mk-card" id="dh-open-poems">' +
+              '<span class="dh-mk-orb dh-mk-orb-gold"><svg viewBox="0 0 24 24"><path d="M20 4c-7 0-13 4-13 10 0 3 2 6 5 6 5 0 9-7 8-16z" fill="#F6D97A" fill-opacity="0.9"/><path d="M4 21c3-5 7-8 13-11" stroke="#D4AF37" stroke-width="1.4" fill="none"/></svg></span>' +
               '<strong>سخن بزرگان</strong>' +
               '<span>یک فکر ارزشمند برای امروز</span>' +
             '</button>' +
           '</div>' +
 
-          '<button type="button" class="dh-lux-row" id="dh-open-parents">' +
-            ic('parents') +
-            '<div class="dh-lux-row-txt">' +
-              '<strong>والدین</strong>' +
-              '<span>همراهی بهتر در انتخاب مسیر</span>' +
-            '</div>' +
-            ic('chev') +
+          '<button type="button" class="dh-mk-feat" id="dh-open-parents">' +
+            '<span class="dh-mk-orb dh-mk-orb-mint"><svg viewBox="0 0 24 24"><circle cx="8" cy="7" r="3" fill="none" stroke="#7ec8a3" stroke-width="1.7"/><circle cx="16.5" cy="8" r="2.5" fill="none" stroke="#7ec8a3" stroke-width="1.7"/><path d="M2.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M13 14.5c1-.6 2.2-1 3.5-1 2.4 0 4 2 4.8 5.5" fill="none" stroke="#7ec8a3" stroke-width="1.6"/></svg></span>' +
+            '<div class="dh-mk-feat-txt"><strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></div>' +
+            '<span class="dh-mk-chev">›</span>' +
           '</button>' +
         '</section>' +
 
       '</div>';
 
-    function bind(id, fn) {
-      var el = $(id);
-      if (el) el.onclick = fn;
-    }
-    bind('dh-start-journey', function () { startJourneyFromShell(); });
-    bind('dh-continue-journey', function () { startJourneyFromShell(); });
-    bind('dh-open-spark', function () {
+    function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
+    on('dh-start-journey', function () { startJourneyFromShell(); });
+    on('dh-continue-journey', function () { startJourneyFromShell(); });
+    on('dh-open-spark', function () {
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
       else alert('ماژول جرقه‌یاب بارگذاری نشده.');
     });
-    bind('dh-open-stories', function () {
+    on('dh-open-stories', function () {
       if (window.DHStories && DHStories.open) DHStories.open();
       else alert('بخش داستان‌ها بارگذاری نشده.');
     });
-    bind('dh-open-poems', function () {
+    on('dh-open-poems', function () {
       if (window.DHPoems && DHPoems.open) DHPoems.open();
       else alert('بخش سخن بزرگان بارگذاری نشده.');
     });
-    bind('dh-open-parents', function () {
+    on('dh-open-parents', function () {
       if (window.DHParents && DHParents.open) DHParents.open();
       else alert('بخش والدین بارگذاری نشده.');
     });
