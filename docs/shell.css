@@ -1813,3 +1813,57 @@ body, #app, .dh-home-wrap, .dh-mk2 {
 #app [style*="color:white"] {
   color: #d4c49a !important;
 }
+
+/* v55 */
+/* حذف اثر متا از خانه */
+.dh-mk2-meta { display: none !important; }
+
+/* پروفایل: نام + تاریخ */
+.dh-prof-head {
+  text-align: center;
+  padding: 8px 0 16px;
+  margin-bottom: 8px;
+}
+.dh-prof-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #e8d9a8 !important;
+}
+.dh-prof-date {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #c9b888 !important;
+  font-weight: 500;
+}
+
+/* دکمه شروع/ادامه سفر کوچک‌تر */
+.dh-mk2-cta {
+  padding: 9px 18px !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  min-height: auto !important;
+}
+.dh-mk2-cta span {
+  font-size: 0.95rem !important;
+}
+
+/* گزینه‌های سوالات راهبرد/ارزش — طلایی ملایم */
+#app .btn {
+  color: #d4c49a !important;
+}
+#app .btn-primary {
+  color: #1a1206 !important;
+}
+#app .card p,
+#app .card {
+  color: #d4c49a !important;
+}
+#app h2 {
+  color: #e8d9a8 !important;
+}
+#app .option {
+  color: #d4c49a !important;
+}
+#app .option.selected {
+  color: #F0C040 !important;
+}

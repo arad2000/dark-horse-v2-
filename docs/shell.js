@@ -334,12 +334,6 @@
 
     root.innerHTML =
       '<div class="dh-home-wrap dh-mk2">' +
-        '<div class="dh-mk2-meta">' +
-          '<div class="dh-mk2-meta-stack">' +
-            '<span class="dh-mk2-meta-name">سلام ' + escape(name) + '</span>' +
-            '<span class="dh-mk2-meta-date">' + escape(faDate()) + '</span>' +
-          '</div>' +
-        '</div>' +
         '<header class="dh-mk2-brand">' +
           '<div class="dh-mk2-logo-ring"><img src="' + base + 'icon-192.png" alt="" width="96" height="96"></div>' +
           '<div class="dh-mk2-word">DARK HORSE</div>' +
@@ -537,6 +531,12 @@
     var u = getDisplayUser();
     var q = localQuota();
     var last = loadLastResult();
+    var dateStr = (typeof faDate === 'function') ? faDate() : '';
+    var headBlock = '<div class="dh-prof-head">' +
+      '<div class="dh-prof-name">' + (u && u.name ? escape(u.name) : 'مسافر') + '</div>' +
+      (dateStr ? '<div class="dh-prof-date">' + escape(dateStr) + '</div>' : '') +
+      '</div>';
+    var dateStr = (typeof faDate === 'function') ? faDate() : '';
 
     if (!u) {
       root.innerHTML =
@@ -603,6 +603,7 @@
 
     root.innerHTML =
       '<div class="dh-home-wrap">' +
+      headBlock +
       '<div class="card" style="text-align:right;margin-top:4px;padding-bottom:18px;">' +
       '<div class="dh-profile-avatar">' + escape(initial) + '</div>' +
       '<h2 style="text-align:center;margin:0;color:#f0c040;">' + escape(u.name) + '</h2>' +
