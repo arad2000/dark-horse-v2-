@@ -1674,3 +1674,142 @@ h2 {
 .dh-guide-actions{display:flex;gap:10px}
 .dh-guide-btn{flex:1;padding:12px;border:none;border-radius:12px;background:linear-gradient(180deg,#F0C040,#D4AF37);color:#1a1206;font-family:inherit;font-weight:800;font-size:.95rem;cursor:pointer}
 .dh-guide-btn.secondary{background:transparent;color:#c8c0b0;border:1px solid rgba(255,255,255,.15)}
+
+
+/* ========== v54: متن طلایی ملایم + اصلاح راهنما + پنل سفر + متا ========== */
+
+/* ۱) نوشته‌های سفید → طلایی ملایم مثل «بر اساس فردیت» */
+:root {
+  --text-primary: #d4c49a !important;
+  --text-secondary: #c9b888 !important;
+  --text-soft: #b8a878 !important;
+}
+body, #app, .dh-home-wrap, .dh-mk2 {
+  color: #d4c49a !important;
+}
+/* صفحات سفر / کارت‌ها / نتایج */
+#app p, #app span, #app div, #app li, #app label,
+.card, .quote, .swipe-card, .btn:not(.btn-primary):not(.dh-mk2-cta):not(.dh-guide-btn) {
+  color: inherit;
+}
+#app h1, #app h2, #app h3 {
+  color: #e8d9a8 !important;
+}
+/* تب‌بار */
+.dh-tabbar, .dh-tab, .dh-tab span {
+  color: #c9b888 !important;
+}
+.dh-tab.active, .dh-tab.active span {
+  color: #F0C040 !important;
+}
+
+/* ۴) نام و تاریخ — سمت چپ، ستونی */
+.dh-mk2-meta {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  padding: 6px 4px 12px !important;
+}
+.dh-mk2-meta-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  direction: ltr;
+}
+.dh-mk2-meta-name {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  color: #c9b888 !important;
+  direction: rtl;
+  text-align: left;
+}
+.dh-mk2-meta-date {
+  font-size: 0.78rem !important;
+  font-weight: 400 !important;
+  color: #a89870 !important;
+  direction: rtl;
+  text-align: left;
+}
+
+/* ۳) پنل سفر — هم‌رنگ با صفحه، فقط حاشیه طلایی ظریف */
+.dh-mk2-hero {
+  background: #121018 !important;
+  border: 1px solid rgba(212,175,55,0.28) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35) !important;
+  min-height: 168px !important;
+}
+.dh-mk2-hero-bg {
+  opacity: 0.45 !important;
+  filter: saturate(0.85) brightness(0.9);
+}
+.dh-mk2-hero-shade {
+  background: linear-gradient(105deg,
+    rgba(12,12,18,0.92) 0%,
+    rgba(12,12,18,0.75) 50%,
+    rgba(12,12,18,0.55) 100%) !important;
+}
+.dh-mk2-hero-title {
+  color: #e8d9a8 !important;
+  text-shadow: none !important;
+}
+.dh-mk2-hero-sub {
+  color: #c9b888 !important;
+}
+.dh-mk2-cta {
+  background: linear-gradient(180deg, #E8C547, #D4AF37) !important;
+  box-shadow: 0 4px 16px rgba(212,175,55,0.3) !important;
+}
+
+/* ۲) راهنما — بالای تب‌بار + دکمه‌ها همیشه قابل لمس */
+.dh-guide-ov {
+  z-index: 10080 !important;
+  align-items: center !important;
+  padding: 16px 12px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+}
+.dh-guide-panel {
+  max-height: min(78vh, 640px) !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 20px !important;
+  display: flex;
+  flex-direction: column;
+}
+.dh-guide-body {
+  flex: 1;
+  overflow: auto;
+  max-height: none;
+  padding-bottom: 8px;
+  color: #d4c49a !important;
+}
+.dh-guide-actions {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  padding-top: 8px;
+  background: linear-gradient(180deg, transparent, #121018 20%);
+}
+.dh-guide-title {
+  color: #e8d9a8 !important;
+}
+.dh-guide-btn {
+  min-height: 48px;
+}
+
+/* بولد سامانه */
+.dh-mk2-sys {
+  color: #e8d9a8 !important;
+  font-weight: 800 !important;
+}
+.dh-mk2-sub {
+  color: #c9b888 !important;
+}
+
+/* override common whites in journey UI */
+#app [style*="color:#e0e0e0"],
+#app [style*="color: #e0e0e0"],
+#app [style*="color:#fff"],
+#app [style*="color:#ffffff"],
+#app [style*="color:white"] {
+  color: #d4c49a !important;
+}

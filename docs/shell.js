@@ -235,7 +235,7 @@
     var page = 0;
     var pages = [
       {
-        title: 'اسب سیاه — مشاور سامانه',
+        title: 'راهنمای سفر اکتشافی',
         body:
           '<p class="dh-g-quote">«موفقیت از تقلید دیگران به دست نمی‌آید؛ از شناخت فردیت و ساختن مسیر شخصی می‌آید.»</p>' +
           '<p class="dh-g-src">— تاد رز، کتاب اسب سیاه (پروژه هاروارد)</p>' +
@@ -250,7 +250,7 @@
           '<p class="dh-g-note">این تست شخصیت نیست؛ سفر کوتاهی برای کشف خودت است.</p>'
       },
       {
-        title: 'راهنمای سفر اکتشافی',
+        title: '',
         body:
           '<p>این یک تست نیست؛ <strong>سفری برای شناخت انگیزه، سبک فکر و ارزش‌های خودت</strong> است.</p>' +
           '<h3>مسیر سفر</h3>' +
@@ -272,7 +272,7 @@
       ov.innerHTML =
         '<div class="dh-guide-panel">' +
           '<button type="button" class="dh-guide-x" id="dh-guide-close">×</button>' +
-          '<h2 class="dh-guide-title">' + p.title + '</h2>' +
+          (p.title ? '<h2 class="dh-guide-title">' + p.title + '</h2>' : '') +
           '<div class="dh-guide-body">' + p.body + '</div>' +
           '<div class="dh-guide-dots"><span class="' + (page === 0 ? 'on' : '') + '"></span><span class="' + (page === 1 ? 'on' : '') + '"></span></div>' +
           '<div class="dh-guide-actions">' +
@@ -335,8 +335,10 @@
     root.innerHTML =
       '<div class="dh-home-wrap dh-mk2">' +
         '<div class="dh-mk2-meta">' +
-          '<span class="dh-mk2-meta-name">سلام ' + escape(name) + '</span>' +
-          '<span class="dh-mk2-meta-date">' + escape(faDate()) + '</span>' +
+          '<div class="dh-mk2-meta-stack">' +
+            '<span class="dh-mk2-meta-name">سلام ' + escape(name) + '</span>' +
+            '<span class="dh-mk2-meta-date">' + escape(faDate()) + '</span>' +
+          '</div>' +
         '</div>' +
         '<header class="dh-mk2-brand">' +
           '<div class="dh-mk2-logo-ring"><img src="' + base + 'icon-192.png" alt="" width="96" height="96"></div>' +
