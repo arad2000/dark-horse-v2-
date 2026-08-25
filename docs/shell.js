@@ -532,10 +532,6 @@
     var q = localQuota();
     var last = loadLastResult();
     var dateStr = (typeof faDate === 'function') ? faDate() : '';
-    var headBlock = '<div class="dh-prof-head">' +
-      '<div class="dh-prof-name">' + (u && u.name ? escape(u.name) : 'مسافر') + '</div>' +
-      (dateStr ? '<div class="dh-prof-date">' + escape(dateStr) + '</div>' : '') +
-      '</div>';
     var dateStr = (typeof faDate === 'function') ? faDate() : '';
 
     if (!u) {
@@ -603,10 +599,11 @@
 
     root.innerHTML =
       '<div class="dh-home-wrap">' +
-      headBlock +
+      
       '<div class="card" style="text-align:right;margin-top:4px;padding-bottom:18px;">' +
       '<div class="dh-profile-avatar">' + escape(initial) + '</div>' +
-      '<h2 style="text-align:center;margin:0;color:#f0c040;">' + escape(u.name) + '</h2>' +
+      '<h2 class="dh-prof-display-name">' + escape(u.name) + '</h2>' +
+      (dateStr ? '<p class="dh-prof-date">' + escape(dateStr) + '</p>' : '') +
       '<p style="text-align:center;color:#8a7a55;margin:6px 0 0;font-size:0.9rem;">' + escape(u.phone || '') + '</p>' +
       '<div class="dh-stat-grid">' +
         '<div class="dh-stat"><div class="n">' + escape(String(remain)) + '</div><div class="l">اکتشاف باقی</div></div>' +
@@ -712,14 +709,15 @@
     ensureTabbar();
     patchRender();
     patchConsumeOnResults();
-    // اگر سفر ناتمام است، از همان‌جا ادامه بده (خروج از اپ = از دست رفتن پیشرفت نباشد)
-    if (tryAutoResumeJourney()) return;
+    // همیشه از صفحه خانه باز شو
+    // سشن ناتمام تا دیدن نتایج حفظ می‌شود؛ ادامه فقط با دکمه «ادامه سفر»
+    window.__dhInJourney = false;
     renderHome();
     setTimeout(function () {
-      if (!window.__dhInJourney && !tryAutoResumeJourney()) renderHome();
+      if (!window.__dhInJourney) renderHome();
     }, 200);
     setTimeout(function () {
-      if (!window.__dhInJourney && !tryAutoResumeJourney()) renderHome();
+      if (!window.__dhInJourney) renderHome();
     }, 700);
   }
 

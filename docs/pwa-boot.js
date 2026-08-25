@@ -1,4 +1,4 @@
-/* pwa-boot.js v55 — force SW update + one reload */
+/* pwa-boot.js v57 — force SW update + one reload */
 (function () {
   'use strict';
 
@@ -17,7 +17,7 @@
 
   if ('serviceWorker' in navigator) {
     // URL جدید = نصب SW جدید اجباری
-    var SW_URL = './sw.js?v=55';
+    var SW_URL = './sw.js?v=57';
 
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
@@ -43,8 +43,8 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v55') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v55', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v57') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v57', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();

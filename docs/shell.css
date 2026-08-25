@@ -1867,3 +1867,101 @@ body, #app, .dh-home-wrap, .dh-mk2 {
 #app .option.selected {
   color: #F0C040 !important;
 }
+
+/* ========== v56: سلسله‌مراتب تایپو + پروفایل تک‌نام ==========
+   الگوی لوکس (Apple/Spotify/Linear):
+   - یک نام نمایشی زیر آواتار
+   - زیرش متای کم‌رنگ (تاریخ / عضویت)
+   سوال: روشن‌تر و بزرگ‌تر | گزینه: ملایم‌تر و کوچک‌تر
+*/
+
+.dh-prof-display-name {
+  text-align: center !important;
+  margin: 10px 0 0 !important;
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  color: #f0e6c8 !important;
+  letter-spacing: -0.01em;
+}
+.dh-prof-date {
+  text-align: center !important;
+  margin: 6px 0 0 !important;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
+  color: #a89870 !important;
+}
+.dh-prof-head { display: none !important; } /* جلوگیری از تکرار */
+
+/* --- سوالات: تمایز سوال vs گزینه --- */
+/* متن سوال داخل کارت */
+#app .card > p {
+  font-size: 1.08rem !important;
+  font-weight: 600 !important;
+  line-height: 1.85 !important;
+  color: #f0e6c8 !important; /* روشن‌تر از گزینه */
+}
+/* عنوان بخش (راهبرد n از m) */
+#app > h2,
+#app h2 {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #e8d9a8 !important;
+}
+/* گزینه‌های دکمه سوالات */
+#app .card .btn:not(.btn-primary) {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  line-height: 1.7 !important;
+  color: #c9b888 !important; /* ملایم‌تر */
+  background: #16141e !important;
+  border: 1px solid rgba(212,175,55,0.18) !important;
+  text-align: right !important;
+}
+#app .card .btn:not(.btn-primary):active {
+  border-color: rgba(240,192,64,0.45) !important;
+  color: #e8d9a8 !important;
+}
+/* گزینه انتخاب‌شده — کمی برجسته‌تر */
+#app .card .btn:not(.btn-primary)[style*="border:2px solid"],
+#app .card .btn:not(.btn-primary)[style*="border: 2px solid"] {
+  color: #f0e6c8 !important;
+  border-color: #D4AF37 !important;
+  background: rgba(212,175,55,0.08) !important;
+}
+
+/* گزینه‌های محله/مسیر (.option) */
+#app .option {
+  font-size: 0.92rem !important;
+  font-weight: 500 !important;
+  color: #c9b888 !important;
+}
+#app .option.selected {
+  color: #f0e6c8 !important;
+  font-weight: 600 !important;
+}
+
+/* دکمه اصلی */
+#app .btn-primary {
+  color: #1a1206 !important;
+  font-weight: 700 !important;
+}
+
+
+/* v57 on v56: تیتر سامانه یک خط + boot خانه */
+.dh-mk2-sys {
+  white-space: nowrap !important;
+  font-size: 0.92rem !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.4 !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 0 4px !important;
+}
+@media (min-width: 360px) {
+  .dh-mk2-sys { font-size: 0.98rem !important; }
+}
+@media (min-width: 400px) {
+  .dh-mk2-sys { font-size: 1.05rem !important; }
+}
