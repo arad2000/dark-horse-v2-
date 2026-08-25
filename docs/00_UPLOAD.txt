@@ -1,10 +1,12 @@
-HOTFIX فوری — SyntaxError
-=========================
-علت خرابی سایت: escape اشتباه در shell.js (onerror / url)
+یکدست‌سازی Home
+================
+مشکل: چند لایه CSS متناقض (m25 + lux + mk + mk2) ظاهر را از یکدستی انداخته بود.
 
-فقط جایگزین در docs:
-  shell.js
-  shell.css
-  sw.js
+این بسته:
+- CSS قدیمی Home را حذف و یک تم واحد dh-mk2 گذاشته
+- shell.js بدون تغییر منطق (همان نسخه سالم)
+- بولد فقط سامانه هدایت تحصیلی
+- نام کاربر بولد نیست
 
-بعد Hard Refresh
+docs: shell.js shell.css sw.js
+Hard Refresh

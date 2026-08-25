@@ -1308,771 +1308,54 @@ h2 {
 .dh-brand-text { text-align: center; }
 
 
-/* ========== Home Mock v25 (ماکت ارزیاب) ========== */
-.dh-home-mock25 {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 8px 8px 28px;
-}
-.dh-m25-brand { text-align: center; margin-bottom: 14px; }
-.dh-m25-logo {
-  width: 72px; height: 72px; margin: 0 auto 10px;
-  border-radius: 18px; overflow: hidden;
-  border: 1px solid rgba(212,175,55,0.4);
-  box-shadow: 0 6px 24px rgba(212,175,55,0.2);
-  background: #0a0a0f;
-}
-.dh-m25-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.dh-m25-word {
-  font-size: 1.35rem; font-weight: 800; letter-spacing: 0.12em;
-  color: #f0c040;
-}
-.dh-m25-fa {
-  margin-top: 6px; font-size: 0.95rem; color: #e8e0d0;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-}
-.dh-m25-line {
-  display: inline-block; width: 28px; height: 1px;
-  background: rgba(212,175,55,0.45);
-}
-.dh-m25-sys {
-  margin: 10px auto 0; max-width: 300px;
-  font-size: 0.8rem; line-height: 1.7; color: #8a8478;
-}
-.dh-m25-sys strong { color: #c8b890; font-weight: 700; }
-.dh-m25-hello { text-align: center; margin-bottom: 16px; }
-.dh-m25-greet {
-  margin: 0; font-size: 1.45rem; font-weight: 800; color: #f2ebe0;
-}
-.dh-m25-date { margin: 4px 0 0; font-size: 0.82rem; color: #7a7568; }
-.dh-m25-living {
-  margin: 10px 0 0; font-size: 0.92rem; line-height: 1.7; color: #b0a890;
-}
-.dh-m25-hero {
-  position: relative; border-radius: 20px; overflow: hidden;
-  min-height: 168px; margin-bottom: 14px;
-  border: 1px solid rgba(212,175,55,0.35);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-}
-.dh-m25-hero-bg {
-  position: absolute; inset: 0;
-  background-size: cover; background-position: center;
-  opacity: 1;
-}
-.dh-m25-hero-bg::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(8,8,12,0.88) 0%, rgba(8,8,12,0.55) 55%, rgba(8,8,12,0.25) 100%);
-}
-.dh-m25-hero-body {
-  position: relative; z-index: 1; padding: 18px 16px 16px; text-align: right;
-}
-.dh-m25-hero-top {
-  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px;
-}
-.dh-m25-hero-title {
-  font-size: 1.2rem; font-weight: 800; color: #f0c040;
-}
-.dh-m25-hero-sub {
-  margin-top: 4px; font-size: 0.88rem; color: #c8c0b0; line-height: 1.5;
-}
-.dh-m25-cta {
-  width: auto !important; min-width: 140px;
-  padding: 11px 22px !important; border-radius: 999px !important;
-  font-weight: 700 !important; font-size: 0.95rem !important;
-}
-.dh-m25-ico { width: 28px; height: 28px; flex-shrink: 0; }
-.dh-m25-ico-lg { width: 36px; height: 36px; }
-.dh-m25-progress {
-  display: flex; gap: 14px; align-items: center;
-  padding: 14px; border-radius: 16px;
-  background: rgba(18,16,26,0.95);
-  border: 1px solid rgba(255,255,255,0.07);
-  margin-bottom: 14px;
-}
-.dh-m25-ring-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
-.dh-m25-ring { width: 64px; height: 64px; }
-.dh-m25-ring-pct {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 0.85rem; font-weight: 800; color: #f0c040;
-}
-.dh-m25-prog-info { flex: 1; min-width: 0; }
-.dh-m25-prog-title { font-size: 0.95rem; font-weight: 700; color: #e8e0d0; margin-bottom: 8px; }
-.dh-m25-bar {
-  height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden;
-}
-.dh-m25-bar-fill {
-  height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, #b8860b, #f0c040);
-}
-.dh-m25-continue {
-  margin-top: 8px; background: none; border: none; color: #f0c040;
-  font-family: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer; padding: 0;
-}
-.dh-m25-restart {
-  display: block; margin-top: 4px; background: none; border: none;
-  color: #7a7568; font-family: inherit; font-size: 0.8rem; cursor: pointer;
-  text-decoration: underline; text-underline-offset: 2px;
-}
-.dh-m25-quote {
-  padding: 16px; border-radius: 16px;
-  background: #121018; border: 1px solid rgba(255,255,255,0.06);
-  margin-bottom: 18px;
-}
-.dh-m25-quote-head {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
-}
-.dh-m25-quote-label { font-size: 0.95rem; font-weight: 800; color: #e8e0d0; flex: 1; }
-.dh-m25-qmark { color: rgba(240,192,64,0.45); font-size: 1.4rem; }
-.dh-m25-quote-text {
-  margin: 0; font-size: 0.98rem; line-height: 1.9; color: #d8d0c4; text-align: right;
-}
-.dh-m25-quote-by {
-  margin-top: 10px; font-size: 0.8rem; color: #8a8478; text-align: left;
-}
-.dh-m25-section {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  margin-bottom: 12px; font-size: 0.85rem; color: #a09070; font-weight: 700;
-}
-.dh-m25-div { width: 72px; height: 10px; opacity: 0.85; }
-.dh-m25-row {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 14px 14px; margin-bottom: 10px; border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08); background: #121018;
-  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
-}
-.dh-m25-spark { border-color: rgba(212,175,55,0.28); box-shadow: 0 0 20px rgba(212,175,55,0.06); }
-.dh-m25-row-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.dh-m25-row-text strong { font-size: 1rem; color: #f0e8d8; }
-.dh-m25-row-text span { font-size: 0.8rem; color: #8a8478; line-height: 1.5; }
-.dh-m25-chev { width: 18px; height: 18px; opacity: 0.7; }
-.dh-m25-duo {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
-}
-.dh-m25-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  padding: 14px; min-height: 120px; border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08); background: #121018;
-  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
-}
-.dh-m25-tile strong { font-size: 0.95rem; color: #f0e8d8; }
-.dh-m25-tile span { font-size: 0.78rem; color: #8a8478; line-height: 1.5; }
-.dh-m25-row:active, .dh-m25-tile:active { transform: scale(0.985); }
-@media (prefers-reduced-motion: reduce) {
-  .dh-m25-row:active, .dh-m25-tile:active { transform: none; }
-}
+/* ============================================================
+   HOME UNIFIED — یک تم واحد نزدیک ماکت
+   بولد فقط: سامانه هدایت تحصیلی
+   نام کاربر: سبک
+   ============================================================ */
 
-/* Fix: آیکون‌های inline + تیتر سامانه بولد */
-.dh-m25-svg {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-}
-.dh-m25-svg svg { width: 100%; height: 100%; display: block; }
-.dh-m25-svg-sm, .dh-m25-row .dh-m25-svg:last-child {
-  width: 18px; height: 18px; opacity: 0.75;
-}
-.dh-m25-sys {
-  margin: 10px auto 0 !important;
-  max-width: 320px;
-  font-size: 0.95rem !important;
-  line-height: 1.75 !important;
-  color: #c8b890 !important;
-  font-weight: 400 !important;
-}
-.dh-m25-sys strong {
-  display: inline;
-  font-size: 1.05rem !important;
-  font-weight: 800 !important;
-  color: #f0e8d8 !important;
-}
-.dh-m25-greet {
-  margin: 0 !important;
-  font-size: 1.05rem !important;
-  font-weight: 600 !important;
-  color: #c8c0b0 !important;
-}
-.dh-m25-div-line {
-  display: inline-block;
-  width: 40px;
-  height: 1px;
-  background: rgba(212,175,55,0.35);
-  vertical-align: middle;
-}
-.dh-m25-hero-bg {
-  background-color: #0c0b12;
-  background-size: cover;
-  background-position: center;
-}
-
-
-/* =========================================================
-   Home LUX — نزدیک به ماکت ارزیاب (فقط ظاهر)
-   ========================================================= */
-.dh-lux {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 6px 10px 32px;
-  color: #e8e2d6;
-}
-.dh-lux-brand { text-align: center; margin-bottom: 8px; }
-.dh-lux-logo-wrap {
-  width: 88px; height: 88px; margin: 0 auto 12px;
-  border-radius: 22px;
-  background: radial-gradient(circle at 50% 40%, rgba(246,217,122,0.2), transparent 70%);
-  box-shadow: 0 0 32px rgba(212,175,55,0.25);
-  display: flex; align-items: center; justify-content: center;
-}
-.dh-lux-logo {
-  width: 80px; height: 80px; object-fit: contain;
-  border-radius: 18px;
-  border: 1px solid rgba(212,175,55,0.35);
-}
-.dh-lux-word {
-  font-size: 1.55rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: #E8C547;
-  text-shadow: 0 0 24px rgba(232,197,71,0.35);
-}
-.dh-lux-fa {
-  margin-top: 8px;
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  font-size: 1rem; color: #d8d0c0; font-weight: 600;
-}
-.dh-lux-fa i {
-  display: block; width: 36px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent);
-}
-.dh-lux-sys {
-  margin: 12px auto 0;
-  max-width: 300px;
-  font-size: 0.82rem;
-  line-height: 1.75;
-  color: #8a8478;
-  font-weight: 400;
-}
-.dh-lux-sys b {
-  color: #c8b890;
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-.dh-lux-hello { text-align: center; margin: 18px 0 16px; }
-.dh-lux-name {
-  margin: 0;
-  font-size: 1.65rem;
-  font-weight: 800;
-  color: #f5f0e6;
-  letter-spacing: -0.01em;
-}
-.dh-lux-date {
-  margin: 6px 0 0;
-  font-size: 0.85rem;
-  color: #7a7568;
-}
-
-/* Hero */
-.dh-lux-hero {
-  position: relative;
-  border-radius: 22px;
-  overflow: hidden;
-  min-height: 178px;
-  margin-bottom: 14px;
-  border: 1px solid rgba(212,175,55,0.4);
-  box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(246,217,122,0.08) inset;
-}
-.dh-lux-hero-bg {
-  position: absolute; inset: 0;
-  background-color: #0a0c14;
-  background-size: cover;
-  background-position: center right;
-  /* fallback سینمایی اگر فایل hero نباشد */
-  background-image:
-    radial-gradient(ellipse 80% 50% at 70% 40%, rgba(246,217,122,0.15), transparent 55%),
-    linear-gradient(165deg, #0a0c14 0%, #15101a 45%, #0d0a12 100%);
-}
-.dh-lux-hero-veil {
-  position: absolute; inset: 0;
-  background: linear-gradient(105deg,
-    rgba(6,6,10,0.92) 0%,
-    rgba(6,6,10,0.55) 48%,
-    rgba(6,6,10,0.15) 100%);
-  pointer-events: none;
-}
-.dh-lux-hero-content {
-  position: relative; z-index: 2;
-  padding: 20px 18px 18px;
-  text-align: right;
-}
-.dh-lux-hero-row {
-  display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px;
-}
-.dh-lux-hero-title {
-  font-size: 1.28rem; font-weight: 800; color: #F0C040;
-}
-.dh-lux-hero-sub {
-  margin-top: 5px; font-size: 0.9rem; color: #c8c0b0; line-height: 1.55;
-}
-.dh-lux-cta {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 12px 26px;
-  border: none; border-radius: 999px;
-  background: linear-gradient(180deg, #F0D060 0%, #D4AF37 100%);
-  color: #1a1408;
-  font-family: inherit; font-size: 1rem; font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(212,175,55,0.35);
-}
-.dh-lux-cta-arrow { font-size: 1.2rem; line-height: 1; }
-.dh-lux-cta:active { transform: scale(0.98); }
-
-/* Progress */
-.dh-lux-progress {
-  display: flex; gap: 14px; align-items: center;
-  padding: 16px;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #16141e, #0e0c14);
-  border: 1px solid rgba(255,255,255,0.07);
-  margin-bottom: 14px;
-}
-.dh-lux-ring-box { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
-.dh-lux-ring { width: 72px; height: 72px; }
-.dh-lux-ring-val {
-  filter: drop-shadow(0 0 4px rgba(212,175,55,0.45));
-  transition: stroke-dashoffset 0.7s cubic-bezier(0.22,1,0.36,1);
-}
-.dh-lux-ring-txt {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.95rem; font-weight: 800; color: #F0C040;
-}
-.dh-lux-prog-body { flex: 1; min-width: 0; }
-.dh-lux-prog-title {
-  font-size: 1rem; font-weight: 700; color: #ebe4d8; margin-bottom: 10px;
-}
-.dh-lux-bar {
-  height: 7px; border-radius: 99px;
-  background: rgba(255,255,255,0.08); overflow: hidden;
-}
-.dh-lux-bar i {
-  display: block; height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, #A67C00, #F0C040);
-}
-.dh-lux-link {
-  margin-top: 10px; padding: 0; border: none; background: none;
-  color: #F0C040; font-family: inherit; font-size: 0.9rem; font-weight: 700;
-  cursor: pointer;
-}
-.dh-lux-prog-hint {
-  margin: 8px 0 0; font-size: 0.8rem; color: #7a7568; line-height: 1.5;
-}
-
-/* Quote */
-.dh-lux-quote {
-  padding: 18px 16px;
-  border-radius: 18px;
-  background: linear-gradient(160deg, #14121a, #0c0b12);
-  border: 1px solid rgba(255,255,255,0.06);
-  margin-bottom: 18px;
-}
-.dh-lux-quote-top {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
-}
-.dh-lux-quill-art { font-size: 1.6rem; filter: grayscale(0.2) sepia(0.4); }
-.dh-lux-quote-label {
-  flex: 1; font-size: 1.05rem; font-weight: 800; color: #ebe4d8;
-}
-.dh-lux-marks {
-  font-size: 1.6rem; color: rgba(240,192,64,0.4); line-height: 1;
-}
-.dh-lux-quote-text {
-  margin: 0; font-size: 1rem; line-height: 1.95; color: #d4ccc0; text-align: right;
-}
-.dh-lux-quote-by {
-  margin-top: 12px; font-size: 0.82rem; color: #8a8478; text-align: left;
-}
-
-/* More */
-.dh-lux-divider {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  margin-bottom: 14px; font-size: 0.88rem; font-weight: 700; color: #a09070;
-}
-.dh-lux-divider i {
-  width: 48px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.45), transparent);
-}
-.dh-lux-ic {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-  background: radial-gradient(circle at 40% 35%, rgba(246,217,122,0.22), rgba(20,18,28,0.9) 70%);
-  border: 1px solid rgba(212,175,55,0.28);
-  box-shadow: 0 0 16px rgba(212,175,55,0.12);
-}
-.dh-lux-ic svg { width: 22px; height: 22px; }
-.dh-lux-ic-chev {
-  width: 22px; height: 22px; background: none; border: none; box-shadow: none;
-  opacity: 0.7;
-}
-.dh-lux-ic-chev svg { width: 16px; height: 16px; }
-.dh-lux-ic-parents {
-  border-color: rgba(126,200,163,0.3);
-  background: radial-gradient(circle at 40% 35%, rgba(126,200,163,0.15), rgba(20,18,28,0.9) 70%);
-}
-.dh-lux-row {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 14px 14px; margin-bottom: 10px; border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: linear-gradient(145deg, #16141e, #100e16);
-  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
-}
-.dh-lux-row-spark {
-  border-color: rgba(212,175,55,0.32);
-  box-shadow: 0 0 24px rgba(212,175,55,0.08);
-}
-.dh-lux-row-txt { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.dh-lux-row-txt strong { font-size: 1.02rem; color: #f2ebe0; font-weight: 800; }
-.dh-lux-row-txt span { font-size: 0.8rem; color: #8a8478; line-height: 1.5; }
-.dh-lux-duo {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
-}
-.dh-lux-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  padding: 16px 14px; min-height: 128px; border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: linear-gradient(160deg, #16141e, #100e16);
-  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
-}
-.dh-lux-tile strong { font-size: 0.98rem; color: #f2ebe0; font-weight: 800; }
-.dh-lux-tile span { font-size: 0.78rem; color: #8a8478; line-height: 1.55; }
-.dh-lux-row:active, .dh-lux-tile:active { transform: scale(0.985); }
-
-@media (prefers-reduced-motion: reduce) {
-  .dh-lux-ring-val { transition: none; }
-  .dh-lux-row:active, .dh-lux-tile:active, .dh-lux-cta:active { transform: none; }
-}
-
-
-/* ========== Mock-faithful Home (dh-mk) ========== */
-.dh-mk {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 4px 12px 28px;
-  font-family: Vazirmatn, sans-serif;
-}
-.dh-mk-brand { text-align: center; padding-top: 4px; }
-.dh-mk-logo-glow {
-  width: 96px; height: 96px; margin: 0 auto 10px;
-  border-radius: 24px;
-  background: radial-gradient(circle at 50% 40%, rgba(246,217,122,0.28), transparent 68%);
-  box-shadow: 0 0 40px rgba(212,175,55,0.22);
-  display: grid; place-items: center;
-}
-.dh-mk-logo {
-  width: 88px; height: 88px; object-fit: contain;
-  border-radius: 20px;
-  border: 1px solid rgba(212,175,55,0.4);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-}
-.dh-mk-word {
-  font-size: 1.6rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #E8C547;
-  text-shadow: 0 0 28px rgba(232,197,71,0.4);
-}
-.dh-mk-fa {
-  margin-top: 8px;
-  display: flex; align-items: center; justify-content: center; gap: 14px;
-  font-size: 1.05rem; color: #ddd5c5; font-weight: 600;
-}
-.dh-mk-dash {
-  width: 40px; height: 1px;
-  background: linear-gradient(90deg, transparent, #D4AF37, transparent);
-}
-.dh-mk-sys {
-  margin: 14px auto 0;
-  max-width: 280px;
-  font-size: 0.8rem;
-  line-height: 1.8;
-  color: #8a8478;
-}
-.dh-mk-sys strong {
-  color: #c9b888;
-  font-weight: 700;
-  font-size: 0.88rem;
-}
-.dh-mk-hello { text-align: center; margin: 20px 0 14px; }
-.dh-mk-name {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #f7f2e8;
-}
-.dh-mk-date {
-  margin: 6px 0 0;
-  font-size: 0.84rem;
-  color: #7a7568;
-}
-
-/* Hero — همیشه تصویر دارد (data-uri) */
-.dh-mk-hero {
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-  min-height: 186px;
-  margin-bottom: 12px;
-  border: 1.5px solid rgba(212,175,55,0.45);
-  box-shadow:
-    0 12px 36px rgba(0,0,0,0.5),
-    0 0 0 1px rgba(246,217,122,0.1) inset,
-    0 0 24px rgba(212,175,55,0.12);
-}
-.dh-mk-hero-img {
-  position: absolute; inset: 0;
-  background-size: cover;
-  background-position: 70% center;
-  background-color: #0a0c12;
-}
-.dh-mk-hero-shade {
-  position: absolute; inset: 0;
-  background: linear-gradient(100deg,
-    rgba(5,5,10,0.94) 0%,
-    rgba(5,5,10,0.7) 42%,
-    rgba(5,5,10,0.2) 100%);
-}
-.dh-mk-hero-inner {
-  position: relative; z-index: 2;
-  padding: 18px 16px 16px;
-}
-.dh-mk-hero-head {
-  display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px;
-}
-.dh-mk-star {
-  width: 44px; height: 44px; flex-shrink: 0;
-  filter: drop-shadow(0 0 10px rgba(246,217,122,0.45));
-}
-.dh-mk-star svg { width: 100%; height: 100%; }
-.dh-mk-hero-title {
-  font-size: 1.3rem; font-weight: 800; color: #F0C040;
-}
-.dh-mk-hero-sub {
-  margin-top: 4px; font-size: 0.88rem; color: #c5bdae; line-height: 1.55;
-}
-.dh-mk-cta {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 12px 28px;
-  border: none; border-radius: 999px;
-  background: linear-gradient(180deg, #F3D56A, #C9A227);
-  color: #1a1206;
-  font-family: inherit; font-size: 1.02rem; font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgba(212,175,55,0.4);
-}
-.dh-mk-cta span { font-size: 1.15rem; }
-
-/* Progress */
-.dh-mk-progress {
-  display: flex; gap: 14px; align-items: center;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: #14121a;
-  border: 1px solid rgba(255,255,255,0.06);
-  margin-bottom: 12px;
-}
-.dh-mk-ring {
-  position: relative; width: 68px; height: 68px; flex-shrink: 0;
-}
-.dh-mk-ring svg { width: 100%; height: 100%; }
-.dh-mk-ring span {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  font-size: 0.92rem; font-weight: 800; color: #F0C040;
-}
-.dh-mk-prog-text { flex: 1; }
-.dh-mk-prog-title {
-  font-size: 0.98rem; font-weight: 700; color: #ebe4d8; margin-bottom: 8px;
-}
-.dh-mk-bar {
-  height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden;
-}
-.dh-mk-bar i {
-  display: block; height: 100%;
-  background: linear-gradient(90deg, #A67C00, #F0C040);
-  border-radius: 99px;
-}
-.dh-mk-cont {
-  margin-top: 8px; padding: 0; border: none; background: none;
-  color: #F0C040; font-family: inherit; font-size: 0.88rem; font-weight: 700;
-  cursor: pointer;
-}
-
-/* Quote */
-.dh-mk-quote {
-  padding: 16px;
-  border-radius: 16px;
-  background: #121018;
-  border: 1px solid rgba(255,255,255,0.06);
-  margin-bottom: 16px;
-}
-.dh-mk-quote-head {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-}
-.dh-mk-ink { width: 36px; height: 42px; flex-shrink: 0; }
-.dh-mk-ink svg { width: 100%; height: 100%; }
-.dh-mk-quote-label {
-  flex: 1; font-size: 1.05rem; font-weight: 800; color: #ebe4d8;
-}
-.dh-mk-qq { font-size: 1.5rem; color: rgba(240,192,64,0.4); }
-.dh-mk-quote-body {
-  margin: 0; font-size: 0.98rem; line-height: 1.95; color: #d2caba; text-align: right;
-}
-.dh-mk-quote-by {
-  margin-top: 10px; font-size: 0.8rem; color: #8a8478; text-align: left;
-}
-
-/* Features */
-.dh-mk-sep {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  margin-bottom: 12px; font-size: 0.88rem; font-weight: 700; color: #a09070;
-}
-.dh-mk-sep i {
-  width: 52px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent);
-}
-.dh-mk-orb {
-  width: 44px; height: 44px; border-radius: 50%;
-  display: grid; place-items: center; flex-shrink: 0;
-  border: 1px solid rgba(212,175,55,0.3);
-  box-shadow: 0 0 18px rgba(212,175,55,0.15);
-}
-.dh-mk-orb svg { width: 22px; height: 22px; }
-.dh-mk-orb-gold {
-  background: radial-gradient(circle at 40% 35%, rgba(246,217,122,0.25), #121018 70%);
-}
-.dh-mk-orb-mint {
-  background: radial-gradient(circle at 40% 35%, rgba(126,200,163,0.18), #121018 70%);
-  border-color: rgba(126,200,163,0.3);
-}
-.dh-mk-feat {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 14px; margin-bottom: 10px; border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: #14121a;
-  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
-}
-.dh-mk-feat-main {
-  border-color: rgba(212,175,55,0.3);
-  box-shadow: 0 0 20px rgba(212,175,55,0.08);
-}
-.dh-mk-feat-txt { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.dh-mk-feat-txt strong { font-size: 1.02rem; color: #f2ebe0; font-weight: 800; }
-.dh-mk-feat-txt span { font-size: 0.78rem; color: #8a8478; line-height: 1.5; }
-.dh-mk-chev { color: #D4AF37; font-size: 1.2rem; opacity: 0.8; }
-.dh-mk-grid2 {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
-}
-.dh-mk-card {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  padding: 14px; min-height: 124px; border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.07);
-  background: #14121a;
-  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
-}
-.dh-mk-card strong { font-size: 0.98rem; color: #f2ebe0; font-weight: 800; }
-.dh-mk-card span { font-size: 0.76rem; color: #8a8478; line-height: 1.5; }
-
-
-/* ===== قانون قطعی تایپوگرافی (اولویت کاربر) =====
-   بولد = فقط «سامانه هدایت تحصیلی…»
-   نام کاربر = سبک و کوچک‌تر
-*/
-.dh-mk .dh-mk-sys-title {
-  margin: 14px auto 0 !important;
-  max-width: 320px !important;
-  font-size: 1.12rem !important;
-  font-weight: 800 !important;
-  line-height: 1.75 !important;
-  color: #f2ebe0 !important;
-  text-align: center !important;
-}
-.dh-mk .dh-mk-sys-sub {
-  margin: 6px 0 0 !important;
-  font-size: 0.92rem !important;
-  font-weight: 600 !important;
-  color: #c8b890 !important;
-  text-align: center !important;
-}
-.dh-mk .dh-mk-greet,
-.dh-mk .dh-mk-name,
-.dh-mk h1.dh-mk-name {
-  margin: 0 !important;
-  font-size: 0.98rem !important;
-  font-weight: 500 !important;
-  color: #a8a090 !important;
-  text-align: center !important;
-}
-.dh-mk .dh-mk-hello {
-  margin: 12px 0 14px !important;
-  text-align: center !important;
-}
-.dh-mk .dh-mk-date {
-  margin: 4px 0 0 !important;
-  font-size: 0.8rem !important;
-  font-weight: 400 !important;
-  color: #6a6558 !important;
-}
-
-
-/* ========== Home MK2 — بازطراحی نزدیک‌تر به ماکت درخشان ========== */
 .dh-mk2 {
   max-width: 400px;
   margin: 0 auto;
   padding: 8px 12px 32px;
-  background: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(212,175,55,0.07), transparent 55%);
+  color: #e8e2d6;
+  background: radial-gradient(ellipse 120% 70% at 50% -5%, rgba(212,175,55,0.06), transparent 50%);
 }
+
+/* Brand */
 .dh-mk2-brand { text-align: center; }
 .dh-mk2-logo-ring {
   width: 104px; height: 104px; margin: 0 auto 12px;
   border-radius: 28px;
   display: grid; place-items: center;
-  background:
-    radial-gradient(circle at 50% 40%, rgba(255,224,138,0.35), transparent 65%),
-    radial-gradient(circle at 50% 80%, rgba(212,175,55,0.15), transparent 60%);
-  box-shadow:
-    0 0 48px rgba(212,175,55,0.35),
-    0 0 80px rgba(246,217,122,0.12);
+  background: radial-gradient(circle at 50% 40%, rgba(255,224,138,0.3), transparent 65%);
+  box-shadow: 0 0 48px rgba(212,175,55,0.3);
 }
 .dh-mk2-logo-ring img {
   width: 92px; height: 92px; object-fit: contain;
   border-radius: 22px;
-  border: 1.5px solid rgba(246,217,122,0.5);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  border: 1.5px solid rgba(246,217,122,0.45);
 }
 .dh-mk2-word {
-  font-size: 1.65rem; font-weight: 800; letter-spacing: 0.18em;
+  font-size: 1.6rem; font-weight: 800; letter-spacing: 0.16em;
   color: #F0D060;
-  text-shadow:
-    0 0 20px rgba(240,208,96,0.55),
-    0 0 40px rgba(212,175,55,0.25);
+  text-shadow: 0 0 24px rgba(240,208,96,0.45);
 }
 .dh-mk2-fa {
   margin-top: 10px;
   display: flex; align-items: center; justify-content: center; gap: 14px;
-  font-size: 1.05rem; color: #e0d8c8; font-weight: 600;
+  font-size: 1.05rem; color: #ddd5c5; font-weight: 600;
 }
 .dh-mk2-fa i {
-  width: 44px; height: 1px;
+  width: 40px; height: 1px;
   background: linear-gradient(90deg, transparent, #D4AF37, transparent);
-  box-shadow: 0 0 8px rgba(212,175,55,0.4);
 }
 
 /* ★ بولد فقط سامانه */
 .dh-mk2-sys {
   margin: 16px auto 0 !important;
-  max-width: 310px;
-  font-size: 1.14rem !important;
+  max-width: 320px;
+  font-size: 1.12rem !important;
   font-weight: 800 !important;
   line-height: 1.75 !important;
   color: #f4efe6 !important;
@@ -2080,7 +1363,7 @@ h2 {
 }
 .dh-mk2-sub {
   margin: 6px 0 0 !important;
-  font-size: 0.92rem !important;
+  font-size: 0.9rem !important;
   font-weight: 600 !important;
   color: #c9b888 !important;
   text-align: center;
@@ -2101,85 +1384,67 @@ h2 {
   font-weight: 400 !important;
 }
 
-/* Hero درخشان */
+/* Hero */
 .dh-mk2-hero {
   position: relative;
   border-radius: 22px;
   overflow: hidden;
-  min-height: 200px;
+  min-height: 196px;
   margin-bottom: 14px;
-  border: 1.5px solid rgba(246,217,122,0.5);
+  border: 1.5px solid rgba(246,217,122,0.48);
   box-shadow:
-    0 0 0 1px rgba(212,175,55,0.15),
-    0 16px 48px rgba(0,0,0,0.55),
-    0 0 60px rgba(212,175,55,0.18);
+    0 16px 48px rgba(0,0,0,0.5),
+    0 0 40px rgba(212,175,55,0.15);
 }
 .dh-mk2-hero-bg {
   position: absolute; inset: 0;
-  background-size: cover;
-  background-position: 65% center;
   background-color: #080a12;
-  transform: scale(1.02);
+  background-size: cover !important;
+  background-position: 70% center !important;
 }
 .dh-mk2-hero-glow {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse 70% 60% at 75% 45%, rgba(246,217,122,0.2), transparent 60%);
+  background: radial-gradient(ellipse 70% 55% at 75% 45%, rgba(246,217,122,0.18), transparent 60%);
   pointer-events: none;
 }
 .dh-mk2-hero-shade {
   position: absolute; inset: 0;
-  background: linear-gradient(105deg,
-    rgba(4,4,10,0.93) 0%,
-    rgba(4,4,10,0.65) 40%,
-    rgba(4,4,10,0.18) 100%);
+  background: linear-gradient(105deg, rgba(4,4,10,0.92) 0%, rgba(4,4,10,0.6) 42%, rgba(4,4,10,0.15) 100%);
   pointer-events: none;
 }
-.dh-mk2-hero-body {
-  position: relative; z-index: 2;
-  padding: 20px 18px 18px;
-}
-.dh-mk2-hero-top {
-  display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px;
-}
+.dh-mk2-hero-body { position: relative; z-index: 2; padding: 20px 18px 18px; }
+.dh-mk2-hero-top { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
 .dh-mk2-compass {
   width: 48px; height: 48px; flex-shrink: 0;
-  filter: drop-shadow(0 0 12px rgba(255,224,138,0.55));
+  filter: drop-shadow(0 0 10px rgba(255,224,138,0.5));
 }
-.dh-mk2-compass svg { width: 100%; height: 100%; }
+.dh-mk2-compass img { width: 48px; height: 48px; object-fit: contain; }
 .dh-mk2-hero-title {
-  font-size: 1.35rem; font-weight: 800; color: #F6D97A;
-  text-shadow: 0 0 16px rgba(246,217,122,0.35);
+  font-size: 1.3rem; font-weight: 800; color: #F6D97A;
+  text-shadow: 0 0 14px rgba(246,217,122,0.3);
 }
-.dh-mk2-hero-sub {
-  margin-top: 5px; font-size: 0.9rem; color: #c8c0b0; line-height: 1.55;
-}
+.dh-mk2-hero-sub { margin-top: 5px; font-size: 0.88rem; color: #c5bdae; line-height: 1.55; }
 .dh-mk2-cta {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 13px 30px;
-  border: none; border-radius: 999px;
-  background: linear-gradient(180deg, #FFE08A 0%, #E8C547 40%, #C9A227 100%);
-  color: #1a1206;
-  font-family: inherit; font-size: 1.05rem; font-weight: 800;
+  padding: 13px 28px; border: none; border-radius: 999px;
+  background: linear-gradient(180deg, #FFE08A, #C9A227);
+  color: #1a1206; font-family: inherit; font-size: 1.02rem; font-weight: 800;
   cursor: pointer;
-  box-shadow:
-    0 8px 28px rgba(212,175,55,0.45),
-    0 0 20px rgba(246,217,122,0.25);
+  box-shadow: 0 8px 28px rgba(212,175,55,0.4);
 }
-.dh-mk2-cta span { font-size: 1.2rem; }
+.dh-mk2-cta span { font-size: 1.15rem; }
 
 /* Progress */
 .dh-mk2-progress {
   display: flex; gap: 14px; align-items: center;
-  padding: 16px;
-  border-radius: 18px;
+  padding: 16px; border-radius: 18px;
   background: linear-gradient(145deg, #18151f, #0e0c14);
   border: 1px solid rgba(212,175,55,0.12);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   margin-bottom: 14px;
 }
 .dh-mk2-ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
 .dh-mk2-ring svg { width: 100%; height: 100%; }
-.dh-mk2-ring-val { filter: drop-shadow(0 0 6px rgba(212,175,55,0.55)); }
+.dh-mk2-ring-val { filter: drop-shadow(0 0 5px rgba(212,175,55,0.5)); }
 .dh-mk2-ring span {
   position: absolute; inset: 0; display: grid; place-items: center;
   font-size: 0.95rem; font-weight: 800; color: #F0C040;
@@ -2192,7 +1457,6 @@ h2 {
 .dh-mk2-bar i {
   display: block; height: 100%; border-radius: 99px;
   background: linear-gradient(90deg, #A67C00, #F6D97A);
-  box-shadow: 0 0 10px rgba(246,217,122,0.4);
 }
 .dh-mk2-cont {
   margin-top: 10px; padding: 0; border: none; background: none;
@@ -2201,48 +1465,41 @@ h2 {
 
 /* Quote */
 .dh-mk2-quote {
-  padding: 18px 16px;
-  border-radius: 18px;
+  padding: 18px 16px; border-radius: 18px;
   background: linear-gradient(160deg, #16131c, #0c0b12);
   border: 1px solid rgba(255,255,255,0.06);
   margin-bottom: 18px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
 .dh-mk2-quote-top {
   display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
 }
-.dh-mk2-quill { font-size: 1.5rem; filter: drop-shadow(0 0 6px rgba(246,217,122,0.3)); }
-.dh-mk2-quote-label { flex: 1; font-size: 1.08rem; font-weight: 800; color: #ebe4d8; }
-.dh-mk2-qq { font-size: 1.6rem; color: rgba(240,192,64,0.4); }
+.dh-mk2-quote-label { flex: 1; font-size: 1.05rem; font-weight: 800; color: #ebe4d8; }
+.dh-mk2-qq { font-size: 1.5rem; color: rgba(240,192,64,0.4); }
 .dh-mk2-quote-text {
-  margin: 0; font-size: 1rem; line-height: 1.95; color: #d4ccc0; text-align: right;
+  margin: 0; font-size: 0.98rem; line-height: 1.95; color: #d4ccc0; text-align: right;
 }
-.dh-mk2-quote-by {
-  margin-top: 12px; font-size: 0.82rem; color: #8a8478; text-align: left;
-}
+.dh-mk2-quote-by { margin-top: 12px; font-size: 0.82rem; color: #8a8478; text-align: left; }
 
 /* Features */
 .dh-mk2-sep {
   display: flex; align-items: center; justify-content: center; gap: 12px;
-  margin-bottom: 14px; font-size: 0.9rem; font-weight: 700; color: #b0a070;
+  margin-bottom: 14px; font-size: 0.88rem; font-weight: 700; color: #b0a070;
 }
 .dh-mk2-sep i {
-  width: 56px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent);
-  box-shadow: 0 0 6px rgba(212,175,55,0.3);
+  width: 52px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent);
 }
 .dh-mk2-orb {
   width: 48px; height: 48px; border-radius: 50%;
   display: grid; place-items: center; flex-shrink: 0;
-  background: radial-gradient(circle at 40% 30%, rgba(255,224,138,0.3), #121018 68%);
-  border: 1px solid rgba(246,217,122,0.35);
-  box-shadow: 0 0 20px rgba(212,175,55,0.2);
+  background: radial-gradient(circle at 40% 30%, rgba(255,224,138,0.28), #121018 68%);
+  border: 1px solid rgba(246,217,122,0.32);
+  box-shadow: 0 0 18px rgba(212,175,55,0.18);
 }
-.dh-mk2-orb svg { width: 24px; height: 24px; }
+.dh-mk2-orb img { width: 24px; height: 24px; object-fit: contain; display: block; }
 .dh-mk2-orb-m {
-  background: radial-gradient(circle at 40% 30%, rgba(126,200,163,0.2), #121018 68%);
-  border-color: rgba(126,200,163,0.35);
-  box-shadow: 0 0 16px rgba(126,200,163,0.15);
+  background: radial-gradient(circle at 40% 30%, rgba(126,200,163,0.18), #121018 68%);
+  border-color: rgba(126,200,163,0.32);
 }
 .dh-mk2-row {
   display: flex; align-items: center; gap: 12px; width: 100%;
@@ -2252,33 +1509,23 @@ h2 {
   color: inherit; font-family: inherit; cursor: pointer; text-align: right;
 }
 .dh-mk2-row-hot {
-  border-color: rgba(246,217,122,0.35);
-  box-shadow: 0 0 28px rgba(212,175,55,0.12);
+  border-color: rgba(246,217,122,0.32);
+  box-shadow: 0 0 24px rgba(212,175,55,0.1);
 }
 .dh-mk2-row-t { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.dh-mk2-row-t strong { font-size: 1.05rem; color: #f4efe6; font-weight: 800; }
+.dh-mk2-row-t strong { font-size: 1.02rem; color: #f4efe6; font-weight: 800; }
 .dh-mk2-row-t span { font-size: 0.8rem; color: #8a8478; line-height: 1.5; }
-.dh-mk2-chev { color: #D4AF37; font-size: 1.25rem; opacity: 0.85; }
+.dh-mk2-chev { display: flex; align-items: center; opacity: 0.85; }
+.dh-mk2-chev img { width: 18px; height: 18px; }
 .dh-mk2-duo {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
 }
 .dh-mk2-tile {
   display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  padding: 16px 14px; min-height: 130px; border-radius: 16px;
+  padding: 16px 14px; min-height: 128px; border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.07);
   background: linear-gradient(160deg, #18151f, #100e16);
   color: inherit; font-family: inherit; cursor: pointer; text-align: right;
 }
-.dh-mk2-tile strong { font-size: 1rem; color: #f4efe6; font-weight: 800; }
+.dh-mk2-tile strong { font-size: 0.98rem; color: #f4efe6; font-weight: 800; }
 .dh-mk2-tile span { font-size: 0.76rem; color: #8a8478; line-height: 1.5; }
-
-.dh-mk2-orb img, .dh-mk2-compass img {
-  display: block; width: 24px; height: 24px; object-fit: contain;
-}
-.dh-mk2-compass img { width: 44px; height: 44px; }
-.dh-mk2-chev img { width: 18px; height: 18px; opacity: 0.85; }
-.dh-mk2-hero-bg {
-  background-color: #080a12 !important;
-  background-size: cover !important;
-  background-position: 70% center !important;
-}
