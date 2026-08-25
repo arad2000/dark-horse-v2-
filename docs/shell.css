@@ -2271,3 +2271,14 @@ h2 {
 }
 .dh-mk2-tile strong { font-size: 1rem; color: #f4efe6; font-weight: 800; }
 .dh-mk2-tile span { font-size: 0.76rem; color: #8a8478; line-height: 1.5; }
+
+.dh-mk2-orb img, .dh-mk2-compass img {
+  display: block; width: 24px; height: 24px; object-fit: contain;
+}
+.dh-mk2-compass img { width: 44px; height: 44px; }
+.dh-mk2-chev img { width: 18px; height: 18px; opacity: 0.85; }
+.dh-mk2-hero-bg {
+  background-color: #080a12 !important;
+  background-size: cover !important;
+  background-position: 70% center !important;
+}
