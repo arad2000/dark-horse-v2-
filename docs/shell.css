@@ -1982,3 +1982,44 @@ h2 {
 }
 .dh-mk-card strong { font-size: 0.98rem; color: #f2ebe0; font-weight: 800; }
 .dh-mk-card span { font-size: 0.76rem; color: #8a8478; line-height: 1.5; }
+
+
+/* ===== قانون قطعی تایپوگرافی (اولویت کاربر) =====
+   بولد = فقط «سامانه هدایت تحصیلی…»
+   نام کاربر = سبک و کوچک‌تر
+*/
+.dh-mk .dh-mk-sys-title {
+  margin: 14px auto 0 !important;
+  max-width: 320px !important;
+  font-size: 1.12rem !important;
+  font-weight: 800 !important;
+  line-height: 1.75 !important;
+  color: #f2ebe0 !important;
+  text-align: center !important;
+}
+.dh-mk .dh-mk-sys-sub {
+  margin: 6px 0 0 !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  color: #c8b890 !important;
+  text-align: center !important;
+}
+.dh-mk .dh-mk-greet,
+.dh-mk .dh-mk-name,
+.dh-mk h1.dh-mk-name {
+  margin: 0 !important;
+  font-size: 0.98rem !important;
+  font-weight: 500 !important;
+  color: #a8a090 !important;
+  text-align: center !important;
+}
+.dh-mk .dh-mk-hello {
+  margin: 12px 0 14px !important;
+  text-align: center !important;
+}
+.dh-mk .dh-mk-date {
+  margin: 4px 0 0 !important;
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  color: #6a6558 !important;
+}
