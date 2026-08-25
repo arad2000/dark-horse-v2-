@@ -238,7 +238,9 @@
     var name = (u && u.name) ? u.name : 'مسافر';
     var pct = journeyProgressPct();
     var canContinue = hasUnfinishedJourney();
-    var living = homeLivingLine(pct, canContinue);
+    var living = (typeof homeLivingLine === 'function')
+      ? homeLivingLine(pct, canContinue)
+      : 'مسیر متفاوت تو از اینجا شروع می‌شود.';
     var progressLabel = pct >= 100 ? 'سفر قبلی کامل شده'
       : (canContinue ? 'آخرین مسیر شما' : 'هنوز سفری شروع نشده');
 
@@ -254,31 +256,49 @@
 
     var root = $('app');
     if (!root) return;
-    var A = 'home-v25-assets/';
+
+    var base = 'home-v25-assets/';
+    try {
+      if ((location.pathname || '').indexOf('/dark-horse-v2-') >= 0) {
+        base = '/dark-horse-v2-/home-v25-assets/';
+      }
+    } catch (e0) {}
+
+    function svgIcon(name) {
+      var map = {
+        compass: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.2 5.1-4.8 2.1 2.2-5.1 4.8-2.1Z"/></svg>',
+        bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 5 14h6l-1 8 8-12h-6z"/></svg>',
+        book: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5v16.5M8 6h8"/></svg>',
+        quill: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c-7 0-13 4-13 10 0 3 2 6 5 6 5 0 9-7 8-16Z"/><path d="M4 21c3-5 7-8 13-11"/></svg>',
+        parents: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><circle cx="17" cy="8" r="2.5"/><path d="M2.5 20c.6-4.2 2.5-6.5 5.5-6.5S12.9 15.8 13.5 20"/><path d="M13 14.5c1-.7 2.2-1 3.5-1 2.5 0 4.2 2 5 5.5"/></svg>',
+        chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg>'
+      };
+      return '<span class="dh-m25-svg">' + (map[name] || '') + '</span>';
+    }
 
     root.innerHTML =
       '<div class="dh-home-wrap dh-home-mock25">' +
 
         '<header class="dh-m25-brand">' +
           '<div class="dh-m25-logo">' +
-            '<img src="icon-192.png" alt="" width="72" height="72" onerror="this.src=\'' + A + 'ico-journey.svg\'">' +
+            '<img src="icon-192.png" alt="اسب سیاه" width="72" height="72">' +
           '</div>' +
           '<div class="dh-m25-word">DARK HORSE</div>' +
           '<div class="dh-m25-fa"><span class="dh-m25-line"></span> اسب سیاه <span class="dh-m25-line"></span></div>' +
-          '<p class="dh-m25-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی<br><strong>بر اساس فردیت</strong></p>' +
+          '<p class="dh-m25-sys"><strong>سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</strong><br>بر اساس فردیت</p>' +
         '</header>' +
 
         '<section class="dh-m25-hello">' +
-          '<h1 class="dh-m25-greet">سلام ' + escape(name) + '</h1>' +
+          '<p class="dh-m25-greet">سلام ' + escape(name) + '</p>' +
           '<p class="dh-m25-date">' + escape(faDate()) + '</p>' +
           '<p class="dh-m25-living">' + escape(living) + '</p>' +
         '</section>' +
 
         '<section class="dh-m25-hero">' +
-          '<div class="dh-m25-hero-bg" style="background-image:url(\'' + A + 'hero-journey.svg\')"></div>' +
+          '<div class="dh-m25-hero-bg" style="background-image:url(\'' + base + 'hero-journey.svg\')"></div>' +
           '<div class="dh-m25-hero-body">' +
             '<div class="dh-m25-hero-top">' +
-              '<img class="dh-m25-ico" src="' + A + 'ico-compass.svg" alt="">' +
+              svgIcon('compass') +
               '<div>' +
                 '<div class="dh-m25-hero-title">سفر اکتشافی</div>' +
                 '<div class="dh-m25-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div>' +
@@ -313,7 +333,7 @@
 
         '<section class="dh-m25-quote">' +
           '<div class="dh-m25-quote-head">' +
-            '<img class="dh-m25-ico-lg" src="' + A + 'ico-quill.svg" alt="">' +
+            svgIcon('quill') +
             '<span class="dh-m25-quote-label">پیام امروز</span>' +
             '<span class="dh-m25-qmark">”</span>' +
           '</div>' +
@@ -322,41 +342,37 @@
         '</section>' +
 
         '<section class="dh-m25-more">' +
-          '<div class="dh-m25-section">' +
-            '<img src="' + A + 'divider-gold.svg" alt="" class="dh-m25-div">' +
-            '<span>کشف بیشتر</span>' +
-            '<img src="' + A + 'divider-gold.svg" alt="" class="dh-m25-div">' +
-          '</div>' +
+          '<div class="dh-m25-section"><span class="dh-m25-div-line"></span><span>کشف بیشتر</span><span class="dh-m25-div-line"></span></div>' +
 
           '<button type="button" class="dh-m25-row dh-m25-spark" id="dh-open-spark">' +
-            '<img src="' + A + 'ico-bolt.svg" alt="" class="dh-m25-ico">' +
+            svgIcon('bolt') +
             '<div class="dh-m25-row-text">' +
               '<strong>جرقه‌یاب</strong>' +
               '<span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span>' +
             '</div>' +
-            '<img src="' + A + 'ico-chevron.svg" alt="" class="dh-m25-chev">' +
+            svgIcon('chevron') +
           '</button>' +
 
           '<div class="dh-m25-duo">' +
             '<button type="button" class="dh-m25-tile" id="dh-open-stories">' +
-              '<img src="' + A + 'ico-book.svg" alt="" class="dh-m25-ico">' +
+              svgIcon('book') +
               '<strong>داستان‌ها</strong>' +
               '<span>روایت مسیرهای واقعی برای الهام گرفتن</span>' +
             '</button>' +
             '<button type="button" class="dh-m25-tile" id="dh-open-poems">' +
-              '<img src="' + A + 'ico-quill.svg" alt="" class="dh-m25-ico">' +
+              svgIcon('quill') +
               '<strong>سخن بزرگان</strong>' +
               '<span>یک فکر ارزشمند برای امروز</span>' +
             '</button>' +
           '</div>' +
 
           '<button type="button" class="dh-m25-row" id="dh-open-parents">' +
-            '<img src="' + A + 'ico-parents.svg" alt="" class="dh-m25-ico">' +
+            svgIcon('parents') +
             '<div class="dh-m25-row-text">' +
               '<strong>والدین</strong>' +
               '<span>همراهی بهتر در انتخاب مسیر</span>' +
             '</div>' +
-            '<img src="' + A + 'ico-chevron.svg" alt="" class="dh-m25-chev">' +
+            svgIcon('chevron') +
           '</button>' +
         '</section>' +
 

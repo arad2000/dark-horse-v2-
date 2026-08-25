@@ -1,5 +1,5 @@
 /* Dark Horse SW v27 — visual polish + cache refresh */
-const CACHE = 'darkhorse-shell-v40';
+const CACHE = 'darkhorse-shell-v41';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
   './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',
