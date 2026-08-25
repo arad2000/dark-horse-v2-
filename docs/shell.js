@@ -251,172 +251,163 @@
       if (!bundle.length && window.DH_QUOTES && DH_QUOTES.length) {
         bundle = [DH_QUOTES[new Date().getDate() % DH_QUOTES.length]];
       }
-      if (bundle[0]) quote = { t: bundle[0].t || bundle[0].text || quote.t, tag: bundle[0].tag || bundle[0].a || quote.tag };
+      if (bundle[0]) {
+        quote = { t: bundle[0].t || bundle[0].text || quote.t, tag: bundle[0].tag || bundle[0].a || quote.tag };
+      }
     } catch (e2) {}
 
     var root = $('app');
     if (!root) return;
 
-    var base = 'home-v25-assets/';
+    var heroUrl = 'home-v25-assets/hero-journey.svg';
     try {
       if ((location.pathname || '').indexOf('/dark-horse-v2-') >= 0) {
-        base = '/dark-horse-v2-/home-v25-assets/';
+        heroUrl = '/dark-horse-v2-/home-v25-assets/hero-journey.svg';
       }
     } catch (e0) {}
 
-    function svgIcon(name) {
-      var map = {
-        compass: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.2 5.1-4.8 2.1 2.2-5.1 4.8-2.1Z"/></svg>',
-        bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 5 14h6l-1 8 8-12h-6z"/></svg>',
-        book: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5v16.5M8 6h8"/></svg>',
-        quill: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c-7 0-13 4-13 10 0 3 2 6 5 6 5 0 9-7 8-16Z"/><path d="M4 21c3-5 7-8 13-11"/></svg>',
-        parents: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><circle cx="17" cy="8" r="2.5"/><path d="M2.5 20c.6-4.2 2.5-6.5 5.5-6.5S12.9 15.8 13.5 20"/><path d="M13 14.5c1-.7 2.2-1 3.5-1 2.5 0 4.2 2 5 5.5"/></svg>',
-        chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg>'
+    function ic(kind) {
+      var paths = {
+        star: '<path d="M12 2l2.2 5.5L20 9l-4.5 3.5L17 19l-5-3-5 3 1.5-6.5L4 9l5.8-1.5L12 2z" fill="#F6D97A"/>',
+        bolt: '<path d="M13 2 5 14h6l-1 8 8-12h-6z" fill="none" stroke="#F6D97A" stroke-width="1.8" stroke-linejoin="round"/>',
+        book: '<path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z" fill="none" stroke="#F6D97A" stroke-width="1.6"/><path d="M4 5.5v16.5M8 6h8" fill="none" stroke="#F6D97A" stroke-width="1.6"/>',
+        quill: '<path d="M20 4c-7 0-13 4-13 10 0 3 2 6 5 6 5 0 9-7 8-16Z" fill="none" stroke="#F6D97A" stroke-width="1.6"/><path d="M4 21c3-5 7-8 13-11" fill="none" stroke="#F6D97A" stroke-width="1.6"/>',
+        parents: '<circle cx="8" cy="7" r="3" fill="none" stroke="#7ec8a3" stroke-width="1.6"/><circle cx="17" cy="8" r="2.5" fill="none" stroke="#7ec8a3" stroke-width="1.6"/><path d="M2.5 20c.6-4.2 2.5-6.5 5.5-6.5S12.9 15.8 13.5 20" fill="none" stroke="#7ec8a3" stroke-width="1.6"/><path d="M13 14.5c1-.7 2.2-1 3.5-1 2.5 0 4.2 2 5 5.5" fill="none" stroke="#7ec8a3" stroke-width="1.6"/>',
+        chev: '<path d="m10 6 6 6-6 6" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round"/>'
       };
-      return '<span class="dh-m25-svg">' + (map[name] || '') + '</span>';
+      return '<span class="dh-lux-ic dh-lux-ic-' + kind + '"><svg viewBox="0 0 24 24">' + (paths[kind] || '') + '</svg></span>';
     }
 
-    root.innerHTML =
-      '<div class="dh-home-wrap dh-home-mock25">' +
+    var ringOff = (301.6 * (1 - Math.min(100, Math.max(0, pct)) / 100)).toFixed(1);
 
-        '<header class="dh-m25-brand">' +
-          '<div class="dh-m25-logo">' +
-            '<img src="icon-192.png" alt="اسب سیاه" width="72" height="72">' +
+    root.innerHTML =
+      '<div class="dh-home-wrap dh-lux">' +
+
+        /* —— برند —— */
+        '<header class="dh-lux-brand">' +
+          '<div class="dh-lux-logo-wrap">' +
+            '<img class="dh-lux-logo" src="icon-192.png" alt="اسب سیاه" width="88" height="88">' +
           '</div>' +
-          '<div class="dh-m25-word">DARK HORSE</div>' +
-          '<div class="dh-m25-fa"><span class="dh-m25-line"></span> اسب سیاه <span class="dh-m25-line"></span></div>' +
-          '<p class="dh-m25-sys"><strong>سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</strong><br>بر اساس فردیت</p>' +
+          '<div class="dh-lux-word">DARK HORSE</div>' +
+          '<div class="dh-lux-fa"><i></i><span>اسب سیاه</span><i></i></div>' +
+          '<p class="dh-lux-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی<br><b>بر اساس فردیت</b></p>' +
         '</header>' +
 
-        '<section class="dh-m25-hello">' +
-          '<p class="dh-m25-greet">سلام ' + escape(name) + '</p>' +
-          '<p class="dh-m25-date">' + escape(faDate()) + '</p>' +
-          '<p class="dh-m25-living">' + escape(living) + '</p>' +
+        /* —— سلام —— */
+        '<section class="dh-lux-hello">' +
+          '<h1 class="dh-lux-name">سلام ' + escape(name) + '</h1>' +
+          '<p class="dh-lux-date">' + escape(faDate()) + '</p>' +
         '</section>' +
 
-        '<section class="dh-m25-hero">' +
-          '<div class="dh-m25-hero-bg" style="background-image:url(\'' + base + 'hero-journey.svg\')"></div>' +
-          '<div class="dh-m25-hero-body">' +
-            '<div class="dh-m25-hero-top">' +
-              svgIcon('compass') +
+        /* —— سفر اکتشافی (Hero) —— */
+        '<section class="dh-lux-hero">' +
+          '<div class="dh-lux-hero-bg" style="background-image:url(\'' + heroUrl + '\')"></div>' +
+          '<div class="dh-lux-hero-veil"></div>' +
+          '<div class="dh-lux-hero-content">' +
+            '<div class="dh-lux-hero-row">' +
+              ic('star') +
               '<div>' +
-                '<div class="dh-m25-hero-title">سفر اکتشافی</div>' +
-                '<div class="dh-m25-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div>' +
+                '<div class="dh-lux-hero-title">سفر اکتشافی</div>' +
+                '<div class="dh-lux-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div>' +
               '</div>' +
             '</div>' +
-            '<button type="button" class="btn btn-primary dh-m25-cta" id="dh-start-journey">' +
-              (canContinue ? 'ادامه سفر' : 'شروع سفر') + ' <span>›</span>' +
+            '<button type="button" class="dh-lux-cta" id="dh-start-journey">' +
+              (canContinue ? 'ادامه سفر' : 'شروع سفر') +
+              '<span class="dh-lux-cta-arrow">›</span>' +
             '</button>' +
           '</div>' +
         '</section>' +
 
-        '<section class="dh-m25-progress">' +
-          '<div class="dh-m25-ring-wrap">' +
-            '<svg class="dh-m25-ring" viewBox="0 0 120 120" aria-hidden="true">' +
-              '<circle cx="60" cy="60" r="48" fill="none" stroke="#26232B" stroke-width="8"/>' +
-              '<circle cx="60" cy="60" r="48" fill="none" stroke="#D4AF37" stroke-width="8" stroke-linecap="round" ' +
-                'stroke-dasharray="301.6" stroke-dashoffset="' + (301.6 * (1 - pct / 100)).toFixed(1) + '" transform="rotate(-90 60 60)"/>' +
+        /* —— پیشرفت —— */
+        '<section class="dh-lux-progress">' +
+          '<div class="dh-lux-ring-box">' +
+            '<svg viewBox="0 0 120 120" class="dh-lux-ring">' +
+              '<circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>' +
+              '<circle class="dh-lux-ring-val" cx="60" cy="60" r="48" fill="none" stroke="#D4AF37" stroke-width="8" ' +
+                'stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="' + ringOff + '" transform="rotate(-90 60 60)"/>' +
             '</svg>' +
-            '<div class="dh-m25-ring-pct">' + pct + '%</div>' +
+            '<div class="dh-lux-ring-txt">' + pct + '%</div>' +
           '</div>' +
-          '<div class="dh-m25-prog-info">' +
-            '<div class="dh-m25-prog-title">' + escape(progressLabel) + '</div>' +
-            '<div class="dh-m25-bar"><div class="dh-m25-bar-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="dh-lux-prog-body">' +
+            '<div class="dh-lux-prog-title">' + escape(progressLabel) + '</div>' +
+            '<div class="dh-lux-bar"><i style="width:' + pct + '%"></i></div>' +
             (canContinue
-              ? '<button type="button" class="dh-m25-continue" id="dh-continue-journey">ادامه سفر ‹</button>'
-              : '') +
-            (canContinue
-              ? '<button type="button" class="dh-m25-restart" id="dh-restart-journey">شروع از نو</button>'
-              : '') +
+              ? '<button type="button" class="dh-lux-link" id="dh-continue-journey">ادامه سفر ‹</button>'
+              : '<p class="dh-lux-prog-hint">' + escape(living) + '</p>') +
           '</div>' +
         '</section>' +
 
-        '<section class="dh-m25-quote">' +
-          '<div class="dh-m25-quote-head">' +
-            svgIcon('quill') +
-            '<span class="dh-m25-quote-label">پیام امروز</span>' +
-            '<span class="dh-m25-qmark">”</span>' +
+        /* —— پیام امروز —— */
+        '<section class="dh-lux-quote">' +
+          '<div class="dh-lux-quote-top">' +
+            '<span class="dh-lux-quill-art" aria-hidden="true">🪶</span>' +
+            '<span class="dh-lux-quote-label">پیام امروز</span>' +
+            '<span class="dh-lux-marks">”</span>' +
           '</div>' +
-          '<p class="dh-m25-quote-text">' + escape(quote.t) + '</p>' +
-          '<div class="dh-m25-quote-by">' + escape(quote.tag) + '</div>' +
+          '<p class="dh-lux-quote-text">' + escape(quote.t) + '</p>' +
+          '<div class="dh-lux-quote-by">' + escape(quote.tag) + '</div>' +
         '</section>' +
 
-        '<section class="dh-m25-more">' +
-          '<div class="dh-m25-section"><span class="dh-m25-div-line"></span><span>کشف بیشتر</span><span class="dh-m25-div-line"></span></div>' +
+        /* —— کشف بیشتر —— */
+        '<section class="dh-lux-more">' +
+          '<div class="dh-lux-divider"><i></i><span>کشف بیشتر</span><i></i></div>' +
 
-          '<button type="button" class="dh-m25-row dh-m25-spark" id="dh-open-spark">' +
-            svgIcon('bolt') +
-            '<div class="dh-m25-row-text">' +
+          '<button type="button" class="dh-lux-row dh-lux-row-spark" id="dh-open-spark">' +
+            ic('bolt') +
+            '<div class="dh-lux-row-txt">' +
               '<strong>جرقه‌یاب</strong>' +
               '<span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span>' +
             '</div>' +
-            svgIcon('chevron') +
+            ic('chev') +
           '</button>' +
 
-          '<div class="dh-m25-duo">' +
-            '<button type="button" class="dh-m25-tile" id="dh-open-stories">' +
-              svgIcon('book') +
+          '<div class="dh-lux-duo">' +
+            '<button type="button" class="dh-lux-tile" id="dh-open-stories">' +
+              ic('book') +
               '<strong>داستان‌ها</strong>' +
               '<span>روایت مسیرهای واقعی برای الهام گرفتن</span>' +
             '</button>' +
-            '<button type="button" class="dh-m25-tile" id="dh-open-poems">' +
-              svgIcon('quill') +
+            '<button type="button" class="dh-lux-tile" id="dh-open-poems">' +
+              ic('quill') +
               '<strong>سخن بزرگان</strong>' +
               '<span>یک فکر ارزشمند برای امروز</span>' +
             '</button>' +
           '</div>' +
 
-          '<button type="button" class="dh-m25-row" id="dh-open-parents">' +
-            svgIcon('parents') +
-            '<div class="dh-m25-row-text">' +
+          '<button type="button" class="dh-lux-row" id="dh-open-parents">' +
+            ic('parents') +
+            '<div class="dh-lux-row-txt">' +
               '<strong>والدین</strong>' +
               '<span>همراهی بهتر در انتخاب مسیر</span>' +
             '</div>' +
-            svgIcon('chevron') +
+            ic('chev') +
           '</button>' +
         '</section>' +
 
       '</div>';
 
-    var sj = $('dh-start-journey');
-    if (sj) sj.onclick = function () { startJourneyFromShell(); };
-    var cj = $('dh-continue-journey');
-    if (cj) cj.onclick = function () { startJourneyFromShell(); };
-    var rs = $('dh-restart-journey');
-    if (rs) rs.onclick = function () {
-      if (!confirm('سفر فعلی پاک شود و از اول شروع کنی؟')) return;
-      try {
-        if (typeof fullResetState === 'function') fullResetState(true);
-        else localStorage.removeItem('darkhorse_session_v2');
-        window.__dhHasSavedSession = false;
-        window.__dhJourneyFinished = false;
-      } catch (e3) {}
-      window.__dhInJourney = true;
-      setActiveTab('journey');
-      if (typeof state !== 'undefined') { state.stage = 'splash'; state.history = []; }
-      try { if (typeof saveSession === 'function') saveSession(); } catch (e4) {}
-      if (typeof render === 'function') render();
-    };
-    var sp = $('dh-open-spark');
-    if (sp) sp.onclick = function () {
+    function bind(id, fn) {
+      var el = $(id);
+      if (el) el.onclick = fn;
+    }
+    bind('dh-start-journey', function () { startJourneyFromShell(); });
+    bind('dh-continue-journey', function () { startJourneyFromShell(); });
+    bind('dh-open-spark', function () {
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
       else alert('ماژول جرقه‌یاب بارگذاری نشده.');
-    };
-    var pr = $('dh-open-parents');
-    if (pr) pr.onclick = function () {
-      if (window.DHParents && DHParents.open) DHParents.open();
-      else alert('بخش والدین بارگذاری نشده.');
-    };
-    var st = $('dh-open-stories');
-    if (st) st.onclick = function () {
+    });
+    bind('dh-open-stories', function () {
       if (window.DHStories && DHStories.open) DHStories.open();
       else alert('بخش داستان‌ها بارگذاری نشده.');
-    };
-    var po = $('dh-open-poems');
-    if (po) po.onclick = function () {
+    });
+    bind('dh-open-poems', function () {
       if (window.DHPoems && DHPoems.open) DHPoems.open();
       else alert('بخش سخن بزرگان بارگذاری نشده.');
-    };
+    });
+    bind('dh-open-parents', function () {
+      if (window.DHParents && DHParents.open) DHParents.open();
+      else alert('بخش والدین بارگذاری نشده.');
+    });
   }
 
   function startJourneyFromShell() {

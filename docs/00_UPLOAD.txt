@@ -1,14 +1,11 @@
-اصلاح آیکون‌های شکسته + تیتر سامانه
-=====================================
-docs/ جایگزین:
-  shell.js
-  shell.css
-  sw.js
+Home LUX ≈ ماکت ارزیاب
+========================
+1) کل پوشه home-v25-assets را در docs/home-v25-assets/ بگذار
+2) در docs جایگزین کن:
+   shell.js
+   shell.css
+   sw.js
 
-آیکون‌ها دیگر inline هستند و بدون پوشه assets هم دیده می‌شوند.
-hero همچنان از home-v25-assets/hero-journey.svg می‌آید (اختیاری).
+Hard Refresh / پاک کردن کش
 
-اگر hero می‌خواهی:
-docs/home-v25-assets/hero-journey.svg را آپلود کن.
-
-تیتر «سامانه هدایت تحصیلی...» بولد است؛ نام کاربر سبک‌تر.
+منطق سفر و داده دست نخورده است.

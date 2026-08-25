@@ -1506,3 +1506,249 @@ h2 {
   background-size: cover;
   background-position: center;
 }
+
+
+/* =========================================================
+   Home LUX — نزدیک به ماکت ارزیاب (فقط ظاهر)
+   ========================================================= */
+.dh-lux {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 6px 10px 32px;
+  color: #e8e2d6;
+}
+.dh-lux-brand { text-align: center; margin-bottom: 8px; }
+.dh-lux-logo-wrap {
+  width: 88px; height: 88px; margin: 0 auto 12px;
+  border-radius: 22px;
+  background: radial-gradient(circle at 50% 40%, rgba(246,217,122,0.2), transparent 70%);
+  box-shadow: 0 0 32px rgba(212,175,55,0.25);
+  display: flex; align-items: center; justify-content: center;
+}
+.dh-lux-logo {
+  width: 80px; height: 80px; object-fit: contain;
+  border-radius: 18px;
+  border: 1px solid rgba(212,175,55,0.35);
+}
+.dh-lux-word {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #E8C547;
+  text-shadow: 0 0 24px rgba(232,197,71,0.35);
+}
+.dh-lux-fa {
+  margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: 1rem; color: #d8d0c0; font-weight: 600;
+}
+.dh-lux-fa i {
+  display: block; width: 36px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent);
+}
+.dh-lux-sys {
+  margin: 12px auto 0;
+  max-width: 300px;
+  font-size: 0.82rem;
+  line-height: 1.75;
+  color: #8a8478;
+  font-weight: 400;
+}
+.dh-lux-sys b {
+  color: #c8b890;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.dh-lux-hello { text-align: center; margin: 18px 0 16px; }
+.dh-lux-name {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #f5f0e6;
+  letter-spacing: -0.01em;
+}
+.dh-lux-date {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #7a7568;
+}
+
+/* Hero */
+.dh-lux-hero {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  min-height: 178px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(212,175,55,0.4);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(246,217,122,0.08) inset;
+}
+.dh-lux-hero-bg {
+  position: absolute; inset: 0;
+  background-color: #0a0c14;
+  background-size: cover;
+  background-position: center right;
+  /* fallback سینمایی اگر فایل hero نباشد */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 70% 40%, rgba(246,217,122,0.15), transparent 55%),
+    linear-gradient(165deg, #0a0c14 0%, #15101a 45%, #0d0a12 100%);
+}
+.dh-lux-hero-veil {
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg,
+    rgba(6,6,10,0.92) 0%,
+    rgba(6,6,10,0.55) 48%,
+    rgba(6,6,10,0.15) 100%);
+  pointer-events: none;
+}
+.dh-lux-hero-content {
+  position: relative; z-index: 2;
+  padding: 20px 18px 18px;
+  text-align: right;
+}
+.dh-lux-hero-row {
+  display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px;
+}
+.dh-lux-hero-title {
+  font-size: 1.28rem; font-weight: 800; color: #F0C040;
+}
+.dh-lux-hero-sub {
+  margin-top: 5px; font-size: 0.9rem; color: #c8c0b0; line-height: 1.55;
+}
+.dh-lux-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 26px;
+  border: none; border-radius: 999px;
+  background: linear-gradient(180deg, #F0D060 0%, #D4AF37 100%);
+  color: #1a1408;
+  font-family: inherit; font-size: 1rem; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(212,175,55,0.35);
+}
+.dh-lux-cta-arrow { font-size: 1.2rem; line-height: 1; }
+.dh-lux-cta:active { transform: scale(0.98); }
+
+/* Progress */
+.dh-lux-progress {
+  display: flex; gap: 14px; align-items: center;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #16141e, #0e0c14);
+  border: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 14px;
+}
+.dh-lux-ring-box { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+.dh-lux-ring { width: 72px; height: 72px; }
+.dh-lux-ring-val {
+  filter: drop-shadow(0 0 4px rgba(212,175,55,0.45));
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.22,1,0.36,1);
+}
+.dh-lux-ring-txt {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; font-weight: 800; color: #F0C040;
+}
+.dh-lux-prog-body { flex: 1; min-width: 0; }
+.dh-lux-prog-title {
+  font-size: 1rem; font-weight: 700; color: #ebe4d8; margin-bottom: 10px;
+}
+.dh-lux-bar {
+  height: 7px; border-radius: 99px;
+  background: rgba(255,255,255,0.08); overflow: hidden;
+}
+.dh-lux-bar i {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #A67C00, #F0C040);
+}
+.dh-lux-link {
+  margin-top: 10px; padding: 0; border: none; background: none;
+  color: #F0C040; font-family: inherit; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer;
+}
+.dh-lux-prog-hint {
+  margin: 8px 0 0; font-size: 0.8rem; color: #7a7568; line-height: 1.5;
+}
+
+/* Quote */
+.dh-lux-quote {
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, #14121a, #0c0b12);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 18px;
+}
+.dh-lux-quote-top {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.dh-lux-quill-art { font-size: 1.6rem; filter: grayscale(0.2) sepia(0.4); }
+.dh-lux-quote-label {
+  flex: 1; font-size: 1.05rem; font-weight: 800; color: #ebe4d8;
+}
+.dh-lux-marks {
+  font-size: 1.6rem; color: rgba(240,192,64,0.4); line-height: 1;
+}
+.dh-lux-quote-text {
+  margin: 0; font-size: 1rem; line-height: 1.95; color: #d4ccc0; text-align: right;
+}
+.dh-lux-quote-by {
+  margin-top: 12px; font-size: 0.82rem; color: #8a8478; text-align: left;
+}
+
+/* More */
+.dh-lux-divider {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin-bottom: 14px; font-size: 0.88rem; font-weight: 700; color: #a09070;
+}
+.dh-lux-divider i {
+  width: 48px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.45), transparent);
+}
+.dh-lux-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  background: radial-gradient(circle at 40% 35%, rgba(246,217,122,0.22), rgba(20,18,28,0.9) 70%);
+  border: 1px solid rgba(212,175,55,0.28);
+  box-shadow: 0 0 16px rgba(212,175,55,0.12);
+}
+.dh-lux-ic svg { width: 22px; height: 22px; }
+.dh-lux-ic-chev {
+  width: 22px; height: 22px; background: none; border: none; box-shadow: none;
+  opacity: 0.7;
+}
+.dh-lux-ic-chev svg { width: 16px; height: 16px; }
+.dh-lux-ic-parents {
+  border-color: rgba(126,200,163,0.3);
+  background: radial-gradient(circle at 40% 35%, rgba(126,200,163,0.15), rgba(20,18,28,0.9) 70%);
+}
+.dh-lux-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 14px 14px; margin-bottom: 10px; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(145deg, #16141e, #100e16);
+  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
+}
+.dh-lux-row-spark {
+  border-color: rgba(212,175,55,0.32);
+  box-shadow: 0 0 24px rgba(212,175,55,0.08);
+}
+.dh-lux-row-txt { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dh-lux-row-txt strong { font-size: 1.02rem; color: #f2ebe0; font-weight: 800; }
+.dh-lux-row-txt span { font-size: 0.8rem; color: #8a8478; line-height: 1.5; }
+.dh-lux-duo {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+}
+.dh-lux-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 16px 14px; min-height: 128px; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(160deg, #16141e, #100e16);
+  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
+}
+.dh-lux-tile strong { font-size: 0.98rem; color: #f2ebe0; font-weight: 800; }
+.dh-lux-tile span { font-size: 0.78rem; color: #8a8478; line-height: 1.55; }
+.dh-lux-row:active, .dh-lux-tile:active { transform: scale(0.985); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dh-lux-ring-val { transition: none; }
+  .dh-lux-row:active, .dh-lux-tile:active, .dh-lux-cta:active { transform: none; }
+}
