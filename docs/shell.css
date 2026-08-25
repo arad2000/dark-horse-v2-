@@ -2023,3 +2023,251 @@ h2 {
   font-weight: 400 !important;
   color: #6a6558 !important;
 }
+
+
+/* ========== Home MK2 — بازطراحی نزدیک‌تر به ماکت درخشان ========== */
+.dh-mk2 {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 8px 12px 32px;
+  background: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(212,175,55,0.07), transparent 55%);
+}
+.dh-mk2-brand { text-align: center; }
+.dh-mk2-logo-ring {
+  width: 104px; height: 104px; margin: 0 auto 12px;
+  border-radius: 28px;
+  display: grid; place-items: center;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255,224,138,0.35), transparent 65%),
+    radial-gradient(circle at 50% 80%, rgba(212,175,55,0.15), transparent 60%);
+  box-shadow:
+    0 0 48px rgba(212,175,55,0.35),
+    0 0 80px rgba(246,217,122,0.12);
+}
+.dh-mk2-logo-ring img {
+  width: 92px; height: 92px; object-fit: contain;
+  border-radius: 22px;
+  border: 1.5px solid rgba(246,217,122,0.5);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+.dh-mk2-word {
+  font-size: 1.65rem; font-weight: 800; letter-spacing: 0.18em;
+  color: #F0D060;
+  text-shadow:
+    0 0 20px rgba(240,208,96,0.55),
+    0 0 40px rgba(212,175,55,0.25);
+}
+.dh-mk2-fa {
+  margin-top: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  font-size: 1.05rem; color: #e0d8c8; font-weight: 600;
+}
+.dh-mk2-fa i {
+  width: 44px; height: 1px;
+  background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+  box-shadow: 0 0 8px rgba(212,175,55,0.4);
+}
+
+/* ★ بولد فقط سامانه */
+.dh-mk2-sys {
+  margin: 16px auto 0 !important;
+  max-width: 310px;
+  font-size: 1.14rem !important;
+  font-weight: 800 !important;
+  line-height: 1.75 !important;
+  color: #f4efe6 !important;
+  text-align: center;
+}
+.dh-mk2-sub {
+  margin: 6px 0 0 !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  color: #c9b888 !important;
+  text-align: center;
+}
+
+/* نام کاربر — نه بولد */
+.dh-mk2-hello { text-align: center; margin: 14px 0 16px; }
+.dh-mk2-greet {
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  color: #9a9285 !important;
+}
+.dh-mk2-date {
+  margin: 4px 0 0 !important;
+  font-size: 0.78rem !important;
+  color: #6a6558 !important;
+  font-weight: 400 !important;
+}
+
+/* Hero درخشان */
+.dh-mk2-hero {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  min-height: 200px;
+  margin-bottom: 14px;
+  border: 1.5px solid rgba(246,217,122,0.5);
+  box-shadow:
+    0 0 0 1px rgba(212,175,55,0.15),
+    0 16px 48px rgba(0,0,0,0.55),
+    0 0 60px rgba(212,175,55,0.18);
+}
+.dh-mk2-hero-bg {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: 65% center;
+  background-color: #080a12;
+  transform: scale(1.02);
+}
+.dh-mk2-hero-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 75% 45%, rgba(246,217,122,0.2), transparent 60%);
+  pointer-events: none;
+}
+.dh-mk2-hero-shade {
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg,
+    rgba(4,4,10,0.93) 0%,
+    rgba(4,4,10,0.65) 40%,
+    rgba(4,4,10,0.18) 100%);
+  pointer-events: none;
+}
+.dh-mk2-hero-body {
+  position: relative; z-index: 2;
+  padding: 20px 18px 18px;
+}
+.dh-mk2-hero-top {
+  display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px;
+}
+.dh-mk2-compass {
+  width: 48px; height: 48px; flex-shrink: 0;
+  filter: drop-shadow(0 0 12px rgba(255,224,138,0.55));
+}
+.dh-mk2-compass svg { width: 100%; height: 100%; }
+.dh-mk2-hero-title {
+  font-size: 1.35rem; font-weight: 800; color: #F6D97A;
+  text-shadow: 0 0 16px rgba(246,217,122,0.35);
+}
+.dh-mk2-hero-sub {
+  margin-top: 5px; font-size: 0.9rem; color: #c8c0b0; line-height: 1.55;
+}
+.dh-mk2-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 30px;
+  border: none; border-radius: 999px;
+  background: linear-gradient(180deg, #FFE08A 0%, #E8C547 40%, #C9A227 100%);
+  color: #1a1206;
+  font-family: inherit; font-size: 1.05rem; font-weight: 800;
+  cursor: pointer;
+  box-shadow:
+    0 8px 28px rgba(212,175,55,0.45),
+    0 0 20px rgba(246,217,122,0.25);
+}
+.dh-mk2-cta span { font-size: 1.2rem; }
+
+/* Progress */
+.dh-mk2-progress {
+  display: flex; gap: 14px; align-items: center;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #18151f, #0e0c14);
+  border: 1px solid rgba(212,175,55,0.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  margin-bottom: 14px;
+}
+.dh-mk2-ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+.dh-mk2-ring svg { width: 100%; height: 100%; }
+.dh-mk2-ring-val { filter: drop-shadow(0 0 6px rgba(212,175,55,0.55)); }
+.dh-mk2-ring span {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 0.95rem; font-weight: 800; color: #F0C040;
+}
+.dh-mk2-prog-body { flex: 1; min-width: 0; }
+.dh-mk2-prog-title { font-size: 1rem; font-weight: 700; color: #ebe4d8; margin-bottom: 10px; }
+.dh-mk2-bar {
+  height: 7px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden;
+}
+.dh-mk2-bar i {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #A67C00, #F6D97A);
+  box-shadow: 0 0 10px rgba(246,217,122,0.4);
+}
+.dh-mk2-cont {
+  margin-top: 10px; padding: 0; border: none; background: none;
+  color: #F0C040; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+}
+
+/* Quote */
+.dh-mk2-quote {
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, #16131c, #0c0b12);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+.dh-mk2-quote-top {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.dh-mk2-quill { font-size: 1.5rem; filter: drop-shadow(0 0 6px rgba(246,217,122,0.3)); }
+.dh-mk2-quote-label { flex: 1; font-size: 1.08rem; font-weight: 800; color: #ebe4d8; }
+.dh-mk2-qq { font-size: 1.6rem; color: rgba(240,192,64,0.4); }
+.dh-mk2-quote-text {
+  margin: 0; font-size: 1rem; line-height: 1.95; color: #d4ccc0; text-align: right;
+}
+.dh-mk2-quote-by {
+  margin-top: 12px; font-size: 0.82rem; color: #8a8478; text-align: left;
+}
+
+/* Features */
+.dh-mk2-sep {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin-bottom: 14px; font-size: 0.9rem; font-weight: 700; color: #b0a070;
+}
+.dh-mk2-sep i {
+  width: 56px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent);
+  box-shadow: 0 0 6px rgba(212,175,55,0.3);
+}
+.dh-mk2-orb {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: radial-gradient(circle at 40% 30%, rgba(255,224,138,0.3), #121018 68%);
+  border: 1px solid rgba(246,217,122,0.35);
+  box-shadow: 0 0 20px rgba(212,175,55,0.2);
+}
+.dh-mk2-orb svg { width: 24px; height: 24px; }
+.dh-mk2-orb-m {
+  background: radial-gradient(circle at 40% 30%, rgba(126,200,163,0.2), #121018 68%);
+  border-color: rgba(126,200,163,0.35);
+  box-shadow: 0 0 16px rgba(126,200,163,0.15);
+}
+.dh-mk2-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 14px 16px; margin-bottom: 10px; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: linear-gradient(145deg, #18151f, #100e16);
+  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
+}
+.dh-mk2-row-hot {
+  border-color: rgba(246,217,122,0.35);
+  box-shadow: 0 0 28px rgba(212,175,55,0.12);
+}
+.dh-mk2-row-t { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.dh-mk2-row-t strong { font-size: 1.05rem; color: #f4efe6; font-weight: 800; }
+.dh-mk2-row-t span { font-size: 0.8rem; color: #8a8478; line-height: 1.5; }
+.dh-mk2-chev { color: #D4AF37; font-size: 1.25rem; opacity: 0.85; }
+.dh-mk2-duo {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+}
+.dh-mk2-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 16px 14px; min-height: 130px; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: linear-gradient(160deg, #18151f, #100e16);
+  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
+}
+.dh-mk2-tile strong { font-size: 1rem; color: #f4efe6; font-weight: 800; }
+.dh-mk2-tile span { font-size: 0.76rem; color: #8a8478; line-height: 1.5; }
