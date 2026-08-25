@@ -1,22 +1,3 @@
-رفع دخالت ارزیاب + کش v52
-===========================
-علت اصلی ظاهر خراب:
-  فایل home_mk2_exact.css که ارزیاب اضافه کرده بود
-  با !important:
-  - نام کاربر را بزرگ و بولد کرده بود
-  - داستان‌ها را بنفش و والدین را سبز کرده بود
-
-این بسته:
-1) لینک home_mk2_exact.css را از index حذف می‌کند
-2) همان فایل را با قوانین درست جایگزین می‌کند (اگر جایی لینک مانده باشد)
-3) SW را به v52 می‌برد تا کش بشکند
-
-docs جایگزین همه این‌ها:
-  index.html
-  home_mk2_exact.css
-  shell.js
-  shell.css
-  sw.js
-  pwa-boot.js
-
-بعد: https://arad2000.github.io/dark-horse-v2-/?v=52
+4 fixes: guide, hero gold, logo glow, meta name/date
+docs: all files
+?v=53

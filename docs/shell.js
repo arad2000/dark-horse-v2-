@@ -228,6 +228,70 @@
     return 'مسیر متفاوت تو از اینجا شروع می‌شود.';
   }
 
+
+  function openSystemGuide() {
+    var existing = document.getElementById('dh-sys-guide');
+    if (existing) existing.remove();
+    var page = 0;
+    var pages = [
+      {
+        title: 'اسب سیاه — مشاور سامانه',
+        body:
+          '<p class="dh-g-quote">«موفقیت از تقلید دیگران به دست نمی‌آید؛ از شناخت فردیت و ساختن مسیر شخصی می‌آید.»</p>' +
+          '<p class="dh-g-src">— تاد رز، کتاب اسب سیاه (پروژه هاروارد)</p>' +
+          '<h3>مشکل از کجاست؟</h3>' +
+          '<p>هر سال هزاران دانش‌آموز می‌پرسند «چه رشته‌ای بخوانم؟» پاسخ‌های رایج معمولاً بر پایه رتبه، پرستیژ یا بازار کار کلیشه‌ای است و <strong>فردیت تو را نادیده می‌گیرند</strong>.</p>' +
+          '<h3>راه‌حل این سامانه</h3>' +
+          '<p>بر اساس پژوهش Dark Horse در هاروارد، به‌جای «چه نمره‌ای آوردی؟» می‌پرسد: <strong>«از چه چیزی واقعاً انرژی می‌گیری؟»</strong></p>' +
+          '<h3>سه لایه شناخت</h3>' +
+          '<ul><li><strong>خرده‌انگیزه‌ها</strong> — جرقه‌های لذت روزمره</li>' +
+          '<li><strong>راهبردهای شخصی</strong> — سبک فکر و یادگیری</li>' +
+          '<li><strong>ارزش‌های بنیادین</strong> — معنای رضایت‌بخش کار</li></ul>' +
+          '<p class="dh-g-note">این تست شخصیت نیست؛ سفر کوتاهی برای کشف خودت است.</p>'
+      },
+      {
+        title: 'راهنمای سفر اکتشافی',
+        body:
+          '<p>این یک تست نیست؛ <strong>سفری برای شناخت انگیزه، سبک فکر و ارزش‌های خودت</strong> است.</p>' +
+          '<h3>مسیر سفر</h3>' +
+          '<p><strong>۱) خرده‌انگیزه‌ها</strong><br>از میان بیش از ۱۱۰۰ جرقه، موارد انرژی‌بخش را انتخاب کن (حدود ۲۰ تا ۸۰).</p>' +
+          '<p><strong>۲) راهبردهای شخصی</strong><br>حدود ۲۵ موقعیت کوتاه درباره سبک حل مسئله.</p>' +
+          '<p><strong>۳) ارزش‌های بنیادین</strong><br>۱۵ دوگانه برای فهم رضایت بلندمدت.</p>' +
+          '<h3>وزن‌ها</h3>' +
+          '<p><strong>رشته دانشگاهی:</strong> خرده‌انگیزه ۵۵٪ · ارزش ۳۰٪ · راهبرد ۱۵٪</p>' +
+          '<p><strong>شاخه دبیرستان:</strong> خرده‌انگیزه ۶۰٪ · راهبرد ۲۰٪ · ارزش ۲۰٪</p>' +
+          '<p class="dh-g-note">انگیزه و ارزش پایدارترند؛ راهبرد را می‌توان ساخت.</p>'
+      }
+    ];
+    var ov = document.createElement('div');
+    ov.id = 'dh-sys-guide';
+    ov.className = 'dh-guide-ov';
+    ov.setAttribute('dir', 'rtl');
+    function paint() {
+      var p = pages[page];
+      ov.innerHTML =
+        '<div class="dh-guide-panel">' +
+          '<button type="button" class="dh-guide-x" id="dh-guide-close">×</button>' +
+          '<h2 class="dh-guide-title">' + p.title + '</h2>' +
+          '<div class="dh-guide-body">' + p.body + '</div>' +
+          '<div class="dh-guide-dots"><span class="' + (page === 0 ? 'on' : '') + '"></span><span class="' + (page === 1 ? 'on' : '') + '"></span></div>' +
+          '<div class="dh-guide-actions">' +
+            (page === 0
+              ? '<button type="button" class="dh-guide-btn" id="dh-guide-next">ادامه راهنما</button>'
+              : '<button type="button" class="dh-guide-btn secondary" id="dh-guide-prev">قبلی</button><button type="button" class="dh-guide-btn" id="dh-guide-done">متوجه شدم</button>') +
+          '</div></div>';
+      var close = function () { ov.remove(); };
+      var el;
+      el = document.getElementById('dh-guide-close'); if (el) el.onclick = close;
+      el = document.getElementById('dh-guide-next'); if (el) el.onclick = function () { page = 1; paint(); };
+      el = document.getElementById('dh-guide-prev'); if (el) el.onclick = function () { page = 0; paint(); };
+      el = document.getElementById('dh-guide-done'); if (el) el.onclick = close;
+      ov.onclick = function (e) { if (e.target === ov) close(); };
+    }
+    document.body.appendChild(ov);
+    paint();
+  }
+
   function renderHome() {
     ensureTabbar();
     setActiveTab('home');
@@ -258,14 +322,11 @@
 
     var base = '';
     try {
-      if ((location.pathname || '').indexOf('/dark-horse-v2-') === 0) {
-        base = '/dark-horse-v2-/';
-      }
+      if ((location.pathname || '').indexOf('/dark-horse-v2-') === 0) base = '/dark-horse-v2-/';
     } catch (e0) {}
 
-    function ico(file, mint) {
-      var cls = mint ? 'dh-mk2-orb dh-mk2-orb' : 'dh-mk2-orb';
-      return '<span class="' + cls + '"><img src="' + base + file + '" alt="" width="24" height="24"></span>';
+    function ico(file) {
+      return '<span class="dh-mk2-orb"><img src="' + base + file + '" alt="" width="24" height="24"></span>';
     }
 
     var heroUrl = base + 'hero-journey.svg';
@@ -273,93 +334,62 @@
 
     root.innerHTML =
       '<div class="dh-home-wrap dh-mk2">' +
-
+        '<div class="dh-mk2-meta">' +
+          '<span class="dh-mk2-meta-name">سلام ' + escape(name) + '</span>' +
+          '<span class="dh-mk2-meta-date">' + escape(faDate()) + '</span>' +
+        '</div>' +
         '<header class="dh-mk2-brand">' +
-          '<div class="dh-mk2-logo-ring">' +
-            '<img src="' + base + 'icon-192.png" alt="" width="96" height="96">' +
-          '</div>' +
+          '<div class="dh-mk2-logo-ring"><img src="' + base + 'icon-192.png" alt="" width="96" height="96"></div>' +
           '<div class="dh-mk2-word">DARK HORSE</div>' +
           '<div class="dh-mk2-fa"><i></i><span>اسب سیاه</span><i></i></div>' +
           '<h1 class="dh-mk2-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</h1>' +
           '<p class="dh-mk2-sub">بر اساس فردیت</p>' +
         '</header>' +
-
-        '<section class="dh-mk2-hello">' +
-          '<p class="dh-mk2-greet">سلام ' + escape(name) + '</p>' +
-          '<p class="dh-mk2-date">' + escape(faDate()) + '</p>' +
-        '</section>' +
-
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:url(\'' + heroUrl + '\')"></div>' +
-          '<div class="dh-mk2-hero-glow"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
           '<div class="dh-mk2-hero-body">' +
             '<div class="dh-mk2-hero-top">' +
-              '<span class="dh-mk2-compass"><img src="' + base + 'ico-compass.svg" alt="" width="48" height="48"></span>' +
-              '<div>' +
-                '<div class="dh-mk2-hero-title">سفر اکتشافی</div>' +
-                '<div class="dh-mk2-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div>' +
-              '</div>' +
+              '<span class="dh-mk2-compass"><img src="' + base + 'ico-compass.svg" alt="" width="40" height="40"></span>' +
+              '<div><div class="dh-mk2-hero-title">سفر اکتشافی</div>' +
+              '<div class="dh-mk2-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div></div>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
-              (canContinue ? 'ادامه سفر' : 'شروع سفر') +
-              '<span>›</span>' +
-            '</button>' +
-          '</div>' +
-        '</section>' +
-
+              (canContinue ? 'ادامه سفر' : 'شروع سفر') + ' <span>›</span></button>' +
+          '</div></section>' +
         '<section class="dh-mk2-progress">' +
-          '<div class="dh-mk2-ring">' +
-            '<svg viewBox="0 0 120 120">' +
-              '<circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>' +
-              '<circle cx="60" cy="60" r="48" fill="none" stroke="#D4AF37" stroke-width="10" stroke-linecap="round" ' +
-                'stroke-dasharray="301.6" stroke-dashoffset="' + ringOff + '" transform="rotate(-90 60 60)" class="dh-mk2-ring-val"/>' +
-            '</svg>' +
-            '<span>' + pct + '%</span>' +
-          '</div>' +
+          '<div class="dh-mk2-ring"><svg viewBox="0 0 120 120">' +
+            '<circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>' +
+            '<circle cx="60" cy="60" r="48" fill="none" stroke="#D4AF37" stroke-width="10" stroke-linecap="round" ' +
+              'stroke-dasharray="301.6" stroke-dashoffset="' + ringOff + '" transform="rotate(-90 60 60)" class="dh-mk2-ring-val"/>' +
+          '</svg><span>' + pct + '%</span></div>' +
           '<div class="dh-mk2-prog-body">' +
             '<div class="dh-mk2-prog-title">' + escape(progressLabel) + '</div>' +
             '<div class="dh-mk2-bar"><i style="width:' + pct + '%"></i></div>' +
-            (canContinue
-              ? '<button type="button" class="dh-mk2-cont" id="dh-continue-journey">ادامه سفر ‹</button>'
-              : '') +
-          '</div>' +
-        '</section>' +
-
+            (canContinue ? '<button type="button" class="dh-mk2-cont" id="dh-continue-journey">ادامه سفر ‹</button>' : '') +
+          '</div></section>' +
         '<section class="dh-mk2-quote">' +
-          '<div class="dh-mk2-quote-top">' +
-            ico('ico-quill.svg', false) +
-            '<span class="dh-mk2-quote-label">پیام امروز</span>' +
-            '<span class="dh-mk2-qq">”</span>' +
-          '</div>' +
+          '<div class="dh-mk2-quote-top">' + ico('ico-quill.svg') +
+          '<span class="dh-mk2-quote-label">پیام امروز</span><span class="dh-mk2-qq">”</span></div>' +
           '<p class="dh-mk2-quote-text">' + escape(quote.t) + '</p>' +
-          '<div class="dh-mk2-quote-by">' + escape(quote.tag) + '</div>' +
-        '</section>' +
-
+          '<div class="dh-mk2-quote-by">' + escape(quote.tag) + '</div></section>' +
         '<section class="dh-mk2-more">' +
           '<div class="dh-mk2-sep"><i></i><span>کشف بیشتر</span><i></i></div>' +
           '<button type="button" class="dh-mk2-row dh-mk2-row-hot" id="dh-open-spark">' +
-            ico('ico-bolt.svg', false) +
+            ico('ico-bolt.svg') +
             '<div class="dh-mk2-row-t"><strong>جرقه‌یاب</strong><span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span></div>' +
-            '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span>' +
-          '</button>' +
+            '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span></button>' +
           '<div class="dh-mk2-duo">' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' +
-              ico('ico-book.svg', false) +
-              '<strong>داستان‌ها</strong><span>روایت مسیرهای واقعی برای الهام گرفتن</span>' +
-            '</button>' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-poems">' +
-              ico('ico-quill.svg', false) +
-              '<strong>سخن بزرگان</strong><span>یک فکر ارزشمند برای امروز</span>' +
-            '</button>' +
-          '</div>' +
-          '<button type="button" class="dh-mk2-row" id="dh-open-parents">' +
-            ico('ico-parents.svg', false) +
-            '<div class="dh-mk2-row-t"><strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></div>' +
-            '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span>' +
-          '</button>' +
-        '</section>' +
-      '</div>';
+            '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' + ico('ico-book.svg') +
+            '<strong>داستان‌ها</strong><span>روایت مسیرهای واقعی</span></button>' +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-poems">' + ico('ico-quill.svg') +
+            '<strong>سخن بزرگان</strong><span>یک فکر ارزشمند برای امروز</span></button></div>' +
+          '<div class="dh-mk2-duo">' +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-parents">' + ico('ico-parents.svg') +
+            '<strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></button>' +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-guide">' + ico('ico-compass.svg') +
+            '<strong>راهنمای سامانه</strong><span>مشاور و معرفی سامانه</span></button></div>' +
+        '</section></div>';
 
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
     on('dh-start-journey', function () { startJourneyFromShell(); });
@@ -380,6 +410,7 @@
       if (window.DHParents && DHParents.open) DHParents.open();
       else alert('بخش والدین بارگذاری نشده.');
     });
+    on('dh-open-guide', function () { openSystemGuide(); });
   }
 
   function startJourneyFromShell() {

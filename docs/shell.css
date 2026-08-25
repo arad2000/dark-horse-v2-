@@ -1645,3 +1645,32 @@ h2 {
 .dh-mk2-quote {
   border-color: rgba(212,175,55,0.12) !important;
 }
+
+.dh-mk2-meta{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px}
+.dh-mk2-meta-name{font-size:.88rem!important;font-weight:500!important;color:#a8a090!important}
+.dh-mk2-meta-date{font-size:.78rem!important;font-weight:400!important;color:#6a6558!important}
+.dh-mk2-logo-ring{background:radial-gradient(circle at 50% 35%,rgba(255,236,170,.55),transparent 58%),radial-gradient(circle at 50% 70%,rgba(212,175,55,.25),transparent 60%)!important;box-shadow:0 0 36px rgba(246,217,122,.55),0 0 70px rgba(212,175,55,.28)!important}
+.dh-mk2-logo-ring img{border:1.5px solid rgba(255,224,138,.7)!important;box-shadow:0 0 28px rgba(246,217,122,.4)!important}
+.dh-mk2-word{color:#FFE08A!important;text-shadow:0 0 22px rgba(255,224,138,.55),0 0 40px rgba(212,175,55,.3)!important}
+.dh-mk2-hero{min-height:180px!important;border:1.5px solid rgba(246,217,122,.55)!important;box-shadow:0 10px 32px rgba(0,0,0,.4),0 0 36px rgba(212,175,55,.22)!important;border-radius:18px!important}
+.dh-mk2-hero-glow{display:none!important}
+.dh-mk2-hero-shade{background:linear-gradient(100deg,rgba(8,8,14,.88) 0%,rgba(8,8,14,.55) 45%,rgba(8,8,14,.2) 100%)!important}
+.dh-mk2-hero-title{color:#F6D97A!important;text-shadow:0 0 12px rgba(246,217,122,.35)!important}
+.dh-mk2-cta{background:linear-gradient(180deg,#FFE08A,#D4AF37)!important;box-shadow:0 6px 20px rgba(212,175,55,.4)!important}
+.dh-mk2-sys{font-weight:800!important;font-size:1.12rem!important;color:#f4efe6!important}
+.dh-guide-ov{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px;font-family:Vazirmatn,sans-serif}
+.dh-guide-panel{width:100%;max-width:420px;max-height:88vh;overflow:auto;background:linear-gradient(165deg,#1a1722,#0e0c14);border:1px solid rgba(212,175,55,.35);border-radius:20px 20px 16px 16px;padding:20px 18px 18px;position:relative}
+.dh-guide-x{position:absolute;top:12px;left:12px;width:36px;height:36px;border:none;border-radius:50%;background:rgba(255,255,255,.06);color:#c8c0b0;font-size:1.4rem;cursor:pointer}
+.dh-guide-title{margin:0 0 14px;text-align:center;font-size:1.15rem;color:#F0C040;font-weight:800}
+.dh-guide-body{text-align:right;color:#c8c0b0;font-size:.9rem;line-height:1.95}
+.dh-guide-body h3{color:#F0C040;font-size:.95rem;margin:14px 0 6px}
+.dh-guide-body ul{padding-right:18px;margin:8px 0}
+.dh-g-quote{color:#F6D97A!important;font-weight:700;margin-bottom:4px}
+.dh-g-src{font-size:.78rem;color:#7a7568;margin-bottom:12px}
+.dh-g-note{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);color:#d4c49a!important}
+.dh-guide-dots{display:flex;justify-content:center;gap:8px;margin:16px 0 12px}
+.dh-guide-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15)}
+.dh-guide-dots span.on{background:#D4AF37}
+.dh-guide-actions{display:flex;gap:10px}
+.dh-guide-btn{flex:1;padding:12px;border:none;border-radius:12px;background:linear-gradient(180deg,#F0C040,#D4AF37);color:#1a1206;font-family:inherit;font-weight:800;font-size:.95rem;cursor:pointer}
+.dh-guide-btn.secondary{background:transparent;color:#c8c0b0;border:1px solid rgba(255,255,255,.15)}
