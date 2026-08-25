@@ -264,7 +264,7 @@
     } catch (e0) {}
 
     function ico(file, mint) {
-      var cls = mint ? 'dh-mk2-orb dh-mk2-orb-m' : 'dh-mk2-orb';
+      var cls = mint ? 'dh-mk2-orb dh-mk2-orb' : 'dh-mk2-orb';
       return '<span class="' + cls + '"><img src="' + base + file + '" alt="" width="24" height="24"></span>';
     }
 
@@ -354,7 +354,7 @@
             '</button>' +
           '</div>' +
           '<button type="button" class="dh-mk2-row" id="dh-open-parents">' +
-            ico('ico-parents.svg', true) +
+            ico('ico-parents.svg', false) +
             '<div class="dh-mk2-row-t"><strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></div>' +
             '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span>' +
           '</button>' +

@@ -1529,3 +1529,119 @@ h2 {
 }
 .dh-mk2-tile strong { font-size: 0.98rem; color: #f4efe6; font-weight: 800; }
 .dh-mk2-tile span { font-size: 0.76rem; color: #8a8478; line-height: 1.5; }
+
+
+/* ============================================================
+   FIX FOCUSED — دستور کاربر
+   1) بولد فقط سامانه
+   2) کارت سفر طلایی درخشان
+   3) چهار عنصر یک رنگ طلایی
+   4) کیفیت بصری مثل لوگوی اسب
+   ============================================================ */
+
+/* 1) بولد */
+.dh-mk2-sys {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: #f7f2e8 !important;
+  line-height: 1.75 !important;
+}
+.dh-mk2-sub {
+  font-weight: 600 !important;
+  color: #d4c49a !important;
+}
+.dh-mk2-greet {
+  font-size: 0.92rem !important;
+  font-weight: 500 !important;
+  color: #8a8478 !important;
+}
+
+/* 4) لوگو — درخشش قوی‌تر (مرجع کیفیت) */
+.dh-mk2-logo-ring {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,230,150,0.45), transparent 60%),
+    radial-gradient(circle at 50% 80%, rgba(212,175,55,0.2), transparent 55%) !important;
+  box-shadow:
+    0 0 40px rgba(246,217,122,0.45),
+    0 0 80px rgba(212,175,55,0.2) !important;
+}
+.dh-mk2-logo-ring img {
+  border-color: rgba(246,217,122,0.65) !important;
+  box-shadow: 0 0 24px rgba(212,175,55,0.35) !important;
+}
+.dh-mk2-word {
+  color: #F6D97A !important;
+  text-shadow:
+    0 0 18px rgba(246,217,122,0.55),
+    0 0 36px rgba(212,175,55,0.3) !important;
+}
+
+/* 2) کارت سفر — طلایی درخشان */
+.dh-mk2-hero {
+  border: 2px solid rgba(246,217,122,0.65) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,224,138,0.2),
+    0 12px 40px rgba(0,0,0,0.5),
+    0 0 50px rgba(212,175,55,0.35),
+    inset 0 0 60px rgba(246,217,122,0.06) !important;
+}
+.dh-mk2-hero-glow {
+  background: radial-gradient(ellipse 80% 70% at 70% 40%,
+    rgba(255,224,138,0.35),
+    rgba(212,175,55,0.12) 45%,
+    transparent 70%) !important;
+}
+.dh-mk2-hero-title {
+  color: #FFE08A !important;
+  text-shadow: 0 0 20px rgba(255,224,138,0.5) !important;
+}
+.dh-mk2-cta {
+  background: linear-gradient(180deg, #FFE9A0 0%, #F0C040 45%, #C9A227 100%) !important;
+  box-shadow:
+    0 6px 24px rgba(212,175,55,0.55),
+    0 0 30px rgba(246,217,122,0.3) !important;
+}
+.dh-mk2-compass {
+  filter: drop-shadow(0 0 14px rgba(255,224,138,0.65)) !important;
+}
+
+/* 3) چهار عنصر — یک رنگ طلایی (نه سبز برای والدین) */
+.dh-mk2-orb,
+.dh-mk2-orb-m {
+  background: radial-gradient(circle at 40% 30%,
+    rgba(255,224,138,0.35),
+    rgba(20,18,28,0.95) 68%) !important;
+  border: 1.5px solid rgba(246,217,122,0.45) !important;
+  box-shadow:
+    0 0 22px rgba(212,175,55,0.28),
+    0 0 8px rgba(246,217,122,0.15) !important;
+}
+.dh-mk2-row,
+.dh-mk2-tile {
+  border-color: rgba(212,175,55,0.18) !important;
+  background: linear-gradient(145deg, #1a1722, #100e16) !important;
+}
+.dh-mk2-row-hot {
+  border-color: rgba(246,217,122,0.4) !important;
+  box-shadow: 0 0 28px rgba(212,175,55,0.18) !important;
+}
+.dh-mk2-row-t strong,
+.dh-mk2-tile strong {
+  color: #f4efe6 !important;
+}
+.dh-mk2-sep span { color: #c9b888 !important; }
+.dh-mk2-sep i {
+  background: linear-gradient(90deg, transparent, rgba(246,217,122,0.6), transparent) !important;
+  box-shadow: 0 0 8px rgba(212,175,55,0.35) !important;
+}
+
+/* پیشرفت هم هم‌خانواده طلایی */
+.dh-mk2-progress {
+  border-color: rgba(212,175,55,0.2) !important;
+}
+.dh-mk2-ring-val {
+  filter: drop-shadow(0 0 8px rgba(246,217,122,0.55)) !important;
+}
+.dh-mk2-quote {
+  border-color: rgba(212,175,55,0.12) !important;
+}
