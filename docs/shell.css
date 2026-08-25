@@ -1306,3 +1306,157 @@ h2 {
   display: block;
 }
 .dh-brand-text { text-align: center; }
+
+
+/* ========== Home Mock v25 (ماکت ارزیاب) ========== */
+.dh-home-mock25 {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 8px 8px 28px;
+}
+.dh-m25-brand { text-align: center; margin-bottom: 14px; }
+.dh-m25-logo {
+  width: 72px; height: 72px; margin: 0 auto 10px;
+  border-radius: 18px; overflow: hidden;
+  border: 1px solid rgba(212,175,55,0.4);
+  box-shadow: 0 6px 24px rgba(212,175,55,0.2);
+  background: #0a0a0f;
+}
+.dh-m25-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.dh-m25-word {
+  font-size: 1.35rem; font-weight: 800; letter-spacing: 0.12em;
+  color: #f0c040;
+}
+.dh-m25-fa {
+  margin-top: 6px; font-size: 0.95rem; color: #e8e0d0;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.dh-m25-line {
+  display: inline-block; width: 28px; height: 1px;
+  background: rgba(212,175,55,0.45);
+}
+.dh-m25-sys {
+  margin: 10px auto 0; max-width: 300px;
+  font-size: 0.8rem; line-height: 1.7; color: #8a8478;
+}
+.dh-m25-sys strong { color: #c8b890; font-weight: 700; }
+.dh-m25-hello { text-align: center; margin-bottom: 16px; }
+.dh-m25-greet {
+  margin: 0; font-size: 1.45rem; font-weight: 800; color: #f2ebe0;
+}
+.dh-m25-date { margin: 4px 0 0; font-size: 0.82rem; color: #7a7568; }
+.dh-m25-living {
+  margin: 10px 0 0; font-size: 0.92rem; line-height: 1.7; color: #b0a890;
+}
+.dh-m25-hero {
+  position: relative; border-radius: 20px; overflow: hidden;
+  min-height: 168px; margin-bottom: 14px;
+  border: 1px solid rgba(212,175,55,0.35);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
+.dh-m25-hero-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 1;
+}
+.dh-m25-hero-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(8,8,12,0.88) 0%, rgba(8,8,12,0.55) 55%, rgba(8,8,12,0.25) 100%);
+}
+.dh-m25-hero-body {
+  position: relative; z-index: 1; padding: 18px 16px 16px; text-align: right;
+}
+.dh-m25-hero-top {
+  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px;
+}
+.dh-m25-hero-title {
+  font-size: 1.2rem; font-weight: 800; color: #f0c040;
+}
+.dh-m25-hero-sub {
+  margin-top: 4px; font-size: 0.88rem; color: #c8c0b0; line-height: 1.5;
+}
+.dh-m25-cta {
+  width: auto !important; min-width: 140px;
+  padding: 11px 22px !important; border-radius: 999px !important;
+  font-weight: 700 !important; font-size: 0.95rem !important;
+}
+.dh-m25-ico { width: 28px; height: 28px; flex-shrink: 0; }
+.dh-m25-ico-lg { width: 36px; height: 36px; }
+.dh-m25-progress {
+  display: flex; gap: 14px; align-items: center;
+  padding: 14px; border-radius: 16px;
+  background: rgba(18,16,26,0.95);
+  border: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 14px;
+}
+.dh-m25-ring-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+.dh-m25-ring { width: 64px; height: 64px; }
+.dh-m25-ring-pct {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 800; color: #f0c040;
+}
+.dh-m25-prog-info { flex: 1; min-width: 0; }
+.dh-m25-prog-title { font-size: 0.95rem; font-weight: 700; color: #e8e0d0; margin-bottom: 8px; }
+.dh-m25-bar {
+  height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden;
+}
+.dh-m25-bar-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #b8860b, #f0c040);
+}
+.dh-m25-continue {
+  margin-top: 8px; background: none; border: none; color: #f0c040;
+  font-family: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer; padding: 0;
+}
+.dh-m25-restart {
+  display: block; margin-top: 4px; background: none; border: none;
+  color: #7a7568; font-family: inherit; font-size: 0.8rem; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.dh-m25-quote {
+  padding: 16px; border-radius: 16px;
+  background: #121018; border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 18px;
+}
+.dh-m25-quote-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.dh-m25-quote-label { font-size: 0.95rem; font-weight: 800; color: #e8e0d0; flex: 1; }
+.dh-m25-qmark { color: rgba(240,192,64,0.45); font-size: 1.4rem; }
+.dh-m25-quote-text {
+  margin: 0; font-size: 0.98rem; line-height: 1.9; color: #d8d0c4; text-align: right;
+}
+.dh-m25-quote-by {
+  margin-top: 10px; font-size: 0.8rem; color: #8a8478; text-align: left;
+}
+.dh-m25-section {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-bottom: 12px; font-size: 0.85rem; color: #a09070; font-weight: 700;
+}
+.dh-m25-div { width: 72px; height: 10px; opacity: 0.85; }
+.dh-m25-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 14px 14px; margin-bottom: 10px; border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08); background: #121018;
+  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
+}
+.dh-m25-spark { border-color: rgba(212,175,55,0.28); box-shadow: 0 0 20px rgba(212,175,55,0.06); }
+.dh-m25-row-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.dh-m25-row-text strong { font-size: 1rem; color: #f0e8d8; }
+.dh-m25-row-text span { font-size: 0.8rem; color: #8a8478; line-height: 1.5; }
+.dh-m25-chev { width: 18px; height: 18px; opacity: 0.7; }
+.dh-m25-duo {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+}
+.dh-m25-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  padding: 14px; min-height: 120px; border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08); background: #121018;
+  color: inherit; font-family: inherit; cursor: pointer; text-align: right;
+}
+.dh-m25-tile strong { font-size: 0.95rem; color: #f0e8d8; }
+.dh-m25-tile span { font-size: 0.78rem; color: #8a8478; line-height: 1.5; }
+.dh-m25-row:active, .dh-m25-tile:active { transform: scale(0.985); }
+@media (prefers-reduced-motion: reduce) {
+  .dh-m25-row:active, .dh-m25-tile:active { transform: none; }
+}
