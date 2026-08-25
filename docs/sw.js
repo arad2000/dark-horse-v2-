@@ -1,11 +1,14 @@
 /* Dark Horse SW v27 — visual polish + cache refresh */
-const CACHE = 'darkhorse-shell-v47';
+const CACHE = 'darkhorse-shell-v48';
 const SHELL = [
   './', './index.html', './app.js', './data.js', './ux_v2_patch.js',
-  './shell.js', './shell.css', './quotes_darkhorse.js', './auth_api_client.js',
+  './shell.js', './shell.css', './home_mk2_exact.css', './quotes_darkhorse.js', './auth_api_client.js',
   './spark_game.js', './parents.js', './stories.js', './poems.js',
   './pwa-boot.js', './manifest.json',
-  './icon-192.png', './icon-512.png', './icon.png', './apple-touch-icon.png'
+  './icon-192.png', './icon-512.png', './icon.png', './apple-touch-icon.png',
+  './hero-journey.svg', './ico-compass.svg', './ico-bolt.svg', './ico-book.svg',
+  './ico-quill.svg', './ico-parents.svg', './ico-home.svg', './ico-journey.svg',
+  './ico-profile.svg', './ico-chevron.svg', './ico-bell.svg'
 ];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
