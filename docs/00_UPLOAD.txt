@@ -1,7 +1,14 @@
-اصلاح متمرکز
-1) بولد فقط سامانه هدایت تحصیلی
-2) کارت سفر طلایی درخشان
-3) چهار عنصر یک رنگ طلایی
-4) درخشش مثل لوگوی اسب
+شکست کش — v50
+==============
+docs جایگزین:
+  index.html
+  shell.js
+  shell.css
+  sw.js
 
-docs: shell.js shell.css sw.js
+بعد از آپلود روی گوشی:
+1) سایت را کامل ببند
+2) اگر PWA نصب است: Clear storage همان سایت یا حذف و نصب مجدد
+3) یا Chrome → Site settings → Clear & reset
+
+SW الان network-first برای shell است.
