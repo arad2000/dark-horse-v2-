@@ -1,18 +1,35 @@
-/* Dark Horse MK2 exact-reference refinement: presentation only. */
-.dh-mk2{max-width:410px!important;padding:6px 12px 30px!important;background:radial-gradient(ellipse 130% 80% at 50% -12%,rgba(212,175,55,.085),transparent 58%)!important}
-.dh-mk2-logo-ring{width:106px!important;height:106px!important;margin-bottom:9px!important;border-radius:50%!important;background:radial-gradient(circle at 50% 44%,rgba(246,217,122,.34),transparent 61%),radial-gradient(circle at 50% 78%,rgba(212,175,55,.12),transparent 68%)!important;box-shadow:0 0 38px rgba(212,175,55,.28),0 0 72px rgba(246,217,122,.10)!important}
-.dh-mk2-logo-ring img{width:94px!important;height:94px!important;border-radius:50%!important;border:1px solid rgba(246,217,122,.5)!important;box-shadow:0 5px 28px rgba(0,0,0,.5)!important}
-.dh-mk2-word{font-size:1.7rem!important;letter-spacing:.16em!important}.dh-mk2-fa{margin-top:7px!important;font-size:1.04rem!important}.dh-mk2-fa i{width:42px!important}
-.dh-mk2-sys{margin-top:15px!important;max-width:340px!important;font-size:1.02rem!important;line-height:1.72!important}.dh-mk2-sub{margin-top:4px!important;font-size:.88rem!important;color:#e0c65a!important}
-.dh-mk2-hello{margin:12px 0 15px!important}.dh-mk2-greet{font-size:1.55rem!important;font-weight:700!important;color:#f4efe6!important}.dh-mk2-date{font-size:.77rem!important;color:#b7afa2!important}
-.dh-mk2-hero{min-height:222px!important;border-radius:21px!important;border-color:rgba(246,217,122,.56)!important;box-shadow:0 0 0 1px rgba(212,175,55,.13),0 16px 45px rgba(0,0,0,.55),0 0 46px rgba(212,175,55,.16)!important}
-.dh-mk2-hero-bg{background-position:68% center!important;transform:scale(1.015)!important}.dh-mk2-hero-shade{background:linear-gradient(104deg,rgba(4,4,10,.95) 0%,rgba(4,4,10,.66) 39%,rgba(4,4,10,.14) 100%)!important}.dh-mk2-hero-body{padding:20px 18px 18px!important}
-.dh-mk2-hero-top{gap:11px!important;margin-bottom:18px!important;align-items:center!important}.dh-mk2-compass{width:56px!important;height:56px!important;border:1px solid rgba(246,217,122,.52)!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:radial-gradient(circle,rgba(246,217,122,.13),rgba(0,0,0,.04) 68%)!important;filter:drop-shadow(0 0 11px rgba(246,217,122,.48))!important}.dh-mk2-compass img{width:42px!important;height:42px!important}.dh-mk2-hero-title{font-size:1.34rem!important}.dh-mk2-hero-sub{font-size:.88rem!important;color:#e2dbcf!important}.dh-mk2-cta{padding:12px 28px!important;font-size:1rem!important;box-shadow:0 9px 26px rgba(212,175,55,.42),0 0 17px rgba(246,217,122,.22)!important}
-.dh-mk2-progress{padding:15px 16px!important;border-radius:18px!important}.dh-mk2-ring{width:78px!important;height:78px!important}.dh-mk2-ring span{font-size:1.02rem!important}.dh-mk2-prog-title{font-size:1.03rem!important}.dh-mk2-bar{height:7px!important}
-.dh-mk2-quote{padding:17px 16px!important;border-radius:18px!important;margin-bottom:17px!important;background:radial-gradient(circle at 12% 85%,rgba(212,175,55,.09),transparent 28%),linear-gradient(160deg,#17141d,#0c0b12)!important}.dh-mk2-quote-top{margin-bottom:10px!important}.dh-mk2-quote-label{font-size:1.04rem!important}.dh-mk2-quote-text{font-size:.96rem!important;line-height:1.95!important}
-.dh-mk2-sep{margin-bottom:12px!important;font-size:.9rem!important;color:#d0b85f!important}.dh-mk2-sep i{width:54px!important}
-.dh-mk2-row{min-height:84px!important;padding:12px 14px!important;border-radius:16px!important}.dh-mk2-row-hot{min-height:96px!important;border-color:rgba(246,217,122,.38)!important;box-shadow:0 0 26px rgba(212,175,55,.10)!important}.dh-mk2-row-t strong{font-size:1.01rem!important}.dh-mk2-row-t span{font-size:.77rem!important}.dh-mk2-orb{width:54px!important;height:54px!important;border-radius:50%!important;background:radial-gradient(circle at 38% 28%,rgba(246,217,122,.31),#121018 68%)!important;border-color:rgba(246,217,122,.37)!important;box-shadow:0 0 22px rgba(212,175,55,.19)!important}.dh-mk2-orb img{width:28px!important;height:28px!important}.dh-mk2-orb-m{background:radial-gradient(circle at 38% 28%,rgba(96,214,173,.20),#121018 68%)!important;border-color:rgba(96,214,173,.40)!important;box-shadow:0 0 18px rgba(96,214,173,.13)!important}
-.dh-mk2-duo{gap:9px!important;margin-bottom:9px!important}.dh-mk2-tile{min-height:126px!important;padding:14px 12px!important;align-items:center!important;text-align:center!important;justify-content:flex-start!important;gap:8px!important;border-radius:16px!important;background:linear-gradient(160deg,#18151f,#100e16)!important}.dh-mk2-tile .dh-mk2-orb{width:58px!important;height:58px!important}.dh-mk2-tile .dh-mk2-orb img{width:31px!important;height:31px!important}.dh-mk2-tile strong{font-size:.96rem!important}.dh-mk2-tile span{font-size:.73rem!important;text-align:center!important;line-height:1.5!important}.dh-mk2-row#dh-open-parents{min-height:88px!important}
-#dh-open-stories .dh-mk2-orb{background:radial-gradient(circle at 40% 30%,rgba(139,92,246,.28),#121018 68%)!important;border-color:rgba(139,92,246,.42)!important;box-shadow:0 0 20px rgba(139,92,246,.16)!important}#dh-open-stories .dh-mk2-orb img{filter:hue-rotate(208deg) saturate(1.9) brightness(1.08)!important}
-#dh-open-parents .dh-mk2-orb img{filter:hue-rotate(74deg) saturate(1.55) brightness(1.12)!important}
-@media(max-width:380px){.dh-mk2{padding-inline:8px!important}.dh-mk2-hero{min-height:210px!important}.dh-mk2-greet{font-size:1.45rem!important}.dh-mk2-duo{gap:8px!important}.dh-mk2-tile{min-height:118px!important}}
+/* home_mk2_exact.css — خنثی‌سازی نسخه ارزیاب
+   قانون کاربر: بولد فقط سامانه؛ چهار عنصر یک رنگ طلایی
+*/
+.dh-mk2-sys {
+  font-size: 1.14rem !important;
+  font-weight: 800 !important;
+  color: #f4efe6 !important;
+}
+.dh-mk2-sub {
+  font-weight: 600 !important;
+  color: #c9b888 !important;
+}
+.dh-mk2-greet {
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  color: #8a8478 !important;
+}
+/* یک رنگ طلایی برای همه ارب‌ها — بدون بنفش/سبز ارزیاب */
+#dh-open-stories .dh-mk2-orb,
+#dh-open-parents .dh-mk2-orb,
+#dh-open-poems .dh-mk2-orb,
+#dh-open-spark .dh-mk2-orb,
+.dh-mk2-orb {
+  background: radial-gradient(circle at 40% 30%, rgba(255,224,138,0.32), #121018 68%) !important;
+  border-color: rgba(246,217,122,0.42) !important;
+  box-shadow: 0 0 20px rgba(212,175,55,0.22) !important;
+}
+#dh-open-stories .dh-mk2-orb img,
+#dh-open-parents .dh-mk2-orb img {
+  filter: none !important;
+}
+.dh-mk2-hero {
+  border: 2px solid rgba(246,217,122,0.6) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 48px rgba(212,175,55,0.28) !important;
+}

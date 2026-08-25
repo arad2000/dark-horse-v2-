@@ -1,5 +1,5 @@
-/* Dark Horse SW v51 — nuclear cache reset */
-const CACHE = 'darkhorse-v51';
+/* Dark Horse SW v52 — nuclear cache reset */
+const CACHE = 'darkhorse-v52';
 const PRECACHE = [
   './index.html',
   './shell.js',
