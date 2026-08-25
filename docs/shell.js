@@ -256,7 +256,6 @@
     var root = $('app');
     if (!root) return;
 
-    // دارایی‌های ارزیاب در ریشه docs/ آپلود شده‌اند (نه home-v25-assets)
     var base = '';
     try {
       if ((location.pathname || '').indexOf('/dark-horse-v2-') === 0) {
@@ -264,11 +263,9 @@
       }
     } catch (e0) {}
 
-    function ico(file) {
-      return '<span class="dh-mk2-orb"><img src="' + base + file + '" alt="" width="24" height="24" onerror="this.style.display=\\'none\\'"></span>';
-    }
-    function icoMint(file) {
-      return '<span class="dh-mk2-orb dh-mk2-orb-m"><img src="' + base + file + '" alt="" width="24" height="24" onerror="this.style.display=\\'none\\'"></span>';
+    function ico(file, mint) {
+      var cls = mint ? 'dh-mk2-orb dh-mk2-orb-m' : 'dh-mk2-orb';
+      return '<span class="' + cls + '"><img src="' + base + file + '" alt="" width="24" height="24"></span>';
     }
 
     var heroUrl = base + 'hero-journey.svg';
@@ -293,7 +290,7 @@
         '</section>' +
 
         '<section class="dh-mk2-hero">' +
-          '<div class="dh-mk2-hero-bg" style="background-image:url(\\'' + heroUrl + '\\')"></div>' +
+          '<div class="dh-mk2-hero-bg" style="background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-glow"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
           '<div class="dh-mk2-hero-body">' +
@@ -331,7 +328,7 @@
 
         '<section class="dh-mk2-quote">' +
           '<div class="dh-mk2-quote-top">' +
-            '<span class="dh-mk2-orb"><img src="' + base + 'ico-quill.svg" alt="" width="24" height="24"></span>' +
+            ico('ico-quill.svg', false) +
             '<span class="dh-mk2-quote-label">پیام امروز</span>' +
             '<span class="dh-mk2-qq">”</span>' +
           '</div>' +
@@ -342,22 +339,22 @@
         '<section class="dh-mk2-more">' +
           '<div class="dh-mk2-sep"><i></i><span>کشف بیشتر</span><i></i></div>' +
           '<button type="button" class="dh-mk2-row dh-mk2-row-hot" id="dh-open-spark">' +
-            ico('ico-bolt.svg') +
+            ico('ico-bolt.svg', false) +
             '<div class="dh-mk2-row-t"><strong>جرقه‌یاب</strong><span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span></div>' +
             '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span>' +
           '</button>' +
           '<div class="dh-mk2-duo">' +
             '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' +
-              ico('ico-book.svg') +
+              ico('ico-book.svg', false) +
               '<strong>داستان‌ها</strong><span>روایت مسیرهای واقعی برای الهام گرفتن</span>' +
             '</button>' +
             '<button type="button" class="dh-mk2-tile" id="dh-open-poems">' +
-              ico('ico-quill.svg') +
+              ico('ico-quill.svg', false) +
               '<strong>سخن بزرگان</strong><span>یک فکر ارزشمند برای امروز</span>' +
             '</button>' +
           '</div>' +
           '<button type="button" class="dh-mk2-row" id="dh-open-parents">' +
-            icoMint('ico-parents.svg') +
+            ico('ico-parents.svg', true) +
             '<div class="dh-mk2-row-t"><strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></div>' +
             '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span>' +
           '</button>' +

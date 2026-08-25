@@ -1,11 +1,10 @@
-اتصال به دارایی‌های واقعی روی گیت
-================================
-ارزیاب فایل‌ها را در docs/ گذاشته (نه home-v25-assets):
-  hero-journey.svg
-  ico-*.svg
+HOTFIX فوری — SyntaxError
+=========================
+علت خرابی سایت: escape اشتباه در shell.js (onerror / url)
 
-این نسخه همان مسیرها را صدا می‌زند.
-بولد: فقط سامانه هدایت تحصیلی
-نام کاربر بولد نیست.
+فقط جایگزین در docs:
+  shell.js
+  shell.css
+  sw.js
 
-docs: shell.js shell.css sw.js
+بعد Hard Refresh
