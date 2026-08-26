@@ -1,9 +1,0 @@
-اپ کلاً بالا نمی‌آمد چون app.js Syntax Error داشت.
-
-حتماً همه را در docs بگذار:
-  app.js
-  trait_map_v3.json
-  data/trait_map_v3.json
-  sw.js
-
-بعد Clear data و رفرش.
