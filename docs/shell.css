@@ -1965,3 +1965,60 @@ body, #app, .dh-home-wrap, .dh-mk2 {
 @media (min-width: 400px) {
   .dh-mk2-sys { font-size: 1.05rem !important; }
 }
+
+
+/* v58 — دارایی واقعی ماکت ارزیاب */
+.dh-mk2-hero-bg {
+  background-size: cover !important;
+  background-position: center 40% !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+.dh-mk2-hero {
+  min-height: 200px !important;
+  overflow: hidden;
+  border: 1px solid rgba(212,175,55,0.35) !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.45), 0 0 28px rgba(212,175,55,0.12) !important;
+}
+.dh-mk2-hero-shade {
+  background: linear-gradient(105deg,
+    rgba(8,8,14,0.82) 0%,
+    rgba(8,8,14,0.45) 48%,
+    rgba(8,8,14,0.18) 100%) !important;
+}
+
+/* feature art از JPG ارزیاب */
+.dh-mk2-feat {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 18px rgba(212,175,55,0.18);
+  border: 1px solid rgba(246,217,122,0.25);
+  background: #121018;
+}
+.dh-mk2-feat img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.dh-mk2-row-hot .dh-mk2-feat {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+}
+.dh-mk2-tile .dh-mk2-feat {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 6px;
+  border-radius: 14px;
+}
+.dh-mk2-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}

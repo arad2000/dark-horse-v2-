@@ -328,8 +328,12 @@
     function ico(file) {
       return '<span class="dh-mk2-orb"><img src="' + base + file + '" alt="" width="24" height="24"></span>';
     }
+    function feat(file) {
+      return '<span class="dh-mk2-feat"><img src="' + base + file + '" alt="" loading="lazy"></span>';
+    }
 
-    var heroUrl = base + 'hero-journey.svg';
+    var heroUrl = base + 'hero-journey.jpg';
+    var heroUrl2x = base + 'hero-journey@2x.jpg';
     var ringOff = (301.6 * (1 - Math.min(100, Math.max(0, pct)) / 100)).toFixed(1);
 
     root.innerHTML =
@@ -342,7 +346,7 @@
           '<p class="dh-mk2-sub">بر اساس فردیت</p>' +
         '</header>' +
         '<section class="dh-mk2-hero">' +
-          '<div class="dh-mk2-hero-bg" style="background-image:url(\'' + heroUrl + '\')"></div>' +
+          '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
           '<div class="dh-mk2-hero-body">' +
             '<div class="dh-mk2-hero-top">' +
@@ -372,16 +376,16 @@
         '<section class="dh-mk2-more">' +
           '<div class="dh-mk2-sep"><i></i><span>کشف بیشتر</span><i></i></div>' +
           '<button type="button" class="dh-mk2-row dh-mk2-row-hot" id="dh-open-spark">' +
-            ico('ico-bolt.svg') +
+            feat('spark-feature.jpg') +
             '<div class="dh-mk2-row-t"><strong>جرقه‌یاب</strong><span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span></div>' +
             '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span></button>' +
           '<div class="dh-mk2-duo">' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' + ico('ico-book.svg') +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' + feat('stories-feature.jpg') +
             '<strong>داستان‌ها</strong><span>روایت مسیرهای واقعی</span></button>' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-poems">' + ico('ico-quill.svg') +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-poems">' + feat('wisdom-feature.jpg') +
             '<strong>سخن بزرگان</strong><span>یک فکر ارزشمند برای امروز</span></button></div>' +
           '<div class="dh-mk2-duo">' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-parents">' + ico('ico-parents.svg') +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-parents">' + feat('parents-feature.jpg') +
             '<strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></button>' +
             '<button type="button" class="dh-mk2-tile" id="dh-open-guide">' + ico('ico-compass.svg') +
             '<strong>راهنمای سامانه</strong><span>مشاور و معرفی سامانه</span></button></div>' +
