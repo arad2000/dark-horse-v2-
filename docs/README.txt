@@ -1,12 +1,1 @@
-سرعت باز شدن — آپلود در docs/
-==============================
-جایگزین کن:
-  sw.js
-  pwa-boot.js
-  index.html   (اگر در zip هست)
-
-بعد از Push:
-  یک‌بار صفحه را باز کن تا کش v18 ساخته شود
-  از بار دوم باید خیلی سریع‌تر باز شود
-
-اگر هنوز کند بود: Clear data یک‌بار، بعد دو بار باز/بسته کن.
+Dark Horse Home v25 asset handoff. Reference-derived raster assets plus clean SVG UI icons. Validate the raster crops before production; keep application logic untouched.
