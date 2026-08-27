@@ -39,6 +39,19 @@ def rows(payload: Any, keys: tuple[str, ...]) -> list[dict[str, Any]]:
     raise ValueError("Unsupported JSON collection shape")
 
 
+def strategy_question_rows(payload: Any) -> list[dict[str, Any]]:
+    """Read the canonical nested questions_v2.json shape without reordering it."""
+    if isinstance(payload, dict):
+        layers = payload.get("layers")
+        if isinstance(layers, dict):
+            strategies = layers.get("strategies")
+            if isinstance(strategies, dict):
+                questions = strategies.get("questions")
+                if isinstance(questions, list):
+                    return [x for x in questions if isinstance(x, dict)]
+    return rows(payload, ("questions", "data", "items"))
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -59,10 +72,11 @@ def validate_trait_map(payload: Any) -> tuple[bool, dict[str, Any], list[str]]:
         return False, {"count": 0, "exact_S01_S25": False}, ["trait_map_not_object"]
 
     expected_questions = [f"S{i:02d}" for i in range(1, 26)]
-    actual_questions = sorted(str(k) for k in payload.keys())
-    exact_questions = actual_questions == expected_questions
+    actual_questions = list(payload.keys())
+    actual_question_strings = [str(k) for k in actual_questions]
+    exact_questions = actual_question_strings == expected_questions
     if not exact_questions:
-        errors.append("strategy_question_ids_not_exact_S01_S25")
+        errors.append("strategy_question_ids_not_exact_S01_S25_or_order_changed")
 
     option_counts: dict[str, int] = {}
     option_shape_ok = True
@@ -73,25 +87,24 @@ def validate_trait_map(payload: Any) -> tuple[bool, dict[str, Any], list[str]]:
             option_shape_ok = False
             errors.append(f"{qcode}_not_object")
             continue
-        numeric_keys = []
-        for raw_key in row.keys():
+        numeric_keys: list[int] = []
+        for raw_key, traits in row.items():
             key = str(raw_key)
             if not key.isdigit():
                 option_shape_ok = False
                 errors.append(f"{qcode}_non_numeric_option:{key}")
             else:
                 numeric_keys.append(int(key))
+            if isinstance(traits, list):
+                if not traits or not all(isinstance(t, str) and t.strip() for t in traits):
+                    empty_trait_options.append(f"{qcode}:{key}")
+            else:
+                option_shape_ok = False
+                errors.append(f"{qcode}[{key}]_traits_not_list")
         option_counts[qcode] = len(numeric_keys)
         if sorted(numeric_keys) != [0, 1, 2, 3, 4]:
             option_shape_ok = False
             errors.append(f"{qcode}_options_not_exact_0_to_4")
-        for raw_key, traits in row.items():
-            if isinstance(traits, list):
-                if not traits or not all(isinstance(t, str) and t.strip() for t in traits):
-                    empty_trait_options.append(f"{qcode}:{raw_key}")
-            else:
-                option_shape_ok = False
-                errors.append(f"{qcode}[{raw_key}]_traits_not_list")
 
     if empty_trait_options:
         option_shape_ok = False
@@ -100,14 +113,69 @@ def validate_trait_map(payload: Any) -> tuple[bool, dict[str, Any], list[str]]:
     return (
         exact_questions and option_shape_ok,
         {
-            "count": len(actual_questions),
+            "count": len(actual_question_strings),
             "exact_S01_S25": exact_questions,
+            "order_preserved": exact_questions,
             "every_question_has_5_options": option_shape_ok and len(option_counts) == 25,
             "option_counts": option_counts,
             "invalid_trait_option_count": len(empty_trait_options),
         },
         errors,
     )
+
+
+def validate_strategy_questions(payload: Any) -> tuple[bool, dict[str, Any], list[str]]:
+    """Require the canonical S01..S25 question list and exact 1..25 order/options."""
+    errors: list[str] = []
+    questions = strategy_question_rows(payload)
+    expected_ids = [f"S{i:02d}" for i in range(1, 26)]
+    ids = [str(q.get("id", "")) for q in questions]
+    numbers = [q.get("number") for q in questions]
+    order_ok = ids == expected_ids and numbers == list(range(1, 26))
+    unique_ids = len(ids) == len(set(ids))
+    unique_numbers = len(numbers) == len(set(numbers))
+    option_shape_ok = True
+    text_values: list[str] = []
+
+    if not order_ok:
+        errors.append("strategy_questions_not_exactly_S01_to_S25_in_order")
+    if not unique_ids:
+        errors.append("duplicate_strategy_question_ids")
+    if not unique_numbers:
+        errors.append("duplicate_strategy_question_numbers")
+
+    for q in questions:
+        qid = str(q.get("id", "?"))
+        opts = q.get("options")
+        if not isinstance(opts, list):
+            option_shape_ok = False
+            errors.append(f"{qid}_options_not_list")
+            continue
+        indices = [o.get("index") for o in opts if isinstance(o, dict)]
+        texts = [str(o.get("text", "")).strip() for o in opts if isinstance(o, dict)]
+        text_values.extend(texts)
+        if indices != [0, 1, 2, 3, 4]:
+            option_shape_ok = False
+            errors.append(f"{qid}_option_indices_not_exact_0_to_4_or_order_changed")
+        if len(texts) != 5 or any(not t for t in texts):
+            option_shape_ok = False
+            errors.append(f"{qid}_must_have_5_nonempty_option_texts")
+
+    duplicate_texts = dup(text_values)
+    if duplicate_texts:
+        errors.append(f"duplicate_strategy_option_texts:{duplicate_texts[:20]}")
+
+    report = {
+        "count": len(questions),
+        "exact_S01_S25": order_ok,
+        "order_preserved": order_ok,
+        "unique_ids": unique_ids,
+        "unique_numbers": unique_numbers,
+        "every_question_has_5_options": option_shape_ok and len(questions) == 25,
+        "duplicate_option_texts": len(duplicate_texts),
+        "json_shape": "layers.strategies.questions" if isinstance(payload, dict) and isinstance(payload.get("layers"), dict) else "collection",
+    }
+    return order_ok and unique_ids and unique_numbers and option_shape_ok and len(questions) == 25 and not duplicate_texts, report, errors
 
 
 def main() -> None:
@@ -181,9 +249,15 @@ def main() -> None:
         report["errors"].append("major_ids_not_exact_1_to_160")
 
     trait_ok, trait_report, trait_errors = validate_trait_map(payloads["trait_map"])
-    report["strategy_questions"] = trait_report
+    report["strategy_trait_map"] = trait_report
     report["errors"].extend(trait_errors)
     if not trait_ok:
+        report["status"] = "FAIL"
+
+    question_ok, question_report, question_errors = validate_strategy_questions(payloads["questions"])
+    report["strategy_questions"] = question_report
+    report["errors"].extend(question_errors)
+    if not question_ok:
         report["status"] = "FAIL"
 
     missing_refs: list[dict[str, str]] = []
@@ -203,16 +277,6 @@ def main() -> None:
     if missing_refs:
         report["status"] = "FAIL"
         report["errors"].append(f"unresolved_motive_references:{len(missing_refs)}")
-
-    question_payload = payloads["questions"]
-    question_rows = rows(question_payload, ("questions", "data", "items"))
-    report["questions_reference"] = {
-        "count": len(question_rows),
-        "json_type": type(question_payload).__name__,
-    }
-    if not question_rows:
-        report["status"] = "FAIL"
-        report["errors"].append("questions_reference_empty")
 
     print(json.dumps(report, ensure_ascii=False, indent=2))
     raise SystemExit(0 if report["status"] == "PASS" else 1)
