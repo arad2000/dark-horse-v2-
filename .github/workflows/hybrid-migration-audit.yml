@@ -59,5 +59,8 @@ jobs:
       - name: Verify staged reference data
         run: python verify_hybrid_staging.py --confirm-staging
 
+      - name: Run controlled JSON vs PostgreSQL dual-run
+        run: python dual_run_audit.py --confirm-staging
+
       - name: Verify runtime cutover remains OFF
         run: python hybrid_gate_test.py
