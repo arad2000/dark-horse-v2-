@@ -28,21 +28,66 @@
   }
 
   const Auth = {
-    get() { return load(); },
-    isLoggedIn() { const a = load(); return !!(a && a.token); },
-    async register(payload) {
-      const body = await req('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
-      if (body && body.token) save(body);
-      return body;
-    },
-    async login(payload) {
-      const body = await req('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) });
-      if (body && body.token) save(body);
-      return body;
-    },
+    getSession() { return load(); },
+    isLoggedIn() { const s = load(); return !!(s && s.token); },
+    getUser() { const s = load(); return s && s.user ? s.user : null; },
     logout() { clear(); },
-    async me() { return req('/api/auth/me'); }
+
+    async register(name, phone, password) {
+      const data = await req('/api/v1/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, phone, password })
+      });
+      save(data);
+      return data;
+    },
+
+    async login(phone, password) {
+      const data = await req('/api/v1/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ phone, password })
+      });
+      save(data);
+      return data;
+    },
+
+    async refreshMe() {
+      const data = await req('/api/v1/me');
+      const s = load() || {};
+      s.user = data.user;
+      save(s);
+      return data.user;
+    },
+
+    async quota() {
+      return req('/api/v1/me/quota');
+    },
+
+    async consumeTest() {
+      const data = await req('/api/v1/me/consume-test', { method: 'POST', body: '{}' });
+      const s = load() || {};
+      if (data.user) { s.user = data.user; save(s); }
+      return data;
+    },
+
+    async saveResult(summary) {
+      return req('/api/v1/me/save-result', {
+        method: 'POST',
+        body: JSON.stringify({ result_summary: summary })
+      });
+    },
+
+    async createPayment() {
+      return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
+    },
+
+    async devActivatePremium() {
+      const data = await req('/api/v1/billing/dev-activate-premium', { method: 'POST', body: '{}' });
+      const s = load() || {};
+      if (data.user) { s.user = data.user; save(s); }
+      return data;
+    }
   };
 
   global.DHAuth = Auth;
-})(typeof window !== 'undefined' ? window : globalThis);
+})(window);
