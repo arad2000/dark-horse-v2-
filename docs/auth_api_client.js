@@ -1,6 +1,6 @@
 /* auth_api_client.js — Dark Horse Phase B */
 (function (global) {
-  const API = (global.API_BASE || 'https://dark-horse-v2.onrender.com');
+  const API = (global.API_BASE || 'https://asbe-siah.liara.run');
   const KEY = 'dh_auth_v1';
 
   function load() {
@@ -28,66 +28,21 @@
   }
 
   const Auth = {
-    getSession() { return load(); },
-    isLoggedIn() { const s = load(); return !!(s && s.token); },
-    getUser() { const s = load(); return s && s.user ? s.user : null; },
+    get() { return load(); },
+    isLoggedIn() { const a = load(); return !!(a && a.token); },
+    async register(payload) {
+      const body = await req('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+      if (body && body.token) save(body);
+      return body;
+    },
+    async login(payload) {
+      const body = await req('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) });
+      if (body && body.token) save(body);
+      return body;
+    },
     logout() { clear(); },
-
-    async register(name, phone, password) {
-      const data = await req('/api/v1/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ name, phone, password })
-      });
-      save(data);
-      return data;
-    },
-
-    async login(phone, password) {
-      const data = await req('/api/v1/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ phone, password })
-      });
-      save(data);
-      return data;
-    },
-
-    async refreshMe() {
-      const data = await req('/api/v1/me');
-      const s = load() || {};
-      s.user = data.user;
-      save(s);
-      return data.user;
-    },
-
-    async quota() {
-      return req('/api/v1/me/quota');
-    },
-
-    async consumeTest() {
-      const data = await req('/api/v1/me/consume-test', { method: 'POST', body: '{}' });
-      const s = load() || {};
-      if (data.user) { s.user = data.user; save(s); }
-      return data;
-    },
-
-    async saveResult(summary) {
-      return req('/api/v1/me/save-result', {
-        method: 'POST',
-        body: JSON.stringify({ result_summary: summary })
-      });
-    },
-
-    async createPayment() {
-      return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
-    },
-
-    async devActivatePremium() {
-      const data = await req('/api/v1/billing/dev-activate-premium', { method: 'POST', body: '{}' });
-      const s = load() || {};
-      if (data.user) { s.user = data.user; save(s); }
-      return data;
-    }
+    async me() { return req('/api/auth/me'); }
   };
 
   global.DHAuth = Auth;
-})(window);
+})(typeof window !== 'undefined' ? window : globalThis);
