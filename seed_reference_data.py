@@ -6,6 +6,7 @@ Safety contract:
 - It does not enable production PostgreSQL runtime use.
 - It preserves natural keys and many-to-many mappings from the JSON sources.
 - It assumes the Alembic schema has already been applied to the staging DB.
+- Any unresolved reference mapping aborts the seed before commit.
 """
 
 from __future__ import annotations
@@ -22,7 +23,6 @@ from sqlalchemy.orm import Session
 from database import engine
 from models import (
     Base,
-    BranchRecommendation,
     Major,
     MicroMotive,
     SchoolBranch,
@@ -71,6 +71,28 @@ def parse_trait_options(payload: Any) -> list[dict[str, Any]]:
     return result
 
 
+def _require_reference_codes(
+    owners: list[tuple[str, dict[str, Any], list[str]]], known_codes: set[str]
+) -> int:
+    """Fail closed on any major/branch -> motive reference that cannot resolve."""
+    missing: list[tuple[str, str, str]] = []
+    total = 0
+    for owner_kind, item, codes in owners:
+        owner_key = str(item.get("id") or item.get("major_id") or item.get("name") or item.get("branch_name") or "?")
+        for raw_code in codes:
+            code = str(raw_code).strip()
+            total += 1
+            if code not in known_codes:
+                missing.append((owner_kind, owner_key, code))
+    if missing:
+        preview = "; ".join(f"{kind}:{owner}:{code}" for kind, owner, code in missing[:20])
+        suffix = " ..." if len(missing) > 20 else ""
+        raise ValueError(
+            f"Unresolved micro-motive references: {len(missing)} ({preview}{suffix})"
+        )
+    return total
+
+
 def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     motives_path = base / "docs" / "data" / "micro_motives.json"
     majors_path = base / "majors_database_v2.json"
@@ -90,11 +112,14 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     trait_records = parse_trait_options(load_json(trait_path))
 
     motive_by_code: dict[str, MicroMotive] = {}
+    motive_codes: set[str] = set()
 
     for item in motive_records:
         code = str(item.get("code") or "").strip()
         if not code:
             raise ValueError("Micro-motive without code")
+        if code in motive_codes:
+            raise ValueError(f"Duplicate micro-motive code: {code}")
         row = db.scalar(select(MicroMotive).where(MicroMotive.code == code))
         if row is None:
             row = MicroMotive(code=code, description_fa=item.get("description_fa") or item.get("text") or "")
@@ -103,6 +128,15 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         row.category = item.get("category")
         row.intensity_level = item.get("intensity_level")
         motive_by_code[code] = row
+        motive_codes.add(code)
+
+    # Validate all JSON references before any destructive association-table operation.
+    reference_owners = []
+    for item in major_records:
+        reference_owners.append(("major", item, [str(x) for x in (item.get("micro_motive_codes") or [])]))
+    for item in branch_records:
+        reference_owners.append(("branch", item, [str(x) for x in (item.get("micro_motive_codes") or [])]))
+    total_references = _require_reference_codes(reference_owners, motive_codes)
 
     db.flush()
 
@@ -210,7 +244,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
 
     db.flush()
 
-    # Preserve the exact major -> micro-motive and branch -> micro-motive routes.
+    # Rebuild reference-only associations atomically after all validation succeeds.
     db.execute(major_micro_motives.delete())
     db.execute(branch_micro_motives.delete())
     db.flush()
@@ -224,10 +258,9 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         if major is None:
             continue
         for code in item.get("micro_motive_codes") or []:
-            motive = motive_by_code.get(str(code))
-            if motive is not None:
-                major.micro_motives.append(motive)
-                major_links += 1
+            motive = motive_by_code[str(code).strip()]
+            major.micro_motives.append(motive)
+            major_links += 1
 
     branch_links = 0
     for item in branch_records:
@@ -236,10 +269,9 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         if branch is None:
             continue
         for code in item.get("micro_motive_codes") or []:
-            motive = motive_by_code.get(str(code))
-            if motive is not None:
-                branch.micro_motives.append(motive)
-                branch_links += 1
+            motive = motive_by_code[str(code).strip()]
+            branch.micro_motives.append(motive)
+            branch_links += 1
 
     db.commit()
 
@@ -251,6 +283,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
             "trait_options": len(trait_records),
             "majors": len(major_records),
             "school_branches": len(branch_records),
+            "major_micro_motive_references": total_references,
             "major_micro_motive_links": major_links,
             "branch_micro_motive_links": branch_links,
         },
@@ -276,7 +309,6 @@ def main() -> None:
         raise SystemExit("DATABASE_URL is not configured")
 
     # Do not bootstrap schema here. Schema lifecycle belongs to Alembic.
-    report = None
     with Session(engine) as db:
         report = seed_reference_data(db, ROOT)
     print(json.dumps(report, ensure_ascii=False, indent=2))
