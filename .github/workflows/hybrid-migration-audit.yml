@@ -50,6 +50,12 @@ jobs:
       - name: Apply Alembic schema
         run: alembic upgrade head
 
+      - name: Run static schema verification
+        run: python scripts/verify_hybrid_schema.py
+
+      - name: Run operational persistence tests
+        run: python -m unittest -v test_operational_store.py
+
       - name: Run strict offline reference contract audit
         run: python reference_contract_audit.py
 
