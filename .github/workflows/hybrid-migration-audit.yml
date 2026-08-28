@@ -60,6 +60,12 @@ jobs:
       - name: Run billing model integrity tests
         run: python -m unittest -v test_billing_models.py
 
+      - name: Run billing credit semantics tests
+        run: python -m unittest -v test_billing_credits.py
+
+      - name: Run payment provider contract tests
+        run: python -m unittest -v test_payment_providers.py
+
       - name: Run operational contract tests
         run: python -m unittest -v test_operational_contract.py
 
