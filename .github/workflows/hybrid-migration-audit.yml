@@ -57,6 +57,9 @@ jobs:
       - name: Run static schema verification
         run: python scripts/verify_hybrid_schema.py
 
+      - name: Run operational contract tests
+        run: python -m unittest -v test_operational_contract.py
+
       - name: Run operational persistence tests
         run: python -m unittest -v test_operational_store.py
 
