@@ -1,13 +1,13 @@
-"""Billing and authentication domain models for the staged Hybrid architecture.
+"""Billing/auth models for staged Hybrid mode.
 
-Credit-based monetization (not time-based subscription):
-- Free entitlement: exactly 1 test credit.
-- ``pack_3_tests``: exactly 3 additional test credits after successful payment.
-- Expiration is optional and normally NULL.
+The product is credit-based, not a time subscription:
+- free_1_test => exactly 1 test credit
+- pack_3_tests => exactly 3 additional test credits after verified payment
+- expiration is optional and normally NULL
 """
 from __future__ import annotations
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from models import Base
@@ -46,11 +46,12 @@ class AuthSession(Base):
 
 class PremiumPlan(Base):
     __tablename__ = "premium_plans"
+    __table_args__ = (UniqueConstraint("code", name="uq_premium_plan_code"),)
     id = Column(BigInteger, primary_key=True)
     code = Column(String(64), nullable=False, unique=True)
     name_fa = Column(String(200), nullable=False)
     plan_type = Column(String(20), nullable=False, default="credits", server_default="credits")
-    duration_days = Column(Integer, nullable=True)  # Optional legacy field; not the product entitlement model.
+    duration_days = Column(Integer, nullable=True)
     credits_granted = Column(Integer, nullable=False, default=0, server_default="0")
     price_minor = Column(BigInteger, nullable=False)  # IRR rials; 249,000 Toman = 2,490,000 Rial.
     currency = Column(String(8), nullable=False, default="IRR", server_default="IRR")
@@ -83,7 +84,11 @@ class Order(Base):
 
 class Payment(Base):
     __tablename__ = "payments"
-    __table_args__ = (Index("idx_payments_provider_authority", "provider", "provider_authority"), Index("idx_payments_status", "status"))
+    __table_args__ = (
+        Index("idx_payments_provider_authority", "provider", "provider_authority"),
+        Index("idx_payments_status", "status"),
+        UniqueConstraint("provider", "provider_transaction_id", name="uq_payment_provider_transaction"),
+    )
     id = Column(BigInteger, primary_key=True)
     order_id = Column(BigInteger, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
     provider = Column(String(32), nullable=False)
@@ -104,11 +109,14 @@ class Payment(Base):
 
 class Entitlement(Base):
     __tablename__ = "entitlements"
-    __table_args__ = (Index("idx_entitlement_user_status", "user_id", "status"), Index("idx_entitlement_user_credits", "user_id", "credits_remaining"))
+    __table_args__ = (
+        Index("idx_entitlement_user_status", "user_id", "status"),
+        Index("idx_entitlement_user_credits", "user_id", "credits_remaining"),
+    )
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     plan_id = Column(BigInteger, ForeignKey("premium_plans.id", ondelete="RESTRICT"), nullable=False)
-    source = Column(String(20), nullable=False)  # free, payment, grant, admin, promo
+    source = Column(String(20), nullable=False)
     credits_granted = Column(Integer, nullable=False, default=0, server_default="0")
     credits_remaining = Column(Integer, nullable=False, default=0, server_default="0")
     starts_at = Column(DateTime(timezone=True), nullable=False)
@@ -124,7 +132,7 @@ class Entitlement(Base):
 
 class PaymentEvent(Base):
     __tablename__ = "payment_events"
-    __table_args__ = (Index("idx_payment_event_payment", "payment_id"),)
+    __table_args__ = (Index("idx_payment_event_payment", "payment_id"), UniqueConstraint("event_key", name="uq_payment_event_key"))
     id = Column(BigInteger, primary_key=True)
     payment_id = Column(BigInteger, ForeignKey("payments.id", ondelete="CASCADE"), nullable=False)
     event_type = Column(String(50), nullable=False)
