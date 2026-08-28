@@ -26,8 +26,8 @@ class OperationalStoreTests(unittest.TestCase):
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
         with self.SessionLocal() as db:
-            db.add(Major(id=1, name="Test Major", group="Test", strategy_weights=[[0.0]*5 for _ in range(25)], value_weights={}))
-            db.add(SchoolBranch(id=1, name="Test Branch", group="Test", strategy_weights=[[0.0]*5 for _ in range(25)], value_weights={}))
+            db.add(Major(id=1, name="Test Major", group="Test", strategy_weights=[[0.0] * 5 for _ in range(25)], value_weights={}))
+            db.add(SchoolBranch(id=1, name="Test Branch", group="Test", strategy_weights=[[0.0] * 5 for _ in range(25)], value_weights={}))
             db.commit()
         self.store = OperationalStore(self.SessionLocal)
 
@@ -39,7 +39,35 @@ class OperationalStoreTests(unittest.TestCase):
             self.assertTrue(row.is_completed)
             self.assertEqual(row.session_uuid, "fixed")
 
-    def test_feedback_upsert(self):
+    def test_create_session_rejects_invalid_motives(self):
+        with self.assertRaises(ValueError):
+            self.store.create_session([""], {}, {})
+
+    def test_discovery_persists_ranked_results(self):
+        session = self.store.create_session([], {}, {}, session_uuid="results")
+        rows = self.store.store_discovery_results(
+            session.id,
+            [
+                {"major_id": 1, "fit_score": 80.0, "m_score": 70.0, "s_score": 60.0, "v_score": 90.0},
+            ],
+        )
+        self.assertEqual(len(rows), 1)
+        with self.SessionLocal() as db:
+            row = db.get(DiscoveryResult, rows[0].id)
+            self.assertEqual(row.rank, 1)
+            self.assertEqual(row.total_score, 80.0)
+
+    def test_discovery_rejects_out_of_range_score_before_write(self):
+        session = self.store.create_session([], {}, {}, session_uuid="bad-score")
+        with self.assertRaises(ValueError):
+            self.store.store_discovery_results(
+                session.id,
+                [{"major_id": 1, "fit_score": 120.0}],
+            )
+        with self.SessionLocal() as db:
+            self.assertEqual(db.query(DiscoveryResult).count(), 0)
+
+    def test_feedback_upsert_and_range(self):
         session = self.store.create_session([], {}, {}, session_uuid="feedback")
         self.store.save_feedback(session.id, satisfaction_score=4, recommended_major_id=1)
         self.store.save_feedback(session.id, satisfaction_score=5, recommended_major_id=1)
@@ -47,6 +75,8 @@ class OperationalStoreTests(unittest.TestCase):
             rows = db.query(UserFeedback).filter_by(session_id=session.id).all()
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0].satisfaction_score, 5)
+        with self.assertRaises(ValueError):
+            self.store.save_feedback(session.id, satisfaction_score=6)
 
     def test_unknown_major_rolls_back_results(self):
         session = self.store.create_session([], {}, {}, session_uuid="rollback")
@@ -61,6 +91,17 @@ class OperationalStoreTests(unittest.TestCase):
             self.store.store_branch_recommendations(session.id, [{"branch_name": "Unknown", "fit_score": 70.0}])
         with self.SessionLocal() as db:
             self.assertEqual(db.query(BranchRecommendation).count(), 0)
+
+    def test_branch_persists_ranked_recommendations(self):
+        session = self.store.create_session([], {}, {}, session_uuid="branch-ok")
+        rows = self.store.store_branch_recommendations(
+            session.id,
+            [{"branch_name": "Test Branch", "fit_score": 75.0, "m_score": 70.0, "s_score": 80.0, "v_score": 75.0}],
+        )
+        self.assertEqual(rows[0].rank, 1)
+        with self.SessionLocal() as db:
+            row = db.get(BranchRecommendation, rows[0].id)
+            self.assertEqual(row.average_score, 75.0)
 
     def test_archive_creates_audit_log(self):
         session = self.store.create_session([], {}, {}, session_uuid="archive")
