@@ -28,10 +28,10 @@ EXPECTED_COLUMNS = {
     "audit_logs": {"id", "table_name", "record_id", "action", "old_values", "new_values"},
     "users": {"id", "public_id", "name", "phone", "password_hash", "role", "status"},
     "auth_sessions": {"id", "user_id", "token_hash", "expires_at", "revoked_at"},
-    "premium_plans": {"id", "code", "name_fa", "duration_days", "price_minor", "currency", "is_active", "features"},
+    "premium_plans": {"id", "code", "name_fa", "plan_type", "duration_days", "credits_granted", "price_minor", "currency", "is_active", "features"},
     "orders": {"id", "public_id", "user_id", "plan_id", "amount_minor", "currency", "status"},
-    "payments": {"id", "order_id", "provider", "amount_minor", "currency", "status", "provider_authority"},
-    "entitlements": {"id", "user_id", "plan_id", "source", "starts_at", "expires_at", "status", "order_id"},
+    "payments": {"id", "order_id", "provider", "provider_request_id", "provider_authority", "provider_transaction_id", "amount_minor", "currency", "status"},
+    "entitlements": {"id", "user_id", "plan_id", "source", "credits_granted", "credits_remaining", "starts_at", "expires_at", "status", "order_id"},
     "payment_events": {"id", "payment_id", "event_type", "event_key", "payload"},
     "admin_audit_logs": {"id", "admin_user_id", "action", "target_type", "target_id", "metadata", "ip_address"},
 }
