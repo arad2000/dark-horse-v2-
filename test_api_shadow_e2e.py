@@ -8,6 +8,7 @@ from __future__ import annotations
 import copy
 import os
 import unittest
+from unittest.mock import patch
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
@@ -126,9 +127,9 @@ class ApiShadowE2ETests(unittest.TestCase):
 
     def test_shadow_on_is_never_allowed_when_cutover_gate_is_true(self):
         os.environ["DARK_HORSE_SHADOW_PERSISTENCE"] = "true"
-        os.environ["POSTGRES_RUNTIME_CUTOVER_APPROVED"] = "true"
-        with self.assertRaises(RuntimeError):
-            shadow_persistence.persist_shadow(self.adapter, self._request(), self._response(), strict=True)
+        with patch("migration_control.POSTGRES_RUNTIME_CUTOVER_APPROVED", True):
+            with self.assertRaises(RuntimeError):
+                shadow_persistence.persist_shadow(self.adapter, self._request(), self._response(), strict=True)
 
 
 if __name__ == "__main__":
