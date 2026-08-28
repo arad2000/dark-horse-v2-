@@ -4,7 +4,6 @@ Reference/psychometric data stays in versioned JSON files. Alembic is only
 for PostgreSQL schema evolution. It is never invoked by the application at
 startup, so creating this file cannot switch production traffic to PostgreSQL.
 """
-
 from logging.config import fileConfig
 import os
 
@@ -12,6 +11,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from models import Base
+import billing_models  # noqa: F401  # register billing/auth tables in metadata
 
 config = context.config
 if config.config_file_name is not None:
