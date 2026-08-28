@@ -1,11 +1,13 @@
 """Billing and authentication domain models for the staged Hybrid architecture.
 
-These models are operational-only. They do not participate in scoring or
-reference-data selection, and they do not enable PostgreSQL runtime cutover.
+Credit-based monetization (not time-based subscription):
+- Free entitlement: exactly 1 test credit.
+- ``pack_3_tests``: exactly 3 additional test credits after successful payment.
+- Expiration is optional and normally NULL.
 """
 from __future__ import annotations
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from models import Base
@@ -47,8 +49,10 @@ class PremiumPlan(Base):
     id = Column(BigInteger, primary_key=True)
     code = Column(String(64), nullable=False, unique=True)
     name_fa = Column(String(200), nullable=False)
-    duration_days = Column(Integer, nullable=False)
-    price_minor = Column(BigInteger, nullable=False)
+    plan_type = Column(String(20), nullable=False, default="credits", server_default="credits")
+    duration_days = Column(Integer, nullable=True)  # Optional legacy field; not the product entitlement model.
+    credits_granted = Column(Integer, nullable=False, default=0, server_default="0")
+    price_minor = Column(BigInteger, nullable=False)  # IRR rials; 249,000 Toman = 2,490,000 Rial.
     currency = Column(String(8), nullable=False, default="IRR", server_default="IRR")
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
     features = Column(JSON, nullable=False, default=dict)
@@ -100,13 +104,15 @@ class Payment(Base):
 
 class Entitlement(Base):
     __tablename__ = "entitlements"
-    __table_args__ = (Index("idx_entitlement_user_status", "user_id", "status"),)
+    __table_args__ = (Index("idx_entitlement_user_status", "user_id", "status"), Index("idx_entitlement_user_credits", "user_id", "credits_remaining"))
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     plan_id = Column(BigInteger, ForeignKey("premium_plans.id", ondelete="RESTRICT"), nullable=False)
-    source = Column(String(20), nullable=False)
+    source = Column(String(20), nullable=False)  # free, payment, grant, admin, promo
+    credits_granted = Column(Integer, nullable=False, default=0, server_default="0")
+    credits_remaining = Column(Integer, nullable=False, default=0, server_default="0")
     starts_at = Column(DateTime(timezone=True), nullable=False)
-    expires_at = Column(DateTime(timezone=True), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
     status = Column(String(20), nullable=False, default="active", server_default="active")
     order_id = Column(BigInteger, ForeignKey("orders.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
