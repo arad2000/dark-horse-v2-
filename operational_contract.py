@@ -17,14 +17,16 @@ _SCORE_KEYS = (
     "total_score",
     "fit_score",
     "average_score",
+    "score",
 )
 
 
 def validate_scores(item: dict[str, Any], required: tuple[str, ...] = _SCORE_KEYS) -> None:
     """Reject non-numeric, non-finite, or out-of-range percentage scores.
 
-    The API has historically used multiple aliases (e.g. ``fit_score`` and
-    ``average_score``), so all supported persisted score fields are guarded.
+    The API has historically used multiple aliases (e.g. ``score``,
+    ``fit_score`` and ``average_score``), so all supported persisted score
+    fields are guarded.
     """
     for key in required:
         if key not in item or item[key] is None:
