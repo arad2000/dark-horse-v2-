@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime, timezone
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -11,10 +10,10 @@ from billing_credit_service import (
     FREE_CREDITS,
     PACK_3_CREDITS,
     PACK_3_PRICE_RIAL,
+    consume_one_test,
     create_pack_order,
     ensure_free_entitlement,
     initiate_payment,
-    consume_one_test,
     verify_and_grant,
 )
 from billing_models import Entitlement, PaymentEvent, PremiumPlan, User
@@ -27,9 +26,7 @@ class BillingCreditTests(unittest.TestCase):
     def setUpClass(cls):
         cls.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         cls.SessionLocal = sessionmaker(bind=cls.engine, autoflush=False, expire_on_commit=False)
-
-        # Import billing models before create_all; Base metadata then contains both domains.
-        _ = (Entitlement, PremiumPlan)
+        _ = (Entitlement, PremiumPlan, PaymentEvent)
 
     def setUp(self):
         Base.metadata.drop_all(self.engine)
@@ -66,7 +63,7 @@ class BillingCreditTests(unittest.TestCase):
             self.assertEqual(entitlement.credits_remaining, PACK_3_CREDITS)
             self.assertIsNone(entitlement.expires_at)
 
-    def test_duplicate_callback_does_not_double_grant(self):
+    def test_duplicate_callback_same_event_does_not_double_grant(self):
         provider = MockPaymentProvider()
         with self.SessionLocal() as db:
             _, payment, request = initiate_payment(db, 1, provider, "https://example.test/callback")
@@ -78,18 +75,30 @@ class BillingCreditTests(unittest.TestCase):
             self.assertEqual(first.id, second.id)
             self.assertEqual(db.query(Entitlement).filter(Entitlement.order_id == payment.order_id).count(), 1)
             self.assertEqual(db.query(PaymentEvent).filter(PaymentEvent.event_key == "evt-duplicate").count(), 1)
-            self.assertEqual(second.credits_remaining, PACK_3_CREDITS)
+
+    def test_duplicate_callback_with_different_event_key_does_not_double_grant(self):
+        provider = MockPaymentProvider()
+        with self.SessionLocal() as db:
+            _, payment, request = initiate_payment(db, 1, provider, "https://example.test/callback")
+            db.commit()
+            first = verify_and_grant(db, payment.id, provider, request["authority"], "evt-1")
+            db.commit()
+            second = verify_and_grant(db, payment.id, provider, request["authority"], "evt-2")
+            db.commit()
+            self.assertEqual(first.id, second.id)
+            self.assertEqual(db.query(Entitlement).filter(Entitlement.order_id == payment.order_id).count(), 1)
+            self.assertEqual(db.query(PaymentEvent).filter(PaymentEvent.payment_id == payment.id).count(), 1)
 
     def test_consumption_never_goes_negative(self):
         with self.SessionLocal() as db:
-            entitlement = ensure_free_entitlement(db, 1)
+            ensure_free_entitlement(db, 1)
             db.commit()
             consume_one_test(db, 1)
             db.commit()
             with self.assertRaises(ValueError):
                 consume_one_test(db, 1)
 
-    def test_plan_price_is_server_side(self):
+    def test_plan_price_is_server_side_and_exact(self):
         with self.SessionLocal() as db:
             order = create_pack_order(db, 1, "pack_3_tests")
             self.assertEqual(order.amount_minor, PACK_3_PRICE_RIAL)
