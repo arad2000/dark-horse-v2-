@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator
 from uuid import uuid4
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
@@ -22,6 +23,11 @@ from models import (
     SchoolBranch,
     UserFeedback,
     UserSession,
+)
+from operational_contract import (
+    validate_branch_payload,
+    validate_discovery_payload,
+    validate_session_payload,
 )
 
 
@@ -57,6 +63,7 @@ class OperationalStore:
         user_agent: str | None = None,
         language_preference: str = "fa",
     ) -> UserSession:
+        validate_session_payload(micro_motives, sjt_answers, conjoint_choices)
         with self.transaction() as db:
             row = UserSession(
                 session_uuid=session_uuid or str(uuid4()),
@@ -78,6 +85,7 @@ class OperationalStore:
         recommendations: list[dict[str, Any]],
     ) -> list[DiscoveryResult]:
         """Persist a deterministic set of major results for an existing session."""
+        validate_discovery_payload(recommendations)
         with self.transaction() as db:
             session = db.get(UserSession, session_id)
             if session is None:
@@ -120,6 +128,7 @@ class OperationalStore:
         session_id: int,
         branches: list[dict[str, Any]],
     ) -> list[BranchRecommendation]:
+        validate_branch_payload(branches)
         with self.transaction() as db:
             session = db.get(UserSession, session_id)
             if session is None:
@@ -173,6 +182,10 @@ class OperationalStore:
         contact_for_research: bool = False,
         email: str | None = None,
     ) -> UserFeedback:
+        if satisfaction_score is not None and not 1 <= satisfaction_score <= 5:
+            raise ValueError("satisfaction_score must be 1..5")
+        if accuracy_rating is not None and not 1 <= accuracy_rating <= 5:
+            raise ValueError("accuracy_rating must be 1..5")
         with self.transaction() as db:
             if db.get(UserSession, session_id) is None:
                 raise ValueError(f"Unknown session_id: {session_id}")
