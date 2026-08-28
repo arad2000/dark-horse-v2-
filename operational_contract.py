@@ -6,17 +6,35 @@ of scoring/reference data remains JSON until explicit cutover approval.
 """
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
-def validate_scores(item: dict[str, Any], required: tuple[str, ...] = ("m_score", "s_score", "v_score", "total_score")) -> None:
-    """Reject non-numeric or out-of-range percentage scores before persistence."""
+_SCORE_KEYS = (
+    "m_score",
+    "s_score",
+    "v_score",
+    "total_score",
+    "fit_score",
+    "average_score",
+)
+
+
+def validate_scores(item: dict[str, Any], required: tuple[str, ...] = _SCORE_KEYS) -> None:
+    """Reject non-numeric, non-finite, or out-of-range percentage scores.
+
+    The API has historically used multiple aliases (e.g. ``fit_score`` and
+    ``average_score``), so all supported persisted score fields are guarded.
+    """
     for key in required:
-        if key not in item:
+        if key not in item or item[key] is None:
             continue
-        value = float(item[key])
-        if not 0.0 <= value <= 100.0:
-            raise ValueError(f"{key} must be between 0 and 100; got {value}")
+        try:
+            value = float(item[key])
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{key} must be numeric; got {item[key]!r}") from exc
+        if not math.isfinite(value) or not 0.0 <= value <= 100.0:
+            raise ValueError(f"{key} must be a finite value between 0 and 100; got {value}")
 
 
 def validate_ranked_items(items: list[dict[str, Any]], *, rank_key: str = "rank") -> None:
@@ -42,6 +60,11 @@ def validate_discovery_payload(recommendations: list[dict[str, Any]]) -> None:
         if "major_id" not in item:
             raise ValueError("each discovery recommendation requires major_id")
         validate_scores(item)
+        nested_fit = item.get("individuality_fit")
+        if nested_fit is not None:
+            if not isinstance(nested_fit, dict):
+                raise ValueError("individuality_fit must be an object when supplied")
+            validate_scores(nested_fit)
     validate_ranked_items(recommendations)
 
 
@@ -51,5 +74,5 @@ def validate_branch_payload(branches: list[dict[str, Any]]) -> None:
     for item in branches:
         if not (item.get("branch_name") or item.get("branch_name_fa")):
             raise ValueError("each branch recommendation requires a branch name")
-        validate_scores(item, required=("m_score", "s_score", "v_score", "average_score"))
+        validate_scores(item)
     validate_ranked_items(branches)
