@@ -60,6 +60,9 @@ jobs:
       - name: Run API persistence adapter tests
         run: python -m unittest -v test_api_persistence_adapter.py
 
+      - name: Run API shadow end-to-end tests
+        run: python -m unittest -v test_api_shadow_e2e.py
+
       - name: Run shadow persistence safety tests
         run: python -m unittest -v test_shadow_persistence.py
 
