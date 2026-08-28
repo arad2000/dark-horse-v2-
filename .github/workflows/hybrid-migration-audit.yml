@@ -72,6 +72,9 @@ jobs:
       - name: Run API shadow bridge contract tests
         run: python -m unittest -v test_api_shadow_bridge.py
 
+      - name: Run main API contract tests
+        run: python -m unittest -v test_main_api_contract.py
+
       - name: Run strict offline reference contract audit
         run: python reference_contract_audit.py
 
