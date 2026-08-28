@@ -77,8 +77,6 @@ def create_pack_order(db: Session, user_id: int, plan_code: str = PACK_3_TESTS_C
         raise ValueError("unknown or inactive plan")
     if plan_code != PACK_3_TESTS_CODE or plan.credits_granted != PACK_3_CREDITS:
         raise ValueError("unexpected credit-pack configuration")
-    if plan.price_minor != PACK_3_PRICE_RIAL or plan.currency != "IRR":
-        raise ValueError("unexpected pack_3_tests price/currency configuration")
 
     return Order(
         public_id=str(uuid4()),
@@ -127,20 +125,19 @@ def initiate_payment(
 
 def verify_and_grant(
     db: Session,
-    payment_id: int,
+    payment_public_id: int,
     provider: PaymentProvider,
     authority: str,
     event_key: str,
     raw_callback: dict | None = None,
 ) -> Entitlement:
-    """Verify payment and grant exactly the DB-configured number of credits.
+    """Verify payment and grant exactly plan.credits_granted in one transaction.
 
-    Caller must wrap this operation in a DB transaction. Idempotency is enforced
-    at two levels: event_key uniqueness and the paid-order entitlement check.
-    Thus a repeated gateway callback—even with a different callback event key—
-    cannot grant a second pack for the same order.
+    A repeated callback for an already-verified payment is idempotent even when
+    the gateway retries it with a different event key. The verified payment/order
+    is the business idempotency boundary; ``event_key`` protects event insertion.
     """
-    payment = db.get(Payment, payment_id)
+    payment = db.get(Payment, payment_public_id)
     if payment is None:
         raise ValueError("unknown payment")
     order = db.get(Order, payment.order_id)
@@ -152,16 +149,18 @@ def verify_and_grant(
         raise ValueError("payment references missing plan/user")
     if authority != payment.provider_authority:
         raise ValueError("payment authority mismatch")
-    if plan.code != PACK_3_TESTS_CODE or plan.credits_granted != PACK_3_CREDITS or plan.price_minor != PACK_3_PRICE_RIAL:
-        raise ValueError("unexpected credit-pack configuration")
 
     existing_entitlement = db.scalar(select(Entitlement).where(Entitlement.order_id == order.id))
-    if existing_entitlement is not None:
+    if payment.status == "verified":
+        if existing_entitlement is None:
+            raise RuntimeError("verified payment exists without entitlement")
         return existing_entitlement
 
     existing_event = db.scalar(select(PaymentEvent).where(PaymentEvent.event_key == event_key))
     if existing_event is not None:
-        raise RuntimeError("idempotency event exists without entitlement")
+        if existing_entitlement is None:
+            raise RuntimeError("idempotency event exists without entitlement")
+        return existing_entitlement
 
     verification = provider.verify_payment(amount_rial=order.amount_minor, authority=authority)
     if not verification.get("verified"):
@@ -169,17 +168,13 @@ def verify_and_grant(
         payment.raw_callback = raw_callback
         payment.verification_response = verification
         order.status = "failed"
-        db.add(PaymentEvent(
-            payment_id=payment.id,
-            event_type="verification_failed",
-            event_key=event_key,
-            payload={"provider": provider.name},
-        ))
+        db.add(PaymentEvent(payment_id=payment.id, event_type="verification_failed", event_key=event_key, payload={"provider": provider.name}))
         raise ValueError("payment verification failed")
 
-    # Never trust provider/client amount for entitlement size; use the DB plan.
     if order.amount_minor != plan.price_minor:
         raise ValueError("order/plan amount mismatch")
+    if plan.code != PACK_3_TESTS_CODE or plan.credits_granted != PACK_3_CREDITS:
+        raise ValueError("unexpected credit-pack configuration")
 
     payment.status = "verified"
     payment.provider_transaction_id = str(verification.get("transaction_id")) if verification.get("transaction_id") else None
@@ -216,8 +211,8 @@ def verify_and_grant(
 def consume_one_test(db: Session, user_id: int) -> Entitlement:
     """Consume exactly one test credit from the oldest active entitlement.
 
-    PostgreSQL uses row locking to serialize concurrent consumption. Credits are
-    never allowed to become negative.
+    Row locking is used on PostgreSQL to serialize concurrent consumption. The
+    operation fails instead of allowing negative credits.
     """
     stmt = (
         select(Entitlement)
