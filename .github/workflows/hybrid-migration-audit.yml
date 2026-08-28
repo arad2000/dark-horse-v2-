@@ -30,6 +30,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
       POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+      DARK_HORSE_SHADOW_PERSISTENCE: "false"
       PYTHONUNBUFFERED: "1"
 
     steps:
@@ -58,6 +59,9 @@ jobs:
 
       - name: Run API persistence adapter tests
         run: python -m unittest -v test_api_persistence_adapter.py
+
+      - name: Run shadow persistence safety tests
+        run: python -m unittest -v test_shadow_persistence.py
 
       - name: Run strict offline reference contract audit
         run: python reference_contract_audit.py
