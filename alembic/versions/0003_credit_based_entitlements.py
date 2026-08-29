@@ -31,7 +31,7 @@ def upgrade() -> None:
     free_plan_sql = sa.text(
         "INSERT INTO premium_plans "
         "(code, name_fa, plan_type, duration_days, credits_granted, price_minor, currency, is_active, features) "
-        "VALUES (:code, :name_fa, 'credits', NULL, 1, 0, 'IRR', TRUE, :features) "
+        "VALUES (:code, :name_fa, 'credits', NULL, 1, 0, 'IRR', TRUE, CAST(:features AS jsonb)) "
         "ON CONFLICT (code) DO NOTHING"
     ).bindparams(
         code="free_1_test",
@@ -43,7 +43,7 @@ def upgrade() -> None:
     pack_sql = sa.text(
         "INSERT INTO premium_plans "
         "(code, name_fa, plan_type, duration_days, credits_granted, price_minor, currency, is_active, features) "
-        "VALUES (:code, :name_fa, 'credits', NULL, 3, 2490000, 'IRR', TRUE, :features) "
+        "VALUES (:code, :name_fa, 'credits', NULL, 3, 2490000, 'IRR', TRUE, CAST(:features AS jsonb)) "
         "ON CONFLICT (code) DO NOTHING"
     ).bindparams(
         code="pack_3_tests",
