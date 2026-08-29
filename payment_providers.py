@@ -134,7 +134,7 @@ class ZarinPalPaymentProvider:
         return {
             "verified": verified,
             "code": code,
-            "transaction_id": data.get("ref_id"),
+            "transaction_id": str(data.get("ref_id")) if data.get("ref_id") is not None else None,
             "message": errors.get("message") if errors else None,
             "raw": body,
         }
