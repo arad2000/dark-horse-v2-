@@ -1,1 +1,1 @@
-CI validation note: current feature/postgresql-hybrid HEAD requires a new workflow run. Keep PR #7 draft; do not merge or deploy until all staging, security, and dual-run checks pass. Runtime cutover remains OFF.
+CI validation note: current feature/postgresql-hybrid HEAD requires a fresh workflow run. Keep PR #7 draft; do not merge or deploy until all staging, security, and dual-run checks pass. Runtime cutover remains OFF.
