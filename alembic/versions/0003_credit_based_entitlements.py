@@ -28,32 +28,29 @@ def upgrade() -> None:
     op.create_index("idx_entitlement_user_credits", "entitlements", ["user_id", "credits_remaining"])
 
     # Stored money uses Rial (IRR). 249,000 Toman = 2,490,000 Rial.
-    op.execute(
-        sa.text(
-            "INSERT INTO premium_plans "
-            "(code, name_fa, plan_type, duration_days, credits_granted, price_minor, currency, is_active, features) "
-            "VALUES (:code, :name_fa, 'credits', NULL, 1, 0, 'IRR', TRUE, :features) "
-            "ON CONFLICT (code) DO NOTHING"
-        ),
-        {
-            "code": "free_1_test",
-            "name_fa": "رایگان — ۱ تست",
-            "features": '{"tests": 1, "non_expiring": true}',
-        },
+    free_plan_sql = sa.text(
+        "INSERT INTO premium_plans "
+        "(code, name_fa, plan_type, duration_days, credits_granted, price_minor, currency, is_active, features) "
+        "VALUES (:code, :name_fa, 'credits', NULL, 1, 0, 'IRR', TRUE, :features) "
+        "ON CONFLICT (code) DO NOTHING"
+    ).bindparams(
+        code="free_1_test",
+        name_fa="رایگان — ۱ تست",
+        features='{"tests": 1, "non_expiring": true}',
     )
-    op.execute(
-        sa.text(
-            "INSERT INTO premium_plans "
-            "(code, name_fa, plan_type, duration_days, credits_granted, price_minor, currency, is_active, features) "
-            "VALUES (:code, :name_fa, 'credits', NULL, 3, 2490000, 'IRR', TRUE, :features) "
-            "ON CONFLICT (code) DO NOTHING"
-        ),
-        {
-            "code": "pack_3_tests",
-            "name_fa": "بسته ۳ تست",
-            "features": '{"tests": 3, "non_expiring": true}',
-        },
+    op.execute(free_plan_sql)
+
+    pack_sql = sa.text(
+        "INSERT INTO premium_plans "
+        "(code, name_fa, plan_type, duration_days, credits_granted, price_minor, currency, is_active, features) "
+        "VALUES (:code, :name_fa, 'credits', NULL, 3, 2490000, 'IRR', TRUE, :features) "
+        "ON CONFLICT (code) DO NOTHING"
+    ).bindparams(
+        code="pack_3_tests",
+        name_fa="بسته ۳ تست",
+        features='{"tests": 3, "non_expiring": true}',
     )
+    op.execute(pack_sql)
 
 
 def downgrade() -> None:
