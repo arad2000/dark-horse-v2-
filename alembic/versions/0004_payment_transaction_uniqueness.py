@@ -1,12 +1,11 @@
 """Guard payment provider transaction identity against double settlement.
 
-Revision ID: 0004_payment_transaction_uniqueness
+Revision ID: 0004_txn_unique
 Revises: 0003_credit_based_entitlements
 """
 from alembic import op
-import sqlalchemy as sa
 
-revision = "0004_payment_transaction_uniqueness"
+revision = "0004_txn_unique"
 down_revision = "0003_credit_based_entitlements"
 branch_labels = None
 depends_on = None
