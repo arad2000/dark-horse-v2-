@@ -1,0 +1,118 @@
+name: Hybrid Migration Audit
+
+on:
+  push:
+    branches:
+      - feature/postgresql-hybrid
+  pull_request:
+    branches:
+      - main
+      - feature/postgresql-hybrid
+
+jobs:
+  postgres-staging-audit:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: dark_horse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dark_horse_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
+      POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+      DARK_HORSE_SHADOW_PERSISTENCE: "false"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Compile Python sources
+        run: python -m compileall -q .
+
+      - name: Verify PostgreSQL connectivity
+        run: python -c "from database import healthcheck; assert healthcheck() is True"
+
+      - name: Apply Alembic schema
+        run: alembic upgrade head
+
+      - name: Run static schema verification
+        run: python scripts/verify_hybrid_schema.py
+
+      - name: Run authentication service tests
+        run: python -m unittest -v test_auth_service.py
+
+      - name: Run billing model integrity tests
+        run: python -m unittest -v test_billing_models.py
+
+      - name: Run credit billing service tests
+        run: python -m unittest -v test_billing_credits.py
+
+      - name: Run billing API tests
+        run: python -m unittest -v test_billing_api.py
+
+      - name: Run payment provider contract tests
+        run: python -m unittest -v test_payment_providers.py
+
+      - name: Run admin service tests
+        run: python -m unittest -v test_admin_service.py
+
+      - name: Run admin API tests
+        run: python -m unittest -v test_admin_api.py
+
+      - name: Run admin HTTP auth tests
+        run: python -m unittest -v test_admin_http_api.py
+
+      - name: Run operational contract tests
+        run: python -m unittest -v test_operational_contract.py
+
+      - name: Run operational persistence tests
+        run: python -m unittest -v test_operational_store.py
+
+      - name: Run API persistence adapter tests
+        run: python -m unittest -v test_api_persistence_adapter.py
+
+      - name: Run shadow persistence safety tests
+        run: python -m unittest -v test_shadow_persistence.py
+
+      - name: Run API shadow end-to-end tests
+        run: python -m unittest -v test_api_shadow_e2e.py
+
+      - name: Run API shadow bridge contract tests
+        run: python -m unittest -v test_api_shadow_bridge.py
+
+      - name: Run main API contract tests
+        run: python -m unittest -v test_main_api_contract.py
+
+      - name: Run strict offline reference contract audit
+        run: python reference_contract_audit.py
+
+      - name: Seed reference data into staging DB
+        run: python seed_reference_data.py --confirm-staging
+
+      - name: Verify staged reference data
+        run: python verify_hybrid_staging.py --confirm-staging
+
+      - name: Run controlled JSON vs PostgreSQL dual-run
+        run: python dual_run_audit.py --confirm-staging
+
+      - name: Verify runtime cutover remains OFF
+        run: python hybrid_gate_test.py
