@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 import httpx
 
@@ -26,6 +26,16 @@ class ProviderResponse:
     code: int | None = None
     message: str | None = None
     raw: dict[str, Any] | None = None
+
+
+class PaymentProvider(Protocol):
+    name: str
+
+    def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]:
+        ...
+
+    def verify_payment(self, *, amount_rial: int, authority: str) -> dict[str, Any]:
+        ...
 
 
 class MockPaymentProvider:
