@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import os
 import unittest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from admin_service import grant_credits, list_user_summary, revoke_entitlement
 from billing_models import Entitlement, PremiumPlan, User
@@ -12,10 +12,15 @@ from models import Base
 
 
 class AdminServiceTests(unittest.TestCase):
+    """Run Admin Service persistence tests against the configured staging PostgreSQL DB."""
+
     @classmethod
     def setUpClass(cls):
-        cls.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
-        cls.SessionLocal = sessionmaker(bind=cls.engine, expire_on_commit=False)
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise unittest.SkipTest("DATABASE_URL is required for PostgreSQL admin persistence tests")
+        cls.engine = create_engine(database_url, future=True)
+        cls.SessionLocal = sessionmaker(bind=cls.engine, expire_on_commit=False, future=True)
         _ = (Entitlement, PremiumPlan)
 
     def setUp(self):
@@ -23,25 +28,26 @@ class AdminServiceTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         with self.SessionLocal() as db:
             db.add_all([
-                User(id=1, public_id="admin-1", name="Admin", phone="09000000001", role="admin", status="active"),
-                User(id=2, public_id="user-1", name="User", phone="09000000002", role="user", status="active"),
-                User(id=3, public_id="support-1", name="Support", phone="09000000003", role="support", status="active"),
-                PremiumPlan(id=1, code="pack_3_tests", name_fa="بسته ۳ تست", plan_type="credits", duration_days=None, credits_granted=3, price_minor=2_490_000, currency="IRR", is_active=True, features={"tests": 3, "non_expiring": True}),
+                User(public_id="admin-1", name="Admin", phone="09000000001", role="admin", status="active"),
+                User(public_id="user-1", name="User", phone="09000000002", role="user", status="active"),
+                User(public_id="support-1", name="Support", phone="09000000003", role="support", status="active"),
+                PremiumPlan(code="pack_3_tests", name_fa="بسته ۳ تست", plan_type="credits", duration_days=None, credits_granted=3, price_minor=2_490_000, currency="IRR", is_active=True, features={"tests": 3, "non_expiring": True}),
             ])
             db.commit()
 
     def test_non_admin_cannot_grant(self):
         with self.SessionLocal() as db:
-            actor = db.get(User, 2)
+            actor = db.query(User).filter_by(public_id="user-1").one()
             with self.assertRaises(PermissionError):
-                grant_credits(db, actor, user_id=2, plan_code="pack_3_tests", reason="manual correction")
+                grant_credits(db, actor, user_id=actor.id, plan_code="pack_3_tests", reason="manual correction")
 
     def test_grant_requires_reason_and_is_audited(self):
         with self.SessionLocal() as db:
-            actor = db.get(User, 1)
+            actor = db.query(User).filter_by(public_id="admin-1").one()
+            target = db.query(User).filter_by(public_id="user-1").one()
             with self.assertRaises(ValueError):
-                grant_credits(db, actor, user_id=2, plan_code="pack_3_tests", reason="")
-            entitlement = grant_credits(db, actor, user_id=2, plan_code="pack_3_tests", reason="support request #123")
+                grant_credits(db, actor, user_id=target.id, plan_code="pack_3_tests", reason="")
+            entitlement = grant_credits(db, actor, user_id=target.id, plan_code="pack_3_tests", reason="support request #123")
             db.commit()
             self.assertEqual(entitlement.credits_granted, 3)
             self.assertEqual(entitlement.credits_remaining, 3)
@@ -50,8 +56,9 @@ class AdminServiceTests(unittest.TestCase):
 
     def test_revoke_zeroes_remaining_credit_and_is_audited(self):
         with self.SessionLocal() as db:
-            actor = db.get(User, 1)
-            ent = grant_credits(db, actor, user_id=2, plan_code="pack_3_tests", reason="grant")
+            actor = db.query(User).filter_by(public_id="admin-1").one()
+            target = db.query(User).filter_by(public_id="user-1").one()
+            ent = grant_credits(db, actor, user_id=target.id, plan_code="pack_3_tests", reason="grant")
             db.commit()
             updated = revoke_entitlement(db, actor, entitlement_id=ent.id, reason="fraud review")
             db.commit()
@@ -61,7 +68,7 @@ class AdminServiceTests(unittest.TestCase):
 
     def test_user_summary_omits_sensitive_password(self):
         with self.SessionLocal() as db:
-            actor = db.get(User, 1)
+            actor = db.query(User).filter_by(public_id="admin-1").one()
             rows = list_user_summary(db, actor)
             self.assertTrue(rows)
             self.assertNotIn("password_hash", rows[0])
