@@ -1,7 +1,7 @@
 """Staged Admin API facade.
 
-This module is intentionally operational-only: it delegates to admin_service and
-never mutates reference/psychometric source data or scoring logic.
+Operational-only facade over admin_service. Reference/psychometric source data
+and scoring logic are intentionally outside this API boundary.
 """
 from __future__ import annotations
 
@@ -9,15 +9,15 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from admin_service import grant_credits, revoke_entitlement, require_admin
-from billing_models import AdminAuditLog, Entitlement, PremiumPlan, User
+from billing_models import AdminAuditLog, Entitlement, Order, Payment, PremiumPlan, User
 
 
 def dashboard_summary(db: Session, actor: User) -> dict[str, int]:
     require_admin(actor)
     return {
         "users_total": int(db.scalar(select(func.count(User.id))) or 0),
-        "orders_total": int(db.scalar(select(func.count())) if False else 0),
-        "payments_total": 0,
+        "orders_total": int(db.scalar(select(func.count(Order.id))) or 0),
+        "payments_total": int(db.scalar(select(func.count(Payment.id))) or 0),
         "entitlements_total": int(db.scalar(select(func.count(Entitlement.id))) or 0),
         "audit_logs_total": int(db.scalar(select(func.count(AdminAuditLog.id))) or 0),
         "active_plans_total": int(
