@@ -57,6 +57,9 @@ jobs:
       - name: Run static schema verification
         run: python scripts/verify_hybrid_schema.py
 
+      - name: Run authentication service tests
+        run: python -m unittest -v test_auth_service.py
+
       - name: Run billing model integrity tests
         run: python -m unittest -v test_billing_models.py
 
