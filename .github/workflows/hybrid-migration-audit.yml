@@ -72,6 +72,9 @@ jobs:
       - name: Run payment provider contract tests
         run: python -m unittest -v test_payment_providers.py
 
+      - name: Run admin service tests
+        run: python -m unittest -v test_admin_service.py
+
       - name: Run operational contract tests
         run: python -m unittest -v test_operational_contract.py
 
