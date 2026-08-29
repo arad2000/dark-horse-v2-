@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import os
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from auth_service import (
     authenticate_user,
@@ -21,13 +21,25 @@ from models import Base
 
 
 class AuthServiceTests(unittest.TestCase):
+    """Run auth persistence tests against the configured staging PostgreSQL DB.
+
+    The Hybrid CI job already provisions PostgreSQL. Using the same database
+    dialect here avoids false failures from SQLite's lack of AUTOINCREMENT
+    semantics for PostgreSQL-style BigInteger primary keys.
+    """
+
     @classmethod
     def setUpClass(cls):
-        cls.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
-        cls.SessionLocal = sessionmaker(bind=cls.engine, expire_on_commit=False)
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise unittest.SkipTest("DATABASE_URL is required for PostgreSQL auth persistence tests")
+        cls.engine = create_engine(database_url, future=True)
+        cls.SessionLocal = sessionmaker(bind=cls.engine, expire_on_commit=False, future=True)
         _ = (User, AuthSession)
 
     def setUp(self):
+        # This is a disposable staging database in CI; reset ORM-managed tables
+        # before each test so each scenario is isolated.
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
 
@@ -65,10 +77,19 @@ class AuthServiceTests(unittest.TestCase):
 
     def test_expired_session_rejected(self):
         with self.SessionLocal() as db:
-            user = User(id=1, public_id="u1", name="Test", phone="09200000000", password_hash=hash_password("strong-pass-123"))
+            user = User(
+                public_id="u1",
+                name="Test",
+                phone="09200000000",
+                password_hash=hash_password("strong-pass-123"),
+            )
             db.add(user)
             db.flush()
-            session = AuthSession(user_id=user.id, token_hash=hash_token("expired-token"), expires_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc) - timedelta(minutes=1))
+            session = AuthSession(
+                user_id=user.id,
+                token_hash=hash_token("expired-token"),
+                expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+            )
             db.add(session)
             db.commit()
             with self.assertRaises(ValueError):
