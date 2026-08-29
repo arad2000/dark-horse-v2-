@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import os
 import unittest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from billing_credit_service import (
     FREE_CREDITS,
@@ -24,7 +24,11 @@ from payment_providers import MockPaymentProvider
 class BillingCreditTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        database_url = os.environ.get(
+            "DATABASE_URL",
+            "postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test",
+        )
+        cls.engine = create_engine(database_url, pool_pre_ping=True)
         cls.SessionLocal = sessionmaker(bind=cls.engine, autoflush=False, expire_on_commit=False)
         _ = (Entitlement, PremiumPlan, PaymentEvent)
 
