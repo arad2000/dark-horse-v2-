@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import os
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
 
 import billing_models  # noqa: F401
 from models import Base
@@ -16,13 +16,11 @@ from billing_models import AdminAuditLog, AuthSession, Entitlement, Order, Payme
 class BillingModelTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
-
-        @event.listens_for(cls.engine, "connect")
-        def enable_fk(dbapi_connection, _record):
-            cur = dbapi_connection.cursor()
-            cur.execute("PRAGMA foreign_keys=ON")
-            cur.close()
+        cls.database_url = os.getenv(
+            "DATABASE_URL",
+            "postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test",
+        )
+        cls.engine = create_engine(cls.database_url)
 
     def setUp(self):
         Base.metadata.drop_all(self.engine)
@@ -32,7 +30,15 @@ class BillingModelTests(unittest.TestCase):
         now = datetime.now(timezone.utc)
         with Session(self.engine) as db:
             user = User(public_id="u-1", name="Test", phone="09120000000")
-            plan = PremiumPlan(code="premium-30", name_fa="پریمیوم ۳۰ روزه", duration_days=30, price_minor=250000000, currency="IRR", features={"reports": True})
+            plan = PremiumPlan(
+                code="premium-30",
+                name_fa="پریمیوم ۳۰ روزه",
+                duration_days=30,
+                credits_granted=0,
+                price_minor=250000000,
+                currency="IRR",
+                features={"reports": True},
+            )
             db.add_all([user, plan])
             db.flush()
             order = Order(public_id="o-1", user_id=user.id, plan_id=plan.id, amount_minor=plan.price_minor, currency="IRR")
@@ -41,7 +47,16 @@ class BillingModelTests(unittest.TestCase):
             payment = Payment(order_id=order.id, provider="sandbox", amount_minor=order.amount_minor, currency="IRR")
             db.add(payment)
             db.flush()
-            entitlement = Entitlement(user_id=user.id, plan_id=plan.id, source="payment", starts_at=now, expires_at=now + timedelta(days=30), order_id=order.id)
+            entitlement = Entitlement(
+                user_id=user.id,
+                plan_id=plan.id,
+                source="payment",
+                credits_granted=3,
+                credits_remaining=3,
+                starts_at=now,
+                expires_at=now + timedelta(days=30),
+                order_id=order.id,
+            )
             db.add(entitlement)
             session = AuthSession(user_id=user.id, token_hash="hash-1", expires_at=now + timedelta(days=1))
             db.add(session)
