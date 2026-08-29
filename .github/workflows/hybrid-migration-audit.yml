@@ -34,8 +34,12 @@ jobs:
       PYTHONUNBUFFERED: "1"
 
     steps:
-      - name: Checkout
+      - name: Checkout branch HEAD for validation
         uses: actions/checkout@v4
+        with:
+          # PR jobs otherwise default to the synthetic merge ref. For this
+          # staging-only audit we must validate the actual feature branch HEAD.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
