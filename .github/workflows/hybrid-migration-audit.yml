@@ -78,6 +78,9 @@ jobs:
       - name: Run admin API tests
         run: python -m unittest -v test_admin_api.py
 
+      - name: Run admin HTTP auth tests
+        run: python -m unittest -v test_admin_http_api.py
+
       - name: Run operational contract tests
         run: python -m unittest -v test_operational_contract.py
 
