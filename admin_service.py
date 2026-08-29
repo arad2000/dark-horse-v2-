@@ -5,10 +5,12 @@ source data or scoring logic. Every mutation requires an audit record and a reas
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from billing_models import AdminAuditLog, Entitlement, Order, Payment, PremiumPlan, User
+from billing_models import AdminAuditLog, Entitlement, PremiumPlan, User
 
 ADMIN_ROLES = {"admin", "support"}
 
@@ -34,19 +36,20 @@ def _audit(db: Session, actor: User, *, action: str, target_type: str, target_id
 
 def grant_credits(db: Session, actor: User, *, user_id: int, plan_code: str, reason: str) -> Entitlement:
     require_admin(actor)
-    plan = db.scalar(select(PremiumPlan).where(PremiumPlan.code == plan_code, PremiumPlan.is_active.is_(True)))
     user = db.get(User, user_id)
-    if plan is None or user is None:
-        raise ValueError("unknown user or inactive plan")
-    if plan.credits_granted <= 0:
+    plan = db.scalar(select(PremiumPlan).where(PremiumPlan.code == plan_code, PremiumPlan.is_active.is_(True)))
+    if user is None or user.status != "active" or plan is None:
+        raise ValueError("unknown/inactive user or inactive plan")
+    if plan.credits_granted <= 0 or plan.plan_type != "credits":
         raise ValueError("plan does not grant credits")
+
     entitlement = Entitlement(
         user_id=user.id,
         plan_id=plan.id,
         source="admin",
         credits_granted=plan.credits_granted,
         credits_remaining=plan.credits_granted,
-        starts_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+        starts_at=datetime.now(timezone.utc),
         expires_at=None,
         status="active",
         order_id=None,
@@ -74,13 +77,13 @@ def list_user_summary(db: Session, actor: User, *, limit: int = 100) -> list[dic
     if limit < 1 or limit > 500:
         raise ValueError("limit must be between 1 and 500")
     users = db.scalars(select(User).order_by(User.id.desc()).limit(limit)).all()
-    summaries = []
-    for user in users:
-        summaries.append({
+    return [
+        {
             "public_id": user.public_id,
             "name": user.name,
             "phone": user.phone,
             "status": user.status,
             "role": user.role,
-        })
-    return summaries
+        }
+        for user in users
+    ]
