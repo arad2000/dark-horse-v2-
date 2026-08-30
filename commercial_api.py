@@ -44,8 +44,15 @@ def _public_user(user: User) -> dict[str, object]:
     }
 
 
+def _valid_expiry(value: datetime | None) -> bool:
+    if value is None:
+        return True
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value > datetime.now(timezone.utc)
+
+
 def _quota(db: Session, user_id: int) -> int:
-    now = datetime.now(timezone.utc)
     rows = db.scalars(
         select(Entitlement).where(
             Entitlement.user_id == user_id,
@@ -53,11 +60,7 @@ def _quota(db: Session, user_id: int) -> int:
             Entitlement.credits_remaining > 0,
         )
     )
-    total = 0
-    for row in rows:
-        if row.expires_at is None or row.expires_at > now:
-            total += int(row.credits_remaining)
-    return total
+    return sum(int(row.credits_remaining) for row in rows if _valid_expiry(row.expires_at))
 
 
 def _current_user(
@@ -78,19 +81,10 @@ def _current_user(
 @router.post("/auth/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, object]:
     try:
-        user, token = register_user(
-            db,
-            name=req.name,
-            phone=req.phone,
-            password=req.password,
-        )
+        user, token = register_user(db, name=req.name, phone=req.phone, password=req.password)
         ensure_free_entitlement(db, user.id)
         db.commit()
-        return {
-            "token": token,
-            "user": _public_user(user),
-            "quota": _quota(db, user.id),
-        }
+        return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id)}
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -102,11 +96,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
         ensure_free_entitlement(db, user.id)
         db.commit()
-        return {
-            "token": token,
-            "user": _public_user(user),
-            "quota": _quota(db, user.id),
-        }
+        return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id)}
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=401, detail="invalid credentials") from exc
