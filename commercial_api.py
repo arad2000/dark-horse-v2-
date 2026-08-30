@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -91,6 +93,11 @@ def _callback_url(request: Request) -> str:
     if configured:
         return configured
     return str(request.base_url).rstrip("/") + "/api/v1/billing/callback"
+
+
+def _frontend_redirect(payment: str) -> str:
+    base = os.getenv("FRONTEND_APP_URL", "https://arad2000.github.io/dark-horse-v2-/").strip().rstrip("/")
+    return base + "/?" + urlencode({"payment": payment})
 
 
 @router.post("/auth/register")
@@ -177,8 +184,8 @@ def billing_callback(
     authority: str = Query(..., alias="Authority"),
     status: str | None = Query(default=None, alias="Status"),
     db: Session = Depends(get_db),
-) -> dict[str, object]:
-    """Gateway callback endpoint; provider verification remains server-to-server.
+):
+    """Verify the gateway callback and return the user to the static app.
 
     ZarinPal returns ``Authority`` and ``Status`` query parameters. ``order_id``
     is appended to the callback URL created for the specific order so the server
@@ -197,7 +204,9 @@ def billing_callback(
             zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
         )
         db.commit()
-        return result
+        if result.get("verified"):
+            return RedirectResponse(url=_frontend_redirect("success"), status_code=303)
+        return RedirectResponse(url=_frontend_redirect("failed"), status_code=303)
     except HTTPException:
         db.rollback()
         raise
