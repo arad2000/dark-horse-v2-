@@ -146,7 +146,7 @@ class CommercialApiContractTests(unittest.TestCase):
         self.assertEqual(kwargs["provider_name"], "mock")
         self.assertNotIn("amount_rial", kwargs)
 
-    def test_billing_callback_delegates_server_verification(self):
+    def test_billing_callback_delegates_server_verification_and_redirects(self):
         expected = {
             "verified": True,
             "status": "paid",
@@ -160,9 +160,10 @@ class CommercialApiContractTests(unittest.TestCase):
             response = self.client.get(
                 "/api/v1/billing/callback",
                 params={"order_id": "order-12", "Authority": "MOCK-AUTH-001", "Status": "OK"},
+                follow_redirects=False,
             )
-        self.assertEqual(response.status_code, 200, response.text)
-        self.assertEqual(response.json(), expected)
+        self.assertEqual(response.status_code, 303, response.text)
+        self.assertEqual(response.headers["location"], "https://arad2000.github.io/dark-horse-v2-/?payment=success")
         kwargs = callback.call_args.kwargs
         self.assertEqual(kwargs["order_public_id"], "order-12")
         self.assertEqual(kwargs["authority"], "MOCK-AUTH-001")
