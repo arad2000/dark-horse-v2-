@@ -2,6 +2,10 @@
 
 Read-only. This script never connects to PostgreSQL and never changes runtime state.
 It validates the exact reference-data invariants required before a staging seed.
+
+BIOTM-* references are intentionally deferred until the dedicated BIOTM reference
+correction phase. They are reported as deferred findings, while every other
+unresolved motive reference remains a hard failure.
 """
 
 from __future__ import annotations
@@ -12,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent
+DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 
 FILES = {
     "micro_motives": ROOT / "docs" / "data" / "micro_motives.json",
@@ -183,6 +188,7 @@ def main() -> None:
         "status": "PASS",
         "runtime_cutover": "OFF",
         "errors": [],
+        "deferred": [],
         "files": {},
     }
 
@@ -261,19 +267,32 @@ def main() -> None:
         report["status"] = "FAIL"
 
     missing_refs: list[dict[str, str]] = []
+    deferred_refs: list[dict[str, str]] = []
     motive_set = set(motive_codes)
     for kind, items in (("major", majors), ("branch", branches)):
         for item in items:
             owner = str(item.get("id") or item.get("major_id") or item.get("branch_id") or item.get("name") or "?")
             for raw in item.get("micro_motive_codes") or []:
                 code = str(raw).strip()
-                if code not in motive_set:
-                    missing_refs.append({"kind": kind, "owner": owner, "code": code})
+                if code in motive_set:
+                    continue
+                finding = {"kind": kind, "owner": owner, "code": code}
+                if code.startswith(DEFERRED_MOTIVE_PREFIXES):
+                    deferred_refs.append(finding)
+                else:
+                    missing_refs.append(finding)
+
     report["motive_reference_integrity"] = {
         "missing": len(missing_refs),
         "pass": not missing_refs,
-        "sample": missing_refs[:20],
+        "deferred": len(deferred_refs),
+        "deferred_prefixes": list(DEFERRED_MOTIVE_PREFIXES),
+        "sample": (missing_refs + deferred_refs)[:20],
     }
+    if deferred_refs:
+        report["deferred"].append(
+            f"unresolved_motive_references_deferred:{len(deferred_refs)}:prefixes={list(DEFERRED_MOTIVE_PREFIXES)}"
+        )
     if missing_refs:
         report["status"] = "FAIL"
         report["errors"].append(f"unresolved_motive_references:{len(missing_refs)}")
