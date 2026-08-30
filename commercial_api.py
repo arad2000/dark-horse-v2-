@@ -172,10 +172,10 @@ def create_payment(request: Request, user: User = Depends(_current_user), db: Se
 
 @router.get("/billing/callback")
 def billing_callback(
+    request: Request,
     order_id: str,
     authority: str,
     status: str | None = None,
-    request: Request,
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
     """Gateway callback endpoint; verification remains server-to-server."""
