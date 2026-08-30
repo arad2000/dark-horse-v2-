@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/postgresql-hybrid
+      - feature/commercial-api-wiring
   pull_request:
     branches:
       - main
@@ -37,8 +38,6 @@ jobs:
       - name: Checkout branch HEAD for validation
         uses: actions/checkout@v4
         with:
-          # PR jobs otherwise default to the synthetic merge ref. For this
-          # staging-only audit we must validate the actual feature branch HEAD.
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
@@ -63,6 +62,9 @@ jobs:
 
       - name: Run authentication service tests
         run: python -m unittest -v test_auth_service.py
+
+      - name: Run commercial API contract tests
+        run: python -m unittest -v test_commercial_api.py
 
       - name: Run billing model integrity tests
         run: python -m unittest -v test_billing_models.py
