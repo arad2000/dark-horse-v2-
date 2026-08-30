@@ -6,7 +6,8 @@ Safety contract:
 - It never enables production PostgreSQL runtime use.
 - It preserves natural keys and many-to-many mappings from the JSON sources.
 - Alembic owns schema lifecycle; this script does not create/drop schema.
-- All reference mappings are validated before association tables are changed.
+- BIOTM-* motive references are intentionally deferred; non-BIOTM unresolved
+  references remain hard failures.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ from models import (
 )
 
 ROOT = Path(__file__).resolve().parent
+DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 
 
 def load_json(path: Path) -> Any:
@@ -125,31 +127,40 @@ def validate_motive_references(
     major_records: list[dict[str, Any]],
     branch_records: list[dict[str, Any]],
     known_codes: set[str],
-) -> tuple[int, int]:
-    """Fail closed on any unresolved major/branch micro-motive code."""
+) -> tuple[int, int, list[str]]:
+    """Fail closed on unknown refs, except intentionally deferred BIOTM-* refs."""
     major_refs = 0
     branch_refs = 0
     missing: list[str] = []
+    deferred: list[str] = []
 
     for item in major_records:
         for raw_code in item.get("micro_motive_codes") or []:
             major_refs += 1
             code = str(raw_code).strip()
             if code not in known_codes:
-                missing.append(f"major:{item.get('id') or item.get('major_id')}:{code}")
+                finding = f"major:{item.get('id') or item.get('major_id')}:{code}"
+                if code.startswith(DEFERRED_MOTIVE_PREFIXES):
+                    deferred.append(finding)
+                else:
+                    missing.append(finding)
 
     for item in branch_records:
         for raw_code in item.get("micro_motive_codes") or []:
             branch_refs += 1
             code = str(raw_code).strip()
             if code not in known_codes:
-                missing.append(f"branch:{item.get('id') or item.get('branch_id') or item.get('name')}:{code}")
+                finding = f"branch:{item.get('id') or item.get('branch_id') or item.get('name')}:{code}"
+                if code.startswith(DEFERRED_MOTIVE_PREFIXES):
+                    deferred.append(finding)
+                else:
+                    missing.append(finding)
 
     if missing:
         preview = ", ".join(missing[:20])
         suffix = " ..." if len(missing) > 20 else ""
         raise ValueError(f"Unresolved micro-motive references ({len(missing)}): {preview}{suffix}")
-    return major_refs, branch_refs
+    return major_refs, branch_refs, deferred
 
 
 def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
@@ -173,9 +184,15 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     motive_codes = [str(item.get("code") or "").strip() for item in motive_records]
     require_no_duplicate(motive_codes, "micro-motive codes")
     known_codes = set(motive_codes)
-    major_refs, branch_refs = validate_motive_references(major_records, branch_records, known_codes)
+    major_refs, branch_refs, deferred_refs = validate_motive_references(
+        major_records, branch_records, known_codes
+    )
 
-    major_ids = [int(item.get("id") if item.get("id") is not None else item.get("major_id")) for item in major_records if item.get("id") is not None or item.get("major_id") is not None]
+    major_ids = [
+        int(item.get("id") if item.get("id") is not None else item.get("major_id"))
+        for item in major_records
+        if item.get("id") is not None or item.get("major_id") is not None
+    ]
     if sorted(major_ids) != list(range(1, 161)):
         raise ValueError("Major IDs are not exactly 1..160")
 
@@ -288,7 +305,8 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
 
     db.flush()
 
-    # Rebuild only reference associations after all source validation succeeded.
+    # Rebuild only valid reference associations. Deferred BIOTM-* mappings remain
+    # absent from PostgreSQL until the dedicated BIOTM correction phase.
     db.execute(major_micro_motives.delete())
     db.execute(branch_micro_motives.delete())
     db.flush()
@@ -298,7 +316,11 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         mid = int(item.get("id") if item.get("id") is not None else item.get("major_id"))
         major = major_by_id[mid]
         for raw_code in item.get("micro_motive_codes") or []:
-            major.micro_motives.append(motive_by_code[str(raw_code).strip()])
+            code = str(raw_code).strip()
+            motive = motive_by_code.get(code)
+            if motive is None:
+                continue
+            major.micro_motives.append(motive)
             major_links += 1
 
     branch_links = 0
@@ -306,7 +328,11 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         name = str(item.get("name") or item.get("branch_name") or "").strip()
         branch = branch_by_name[name]
         for raw_code in item.get("micro_motive_codes") or []:
-            branch.micro_motives.append(motive_by_code[str(raw_code).strip()])
+            code = str(raw_code).strip()
+            motive = motive_by_code.get(code)
+            if motive is None:
+                continue
+            branch.micro_motives.append(motive)
             branch_links += 1
 
     db.commit()
@@ -314,6 +340,11 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     return {
         "status": "PASS",
         "runtime_cutover": "OFF",
+        "deferred": {
+            "motive_references": deferred_refs,
+            "count": len(deferred_refs),
+            "prefixes": list(DEFERRED_MOTIVE_PREFIXES),
+        },
         "counts": {
             "micro_motives": len(motive_records),
             "value_poles": len(value_records),
@@ -344,7 +375,6 @@ def main() -> None:
         with Session(engine) as db:
             report = seed_reference_data(db, ROOT)
     except Exception:
-        # Session context will roll back on exit for uncommitted work.
         raise
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
