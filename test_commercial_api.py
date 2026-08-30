@@ -40,6 +40,7 @@ class CommercialApiContractTests(unittest.TestCase):
             public_id="public-7",
             name="Test User",
             phone="09120000001",
+            password="unused",
             role="user",
             status="active",
         )
@@ -158,7 +159,7 @@ class CommercialApiContractTests(unittest.TestCase):
         ) as callback:
             response = self.client.get(
                 "/api/v1/billing/callback",
-                params={"order_id": "order-12", "authority": "MOCK-AUTH-001", "status": "OK"},
+                params={"order_id": "order-12", "Authority": "MOCK-AUTH-001", "Status": "OK"},
             )
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json(), expected)
