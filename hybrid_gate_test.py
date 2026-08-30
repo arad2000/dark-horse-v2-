@@ -43,14 +43,17 @@ def main() -> None:
         report["checks"][name] = {"records": len(rows), "path": str(path.relative_to(ROOT))}
 
     # Canonical value_poles_v2.json is an object keyed by Q1A..Q15B descriptions.
+    # Do not lexicographically sort codes: Q10 would sort before Q2.
     value_path = SOURCES["value_poles"]
     assert value_path.exists(), f"Missing reference source: {value_path}"
     value_payload = load(value_path)
     assert isinstance(value_payload, dict), "value_poles must be a JSON object keyed by Q1A..Q15B"
     expected_poles = _expected_value_pole_codes()
-    actual_poles = sorted(str(k).strip().upper() for k in value_payload.keys())
-    assert actual_poles == expected_poles, (
-        f"value pole codes mismatch: expected Q1A..Q15B, got {actual_poles}"
+    actual_poles = {str(k).strip().upper() for k in value_payload.keys()}
+    assert actual_poles == set(expected_poles), (
+        "value pole codes mismatch: expected exact set Q1A..Q15B, "
+        f"missing={sorted(set(expected_poles) - actual_poles)}, "
+        f"extra={sorted(actual_poles - set(expected_poles))}"
     )
     assert all(str(value_payload[k]).strip() for k in value_payload), (
         "value pole descriptions must be non-empty"
