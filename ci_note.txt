@@ -1,2 +1,3 @@
 CI validation note: current feature/postgresql-hybrid HEAD requires a fresh workflow run. Keep PR #7 draft; do not merge or deploy until all staging, security, and dual-run checks pass. Runtime cutover remains OFF.
 Reference audit checkpoint: BIOTM references remain deferred for the dedicated correction phase; all non-BIOTM unresolved references remain hard failures.
+Staging checkpoint: trigger a fresh push validation on this branch before seed/dual-run approval.
