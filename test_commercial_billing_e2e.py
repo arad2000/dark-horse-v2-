@@ -79,8 +79,6 @@ class CommercialBillingE2ETests(unittest.TestCase):
         self.assertEqual(purchase_body["amount_rial"], 2_490_000)
         self.assertEqual(purchase_body["authority"], "MOCK-AUTH-001")
 
-        # Match the real gateway callback contract: order_id is ours, while
-        # ZarinPal sends Authority/Status with capitalized query names.
         callback = self.client.get(
             "/api/v1/billing/callback",
             params={
