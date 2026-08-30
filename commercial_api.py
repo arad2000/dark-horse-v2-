@@ -81,10 +81,20 @@ def _current_user(
 
 
 def _server_billing_provider() -> str:
-    """Choose the provider from server configuration, never from client input."""
+    """Choose the provider from server configuration and fail closed for live payments.
+
+    ZarinPal is allowed here only in explicit sandbox mode. Live gateway use needs
+    a separate production approval flag so forgetting ``ZARINPAL_SANDBOX`` cannot
+    silently send a payment request to the live endpoint.
+    """
     provider = os.getenv("BILLING_PROVIDER", "mock").strip().lower()
     if provider not in {"mock", "zarinpal"}:
         raise HTTPException(status_code=503, detail="billing provider is misconfigured")
+    if provider == "zarinpal":
+        sandbox = os.getenv("ZARINPAL_SANDBOX", "false").strip().lower() in {"1", "true", "yes", "on"}
+        production_approved = os.getenv("ZARINPAL_PRODUCTION_APPROVED", "false").strip().lower() in {"1", "true", "yes", "on"}
+        if not sandbox and not production_approved:
+            raise HTTPException(status_code=503, detail="live ZarinPal requires explicit production approval")
     return provider
 
 
