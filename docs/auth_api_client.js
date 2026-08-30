@@ -1,6 +1,6 @@
 /* auth_api_client.js — Dark Horse Phase B */
 (function (global) {
-  const API = (global.API_BASE || 'https://dark-horse-v2.onrender.com');
+  const API = (global.API_BASE || 'https://asbe-siah.liara.run');
   const KEY = 'dh_auth_v1';
 
   function load() {
