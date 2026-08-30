@@ -1,0 +1,45 @@
+name: One-shot sync Liara app.js
+
+on:
+  push:
+    branches:
+      - feature/commercial-api-wiring
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/commercial-api-wiring
+          fetch-depth: 1
+
+      - name: Sync full app.js from main
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/arad2000/dark-horse-v2-/main/docs/app.js -o docs/app.js
+          test -s docs/app.js
+          grep -q "https://asbe-siah.liara.run" docs/app.js
+          grep -q "function analyzeMajors" docs/app.js
+
+      - name: Commit synced app.js
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/app.js
+          git commit -m "chore: align frontend API base with Liara"
+          git push origin HEAD:feature/commercial-api-wiring
+
+      - name: Remove one-shot workflow
+        run: |
+          set -euo pipefail
+          git pull --rebase origin feature/commercial-api-wiring
+          rm -f .github/workflows/sync-liara-app-js.yml
+          git add .github/workflows/sync-liara-app-js.yml
+          git commit -m "chore: remove one-shot Liara sync workflow"
+          git push origin HEAD:feature/commercial-api-wiring
