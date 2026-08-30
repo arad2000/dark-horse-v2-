@@ -79,12 +79,14 @@ class CommercialBillingE2ETests(unittest.TestCase):
         self.assertEqual(purchase_body["amount_rial"], 2_490_000)
         self.assertEqual(purchase_body["authority"], "MOCK-AUTH-001")
 
+        # Match the real gateway callback contract: order_id is ours, while
+        # ZarinPal sends Authority/Status with capitalized query names.
         callback = self.client.get(
             "/api/v1/billing/callback",
             params={
                 "order_id": purchase_body["order_id"],
-                "authority": purchase_body["authority"],
-                "status": "OK",
+                "Authority": purchase_body["authority"],
+                "Status": "OK",
             },
         )
         self.assertEqual(callback.status_code, 200, callback.text)
@@ -96,8 +98,8 @@ class CommercialBillingE2ETests(unittest.TestCase):
             "/api/v1/billing/callback",
             params={
                 "order_id": purchase_body["order_id"],
-                "authority": purchase_body["authority"],
-                "status": "OK",
+                "Authority": purchase_body["authority"],
+                "Status": "OK",
             },
         )
         self.assertEqual(replay.status_code, 200, replay.text)
@@ -109,7 +111,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
 
         paid_consume = self.client.post("/api/v1/me/consume-test", headers=headers)
         self.assertEqual(paid_consume.status_code, 200, paid_consume.text)
-        self.assertEqual(paid_consume.json()["credits_remaining"], 2)
+        self.assertEqual(paid_consume.json()["credits_remaining"], 2
 
 
 if __name__ == "__main__":
