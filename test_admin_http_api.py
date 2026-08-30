@@ -19,12 +19,25 @@ class AdminHttpApiTests(unittest.TestCase):
         class DummyDb:
             def __enter__(self):
                 return self
+
             def __exit__(self, *args):
                 return False
+
+            def close(self):
+                return None
+
         session_local.return_value = DummyDb()
 
         from billing_models import User
-        fake_user = User(id=5, public_id="u5", name="User", phone="0900", role="user", status="active")
+
+        fake_user = User(
+            id=5,
+            public_id="u5",
+            name="User",
+            phone="0900",
+            role="user",
+            status="active",
+        )
         with patch("admin_http_api.resolve_session", return_value=fake_user):
             client = TestClient(app)
             response = client.get(
