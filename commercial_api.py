@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -173,12 +173,17 @@ def create_payment(request: Request, user: User = Depends(_current_user), db: Se
 @router.get("/billing/callback")
 def billing_callback(
     request: Request,
-    order_id: str,
-    authority: str,
-    status: str | None = None,
+    order_id: str = Query(..., alias="order_id"),
+    authority: str = Query(..., alias="Authority"),
+    status: str | None = Query(default=None, alias="Status"),
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
-    """Gateway callback endpoint; verification remains server-to-server."""
+    """Gateway callback endpoint; provider verification remains server-to-server.
+
+    ZarinPal returns ``Authority`` and ``Status`` query parameters. ``order_id``
+    is appended to the callback URL created for the specific order so the server
+    can resolve the pending payment before verification.
+    """
     try:
         provider = _server_billing_provider()
         result = handle_payment_callback(
