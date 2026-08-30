@@ -175,7 +175,7 @@ def billing_callback(
     order_id: str,
     authority: str,
     status: str | None = None,
-    request: Request | None = None,
+    request: Request,
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
     """Gateway callback endpoint; verification remains server-to-server."""
@@ -188,7 +188,7 @@ def billing_callback(
             status=status,
             provider_name=provider,
             event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}",
-            raw_callback=dict(request.query_params) if request is not None else None,
+            raw_callback=dict(request.query_params),
             zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
         )
         db.commit()
