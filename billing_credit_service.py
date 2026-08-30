@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Protocol
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -88,6 +89,15 @@ def create_pack_order(db: Session, user_id: int, plan_code: str = PACK_3_TESTS_C
     )
 
 
+def _append_order_id(callback_url: str, order_public_id: str) -> str:
+    """Append the server-generated order id without dropping existing query args."""
+    parts = urlsplit(callback_url)
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    query = [(key, value) for key, value in query if key != "order_id"]
+    query.append(("order_id", order_public_id))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+
+
 def initiate_payment(
     db: Session,
     user_id: int,
@@ -100,10 +110,11 @@ def initiate_payment(
     db.add(order)
     db.flush()
 
+    provider_callback_url = _append_order_id(callback_url, order.public_id)
     response = provider.request_payment(
         amount_rial=order.amount_minor,
         order_public_id=order.public_id,
-        callback_url=callback_url,
+        callback_url=provider_callback_url,
     )
     authority = response.get("authority")
     if not authority:
