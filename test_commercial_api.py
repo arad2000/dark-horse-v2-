@@ -178,6 +178,21 @@ class CommercialApiContractTests(unittest.TestCase):
             response = self.client.post("/api/v1/billing/create-payment", headers={"Authorization": "Bearer token"})
         self.assertEqual(response.status_code, 503)
 
+    def test_zarinpal_live_mode_requires_explicit_production_approval(self):
+        user = SimpleNamespace(id=14)
+        with patch.dict(
+            os.environ,
+            {
+                "BILLING_PROVIDER": "zarinpal",
+                "ZARINPAL_SANDBOX": "false",
+                "ZARINPAL_PRODUCTION_APPROVED": "false",
+            },
+            clear=False,
+        ), patch("commercial_api.resolve_session", return_value=user):
+            response = self.client.post("/api/v1/billing/create-payment", headers={"Authorization": "Bearer token"})
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("production approval", response.text)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
