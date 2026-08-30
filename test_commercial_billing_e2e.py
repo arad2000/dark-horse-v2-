@@ -111,7 +111,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
 
         paid_consume = self.client.post("/api/v1/me/consume-test", headers=headers)
         self.assertEqual(paid_consume.status_code, 200, paid_consume.text)
-        self.assertEqual(paid_consume.json()["credits_remaining"], 2
+        self.assertEqual(paid_consume.json()["credits_remaining"], 2)
 
 
 if __name__ == "__main__":
