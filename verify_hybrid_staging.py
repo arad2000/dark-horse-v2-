@@ -3,6 +3,10 @@
 The JSON files remain the source of truth. This verifier connects only to the
 explicit staging DATABASE_URL and compares exact key/content sets. It never
 modifies the database and never enables production PostgreSQL runtime use.
+
+BIOTM-* motive references are intentionally deferred until the dedicated BIOTM
+correction phase. The verifier compares all non-deferred associations exactly
+and reports deferred references separately.
 """
 
 from __future__ import annotations
@@ -29,6 +33,7 @@ from models import (
 )
 
 ROOT = Path(__file__).resolve().parent
+DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 
 
 def load(path: Path) -> Any:
@@ -142,6 +147,10 @@ def actual_major(row: Major) -> dict[str, Any]:
     }
 
 
+def is_deferred(code: str) -> bool:
+    return code.startswith(DEFERRED_MOTIVE_PREFIXES)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--confirm-staging", action="store_true")
@@ -187,11 +196,25 @@ def main() -> None:
         (int(r.get("id") if r.get("id") is not None else r["major_id"]), str(code).strip())
         for r in major_rows
         for code in (r.get("micro_motive_codes") or [])
+        if not is_deferred(str(code).strip())
     }
     expected_branch_links = {
         (str(r.get("name") or r.get("branch_name")).strip(), str(code).strip())
         for r in branch_rows
         for code in (r.get("micro_motive_codes") or [])
+        if not is_deferred(str(code).strip())
+    }
+    deferred_major_links = {
+        (int(r.get("id") if r.get("id") is not None else r["major_id"]), str(code).strip())
+        for r in major_rows
+        for code in (r.get("micro_motive_codes") or [])
+        if is_deferred(str(code).strip())
+    }
+    deferred_branch_links = {
+        (str(r.get("name") or r.get("branch_name")).strip(), str(code).strip())
+        for r in branch_rows
+        for code in (r.get("micro_motive_codes") or [])
+        if is_deferred(str(code).strip())
     }
 
     with Session(engine) as db:
@@ -255,10 +278,16 @@ def main() -> None:
             "trait_options": len(trait_rows),
         },
         "comparisons": comparisons,
+        "deferred": {
+            "prefixes": list(DEFERRED_MOTIVE_PREFIXES),
+            "major_motive_routes": len(deferred_major_links),
+            "branch_motive_routes": len(deferred_branch_links),
+            "total": len(deferred_major_links) + len(deferred_branch_links),
+        },
         "source_sha256": {name: sha256(path) for name, path in files.items()},
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    raise SystemExit(0 if report["status"] == "PASS" else 2)
+    raise SystemExit(0 if report["status"] == "PASS" else 1)
 
 
 if __name__ == "__main__":
