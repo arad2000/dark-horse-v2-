@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -121,6 +122,59 @@ class CommercialApiContractTests(unittest.TestCase):
         self.assertEqual(response.json()["consumed"], 1)
         self.assertEqual(response.json()["credits_remaining"], 2)
         self.assertEqual(response.json()["entitlement_id"], 55)
+
+    def test_create_payment_is_server_authoritative(self):
+        user = SimpleNamespace(id=12)
+        expected = {
+            "order_id": "order-12",
+            "payment_id": 77,
+            "provider": "mock",
+            "amount_rial": 2_490_000,
+            "currency": "IRR",
+            "payment_url": "https://sandbox.example.invalid/pay/MOCK-AUTH-001",
+            "authority": "MOCK-AUTH-001",
+        }
+        with patch.dict(os.environ, {"BILLING_PROVIDER": "mock"}, clear=False), patch(
+            "commercial_api.resolve_session", return_value=user
+        ), patch("commercial_api.create_payment_request", return_value=expected) as create:
+            response = self.client.post("/api/v1/billing/create-payment", headers={"Authorization": "Bearer token"})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json(), expected)
+        kwargs = create.call_args.kwargs
+        self.assertEqual(kwargs["user_id"], 12)
+        self.assertEqual(kwargs["provider_name"], "mock")
+        self.assertNotIn("amount_rial", kwargs)
+
+    def test_billing_callback_delegates_server_verification(self):
+        expected = {
+            "verified": True,
+            "status": "paid",
+            "order_id": "order-12",
+            "credits_added": 3,
+            "credits_remaining": 3,
+        }
+        with patch.dict(os.environ, {"BILLING_PROVIDER": "mock"}, clear=False), patch(
+            "commercial_api.handle_payment_callback", return_value=expected
+        ) as callback:
+            response = self.client.get(
+                "/api/v1/billing/callback",
+                params={"order_id": "order-12", "authority": "MOCK-AUTH-001", "status": "OK"},
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json(), expected)
+        kwargs = callback.call_args.kwargs
+        self.assertEqual(kwargs["order_public_id"], "order-12")
+        self.assertEqual(kwargs["authority"], "MOCK-AUTH-001")
+        self.assertEqual(kwargs["status"], "OK")
+        self.assertEqual(kwargs["provider_name"], "mock")
+
+    def test_unknown_billing_provider_fails_closed(self):
+        user = SimpleNamespace(id=13)
+        with patch.dict(os.environ, {"BILLING_PROVIDER": "evil-provider"}, clear=False), patch(
+            "commercial_api.resolve_session", return_value=user
+        ):
+            response = self.client.post("/api/v1/billing/create-payment", headers={"Authorization": "Bearer token"})
+        self.assertEqual(response.status_code, 503)
 
 
 if __name__ == "__main__":
