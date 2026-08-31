@@ -184,25 +184,32 @@
     }
   }
 
-  function installCaptureGuards() {
-    document.addEventListener('click', function (e) {
-      var journey = e.target && typeof e.target.closest === 'function'
-        ? e.target.closest('#dh-start-journey, #dh-continue-journey, #dh-p-journey') : null;
-      if (journey) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        continueAfterAuth();
-        return;
-      }
+  function installButtonHooks() {
+    function patchButtons() {
+      var journeyButtons = document.querySelectorAll('#dh-start-journey, #dh-continue-journey, #dh-p-journey');
+      journeyButtons.forEach(function (btn) {
+        if (btn.__dhCommercialHooked) return;
+        btn.__dhCommercialHooked = true;
+        btn.onclick = function (e) {
+          if (e) e.preventDefault();
+          continueAfterAuth();
+        };
+      });
 
-      var premium = e.target && typeof e.target.closest === 'function'
-        ? e.target.closest('#dh-p-prem') : null;
-      if (premium) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        openPurchaseModal();
+      var premium = el('dh-p-prem');
+      if (premium && !premium.__dhCommercialHooked) {
+        premium.__dhCommercialHooked = true;
+        premium.textContent = 'خرید بسته ۳ تست';
+        premium.onclick = function (e) {
+          if (e) e.preventDefault();
+          openPurchaseModal();
+        };
       }
-    }, true);
+    }
+
+    patchButtons();
+    var observer = new MutationObserver(patchButtons);
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   function patchLegacyProfileCopy() {
@@ -210,16 +217,10 @@
     if (btn) btn.textContent = 'خرید بسته ۳ تست';
   }
 
-  function observeShell() {
-    var observer = new MutationObserver(function () { patchLegacyProfileCopy(); });
-    observer.observe(document.body, { childList: true, subtree: true });
-    patchLegacyProfileCopy();
-  }
-
   function boot() {
     if (!global.DHAuth) return;
-    installCaptureGuards();
-    observeShell();
+    installButtonHooks();
+    patchLegacyProfileCopy();
   }
 
   global.DHCommercialUI = {
