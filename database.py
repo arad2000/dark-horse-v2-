@@ -13,7 +13,22 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from models import Base
 
-DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+def _normalize_database_url(url: str) -> str:
+    """Map plain postgresql:// to the installed psycopg v3 SQLAlchemy dialect.
+
+    requirements.txt installs psycopg[binary] (v3). SQLAlchemy treats
+    postgresql:// as psycopg2, which is not installed and crashes Liara startup.
+    """
+    u = (url or "").strip()
+    if u.startswith("postgres://"):
+        u = "postgresql://" + u[len("postgres://"):]
+    if u.startswith("postgresql://") and not u.startswith("postgresql+"):
+        u = "postgresql+psycopg://" + u[len("postgresql://"):]
+    return u
+
+
+DATABASE_URL = _normalize_database_url(os.getenv("DATABASE_URL", ""))
 engine = None
 SessionLocal = None
 
