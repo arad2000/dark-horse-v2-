@@ -5,6 +5,7 @@ on:
     branches:
       - feature/postgresql-hybrid
       - feature/commercial-api-wiring
+      - deploy/liara-commercial-sandbox
   pull_request:
     branches:
       - main
@@ -68,6 +69,9 @@ jobs:
 
       - name: Run commercial API contract tests
         run: python -m unittest -v test_commercial_api.py
+
+      - name: Run phone verification service tests
+        run: python -m unittest -v test_phone_verification_service.py
 
       - name: Run commercial billing PostgreSQL E2E tests
         run: python -m unittest -v test_commercial_billing_e2e.py
