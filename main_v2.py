@@ -34,6 +34,19 @@ async def lifespan(app: FastAPI):
     # Explicit runtime fingerprint for Liara deployment diagnostics.
     logger.info("✅ COMMERCIAL_ROUTER_IMPORTED=%s", commercial_router is not None)
 
+    # Operational tables for auth/credits/billing (not psychometric JSON data).
+    try:
+        import billing_models  # noqa: F401 — register ORM tables on Base.metadata
+        from database import init_db, is_configured
+
+        if is_configured():
+            init_db()
+            logger.info("✅ Commercial DB tables ready (init_db).")
+        else:
+            logger.warning("⚠️ DATABASE_URL not configured; auth/billing DB disabled.")
+    except Exception as e:
+        logger.error("❌ Commercial DB init failed: %s", e, exc_info=True)
+
     # موتور اصلی (برای رشته‌های دانشگاهی)
     try:
         app.state.engine = DarkHorseEngineV2(
@@ -148,7 +161,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
             },
         }
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exc_info=True)
+        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exp_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
