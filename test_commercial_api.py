@@ -34,13 +34,22 @@ class CommercialApiContractTests(unittest.TestCase):
     def tearDownClass(cls):
         app.dependency_overrides.clear()
 
-    def test_register_contract(self):
-        user = SimpleNamespace(id=7, public_id="public-7", name="Test User", phone="09120000001", password="unused", role="user", status="active")
-        with patch("commercial_api.register_user", return_value=(user, "raw-token")), patch("commercial_api.ensure_free_entitlement"), patch("commercial_api._quota", return_value=1):
-            response = self.client.post("/api/v1/auth/register", json={"name": "Test User", "phone": user.phone, "password": "strong-pass-123"})
+    def test_register_starts_phone_verification(self):
+        expected = {"otp_required": True, "challenge_id": "challenge-123456", "expires_in": 300, "resend_after": 60}
+        with patch("commercial_api.request_registration_otp", return_value=expected) as request_otp:
+            response = self.client.post("/api/v1/auth/register", json={"name": "Test User", "phone": "09120000001", "password": "strong-pass-123"})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json(), expected)
+        request_otp.assert_called_once_with(self.db, name="Test User", phone="09120000001", password="strong-pass-123")
+
+    def test_verify_registration_creates_session_and_free_credit(self):
+        user = SimpleNamespace(id=7, public_id="public-7", name="Test User", phone="09120000001", role="user", status="active")
+        with patch("commercial_api.verify_registration_otp", return_value=(user, "raw-token")), patch("commercial_api.ensure_free_entitlement"), patch("commercial_api._quota", return_value=1):
+            response = self.client.post("/api/v1/auth/register/verify", json={"challenge_id": "challenge-123456", "code": "123456"})
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["token"], "raw-token")
         self.assertEqual(response.json()["quota"], 1)
+        self.assertTrue(response.json()["phone_verified"])
 
     def test_login_contract(self):
         user = SimpleNamespace(id=8, public_id="public-8", name="Login User", phone="09120000002", role="user", status="active")
