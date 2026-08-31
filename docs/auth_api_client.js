@@ -1,4 +1,4 @@
-/* auth_api_client.js — Dark Horse Phase B */
+/* auth_api_client.js — Dark Horse Commercial Auth */
 (function (global) {
   const API = (global.API_BASE || 'https://asbe-siah.liara.run');
   const KEY = 'dh_auth_v1';
@@ -6,12 +6,8 @@
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
   }
-  function save(data) {
-    localStorage.setItem(KEY, JSON.stringify(data));
-  }
-  function clear() {
-    localStorage.removeItem(KEY);
-  }
+  function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
+  function clear() { localStorage.removeItem(KEY); }
 
   async function req(path, opts = {}) {
     const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
@@ -34,9 +30,16 @@
     logout() { clear(); },
 
     async register(name, phone, password) {
-      const data = await req('/api/v1/auth/register', {
+      return req('/api/v1/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, phone, password })
+      });
+    },
+
+    async verifyRegistration(challengeId, code) {
+      const data = await req('/api/v1/auth/register/verify', {
+        method: 'POST',
+        body: JSON.stringify({ challenge_id: challengeId, code })
       });
       save(data);
       return data;
@@ -59,9 +62,7 @@
       return data.user;
     },
 
-    async quota() {
-      return req('/api/v1/me/quota');
-    },
+    async quota() { return req('/api/v1/me/quota'); },
 
     async consumeTest() {
       const data = await req('/api/v1/me/consume-test', { method: 'POST', body: '{}' });
@@ -79,13 +80,6 @@
 
     async createPayment() {
       return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
-    },
-
-    async devActivatePremium() {
-      const data = await req('/api/v1/billing/dev-activate-premium', { method: 'POST', body: '{}' });
-      const s = load() || {};
-      if (data.user) { s.user = data.user; save(s); }
-      return data;
     }
   };
 
