@@ -1,40 +1,46 @@
-/* free_journey_mode.js — temporary free-access gate for exploratory journey
- * Keeps commercial payment UI available, but does not block or consume credits
- * for entering the exploratory journey while payment/OTP rollout is completed.
+/* free_journey_mode.js — restore the app's original exploratory-journey handlers
+ * during the temporary free-access phase. Commercial billing remains separate.
  */
 (function (global) {
   'use strict';
 
-  function startFreeJourney() {
-    if (global.DHShell && typeof global.DHShell.startJourney === 'function') {
-      global.DHShell.startJourney();
-      return true;
-    }
-    return false;
+  function journeySelectors() {
+    return '#dh-start-journey, #dh-continue-journey, #dh-p-journey';
   }
 
-  function patchButtons() {
-    var selectors = '#dh-start-journey, #dh-continue-journey, #dh-p-journey';
-    document.querySelectorAll(selectors).forEach(function (btn) {
+  function rememberOriginal(btn) {
+    if (btn.__dhOriginalJourneyOnclickSaved) return;
+    btn.__dhOriginalJourneyOnclick = btn.onclick || null;
+    btn.__dhOriginalJourneyOnclickSaved = true;
+  }
+
+  function restoreButtons() {
+    document.querySelectorAll(journeySelectors()).forEach(function (btn) {
+      rememberOriginal(btn);
+      btn.onclick = btn.__dhOriginalJourneyOnclick;
       btn.__dhFreeJourneyMode = true;
-      btn.onclick = function (e) {
-        if (e) e.preventDefault();
-        startFreeJourney();
-      };
     });
   }
 
+  function restoreAfterObservers() {
+    restoreButtons();
+    setTimeout(restoreButtons, 0);
+    setTimeout(restoreButtons, 50);
+  }
+
   function boot() {
-    patchButtons();
+    restoreAfterObservers();
     var observer = new MutationObserver(function () {
-      patchButtons();
+      restoreAfterObservers();
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
   global.DHFreeJourney = {
     enabled: true,
-    start: startFreeJourney
+    start: function () {
+      restoreButtons();
+    }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
