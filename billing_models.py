@@ -44,6 +44,25 @@ class AuthSession(Base):
     user = relationship("User", back_populates="auth_sessions")
 
 
+class PhoneVerification(Base):
+    __tablename__ = "phone_verifications"
+    __table_args__ = (
+        Index("idx_phone_verification_phone", "phone", "purpose", "created_at"),
+        UniqueConstraint("challenge_id", name="uq_phone_verification_challenge"),
+    )
+    id = Column(BigInteger, primary_key=True)
+    challenge_id = Column(String(128), nullable=False, unique=True)
+    phone = Column(String(32), nullable=False)
+    purpose = Column(String(32), nullable=False, default="register", server_default="register")
+    name = Column(String(200), nullable=False)
+    password_hash = Column(Text, nullable=False)
+    code_hash = Column(String(128), nullable=False)
+    attempts = Column(Integer, nullable=False, default=0, server_default="0")
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class PremiumPlan(Base):
     __tablename__ = "premium_plans"
     __table_args__ = (UniqueConstraint("code", name="uq_premium_plan_code"),)
@@ -53,7 +72,7 @@ class PremiumPlan(Base):
     plan_type = Column(String(20), nullable=False, default="credits", server_default="credits")
     duration_days = Column(Integer, nullable=True)
     credits_granted = Column(Integer, nullable=False, default=0, server_default="0")
-    price_minor = Column(BigInteger, nullable=False)  # IRR rials; 249,000 Toman = 2,490,000 Rial.
+    price_minor = Column(BigInteger, nullable=False)
     currency = Column(String(8), nullable=False, default="IRR", server_default="IRR")
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
     features = Column(JSON, nullable=False, default=dict)
