@@ -37,10 +37,6 @@ class VerifyRegistrationRequest(BaseModel):
     code: str = Field(min_length=6, max_length=8)
 
 
-class ResendRegistrationRequest(BaseModel):
-    challenge_id: str = Field(min_length=8, max_length=128)
-
-
 class LoginRequest(BaseModel):
     phone: str = Field(min_length=3, max_length=32)
     password: str = Field(min_length=8, max_length=256)
@@ -119,7 +115,9 @@ def _frontend_redirect(payment: str) -> str:
 def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, object]:
     """Start a verified registration. No user is created before OTP validation."""
     try:
-        return request_registration_otp(db, name=req.name, phone=req.phone, password=req.password)
+        result = request_registration_otp(db, name=req.name, phone=req.phone, password=req.password)
+        db.commit()
+        return result
     except TimeoutError as exc:
         db.rollback()
         raise HTTPException(status_code=429, detail=str(exc)) from exc
@@ -152,16 +150,6 @@ def verify_register(req: VerifyRegistrationRequest, db: Session = Depends(get_db
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@router.post("/auth/register/resend")
-def resend_register(req: ResendRegistrationRequest, db: Session = Depends(get_db)) -> dict[str, object]:
-    """Re-send is intentionally disabled without the original registration data.
-
-    The UI re-submits the original registration payload through /auth/register,
-    subject to the server-side cooldown.
-    """
-    raise HTTPException(status_code=409, detail="resubmit registration to request a new code")
 
 
 @router.post("/auth/login")
