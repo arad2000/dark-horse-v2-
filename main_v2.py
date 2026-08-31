@@ -31,6 +31,9 @@ class DarkHorseDiscoverRequest(BaseModel):
 async def lifespan(app: FastAPI):
     logger.info("🚀 Starting Dark Horse API V2.0 ...")
 
+    # Explicit runtime fingerprint for Liara deployment diagnostics.
+    logger.info("✅ COMMERCIAL_ROUTER_IMPORTED=%s", commercial_router is not None)
+
     # موتور اصلی (برای رشته‌های دانشگاهی)
     try:
         app.state.engine = DarkHorseEngineV2(
@@ -73,6 +76,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(commercial_router)
+logger.info("✅ COMMERCIAL_ROUTER_MOUNTED=True prefix=/api/v1")
+
+
+# ======================= Runtime Diagnostics =======================
+@app.get("/__runtime_fingerprint")
+async def runtime_fingerprint():
+    return {
+        "service": "dark-horse-v2",
+        "commercial_router_mounted": True,
+        "commercial_prefix": "/api/v1",
+        "commit_hint": "deploy/liara-commercial-sandbox",
+    }
 
 
 # ======================= Endpoints =======================
