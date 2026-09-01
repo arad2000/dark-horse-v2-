@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/postgresql-hybrid
+      - feature/postgresql-hybrid-biotm
   pull_request:
     branches:
       - main
@@ -108,6 +109,9 @@ jobs:
 
       - name: Run strict offline reference contract audit
         run: python reference_contract_audit.py
+
+      - name: Run BIOTM reference integrity tests
+        run: python -m unittest -v test_biotm_reference_integrity.py
 
       - name: Seed reference data into staging DB
         run: python seed_reference_data.py --confirm-staging

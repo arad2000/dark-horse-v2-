@@ -73,6 +73,7 @@ def main() -> None:
         {"name":"motive_heavy","motives":["MED-001","MED-004","MED-007"],"sjt":{f"sjt_{i}":"A" for i in range(1,26)},"conjoint":{f"conj_{i}":f"Q{i}A" for i in range(1,16)}},
         {"name":"balanced","motives":["AI-001","CS-001","STAT-001"],"sjt":{f"sjt_{i}":"ABCDE"[i%5] for i in range(1,26)},"conjoint":{f"conj_{i}":f"Q{i}{'A' if i%2 else 'B'}" for i in range(1,16)}},
         {"name":"engineering","motives":["EE-001","EE-004","ME-001"],"sjt":{f"sjt_{i}":"EDCBA"[i%5] for i in range(1,26)},"conjoint":{f"conj_{i}":f"Q{i}B" for i in range(1,16)}},
+        {"name":"medical_biotech","motives":["BIOTM-001","BIOTM-004","BIOTM-007"],"sjt":{f"sjt_{i}":"A" for i in range(1,26)},"conjoint":{f"conj_{i}":f"Q{i}A" for i in range(1,16)}},
     ]
     reports=[]
     for fixture in fixtures:
