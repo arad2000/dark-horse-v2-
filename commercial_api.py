@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, resolve_session
 from billing_api import create_payment_request, handle_payment_callback
-from billing_credit_service import consume_one_test, ensure_free_entitlement
+from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
 from billing_models import Entitlement, User
 from database import get_db
 from phone_verification_service import request_registration_otp, verify_registration_otp
@@ -171,6 +171,14 @@ def me(user: User = Depends(_current_user)) -> dict[str, object]:
 
 @router.get("/me/quota")
 def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    """Return remaining credits; in free mode top-up first so UI does not paywall."""
+    if is_billing_free_mode():
+        try:
+            ensure_free_entitlement(db, user.id)
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
     return {"credits_remaining": _quota(db, user.id), "user_id": user.id}
 
 
