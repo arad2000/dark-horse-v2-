@@ -6,9 +6,11 @@ Rules:
 - Credit consumption is atomic at the database level.
 - Payment verification is provider-agnostic; real ZarinPal and mock providers
   can implement the same interface in parallel.
+- Optional ``BILLING_FREE_MODE=true`` disables credit limits until launch.
 """
 from __future__ import annotations
 
+import os
 from datetime import datetime, timezone
 from typing import Protocol
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -24,6 +26,12 @@ PACK_3_TESTS_CODE = "pack_3_tests"
 PACK_3_PRICE_RIAL = 2_490_000
 PACK_3_CREDITS = 3
 FREE_CREDITS = 1
+FREE_MODE_CREDITS = 999_999
+
+
+def is_billing_free_mode() -> bool:
+    """Temporary unlimited-test mode until commercial launch is complete."""
+    return os.getenv("BILLING_FREE_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 class PaymentProvider(Protocol):
@@ -38,10 +46,16 @@ def utcnow() -> datetime:
 
 
 def ensure_free_entitlement(db: Session, user_id: int) -> Entitlement:
-    """Provision exactly one free credit once, idempotently."""
+    """Provision free credits once, idempotently.
+
+    In normal mode grants 1 credit. In BILLING_FREE_MODE grants a large pool and
+    top-ups existing free entitlements so users are never blocked.
+    """
     free_plan = db.scalar(select(PremiumPlan).where(PremiumPlan.code == FREE_PLAN_CODE))
     if free_plan is None:
         raise ValueError("free plan is not configured")
+
+    credits = FREE_MODE_CREDITS if is_billing_free_mode() else FREE_CREDITS
 
     existing = db.scalar(
         select(Entitlement).where(
@@ -51,14 +65,19 @@ def ensure_free_entitlement(db: Session, user_id: int) -> Entitlement:
         )
     )
     if existing is not None:
+        if is_billing_free_mode() and int(existing.credits_remaining or 0) < credits:
+            existing.credits_remaining = credits
+            existing.credits_granted = max(int(existing.credits_granted or 0), credits)
+            existing.status = "active"
+            db.flush()
         return existing
 
     entitlement = Entitlement(
         user_id=user_id,
         plan_id=free_plan.id,
         source="free",
-        credits_granted=FREE_CREDITS,
-        credits_remaining=FREE_CREDITS,
+        credits_granted=credits,
+        credits_remaining=credits,
         starts_at=utcnow(),
         expires_at=None,
         status="active",
@@ -224,7 +243,14 @@ def consume_one_test(db: Session, user_id: int) -> Entitlement:
 
     Row locking is used on PostgreSQL to serialize concurrent consumption. The
     operation fails instead of allowing negative credits.
+
+    In BILLING_FREE_MODE consumption is a no-op against quota: users are never
+    blocked and remaining credits stay effectively unlimited.
     """
+    if is_billing_free_mode():
+        entitlement = ensure_free_entitlement(db, user_id)
+        return entitlement
+
     stmt = (
         select(Entitlement)
         .where(
