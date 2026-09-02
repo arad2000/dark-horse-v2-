@@ -12,8 +12,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from admin_router import router as admin_router
 from commercial_api import router as commercial_router
 from dark_horse_engine_v2 import DarkHorseEngineV2
+from feedback_api import router as feedback_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("darkhorse_api_v2")
@@ -33,19 +35,22 @@ async def lifespan(app: FastAPI):
 
     # Explicit runtime fingerprint for Liara deployment diagnostics.
     logger.info("✅ COMMERCIAL_ROUTER_IMPORTED=%s", commercial_router is not None)
+    logger.info("✅ ADMIN_ROUTER_IMPORTED=%s", admin_router is not None)
+    logger.info("✅ FEEDBACK_ROUTER_IMPORTED=%s", feedback_router is not None)
 
-    # Operational tables for auth/credits/billing (not psychometric JSON data).
+    # Operational tables for auth/credits/billing/feedback (not psychometric JSON data).
     try:
         import billing_models  # noqa: F401 — register ORM tables on Base.metadata
+        import models  # noqa: F401 — user_sessions / user_feedback tables
         from database import init_db, is_configured
 
         if is_configured():
             init_db()
-            logger.info("✅ Commercial DB tables ready (init_db).")
+            logger.info("✅ Operational DB tables ready (init_db).")
         else:
-            logger.warning("⚠️ DATABASE_URL not configured; auth/billing DB disabled.")
+            logger.warning("⚠️ DATABASE_URL not configured; operational DB disabled.")
     except Exception as e:
-        logger.error("❌ Commercial DB init failed: %s", e, exc_info=True)
+        logger.error("❌ Operational DB init failed: %s", e, exc_info=True)
 
     # موتور اصلی (برای رشته‌های دانشگاهی)
     try:
@@ -89,7 +94,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(commercial_router)
-logger.info("✅ COMMERCIAL_ROUTER_MOUNTED=True prefix=/api/v1")
+app.include_router(admin_router)
+app.include_router(feedback_router)
+logger.info("✅ ROUTERS_MOUNTED commercial=/api/v1 admin=/api/v1/admin feedback=/api/v1/feedback")
 
 
 # ======================= Runtime Diagnostics =======================
@@ -98,7 +105,11 @@ async def runtime_fingerprint():
     return {
         "service": "dark-horse-v2",
         "commercial_router_mounted": True,
+        "admin_router_mounted": True,
+        "feedback_router_mounted": True,
         "commercial_prefix": "/api/v1",
+        "admin_prefix": "/api/v1/admin",
+        "feedback_prefix": "/api/v1/feedback",
         "commit_hint": "deploy/liara-commercial-sandbox",
     }
 
@@ -161,7 +172,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
             },
         }
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exc_info=True)
+        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exp_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
