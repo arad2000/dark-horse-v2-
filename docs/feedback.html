@@ -1,1 +1,393 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فرم بازخورد | سامانه اسب سیاه</title>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --card: #14141f;
+  --card2: #1a1a2a;
+  --amber: #f0c040;
+  --amber-dim: #d4af37;
+  --amber-glow: rgba(240,192,64,0.25);
+  --text: #e8e0d0;
+  --muted: #8a8070;
+  --border: rgba(212,175,55,0.18);
+  --success: #4caf7a;
+  --danger: #e07070;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Vazirmatn', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 20px 16px 48px;
+  line-height: 1.8;
+}
+.wrap { max-width: 560px; margin: 0 auto; }
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding-top: 12px;
+}
+.header h1 {
+  font-family: 'Lalezar', cursive;
+  font-size: 2rem;
+  color: var(--amber);
+  margin-bottom: 6px;
+}
+.header p { color: var(--muted); font-size: 0.92rem; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+}
+.card h2 {
+  font-size: 1.05rem;
+  color: var(--amber-dim);
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+.label { display: block; font-size: 0.9rem; margin-bottom: 10px; color: var(--text); }
+.star-req::after { content: ' *'; color: var(--danger); }
+.rate-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.rate-row label {
+  flex: 1;
+  min-width: 48px;
+  text-align: center;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+.rate-row input { display: none; }
+.rate-row input:checked + span,
+.rate-row label:has(input:checked) {
+  border-color: var(--amber);
+  background: rgba(240,192,64,0.12);
+  color: var(--amber);
+  box-shadow: 0 0 0 1px var(--amber);
+}
+.nps-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.nps-row label {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.nps-row input { display: none; }
+.nps-row label:has(input:checked) {
+  border-color: var(--amber);
+  background: rgba(240,192,64,0.15);
+  color: var(--amber);
+}
+input[type=text], textarea {
+  width: 100%;
+  background: #0f0f18;
+  border: 1px solid #353545;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #fff;
+  font: inherit;
+  outline: none;
+}
+input[type=text]:focus, textarea:focus {
+  border-color: rgba(240,192,64,0.7);
+  box-shadow: 0 0 0 3px rgba(240,192,64,0.1);
+}
+textarea { min-height: 96px; resize: vertical; }
+.progress-wrap { margin: 18px 0 8px; }
+.progress-bar {
+  height: 8px; background: #2a2a3e; border-radius: 99px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, var(--amber-dim), var(--amber));
+  transition: width 0.35s ease;
+}
+.progress-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.8rem; color: var(--muted); margin-top: 8px;
+}
+#horse { transition: transform 0.35s ease; }
+.submit-zone { text-align: center; margin-top: 22px; }
+.submit-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 50px;
+  padding: 14px 20px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--amber), var(--amber-dim));
+  color: #0a0a0f;
+  box-shadow: 0 8px 24px var(--amber-glow);
+  transition: 0.2s;
+}
+.submit-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.submit-hint { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(120%);
+  background: #3a2020; color: #ffc9c9; border: 1px solid #7a4040;
+  padding: 12px 16px; border-radius: 12px; font-size: 0.85rem;
+  max-width: 90%; z-index: 50; transition: 0.3s; opacity: 0;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.thanks {
+  display: none; text-align: center; padding: 40px 16px;
+}
+.thanks.show { display: block; }
+.thanks h2 { color: var(--amber); font-family: 'Lalezar', cursive; font-size: 1.8rem; margin-bottom: 10px; }
+.thanks p { color: var(--muted); }
+.exam-box {
+  background: rgba(240,192,64,0.06);
+  border: 1px dashed rgba(240,192,64,0.28);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.exam-box strong { color: var(--amber-dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>بازخورد اسب سیاه</h1>
+    <p>نظر شما برای بهبود سامانه هدایت تحصیلی ثبت می‌شود</p>
+  </div>
+
+  <div id="thanks" class="thanks">
+    <h2>سپاس از همراهی شما</h2>
+    <p>بازخوردتان ذخیره شد و در بهینه‌سازی پیشنهادها استفاده می‌شود.</p>
+  </div>
+
+  <form id="feedbackForm">
+    <div class="card exam-box" id="examMeta">
+      کد آزمون: <strong id="examCode">—</strong><br>
+      رشته پیشنهادی: <strong id="examMajor">—</strong><br>
+      امتیاز: <strong id="examScore">—</strong>
+    </div>
+
+    <div class="card">
+      <h2>۱. تناسب رشته پیشنهادی</h2>
+      <span class="label star-req">رشته پیشنهادی چقدر با شما هم‌خوان بود؟</span>
+      <div class="rate-row" data-name="major_fit"></div>
+    </div>
+
+    <div class="card">
+      <h2>۲. دقت انگیزه‌ها</h2>
+      <span class="label star-req">خرده‌انگیزه‌ها چقدر دقیق احساس شد؟</span>
+      <div class="rate-row" data-name="motive_accuracy"></div>
+    </div>
+
+    <div class="card">
+      <h2>۳. تناسب راهبردی</h2>
+      <span class="label star-req">سؤالات راهبردی چقدر به شما نزدیک بود؟</span>
+      <div class="rate-row" data-name="strategy_fit"></div>
+    </div>
+
+    <div class="card">
+      <h2>۴. تناسب ارزشی</h2>
+      <span class="label star-req">قطب‌های ارزشی چقدر درست بود؟</span>
+      <div class="rate-row" data-name="value_fit"></div>
+    </div>
+
+    <div class="card">
+      <h2>۵. توصیه به دیگران (NPS)</h2>
+      <span class="label star-req">از ۰ تا ۱۰ چقدر اسب سیاه را توصیه می‌کنید؟</span>
+      <div class="nps-row" id="npsRow"></div>
+    </div>
+
+    <div class="card">
+      <h2>۶. رشته مطلوب شما (اختیاری)</h2>
+      <input type="text" name="desired_major" placeholder="مثلاً پزشکی، معماری، حقوق…">
+    </div>
+
+    <div class="card">
+      <h2>۷. نظر آزاد (اختیاری)</h2>
+      <textarea name="comments" placeholder="هر نکته‌ای که به بهبود سامانه کمک کند…"></textarea>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-meta">
+        <span id="progressText">۰ از ۵ سؤال اصلی</span>
+        <span id="horse">🐎</span>
+      </div>
+    </div>
+
+    <div class="submit-zone">
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>ارسال بازخورد 🐎</button>
+      <div class="submit-hint" id="submitHint">برای فعال شدن دکمه، به ۵ سؤال اول پاسخ دهید</div>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="errorToast"></div>
+
+<script>
+(function () {
+  const requiredFields = ['major_fit', 'motive_accuracy', 'strategy_fit', 'value_fit', 'nps'];
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  const horse = document.getElementById('horse');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitHint = document.getElementById('submitHint');
+  const FEEDBACK_API = 'https://asbe-siah.liara.run/api/v1/feedback';
+
+  function toFa(n) {
+    return String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+  }
+
+  function buildRates() {
+    document.querySelectorAll('.rate-row').forEach(row => {
+      const name = row.getAttribute('data-name');
+      row.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const lab = document.createElement('label');
+        lab.innerHTML = '<input type="radio" name="' + name + '" value="' + i + '"><span>' + toFa(i) + '</span>';
+        row.appendChild(lab);
+      }
+    });
+    const nps = document.getElementById('npsRow');
+    nps.innerHTML = '';
+    for (let i = 0; i <= 10; i++) {
+      const lab = document.createElement('label');
+      lab.innerHTML = '<input type="radio" name="nps" value="' + i + '"><span>' + toFa(i) + '</span>';
+      nps.appendChild(lab);
+    }
+  }
+
+  function parseExamFromQuery() {
+    const q = new URLSearchParams(location.search);
+    return {
+      code: q.get('code') || q.get('exam') || '—',
+      date: q.get('date') || new Date().toISOString().slice(0, 10),
+      major: q.get('major') || '—',
+      score: q.get('score') || '—'
+    };
+  }
+
+  window._exam = parseExamFromQuery();
+  document.getElementById('examCode').textContent = window._exam.code;
+  document.getElementById('examMajor').textContent = window._exam.major;
+  document.getElementById('examScore').textContent = window._exam.score;
+
+  function updateProgress() {
+    let answered = 0;
+    requiredFields.forEach(f => {
+      if (document.querySelector('input[name="' + f + '"]:checked')) answered++;
+    });
+    const pct = Math.round((answered / requiredFields.length) * 100);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = toFa(answered) + ' از ' + toFa(requiredFields.length) + ' سؤال اصلی';
+    horse.style.transform = 'translateX(' + (pct * 0.4) + 'px)';
+    if (answered >= requiredFields.length) {
+      submitBtn.disabled = false;
+      submitHint.textContent = 'آماده ارسال — از پاسخ‌های شما سپاسگزاریم';
+    } else {
+      submitBtn.disabled = true;
+      submitHint.textContent = 'برای فعال شدن دکمه، به ' + toFa(requiredFields.length - answered) + ' سؤال دیگر پاسخ دهید';
+    }
+  }
+
+  buildRates();
+  document.querySelectorAll('input[type="radio"]').forEach(r => r.addEventListener('change', updateProgress));
+  updateProgress();
+
+  document.getElementById('feedbackForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    let answered = 0;
+    requiredFields.forEach(f => {
+      if (document.querySelector('input[name="' + f + '"]:checked')) answered++;
+    });
+    if (answered < requiredFields.length) {
+      const toast = document.getElementById('errorToast');
+      toast.textContent = 'لطفاً به همه سؤالات ستاره‌دار پاسخ دهید';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+      return;
+    }
+
+    const data = {
+      exam_code: window._exam.code === '—' ? null : window._exam.code,
+      exam_date: window._exam.date,
+      suggested_major: window._exam.major === '—' ? null : window._exam.major,
+      suggested_score: null,
+      major_fit: +document.querySelector('input[name="major_fit"]:checked').value,
+      motive_accuracy: +document.querySelector('input[name="motive_accuracy"]:checked').value,
+      strategy_fit: +document.querySelector('input[name="strategy_fit"]:checked').value,
+      value_fit: +document.querySelector('input[name="value_fit"]:checked').value,
+      nps: +document.querySelector('input[name="nps"]:checked').value,
+      desired_major: (document.querySelector('input[name="desired_major"]').value || '').trim() || null,
+      comments: (document.querySelector('textarea[name="comments"]').value || '').trim() || null,
+      submitted_at: new Date().toISOString()
+    };
+    const scoreNum = Number(window._exam.score);
+    data.suggested_score = Number.isFinite(scoreNum) ? scoreNum : null;
+
+    try {
+      const all = JSON.parse(localStorage.getItem('dh_feedbacks') || '[]');
+      all.push(data);
+      localStorage.setItem('dh_feedbacks', JSON.stringify(all));
+    } catch (_) {}
+
+    submitBtn.disabled = true;
+    submitHint.textContent = 'در حال ارسال به سرور…';
+
+    fetch(FEEDBACK_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    })
+      .then(async (res) => {
+        let body = null;
+        try { body = await res.json(); } catch (_) {}
+        if (!res.ok) {
+          const detail = body && body.detail;
+          let msg = 'خطای سرور: ' + res.status;
+          if (typeof detail === 'string') msg = detail;
+          else if (detail) msg = JSON.stringify(detail);
+          else if (body && body.message) msg = body.message;
+          throw new Error(msg);
+        }
+        document.getElementById('feedbackForm').style.display = 'none';
+        document.getElementById('thanks').classList.add('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch((err) => {
+        console.error('feedback submit failed', err);
+        const toast = document.getElementById('errorToast');
+        toast.textContent = 'ارسال به سرور ناموفق بود؛ پاسخ‌ها موقتاً روی دستگاه ذخیره شد. دوباره تلاش کنید.';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3500);
+        submitBtn.disabled = false;
+        submitHint.textContent = 'ارسال ناموفق — می‌توانید دوباره تلاش کنید';
+      });
+  });
+})();
+</script>
+</body>
+</html>
