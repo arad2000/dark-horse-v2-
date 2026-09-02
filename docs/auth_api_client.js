@@ -27,6 +27,10 @@
     getSession() { return load(); },
     isLoggedIn() { const s = load(); return !!(s && s.token); },
     getUser() { const s = load(); return s && s.user ? s.user : null; },
+    isAdmin() {
+      const u = this.getUser();
+      return !!(u && (u.role === 'admin' || u.role === 'support'));
+    },
     logout() { clear(); },
 
     async register(name, phone, password) {
@@ -80,6 +84,20 @@
 
     async createPayment() {
       return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
+    },
+
+    async adminDashboard() {
+      return req('/api/v1/admin/dashboard');
+    },
+
+    async adminFeedback(limit) {
+      const n = Math.max(1, Math.min(200, Number(limit) || 50));
+      return req('/api/v1/admin/feedback?limit=' + n);
+    },
+
+    async adminUsers(limit) {
+      const n = Math.max(1, Math.min(500, Number(limit) || 50));
+      return req('/api/v1/admin/users?limit=' + n);
     }
   };
 
