@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from admin_service import grant_credits, revoke_entitlement, require_admin
 from billing_models import AdminAuditLog, Entitlement, Order, Payment, PremiumPlan, User
+from models import UserFeedback, UserSession
 
 
 def dashboard_summary(db: Session, actor: User) -> dict[str, int]:
@@ -23,7 +24,40 @@ def dashboard_summary(db: Session, actor: User) -> dict[str, int]:
         "active_plans_total": int(
             db.scalar(select(func.count(PremiumPlan.id)).where(PremiumPlan.is_active.is_(True))) or 0
         ),
+        "feedback_total": int(db.scalar(select(func.count(UserFeedback.id))) or 0),
     }
+
+
+def list_feedback(db: Session, actor: User, *, limit: int = 50) -> list[dict]:
+    require_admin(actor)
+    if limit < 1 or limit > 200:
+        raise ValueError("limit must be between 1 and 200")
+
+    rows = db.scalars(
+        select(UserFeedback).order_by(UserFeedback.created_at.desc()).limit(limit)
+    ).all()
+
+    out: list[dict] = []
+    for row in rows:
+        session = db.get(UserSession, row.session_id)
+        conjoint = (session.conjoint_choices if session else None) or {}
+        out.append(
+            {
+                "id": int(row.id),
+                "session_id": int(row.session_id),
+                "session_uuid": getattr(session, "session_uuid", None),
+                "satisfaction_score": row.satisfaction_score,
+                "accuracy_rating": row.accuracy_rating,
+                "would_recommend": row.would_recommend,
+                "contact_for_research": bool(row.contact_for_research),
+                "email": row.email,
+                "comments": row.comments,
+                "exam_code": conjoint.get("exam_code") if isinstance(conjoint, dict) else None,
+                "suggested_major": conjoint.get("suggested_major") if isinstance(conjoint, dict) else None,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+        )
+    return out
 
 
 def admin_grant_credits(
