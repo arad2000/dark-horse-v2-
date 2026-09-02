@@ -25,10 +25,10 @@ This branch prepares and validates a safe, incremental migration.
 3. **Deterministic JSON-to-PostgreSQL seed — COMPLETE in staging CI**
    - Reference JSON remains source of truth.
    - Counts and source SHA-256 values are reported.
-   - BIOTM-prefixed references are explicitly recorded as deferred; all other unresolved references fail closed.
+   - **BIOTM correction complete:** `BIOTM-001..007` exist as first-class medical-biotechnology motives (distinct from `BIOT-001..007`). Every unresolved motive reference now fails closed.
 4. **Staged reference verification — COMPLETE in staging CI**
-   - Exact content/key comparisons pass for micro-motives, 160 majors, 4 school branches, 30 value poles, and 125 strategy options.
-   - Non-BIOTM many-to-many routes are verified exactly.
+   - Exact content/key comparisons pass for micro-motives (1106), 160 majors, 4 school branches, 30 value poles, and 125 strategy options.
+   - All many-to-many routes, including BIOTM, are verified exactly.
 5. **Operational persistence and API contracts — COMPLETE in staging CI**
    - Sessions, results, feedback, audit logs, RBAC, admin API/HTTP, and shadow safety contracts are covered.
 6. **Payment layer — COMPLETE for staging contract**
@@ -36,15 +36,15 @@ This branch prepares and validates a safe, incremental migration.
    - `pack_3_tests` grants exactly 3 credits after verified payment.
    - Price is server-side: 249,000 Toman = 2,490,000 IRR.
    - Mock and real ZarinPal adapters share one provider contract; Mock remains deterministic for CI.
-7. **Controlled JSON ↔ PostgreSQL dual-run — READY FOR FINAL CI RE-RUN**
+7. **Controlled JSON ↔ PostgreSQL dual-run — COMPLETE for staging fixtures**
    - JSON engine remains the live baseline.
    - PostgreSQL engine is staging-only.
    - Semantic output comparison covers recommendations, ordering, scores/components, evidence, warnings, best branch, and alternative paths.
-   - Non-semantic branch counters affected solely by intentionally deferred BIOTM routes are excluded from the equality check.
+   - Dual-run fixtures include a dedicated `medical_biotech` case (`BIOTM-001/004/007`).
 8. **Production cutover — BLOCKED / NOT APPROVED**
    - `POSTGRES_RUNTIME_CUTOVER_APPROVED=false`
    - `DARK_HORSE_SHADOW_PERSISTENCE=false`
-   - `main` must not be merged until final CI is green.
+   - This BIOTM branch must not be merged to `main`.
    - Liara production deployment is intentionally postponed until post-cutover approval.
 
 ## Validation rule
@@ -53,4 +53,4 @@ A migration is not considered complete merely because the schema exists. Referen
 
 ## Final gate
 
-The remaining technical gate is one clean CI run on the current `feature/postgresql-hybrid` HEAD. **No runtime switch, merge to `main`, or production deployment is permitted before that final green result.**
+The remaining product gate is an explicit reviewed commit that sets `POSTGRES_RUNTIME_CUTOVER_APPROVED = True` **after** this branch's CI is green **and** after a rebase onto current `main`. **No runtime switch, merge to `main`, or production deployment is permitted from this BIOTM correction alone.**

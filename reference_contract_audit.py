@@ -3,9 +3,8 @@
 Read-only. This script never connects to PostgreSQL and never changes runtime state.
 It validates the exact reference-data invariants required before a staging seed.
 
-BIOTM-* references are intentionally deferred until the dedicated BIOTM reference
-correction phase. They are reported as deferred findings, while every other
-unresolved motive reference remains a hard failure.
+Every major/branch micro-motive reference must resolve to an existing motive code.
+BIOTM-001..007 (medical biotechnology) are first-class motives, not deferred.
 """
 
 from __future__ import annotations
@@ -16,8 +15,6 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent
-DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
-
 FILES = {
     "micro_motives": ROOT / "docs" / "data" / "micro_motives.json",
     "majors": ROOT / "majors_database_v2.json",
@@ -188,7 +185,6 @@ def main() -> None:
         "status": "PASS",
         "runtime_cutover": "OFF",
         "errors": [],
-        "deferred": [],
         "files": {},
     }
 
@@ -232,7 +228,7 @@ def main() -> None:
         "value_poles": len(values),
     }
 
-    expected_counts = {"micro_motives": 1099, "majors": 160, "value_poles": 30}
+    expected_counts = {"micro_motives": 1106, "majors": 160, "value_poles": 30}
     for name, expected in expected_counts.items():
         actual = report["counts"][name]
         if actual != expected:
@@ -267,7 +263,6 @@ def main() -> None:
         report["status"] = "FAIL"
 
     missing_refs: list[dict[str, str]] = []
-    deferred_refs: list[dict[str, str]] = []
     motive_set = set(motive_codes)
     for kind, items in (("major", majors), ("branch", branches)):
         for item in items:
@@ -276,23 +271,19 @@ def main() -> None:
                 code = str(raw).strip()
                 if code in motive_set:
                     continue
-                finding = {"kind": kind, "owner": owner, "code": code}
-                if code.startswith(DEFERRED_MOTIVE_PREFIXES):
-                    deferred_refs.append(finding)
-                else:
-                    missing_refs.append(finding)
+                missing_refs.append({"kind": kind, "owner": owner, "code": code})
+
+    biotm = [c for c in motive_codes if c.startswith("BIOTM-")]
+    if biotm != [f"BIOTM-{i:03d}" for i in range(1, 8)]:
+        report["status"] = "FAIL"
+        report["errors"].append(f"biotm_codes_not_exact_001_to_007:{biotm}")
 
     report["motive_reference_integrity"] = {
         "missing": len(missing_refs),
         "pass": not missing_refs,
-        "deferred": len(deferred_refs),
-        "deferred_prefixes": list(DEFERRED_MOTIVE_PREFIXES),
-        "sample": (missing_refs + deferred_refs)[:20],
+        "biotm_codes": biotm,
+        "sample": missing_refs[:20],
     }
-    if deferred_refs:
-        report["deferred"].append(
-            f"unresolved_motive_references_deferred:{len(deferred_refs)}:prefixes={list(DEFERRED_MOTIVE_PREFIXES)}"
-        )
     if missing_refs:
         report["status"] = "FAIL"
         report["errors"].append(f"unresolved_motive_references:{len(missing_refs)}")
