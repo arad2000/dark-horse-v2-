@@ -1,0 +1,9 @@
+Current Hybrid validation marker.
+
+This file is intentionally non-functional and exists only to trigger a fresh GitHub Actions run on the current feature/postgresql-hybrid HEAD.
+
+Required safety conditions remain unchanged:
+- JSON scoring remains Source of Truth.
+- PostgreSQL remains staging/shadow only.
+- POSTGRES_RUNTIME_CUTOVER_APPROVED=false.
+- No merge to main.
