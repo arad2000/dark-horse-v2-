@@ -65,6 +65,7 @@ class BillingApiTests(unittest.TestCase):
             )
             db.commit()
             self.assertEqual(created["amount_rial"], 2_490_000)
+            self.assertIn(f"order_id={created['order_id']}", created["callback_url"])
             result = handle_payment_callback(
                 db,
                 order_public_id=created["order_id"],
