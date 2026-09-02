@@ -1,6 +1,6 @@
 """Admin API router mounted on the commercial Liara deploy.
 
-Operational-only: grant/revoke credits, dashboard counts, user list.
+Operational-only: grant/revoke credits, dashboard counts, user list, feedback.
 Does not touch scoring or reference JSON datasets.
 """
 from __future__ import annotations
@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from admin_api import admin_grant_credits, admin_revoke_entitlement, dashboard_summary
+from admin_api import admin_grant_credits, admin_revoke_entitlement, dashboard_summary, list_feedback
 from admin_service import list_user_summary
 from auth_service import resolve_session
 from billing_models import User
@@ -66,6 +66,20 @@ def list_users(
     except (PermissionError, ValueError) as exc:
         status = 403 if isinstance(exc, PermissionError) else 400
         raise HTTPException(status_code=status, detail=str(exc)) from exc
+
+
+@router.get("/feedback")
+def get_feedback(
+    limit: int = 50,
+    actor: User = Depends(current_admin),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    try:
+        return list_feedback(db, actor, limit=limit)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/credits/grant")
