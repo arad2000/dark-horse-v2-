@@ -41,14 +41,22 @@ class CommercialApiContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["token"], "raw-token")
         self.assertEqual(response.json()["quota"], 1)
+        self.assertNotIn("id", response.json()["user"])
+        self.assertNotIn("phone", response.json()["user"])
 
     def test_login_contract(self):
-        user = SimpleNamespace(id=8, public_id="public-8", name="Login User", phone="09120000002", role="user", status="active")
+        user = SimpleNamespace(id=8, public_id="public-8", name="Login User", phone="09120000002", password="unused", role="user", status="active")
         with patch("commercial_api.authenticate_user", return_value=(user, "login-token")), patch("commercial_api.ensure_free_entitlement"), patch("commercial_api._quota", return_value=1):
             response = self.client.post("/api/v1/auth/login", json={"phone": user.phone, "password": "strong-pass-123"})
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["token"], "login-token")
         self.assertEqual(response.json()["quota"], 1)
+        self.assertNotIn("id", response.json()["user"])
+        self.assertNotIn("phone", response.json()["user"])
+
+    def test_register_rejects_invalid_phone_at_http_boundary(self):
+        response = self.client.post("/api/v1/auth/register", json={"name": "Invalid", "phone": "12345", "password": "strong-pass-123"})
+        self.assertEqual(response.status_code, 422, response.text)
 
     def test_bearer_protection_and_me(self):
         user = SimpleNamespace(id=9, public_id="public-9", name="Me User", phone="09120000003", role="user", status="active")
@@ -57,6 +65,8 @@ class CommercialApiContractTests(unittest.TestCase):
             response = self.client.get("/api/v1/me", headers={"Authorization": "Bearer token"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["user"]["public_id"], "public-9")
+        self.assertNotIn("id", response.json()["user"])
+        self.assertNotIn("phone", response.json()["user"])
 
     def test_quota_contract(self):
         user = SimpleNamespace(id=10)
