@@ -192,6 +192,23 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
+# Defensive invariant: the commercial router is expected to be populated before
+# main_v2 imports it, but this guard makes the production app fail-safe if an
+# import-order/circular-initialization path leaves it not yet mounted.
+_COMMERCIAL_ROUTE_PATHS = {
+    "/api/v1/auth/register",
+    "/api/v1/auth/login",
+    "/api/v1/me",
+    "/api/v1/me/quota",
+    "/api/v1/me/consume-test",
+    "/api/v1/billing/create-payment",
+    "/api/v1/billing/callback",
+}
+
+if _COMMERCIAL_ROUTE_PATHS - {getattr(route, "path", "") for route in app.routes}:
+    app.include_router(commercial_router)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main_v2:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=False)
