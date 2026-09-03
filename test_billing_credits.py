@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -101,6 +102,26 @@ class BillingCreditTests(unittest.TestCase):
             db.commit()
             with self.assertRaises(ValueError):
                 consume_one_test(db, 1)
+
+    def test_expired_entitlement_cannot_be_consumed(self):
+        with self.SessionLocal() as db:
+            db.add(
+                Entitlement(
+                    user_id=1,
+                    plan_id=2,
+                    source="payment",
+                    credits_granted=3,
+                    credits_remaining=3,
+                    starts_at=datetime.now(timezone.utc) - timedelta(days=2),
+                    expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+                    status="active",
+                )
+            )
+            db.commit()
+            with self.assertRaisesRegex(ValueError, "no valid test credits remaining"):
+                consume_one_test(db, 1)
+            remaining = db.query(Entitlement).one().credits_remaining
+            self.assertEqual(remaining, 3)
 
     def test_plan_price_is_server_side_and_exact(self):
         with self.SessionLocal() as db:
