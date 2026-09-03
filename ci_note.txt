@@ -1,5 +1,8 @@
-CI validation note: BIOTM-001..007 correction is complete on this branch.
+CI validation note: commercial HTTP mount + auth/role hardening is staged on this branch.
 Keep production cutover OFF. Do not merge to main from this branch.
-JSON remains the scoring source of truth. PostgreSQL staging must now
-materialize BIOTM links exactly; unresolved motive references are hard failures.
+JSON remains the scoring source of truth.
+Auth/credits/billing live under /api/v1 with mock provider in CI.
+Public responses omit internal sequential ids.
+Admin HTTP stays unmounted on main_v2.
+Live ZarinPal requires ZARINPAL_PRODUCTION_APPROVED.
 Runtime gate: POSTGRES_RUNTIME_CUTOVER_APPROVED = false.
