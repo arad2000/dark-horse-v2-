@@ -192,9 +192,9 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
-# Defensive invariant: the commercial router is expected to be populated before
-# main_v2 imports it, but this guard makes the production app fail-safe if an
-# import-order/circular-initialization path leaves it not yet mounted.
+# Defensive invariant: ensure every commercial route is present at the actual
+# application router boundary. This is deliberately path-based and idempotent;
+# existing routes are preserved and never duplicated.
 _COMMERCIAL_ROUTE_PATHS = {
     "/api/v1/auth/register",
     "/api/v1/auth/login",
@@ -205,8 +205,20 @@ _COMMERCIAL_ROUTE_PATHS = {
     "/api/v1/billing/callback",
 }
 
-if _COMMERCIAL_ROUTE_PATHS - {getattr(route, "path", "") for route in app.routes}:
-    app.include_router(commercial_router)
+
+def _ensure_commercial_router_mounted() -> None:
+    registered_paths = {getattr(route, "path", "") for route in app.router.routes}
+    missing_routes = [
+        route for route in commercial_router.routes
+        if getattr(route, "path", "") in _COMMERCIAL_ROUTE_PATHS
+        and getattr(route, "path", "") not in registered_paths
+    ]
+    for route in missing_routes:
+        app.router.routes.append(route)
+        registered_paths.add(route.path)
+
+
+_ensure_commercial_router_mounted()
 
 
 if __name__ == "__main__":
