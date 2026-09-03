@@ -26,21 +26,20 @@ router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "billing"])
 
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=200)
-    phone: str = Field(min_length=3, max_length=32)
+    phone: str = Field(pattern=r"^09\d{9}$")
     password: str = Field(min_length=8, max_length=256)
 
 
 class LoginRequest(BaseModel):
-    phone: str = Field(min_length=3, max_length=32)
+    phone: str = Field(pattern=r"^09\d{9}$")
     password: str = Field(min_length=8, max_length=256)
 
 
 def _public_user(user: User) -> dict[str, object]:
+    # Do not expose the internal sequential DB id or registered phone number.
     return {
-        "id": user.id,
         "public_id": user.public_id,
         "name": user.name,
-        "phone": user.phone,
         "role": user.role,
         "status": user.status,
     }
