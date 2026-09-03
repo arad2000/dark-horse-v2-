@@ -11,6 +11,7 @@ from auth_service import (
     authenticate_user,
     hash_password,
     hash_token,
+    normalize_phone,
     register_user,
     resolve_session,
     revoke_session,
@@ -94,6 +95,21 @@ class AuthServiceTests(unittest.TestCase):
             db.commit()
             with self.assertRaises(ValueError):
                 resolve_session(db, "expired-token")
+
+    def test_persian_digits_normalize_to_iranian_mobile(self):
+        self.assertEqual(normalize_phone("\u06f0\u06f9\u06f1\u06f2\u06f3\u06f4\u06f5\u06f6\u06f7\u06f8\u06f9"), "09123456789")
+        with self.assertRaises(ValueError):
+            normalize_phone("12345")
+
+    def test_suspended_user_cannot_authenticate_or_resolve(self):
+        with self.SessionLocal() as db:
+            user, token = register_user(db, name="Suspended", phone="09330000000", password="strong-pass-123")
+            user.status = "suspended"
+            db.commit()
+            with self.assertRaises(ValueError):
+                authenticate_user(db, phone="09330000000", password="strong-pass-123")
+            with self.assertRaises(ValueError):
+                resolve_session(db, token)
 
 
 if __name__ == "__main__":
