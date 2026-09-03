@@ -209,17 +209,20 @@ def verify_and_grant(
 
 
 def consume_one_test(db: Session, user_id: int) -> Entitlement:
-    """Consume exactly one test credit from the oldest active entitlement.
+    """Consume exactly one unexpired active test credit.
 
-    Row locking is used on PostgreSQL to serialize concurrent consumption. The
-    operation fails instead of allowing negative credits.
+    PostgreSQL row locking serializes concurrent consumption. Expired entitlements
+    are excluded from the locked SELECT so they can never be spent accidentally.
+    The operation fails instead of allowing negative credits.
     """
+    now = utcnow()
     stmt = (
         select(Entitlement)
         .where(
             Entitlement.user_id == user_id,
             Entitlement.status == "active",
             Entitlement.credits_remaining > 0,
+            (Entitlement.expires_at.is_(None) | (Entitlement.expires_at > now)),
         )
         .order_by(Entitlement.created_at.asc(), Entitlement.id.asc())
     )
@@ -228,7 +231,7 @@ def consume_one_test(db: Session, user_id: int) -> Entitlement:
 
     entitlement = db.scalar(stmt)
     if entitlement is None:
-        raise ValueError("no test credits remaining")
+        raise ValueError("no valid test credits remaining")
     entitlement.credits_remaining -= 1
     db.flush()
     return entitlement
