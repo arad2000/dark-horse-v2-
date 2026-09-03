@@ -5,6 +5,8 @@ on:
     branches:
       - feature/postgresql-hybrid
       - feature/postgresql-hybrid-biotm
+      - feature/postgresql-hybrid-commercial-mount
+      - feature/postgresql-hybrid-admin-hardening
   pull_request:
     branches:
       - main
@@ -32,6 +34,7 @@ jobs:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
       POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
       DARK_HORSE_SHADOW_PERSISTENCE: "false"
+      BILLING_PROVIDER: mock
       PYTHONUNBUFFERED: "1"
 
     steps:
@@ -64,6 +67,15 @@ jobs:
 
       - name: Run authentication service tests
         run: python -m unittest -v test_auth_service.py
+
+      - name: Run commercial mount safety tests
+        run: python -m unittest -v test_commercial_mount_safety.py
+
+      - name: Run commercial API contract tests
+        run: python -m unittest -v test_commercial_api.py
+
+      - name: Run commercial billing PostgreSQL E2E tests
+        run: python -m unittest -v test_commercial_billing_e2e.py
 
       - name: Run billing model integrity tests
         run: python -m unittest -v test_billing_models.py
