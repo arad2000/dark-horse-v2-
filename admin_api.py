@@ -1,25 +1,28 @@
-"""Protected Admin API facade over the staged admin service.
+"""Staged Admin API facade.
 
-This module is intentionally standalone: it does not alter main_v2.py, scoring,
-reference JSON, or production deployment state. Callers must resolve the actor
-from the existing authentication layer before invoking these functions.
+Operational-only facade over admin_service. Reference/psychometric source data
+and scoring logic are intentionally outside this API boundary.
 """
 from __future__ import annotations
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from admin_service import grant_credits, list_user_summary, revoke_entitlement
-from billing_models import User
+from admin_service import grant_credits, revoke_entitlement, require_admin
+from billing_models import AdminAuditLog, Entitlement, Order, Payment, PremiumPlan, User
 
 
-def dashboard_summary(db: Session, actor: User) -> dict:
-    """Return a conservative operational dashboard summary."""
-    users = list_user_summary(db, actor, limit=500)
+def dashboard_summary(db: Session, actor: User) -> dict[str, int]:
+    require_admin(actor)
     return {
-        "users_total": len(users),
-        "users_active": sum(1 for item in users if item["status"] == "active"),
-        "users_suspended": sum(1 for item in users if item["status"] == "suspended"),
-        "note": "Operational summary only; no scoring/reference-data editing.",
+        "users_total": int(db.scalar(select(func.count(User.id))) or 0),
+        "orders_total": int(db.scalar(select(func.count(Order.id))) or 0),
+        "payments_total": int(db.scalar(select(func.count(Payment.id))) or 0),
+        "entitlements_total": int(db.scalar(select(func.count(Entitlement.id))) or 0),
+        "audit_logs_total": int(db.scalar(select(func.count(AdminAuditLog.id))) or 0),
+        "active_plans_total": int(
+            db.scalar(select(func.count(PremiumPlan.id)).where(PremiumPlan.is_active.is_(True))) or 0
+        ),
     }
 
 
@@ -30,14 +33,18 @@ def admin_grant_credits(
     user_id: int,
     plan_code: str,
     reason: str,
-) -> dict:
-    entitlement = grant_credits(db, actor, user_id=user_id, plan_code=plan_code, reason=reason)
+) -> dict[str, int | str]:
+    entitlement = grant_credits(
+        db,
+        actor,
+        user_id=user_id,
+        plan_code=plan_code,
+        reason=reason,
+    )
     return {
-        "entitlement_id": entitlement.id,
-        "user_id": entitlement.user_id,
-        "plan_id": entitlement.plan_id,
-        "credits_granted": entitlement.credits_granted,
-        "credits_remaining": entitlement.credits_remaining,
+        "entitlement_id": int(entitlement.id),
+        "credits_granted": int(entitlement.credits_granted),
+        "credits_remaining": int(entitlement.credits_remaining),
         "status": entitlement.status,
     }
 
@@ -48,10 +55,15 @@ def admin_revoke_entitlement(
     *,
     entitlement_id: int,
     reason: str,
-) -> dict:
-    entitlement = revoke_entitlement(db, actor, entitlement_id=entitlement_id, reason=reason)
+) -> dict[str, int | str]:
+    entitlement = revoke_entitlement(
+        db,
+        actor,
+        entitlement_id=entitlement_id,
+        reason=reason,
+    )
     return {
-        "entitlement_id": entitlement.id,
+        "entitlement_id": int(entitlement.id),
+        "credits_remaining": int(entitlement.credits_remaining),
         "status": entitlement.status,
-        "credits_remaining": entitlement.credits_remaining,
     }
