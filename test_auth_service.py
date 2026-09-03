@@ -11,6 +11,7 @@ from auth_service import (
     authenticate_user,
     hash_password,
     hash_token,
+    normalize_phone,
     register_user,
     resolve_session,
     revoke_session,
@@ -48,6 +49,13 @@ class AuthServiceTests(unittest.TestCase):
         self.assertNotEqual(encoded, "strong-pass-123")
         self.assertTrue(verify_password("strong-pass-123", encoded))
         self.assertFalse(verify_password("wrong-pass", encoded))
+
+    def test_phone_validation_rejects_invalid_and_normalizes_persian_digits(self):
+        self.assertEqual(normalize_phone(" ۰۹۱۲۳۴۵۶۷۸۹ "), "09123456789")
+        for value in ("091234", "0912345678", "989123456789", "+989123456789", "09123abc789"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    normalize_phone(value)
 
     def test_register_login_resolve_and_revoke(self):
         with self.SessionLocal() as db:
