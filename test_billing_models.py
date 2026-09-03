@@ -90,6 +90,43 @@ class BillingModelTests(unittest.TestCase):
             with self.assertRaises(IntegrityError):
                 db.commit()
 
+    def test_payment_transaction_partial_unique_allows_multiple_nulls_but_blocks_duplicates(self):
+        with Session(self.engine) as db:
+            user = User(public_id="u-3", name="Test", phone="09123333333")
+            plan = PremiumPlan(code="p3", name_fa="پ", price_minor=1000, currency="IRR", features={})
+            db.add_all([user, plan])
+            db.flush()
+            order1 = Order(public_id="o-3", user_id=user.id, plan_id=plan.id, amount_minor=1000, currency="IRR")
+            order2 = Order(public_id="o-4", user_id=user.id, plan_id=plan.id, amount_minor=1000, currency="IRR")
+            db.add_all([order1, order2])
+            db.flush()
+            db.add_all([
+                Payment(order_id=order1.id, provider="zarinpal", amount_minor=1000, currency="IRR", provider_transaction_id=None),
+                Payment(order_id=order2.id, provider="zarinpal", amount_minor=1000, currency="IRR", provider_transaction_id=None),
+            ])
+            db.commit()
+            db.add(
+                Payment(
+                    order_id=order2.id,
+                    provider="zarinpal",
+                    amount_minor=1000,
+                    currency="IRR",
+                    provider_transaction_id="txn-1",
+                )
+            )
+            db.commit()
+            db.add(
+                Payment(
+                    order_id=order1.id,
+                    provider="zarinpal",
+                    amount_minor=1000,
+                    currency="IRR",
+                    provider_transaction_id="txn-1",
+                )
+            )
+            with self.assertRaises(IntegrityError):
+                db.commit()
+
     def test_admin_audit_requires_admin_user_fk(self):
         with Session(self.engine) as db:
             db.add(AdminAuditLog(admin_user_id=999, action="grant", target_type="entitlement", target_id="1", metadata_json={"reason": "test"}))
