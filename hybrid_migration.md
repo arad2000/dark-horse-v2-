@@ -36,15 +36,21 @@ This branch prepares and validates a safe, incremental migration.
    - `pack_3_tests` grants exactly 3 credits after verified payment.
    - Price is server-side: 249,000 Toman = 2,490,000 IRR.
    - Mock and real ZarinPal adapters share one provider contract; Mock remains deterministic for CI.
-7. **Controlled JSON ↔ PostgreSQL dual-run — COMPLETE for staging fixtures**
+   - ZarinPal sandbox hosts are used when `ZARINPAL_SANDBOX=true`. Live gateway requires `ZARINPAL_PRODUCTION_APPROVED`.
+7. **Commercial HTTP mount — COMPLETE in staging**
+   - `commercial_api.py` is mounted on `main_v2.py` as `/api/v1`.
+   - Endpoints: register/login/session, quota, atomic consume-test, create-payment, callback.
+   - Callback URLs always embed the server-issued `order_id`.
+   - JSON scoring endpoints `/api/v2/darkhorse/*` remain the live engine and are not billed inside the scoring path in this phase.
+8. **Controlled JSON ↔ PostgreSQL dual-run — COMPLETE for staging fixtures**
    - JSON engine remains the live baseline.
    - PostgreSQL engine is staging-only.
    - Semantic output comparison covers recommendations, ordering, scores/components, evidence, warnings, best branch, and alternative paths.
    - Dual-run fixtures include a dedicated `medical_biotech` case (`BIOTM-001/004/007`).
-8. **Production cutover — BLOCKED / NOT APPROVED**
+9. **Production cutover — BLOCKED / NOT APPROVED**
    - `POSTGRES_RUNTIME_CUTOVER_APPROVED=false`
    - `DARK_HORSE_SHADOW_PERSISTENCE=false`
-   - This BIOTM branch must not be merged to `main`.
+   - This branch must not be merged to `main`.
    - Liara production deployment is intentionally postponed until post-cutover approval.
 
 ## Validation rule
@@ -53,4 +59,4 @@ A migration is not considered complete merely because the schema exists. Referen
 
 ## Final gate
 
-The remaining product gate is an explicit reviewed commit that sets `POSTGRES_RUNTIME_CUTOVER_APPROVED = True` **after** this branch's CI is green **and** after a rebase onto current `main`. **No runtime switch, merge to `main`, or production deployment is permitted from this BIOTM correction alone.**
+The remaining product gate is an explicit reviewed commit that sets `POSTGRES_RUNTIME_CUTOVER_APPROVED = True` **after** this branch's CI is green **and** after a rebase onto current `main`. **No runtime switch, merge to `main`, or production deployment is permitted from this commercial-mount work alone.**

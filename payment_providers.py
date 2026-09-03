@@ -4,9 +4,9 @@ The real ZarinPal adapter is intentionally developed in parallel with the Mock
 provider. The Mock provider is used for deterministic CI; production credentials
 are never required for tests. Both implement the same request/verify contract.
 
-ZarinPal's current REST examples use /pg/v4/payment/request.json and
-/pg/v4/payment/verify.json, returning an authority and reference id on success.
-See ZarinPal Lab's official sample repository for the request/verify flow.
+Sandbox mode uses sandbox.zarinpal.com. Live mode is only reachable when the
+caller constructs the provider with sandbox=False (commercial_api additionally
+requires ZARINPAL_PRODUCTION_APPROVED).
 """
 from __future__ import annotations
 
@@ -74,16 +74,34 @@ class ZarinPalPaymentProvider:
     """
 
     name = "zarinpal"
-    DEFAULT_BASE_URL = "https://api.zarinpal.com/pg/v4/payment"
+    LIVE_BASE_URL = "https://api.zarinpal.com/pg/v4/payment"
+    SANDBOX_BASE_URL = "https://sandbox.zarinpal.com/pg/v4/payment"
+    LIVE_STARTPAY_URL = "https://www.zarinpal.com/pg/StartPay"
+    SANDBOX_STARTPAY_URL = "https://sandbox.zarinpal.com/pg/StartPay"
+    DEFAULT_BASE_URL = LIVE_BASE_URL
 
-    def __init__(self, merchant_id: str | None = None, base_url: str | None = None, timeout: float = 15.0):
+    def __init__(
+        self,
+        merchant_id: str | None = None,
+        base_url: str | None = None,
+        timeout: float = 15.0,
+        sandbox: bool | None = None,
+    ):
         self.merchant_id = merchant_id or os.getenv("ZARINPAL_MERCHANT_ID", "")
-        self.base_url = (base_url or os.getenv("ZARINPAL_BASE_URL") or self.DEFAULT_BASE_URL).rstrip("/")
+        if sandbox is None:
+            sandbox = os.getenv("ZARINPAL_SANDBOX", "false").strip().lower() in {"1", "true", "yes", "on"}
+        self.sandbox = bool(sandbox)
+        default_base = self.SANDBOX_BASE_URL if self.sandbox else self.LIVE_BASE_URL
+        self.base_url = (base_url or os.getenv("ZARINPAL_BASE_URL") or default_base).rstrip("/")
         self.timeout = timeout
 
     def _require_credentials(self) -> None:
         if not self.merchant_id:
             raise RuntimeError("ZARINPAL_MERCHANT_ID is not configured")
+
+    def _startpay_url(self, authority: str) -> str:
+        base = self.SANDBOX_STARTPAY_URL if self.sandbox else self.LIVE_STARTPAY_URL
+        return f"{base}/{authority}"
 
     def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]:
         self._require_credentials()
@@ -111,7 +129,8 @@ class ZarinPalPaymentProvider:
             "code": code,
             "authority": authority,
             "request_id": data.get("request_id"),
-            "payment_url": f"https://www.zarinpal.com/pg/StartPay/{authority}",
+            "payment_url": self._startpay_url(str(authority)),
+            "callback_url": callback_url,
             "raw": body,
         }
 

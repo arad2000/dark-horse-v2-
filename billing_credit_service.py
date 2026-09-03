@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Protocol
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -34,6 +35,14 @@ class PaymentProvider(Protocol):
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def attach_order_id(callback_url: str, order_public_id: str) -> str:
+    """Embed the server-issued order id so gateway callbacks can be resolved."""
+    parsed = urlparse(callback_url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query["order_id"] = order_public_id
+    return urlunparse(parsed._replace(query=urlencode(query)))
 
 
 def ensure_free_entitlement(db: Session, user_id: int) -> Entitlement:
@@ -100,6 +109,7 @@ def initiate_payment(
     db.add(order)
     db.flush()
 
+    callback_url = attach_order_id(callback_url, order.public_id)
     response = provider.request_payment(
         amount_rial=order.amount_minor,
         order_public_id=order.public_id,
@@ -120,6 +130,8 @@ def initiate_payment(
     )
     db.add(payment)
     db.flush()
+    response = dict(response)
+    response["callback_url"] = callback_url
     return order, payment, response
 
 
