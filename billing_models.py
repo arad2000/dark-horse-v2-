@@ -7,7 +7,7 @@ The product is credit-based, not a time subscription:
 """
 from __future__ import annotations
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from models import Base
@@ -87,7 +87,13 @@ class Payment(Base):
     __table_args__ = (
         Index("idx_payments_provider_authority", "provider", "provider_authority"),
         Index("idx_payments_status", "status"),
-        UniqueConstraint("provider", "provider_transaction_id", name="uq_payment_provider_transaction"),
+        Index(
+            "uq_payment_provider_transaction",
+            "provider",
+            "provider_transaction_id",
+            unique=True,
+            postgresql_where=text("provider_transaction_id IS NOT NULL"),
+        ),
     )
     id = Column(BigInteger, primary_key=True)
     order_id = Column(BigInteger, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
