@@ -1,8 +1,7 @@
 """Billing API service functions for staged/sandbox integration.
 
-This module is intentionally not imported by ``main_v2.py`` yet. It provides the
-API-facing orchestration for credit purchases while keeping the existing JSON
-scoring runtime untouched.
+HTTP mounting lives in ``commercial_api.py``. This module remains the
+API-facing orchestration for credit purchases while JSON scoring stays untouched.
 
 Rules:
 - Only ``pack_3_tests`` is purchasable here.
@@ -17,8 +16,8 @@ from urllib.parse import urlparse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from billing_credit_service import create_pack_order, initiate_payment, verify_and_grant
-from billing_models import Order, Payment, PremiumPlan
+from billing_credit_service import attach_order_id, initiate_payment, verify_and_grant
+from billing_models import Order, Payment
 from payment_providers import MockPaymentProvider, PaymentProvider, ZarinPalPaymentProvider
 
 
@@ -52,6 +51,7 @@ def create_payment_request(
 
     The DB transaction is owned by the caller. The provider is called only after
     server-side plan resolution; the client cannot supply amount or credit count.
+    The callback URL always includes the server-issued ``order_id``.
     """
     if provider_name not in ALLOWED_PROVIDER_NAMES:
         raise ValueError("unsupported payment provider")
@@ -72,6 +72,7 @@ def create_payment_request(
         "currency": payment.currency,
         "payment_url": provider_response["payment_url"],
         "authority": payment.provider_authority,
+        "callback_url": provider_response.get("callback_url") or attach_order_id(callback_url, order.public_id),
     }
 
 

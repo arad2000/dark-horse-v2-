@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -22,6 +23,7 @@ PASSWORD_ALGORITHM = "pbkdf2_sha256"
 PASSWORD_ITERATIONS = 600_000
 TOKEN_BYTES = 32
 DEFAULT_SESSION_DAYS = 30
+IRAN_MOBILE_RE = re.compile(r"^09\d{9}$")
 
 
 def utcnow() -> datetime:
@@ -32,6 +34,13 @@ def normalize_phone(phone: str) -> str:
     value = "".join((phone or "").split())
     if not value:
         raise ValueError("phone is required")
+    translation = str.maketrans(
+        "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩",
+        "0123456789" + "0123456789",
+    )
+    value = value.translate(translation)
+    if not IRAN_MOBILE_RE.fullmatch(value):
+        raise ValueError("phone must be a valid Iranian mobile number")
     return value
 
 
@@ -71,6 +80,8 @@ def hash_token(token: str) -> str:
 def issue_session(db: Session, user: User, days: int = DEFAULT_SESSION_DAYS) -> tuple[str, AuthSession]:
     if days <= 0:
         raise ValueError("session lifetime must be positive")
+    if user.status != "active":
+        raise ValueError("user is not active")
     raw_token = secrets.token_urlsafe(TOKEN_BYTES)
     session = AuthSession(
         user_id=user.id,
