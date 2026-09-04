@@ -59,8 +59,8 @@ def _run_alembic(*args: str) -> None:
     )
 
 
-def _scalar(conn, sql: str):
-    return conn.execute(text(sql)).scalar()
+def _scalar(conn, sql: str, params: dict | None = None):
+    return conn.execute(text(sql), params or {}).scalar()
 
 
 def test_postgresql_full_migration_round_trip():
@@ -74,10 +74,8 @@ def test_postgresql_full_migration_round_trip():
         tables = set(inspector.get_table_names())
         assert EXPECTED_TABLES.issubset(tables)
 
-        alembic_revision = _scalar(
-            engine.connect(),
-            "SELECT version_num FROM alembic_version",
-        )
+        with engine.connect() as conn:
+            alembic_revision = _scalar(conn, "SELECT version_num FROM alembic_version")
         assert alembic_revision == "0007_auth_challenges_saved_results"
 
         # PostgreSQL identity/autoincrement behavior for all newly-added BIGINT PKs.
@@ -161,13 +159,14 @@ def test_postgresql_full_migration_round_trip():
                 {"order_id": order_id},
             )
             with pytest.raises(Exception):
-                conn.execute(
-                    text(
-                        "INSERT INTO payments (order_id, provider, provider_transaction_id, amount_minor, currency) "
-                        "VALUES (:order_id, 'mock', 'txn-1', 0, 'IRR')"
-                    ),
-                    {"order_id": order_id},
-                )
+                with conn.begin_nested():
+                    conn.execute(
+                        text(
+                            "INSERT INTO payments (order_id, provider, provider_transaction_id, amount_minor, currency) "
+                            "VALUES (:order_id, 'mock', 'txn-1', 0, 'IRR')"
+                        ),
+                        {"order_id": order_id},
+                    )
 
         index_names = {
             item["name"]
