@@ -1,8 +1,20 @@
 from main_v2 import app
 
 
+def _paths(routes):
+    paths = set()
+    for route in routes:
+        path = getattr(route, "path", None)
+        if path:
+            paths.add(path)
+        nested = getattr(route, "routes", None)
+        if nested:
+            paths.update(_paths(nested))
+    return paths
+
+
 def test_runtime_routes_are_mounted():
-    paths = {route.path for route in app.routes}
+    paths = _paths(app.routes)
     expected = {
         "/api/v1/auth/register",
         "/api/v1/auth/register/verify",
@@ -26,6 +38,6 @@ def test_runtime_routes_are_mounted():
 
 
 def test_scoring_routes_remain_present():
-    paths = {route.path for route in app.routes}
+    paths = _paths(app.routes)
     assert "/api/v2/darkhorse/discover" in paths
     assert "/api/v2/darkhorse/branch-discovery" in paths
