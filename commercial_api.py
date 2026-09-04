@@ -1,7 +1,8 @@
 """Staged commercial API wiring for Dark Horse V2.
 
-This module exposes authentication, test-credit, and sandbox billing endpoints
-without touching scoring/ranking or enabling PostgreSQL runtime cutover.
+This module exposes authentication, test-credit, saved-result and sandbox
+billing endpoints without touching scoring/ranking or enabling PostgreSQL
+runtime cutover.
 """
 from __future__ import annotations
 
@@ -15,11 +16,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from auth_service import authenticate_user, register_user, resolve_session
+from auth_service import authenticate_user, create_verified_user, resolve_session
 from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement
-from billing_models import Entitlement, User
+from billing_models import Entitlement, RegistrationChallenge, SavedResult, User
 from database import get_db
+from otp_service import create_registration_challenge, send_code, verify_registration_challenge
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "billing"])
 
@@ -30,13 +32,22 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=256)
 
 
+class VerifyRegistrationRequest(BaseModel):
+    challenge_id: str = Field(min_length=1, max_length=36)
+    code: str = Field(min_length=6, max_length=6)
+
+
 class LoginRequest(BaseModel):
     phone: str = Field(pattern=r"^09\d{9}$")
     password: str = Field(min_length=8, max_length=256)
 
 
+class SaveResultRequest(BaseModel):
+    result_summary: dict = Field(default_factory=dict)
+    session_uuid: str | None = Field(default=None, min_length=1, max_length=36)
+
+
 def _public_user(user: User) -> dict[str, object]:
-    # Do not expose the internal sequential DB id or registered phone number.
     return {
         "public_id": user.public_id,
         "name": user.name,
@@ -80,12 +91,6 @@ def _current_user(
 
 
 def _server_billing_provider() -> str:
-    """Choose the provider from server configuration and fail closed for live payments.
-
-    ZarinPal is allowed here only in explicit sandbox mode. Live gateway use needs
-    a separate production approval flag so forgetting ``ZARINPAL_SANDBOX`` cannot
-    silently send a payment request to the live endpoint.
-    """
     provider = os.getenv("BILLING_PROVIDER", "mock").strip().lower()
     if provider not in {"mock", "zarinpal"}:
         raise HTTPException(status_code=503, detail="billing provider is misconfigured")
@@ -111,8 +116,34 @@ def _frontend_redirect(payment: str) -> str:
 
 @router.post("/auth/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    """Start registration and persist only a verification challenge until OTP succeeds."""
     try:
-        user, token = register_user(db, name=req.name, phone=req.phone, password=req.password)
+        row, code = create_registration_challenge(db, name=req.name, phone=req.phone, password=req.password)
+        send_code(row.phone, code)
+        db.commit()
+        response = {"challenge_id": row.challenge_id, "expires_in": max(0, int((row.expires_at - datetime.now(timezone.utc)).total_seconds()))}
+        # Test/staging can opt into returning the mock code. Production should not.
+        if os.getenv("OTP_EXPOSE_DEBUG_CODE", "false").strip().lower() in {"1", "true", "yes", "on"}:
+            response["debug_code"] = code
+        return response
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.post("/auth/register/verify")
+def verify_registration(req: VerifyRegistrationRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    try:
+        challenge = verify_registration_challenge(db, challenge_id=req.challenge_id, code=req.code)
+        user, token = create_verified_user(
+            db,
+            name=challenge.name,
+            phone=challenge.phone,
+            password_hash=challenge.password_hash,
+        )
         ensure_free_entitlement(db, user.id)
         db.commit()
         return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id)}
@@ -160,13 +191,21 @@ def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+@router.post("/me/save-result")
+def save_result(req: SaveResultRequest, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    try:
+        row = SavedResult(user_id=user.id, session_uuid=req.session_uuid, result_summary=req.result_summary)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {"saved": True, "result_id": row.id}
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="ذخیره نتیجه ناموفق بود") from exc
+
+
 @router.post("/billing/create-payment")
 def create_payment(request: Request, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
-    """Create a payment attempt for the canonical 3-test pack.
-
-    Provider selection and amount are server-authoritative. The normal default is
-    mock/sandbox; switching to ZarinPal requires explicit server configuration.
-    """
     try:
         provider = _server_billing_provider()
         result = create_payment_request(
@@ -194,12 +233,6 @@ def billing_callback(
     status: str | None = Query(default=None, alias="Status"),
     db: Session = Depends(get_db),
 ):
-    """Verify the gateway callback and return the user to the static app.
-
-    ZarinPal returns ``Authority`` and ``Status`` query parameters. ``order_id``
-    is appended to the callback URL at payment creation so the server can
-    resolve the pending payment before verification.
-    """
     try:
         provider = _server_billing_provider()
         result = handle_payment_callback(
