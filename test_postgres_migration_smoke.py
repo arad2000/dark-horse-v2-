@@ -104,9 +104,9 @@ def test_postgresql_full_migration_round_trip():
             conn.execute(
                 text(
                     "INSERT INTO saved_results (user_id, result_summary) "
-                    "VALUES (:user_id, '{\"ok\":true}')"
+                    "VALUES (:user_id, CAST(:summary AS jsonb))"
                 ),
-                {"user_id": user_id},
+                {"user_id": user_id, "summary": '{"ok":true}'},
             )
             saved_id = _scalar(
                 conn,
@@ -121,9 +121,10 @@ def test_postgresql_full_migration_round_trip():
                 text(
                     "INSERT INTO premium_plans "
                     "(code, name_fa, plan_type, duration_days, credits_granted, price_minor, currency, features) "
-                    "VALUES ('smoke-plan', 'Smoke', 'credits', NULL, 1, 0, 'IRR', '{\"tests\":1}') "
+                    "VALUES ('smoke-plan', 'Smoke', 'credits', NULL, 1, 0, 'IRR', CAST(:features AS jsonb)) "
                     "ON CONFLICT (code) DO NOTHING"
-                )
+                ),
+                {"features": '{"tests":1}'},
             )
             plan_id = _scalar(conn, "SELECT id FROM premium_plans WHERE code='smoke-plan'")
             conn.execute(
