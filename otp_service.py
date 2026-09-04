@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import os
 import secrets
-from datetime import timedelta
+from datetime import timedelta, timezone
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -36,6 +36,14 @@ def _otp_secret() -> str:
 def _hash_code(challenge_id: str, code: str) -> str:
     material = f"{challenge_id}:{code}:{_otp_secret()}".encode("utf-8")
     return hashlib.sha256(material).hexdigest()
+
+
+def _aware_utc(value):
+    if value is None:
+        return value
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 def create_registration_challenge(db: Session, *, name: str, phone: str, password: str) -> tuple[RegistrationChallenge, str]:
@@ -73,7 +81,8 @@ def verify_registration_challenge(db: Session, *, challenge_id: str, code: str) 
         raise ValueError("unknown verification challenge")
     if row.consumed_at is not None:
         raise ValueError("verification challenge already used")
-    if row.expires_at <= utcnow():
+    expires_at = _aware_utc(row.expires_at)
+    if expires_at <= utcnow():
         raise ValueError("verification code expired")
     if row.attempts >= row.max_attempts:
         raise ValueError("verification attempts exceeded")
