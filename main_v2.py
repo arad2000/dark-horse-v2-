@@ -1,228 +1,104 @@
-"""
-Dark Horse API V2.0 — نسخه اصلاح‌شده با پشتیبانی کامل از فیلدهای جدید
-"""
+"""Dark Horse V2 — Liara commercial deploy entrypoint.
 
-import asyncio
+Mounts scoring (v2), commercial auth/billing (v1), admin ops, and feedback
+collection. Production payment remains fail-closed without explicit approval.
+"""
+from __future__ import annotations
+
 import logging
 import os
-import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("main_v2")
+
+# Routers
 from admin_router import router as admin_router
 from commercial_api import router as commercial_router
-from dark_horse_engine_v2 import DarkHorseEngineV2
-from feedback_api import router as feedback_router
+from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("darkhorse_api_v2")
-
-
-# ======================= مدل‌های Pydantic =======================
-class DarkHorseDiscoverRequest(BaseModel):
-    micro_motives: list = Field(default_factory=list)
-    sjt_answers: dict = Field(default_factory=dict)
-    conjoint_choices: dict = Field(default_factory=dict)
+try:
+    from darkhorse_api_v2 import router as scoring_router
+except Exception as exc:  # pragma: no cover - deploy diagnostics
+    scoring_router = None
+    logger.exception("scoring router import failed: %s", exc)
 
 
-# ======================= Lifespan =======================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Starting Dark Horse API V2.0 ...")
-
-    # Explicit runtime fingerprint for Liara deployment diagnostics.
     logger.info("✅ COMMERCIAL_ROUTER_IMPORTED=%s", commercial_router is not None)
     logger.info("✅ ADMIN_ROUTER_IMPORTED=%s", admin_router is not None)
     logger.info("✅ FEEDBACK_ROUTER_IMPORTED=%s", feedback_router is not None)
 
     # Operational tables for auth/credits/billing/feedback (not psychometric JSON data).
     try:
-        import billing_models  # noqa: F401 — register ORM tables on Base.metadata
+        from database import init_db
+
         import models  # noqa: F401 — user_sessions / user_feedback tables
-        from database import init_db, is_configured
+        import billing_models  # noqa: F401
 
-        if is_configured():
-            init_db()
-            logger.info("✅ Operational DB tables ready (init_db).")
-        else:
-            logger.warning("⚠️ DATABASE_URL not configured; operational DB disabled.")
-    except Exception as e:
-        logger.error("❌ Operational DB init failed: %s", e, exc_info=True)
-
-    # موتور اصلی (برای رشته‌های دانشگاهی)
-    try:
-        app.state.engine = DarkHorseEngineV2(
-            motives_path="docs/data/micro_motives.json",
-            majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",
-            value_poles_path="value_poles_v2.json",
-            school_branches_path="school_branches_v2.json"
-        )
-        logger.info("✅ DarkHorseEngineV2 آماده است.")
-    except Exception as e:
-        logger.error(f"❌ DarkHorseEngineV2 init failed: {e}")
-        app.state.engine = None
-
-    # موتور شاخه‌ها (برای هدایت تحصیلی)
-    try:
-        app.state.branch_engine = DarkHorseEngineV2(
-            motives_path="docs/data/micro_motives.json",
-            majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",
-            value_poles_path="value_poles_v2.json",
-            school_branches_path="school_branches_v2.json"
-        )
-        logger.info("✅ BranchEngineV2 آماده است.")
-    except Exception as e:
-        logger.error(f"❌ BranchEngineV2 init failed: {e}")
-        app.state.branch_engine = None
+        init_db()
+        logger.info("✅ INIT_DB_OK")
+    except Exception as exc:
+        logger.exception("init_db failed: %s", exc)
 
     yield
-    logger.info("🛑 Shutting down V2.0 ...")
 
 
-# ======================= FastAPI App =======================
-app = FastAPI(title="Dark Horse API V2.0", version="2.0", lifespan=lifespan)
+app = FastAPI(title="Dark Horse V2", lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if scoring_router is not None:
+    app.include_router(scoring_router)
+    logger.info("✅ SCORING_ROUTER_MOUNTED")
+else:
+    logger.warning("⚠️ SCORING_ROUTER_NOT_MOUNTED")
+
 app.include_router(commercial_router)
 app.include_router(admin_router)
 app.include_router(feedback_router)
-logger.info("✅ ROUTERS_MOUNTED commercial=/api/v1 admin=/api/v1/admin feedback=/api/v1/feedback")
+app.include_router(feedback_legacy_router)
+logger.info("✅ ROUTERS_MOUNTED commercial=/api/v1 admin=/api/v1/admin feedback=/api/v1/feedback legacy=/api/feedback/submit")
 
 
-# ======================= Runtime Diagnostics =======================
-@app.get("/__runtime_fingerprint")
-async def runtime_fingerprint():
+@app.get("/")
+def root() -> dict:
     return {
-        "service": "dark-horse-v2",
+        "service": "asbe-siah",
+        "status": "ok",
         "commercial_router_mounted": True,
         "admin_router_mounted": True,
         "feedback_router_mounted": True,
         "commercial_prefix": "/api/v1",
         "admin_prefix": "/api/v1/admin",
         "feedback_prefix": "/api/v1/feedback",
+        "legacy_feedback_submit": "/api/feedback/submit",
         "commit_hint": "deploy/liara-commercial-sandbox",
     }
 
 
-# ======================= Endpoints =======================
-@app.get("/")
-async def root():
-    return {"name": "Dark Horse API V2.0", "status": "online"}
-
-
-# ======================= اندپوینت انتخاب رشته دانشگاهی =======================
-@app.post("/api/v2/darkhorse/discover")
-async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
-    engine = req.app.state.engine
-    if engine is None:
-        raise HTTPException(503, detail="موتور V2.0 در دسترس نیست")
-    try:
-        discovery = await asyncio.to_thread(
-            engine.discover_individuality,
-            request.micro_motives,
-            request.sjt_answers or {},
-            request.conjoint_choices or {}
-        )
-        recommendations = []
-        for item in discovery.get("discovered_majors", []):
-            fit = item.get("individuality_fit", {})
-            rec = {
-                "major_id": item.get("major_id"),
-                "major_name_fa": item.get("major_name_fa"),
-                "realm_fa": item.get("realm_fa"),
-                "fit_score": fit.get("score", 0),
-                "fit_level": fit.get("level", ""),
-                "market_demand_level": fit.get("market_demand_level", 2),
-                "raw_components": fit.get("raw_components", {}),
-                "evidence": fit.get("evidence", {}),
-                "personalized_description": fit.get("personalized_description", ""),
-            }
-            if fit.get("archetype"):
-                rec["archetype"] = fit["archetype"]
-            if fit.get("alternative_paths"):
-                rec["alternative_paths"] = fit["alternative_paths"]
-            recommendations.append(rec)
-
-        recommendations.sort(key=lambda x: x["fit_score"], reverse=True)
-        high = sum(1 for r in recommendations if r["fit_score"] >= 80)
-        med = sum(1 for r in recommendations if 60 <= r["fit_score"] < 80)
-        low = sum(1 for r in recommendations if r["fit_score"] < 60)
-
-        return {
-            "session_id": str(uuid.uuid4()),
-            "discovery_result": {
-                "total_matches": len(recommendations),
-                "high_fit_majors": high,
-                "medium_fit_majors": med,
-                "low_fit_majors": low,
-                "recommendations": recommendations,
-                "method": discovery.get("method", {}),
-                "summary": discovery.get("summary", {}),
-                "next_step": discovery.get("next_step", ""),
-            },
-        }
-    except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exc_info=True)
-        raise HTTPException(500, detail="خطای داخلی سرور")
-
-
-# ======================= اندپوینت هدایت تحصیلی (شاخه‌های دبیرستانی) =======================
-@app.post("/api/v2/darkhorse/branch-discovery")
-async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
-    engine = req.app.state.branch_engine
-    if engine is None:
-        raise HTTPException(503, detail="موتور شاخه‌ها V2.0 در دسترس نیست")
-    try:
-        result = await asyncio.to_thread(
-            engine.recommend_school_branch,
-            request.micro_motives,
-            request.sjt_answers or {},
-            request.conjoint_choices or {}
-        )
-
-        branches = []
-        for branch in result.get("recommended_branches", []):
-            branch_item = {
-                "branch_name_fa": branch.get("branch_name"),
-                "fit_score": branch.get("average_score", 0),
-                "count": branch.get("count", 0),
-                "avg_components": branch.get("avg_components", {}),
-                "evidence": branch.get("evidence", {}),
-            }
-            if branch.get("warning"):
-                branch_item["warning"] = branch["warning"]
-            if branch.get("alternative_paths"):
-                branch_item["alternative_paths"] = branch["alternative_paths"]
-            branches.append(branch_item)
-
-        branches.sort(key=lambda x: x["fit_score"], reverse=True)
-
-        return {
-            "session_id": str(uuid.uuid4()),
-            "branch_discovery_result": {
-                "total_matches": len(branches),
-                "best_branch": result.get("best_branch"),
-                "branches": branches,
-                "method": result.get("method", {}),
-                "summary": result.get("summary", {}),
-                "next_step": result.get("next_step", ""),
-            },
-        }
-    except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/branch-discovery: {e}", exc_info=True)
-        raise HTTPException(500, detail="خطای داخلی سرور")
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main_v2:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=False)
+@app.get("/__runtime_fingerprint")
+def runtime_fingerprint() -> dict:
+    return {
+        "service": "asbe-siah",
+        "commercial_router_mounted": True,
+        "admin_router_mounted": True,
+        "feedback_router_mounted": True,
+        "commercial_prefix": "/api/v1",
+        "admin_prefix": "/api/v1/admin",
+        "feedback_prefix": "/api/v1/feedback",
+        "legacy_feedback_submit": "/api/feedback/submit",
+        "billing_free_mode": os.getenv("BILLING_FREE_MODE", "false"),
+        "zarinpal_sandbox": os.getenv("ZARINPAL_SANDBOX", "true"),
+        "commit_hint": "deploy/liara-commercial-sandbox",
+    }
