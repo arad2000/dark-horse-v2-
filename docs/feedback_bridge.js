@@ -1,4 +1,4 @@
-/* feedback_bridge.js — force journey feedback onto Liara admin DB */
+/* feedback_bridge.js — server submit + visible yes/no/maybe selection */
 (function (global) {
   'use strict';
   var API = (global.API_BASE || 'https://asbe-siah.liara.run');
@@ -61,7 +61,73 @@
     return res.json();
   }
 
-  function patch() {
+  // Strong visual selection for yes/maybe/no + stars (mobile-friendly)
+  function paintChoice(question, value) {
+    if (typeof value === 'number') {
+      for (var i = 1; i <= 5; i++) {
+        var starEl = document.getElementById('star-' + question + '-' + i);
+        if (starEl) {
+          starEl.style.opacity = i <= value ? '1' : '0.3';
+          starEl.style.transform = i <= value ? 'scale(1.12)' : 'scale(1)';
+        }
+      }
+      return;
+    }
+    ['yes', 'maybe', 'no'].forEach(function (v) {
+      var btn = document.getElementById('btn-' + question + '-' + v);
+      if (!btn) return;
+      var on = v === value;
+      btn.style.border = on ? '2px solid #f0c040' : '1px solid #333';
+      btn.style.background = on ? 'rgba(240,192,64,0.22)' : '#2a2a42';
+      btn.style.color = on ? '#f0c040' : '#e0e0e0';
+      btn.style.fontWeight = on ? '800' : '500';
+      btn.style.boxShadow = on ? '0 0 0 1px rgba(240,192,64,0.35)' : 'none';
+    });
+  }
+
+  function patchSetFeedback() {
+    var original = global.setFeedback;
+    global.setFeedback = function (question, value) {
+      try {
+        if (typeof feedback !== 'undefined') feedback[question] = value;
+      } catch (_) {}
+      if (typeof original === 'function' && !original.__dhChoicePatched) {
+        try { original(question, value); } catch (_) {}
+      }
+      paintChoice(question, value);
+    };
+    global.setFeedback.__dhChoicePatched = true;
+    // also keep legacy name reachable for inline onclick
+    try { window.setFeedback = global.setFeedback; } catch (_) {}
+    return true;
+  }
+
+  function bindDelegatedClicks() {
+    if (document.__dhFeedbackClickBound) return;
+    document.__dhFeedbackClickBound = true;
+    document.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t) return;
+      // buttons: btn-q3-yes etc
+      var id = t.id || '';
+      var m = id.match(/^btn-(q\d+)-(yes|maybe|no)$/);
+      if (m) {
+        e.preventDefault();
+        e.stopPropagation();
+        global.setFeedback(m[1], m[2]);
+        return;
+      }
+      // stars: star-q1-3
+      var sm = id.match(/^star-(q\d+)-(\d)$/);
+      if (sm) {
+        e.preventDefault();
+        e.stopPropagation();
+        global.setFeedback(sm[1], Number(sm[2]));
+      }
+    }, true);
+  }
+
+  function patchSubmit() {
     if (typeof global.submitFeedback !== 'function') return false;
     if (global.submitFeedback.__dhBridged) return true;
     global.submitFeedback = async function () {
@@ -136,11 +202,14 @@
   }
 
   function boot() {
-    if (patch()) return;
+    patchSetFeedback();
+    bindDelegatedClicks();
+    if (patchSubmit()) return;
     var n = 0;
     var t = setInterval(function () {
       n += 1;
-      if (patch() || n > 40) clearInterval(t);
+      patchSetFeedback();
+      if (patchSubmit() || n > 40) clearInterval(t);
     }, 250);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
