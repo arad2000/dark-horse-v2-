@@ -1,13 +1,13 @@
 """Add standalone web feedback submissions.
 
 Revision ID: 0006_feedback_submissions
-Revises: 0005_payment_transaction_partial_unique
+Revises: 0005_payment_txn_partial_unique
 """
 from alembic import op
 import sqlalchemy as sa
 
 revision = "0006_feedback_submissions"
-down_revision = "0005_payment_transaction_partial_unique"
+down_revision = "0005_payment_txn_partial_unique"
 branch_labels = None
 depends_on = None
 
