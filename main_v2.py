@@ -122,61 +122,82 @@ async def root():
     return {"name": "Dark Horse API V2.0", "status": "online"}
 
 
+# ======================= اندپوینت کشف رشته‌های دانشگاهی =======================
 @app.post("/api/v2/darkhorse/discover")
-async def discover(req: DarkHorseDiscoverRequest, request: Request):
-    engine = request.app.state.engine
+async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
+    engine = req.app.state.engine
     if engine is None:
-        raise HTTPException(503, detail="موتور امتیازدهی آماده نیست")
+        raise HTTPException(503, detail="موتور امتیازدهی V2.0 در دسترس نیست")
     try:
-        result = engine.discover(
-            micro_motives=req.micro_motives,
-            sjt_answers=req.sjt_answers,
-            conjoint_choices=req.conjoint_choices,
+        discovery = await asyncio.to_thread(
+            engine.discover_individuality,
+            request.micro_motives,
+            request.sjt_answers or {},
+            request.conjoint_choices or {},
         )
-        recommendations = result.get("recommendations") or result.get("majors") or []
-        if isinstance(recommendations, list):
-            recommendations = sorted(
-                recommendations,
-                key=lambda x: x.get("fit_score") or (x.get("individuality_fit") or {}).get("score") or 0,
-                reverse=True,
-            )
+
+        recommendations = []
+        for item in discovery.get("discovered_majors", []):
+            rec = {
+                "major_name_fa": item.get("major_name"),
+                "fit_score": item.get("individuality_fit", {}).get("score", 0),
+                "individuality_fit": item.get("individuality_fit", {}),
+                "components": item.get("components", {}),
+                "evidence": item.get("evidence", {}),
+            }
+            if item.get("warning"):
+                rec["warning"] = item["warning"]
+            if item.get("alternative_paths"):
+                rec["alternative_paths"] = item["alternative_paths"]
+            recommendations.append(rec)
+
+        recommendations.sort(key=lambda x: x["fit_score"], reverse=True)
+
         return {
             "session_id": str(uuid.uuid4()),
             "discovery_result": {
-                "total_matches": len(recommendations) if isinstance(recommendations, list) else 0,
+                "total_matches": len(recommendations),
                 "recommendations": recommendations,
-                "method": result.get("method", {}),
-                "summary": result.get("summary", {}),
-                "next_step": result.get("next_step", ""),
+                "method": discovery.get("method", {}),
+                "summary": discovery.get("summary", {}),
+                "next_step": discovery.get("next_step", ""),
             },
         }
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exc_info=True)
+        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exp_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
+# ======================= اندپوینت هدایت تحصیلی (شاخه‌های دبیرستانی) =======================
 @app.post("/api/v2/darkhorse/branch-discovery")
-async def branch_discovery(req: DarkHorseDiscoverRequest, request: Request):
-    engine = request.app.state.branch_engine or request.app.state.engine
+async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
+    engine = req.app.state.branch_engine
     if engine is None:
-        raise HTTPException(503, detail="موتور امتیازدهی آماده نیست")
+        raise HTTPException(503, detail="موتور شاخه‌ها V2.0 در دسترس نیست")
     try:
-        result = engine.discover_branches(
-            micro_motives=req.micro_motives,
-            sjt_answers=req.sjt_answers,
-            conjoint_choices=req.conjoint_choices,
-        ) if hasattr(engine, "discover_branches") else engine.discover(
-            micro_motives=req.micro_motives,
-            sjt_answers=req.sjt_answers,
-            conjoint_choices=req.conjoint_choices,
+        result = await asyncio.to_thread(
+            engine.recommend_school_branch,
+            request.micro_motives,
+            request.sjt_answers or {},
+            request.conjoint_choices or {}
         )
-        branches = result.get("branches") or result.get("recommendations") or []
-        if isinstance(branches, list):
-            branches = sorted(
-                branches,
-                key=lambda x: x.get("fit_score") or (x.get("individuality_fit") or {}).get("score") or 0,
-                reverse=True,
-            )
+
+        branches = []
+        for branch in result.get("recommended_branches", []):
+            branch_item = {
+                "branch_name_fa": branch.get("branch_name"),
+                "fit_score": branch.get("average_score", 0),
+                "count": branch.get("count", 0),
+                "avg_components": branch.get("avg_components", {}),
+                "evidence": branch.get("evidence", {}),
+            }
+            if branch.get("warning"):
+                branch_item["warning"] = branch["warning"]
+            if branch.get("alternative_paths"):
+                branch_item["alternative_paths"] = branch["alternative_paths"]
+            branches.append(branch_item)
+
+        branches.sort(key=lambda x: x["fit_score"], reverse=True)
 
         return {
             "session_id": str(uuid.uuid4()),
@@ -190,7 +211,7 @@ async def branch_discovery(req: DarkHorseDiscoverRequest, request: Request):
             },
         }
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/branch-discovery: {e}", exc_info=True)
+        logger.error(f"Error in /api/v2/darkhorse/branch-discovery: {e}", exp_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
