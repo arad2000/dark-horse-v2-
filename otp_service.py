@@ -1,8 +1,9 @@
-"""Small server-side OTP helper for registration verification.
+"""Server-side OTP helper with mock and Kavenegar staging providers.
 
 The challenge record is stored in PostgreSQL; only a derived code hash is
-persisted. The default provider is a no-op mock suitable for CI/staging. A real
-SMS provider can be added behind the same send_code contract before production.
+persisted. Real SMS delivery is enabled only when OTP_PROVIDER=kavenegar and
+required staging credentials are present. Production does not receive a
+provider-specific bypass.
 """
 from __future__ import annotations
 
@@ -12,6 +13,7 @@ import secrets
 from datetime import timedelta, timezone
 from uuid import uuid4
 
+import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,6 +23,7 @@ from billing_models import RegistrationChallenge
 OTP_TTL_SECONDS = 300
 OTP_MAX_ATTEMPTS = 5
 DEV_OTP_SECRET = "development-only-change-me"
+KAVENEGAR_API_BASE = "https://api.kavenegar.com/v1"
 
 
 def _otp_secret() -> str:
@@ -98,15 +101,78 @@ def verify_registration_challenge(db: Session, *, challenge_id: str, code: str) 
     return row
 
 
-def send_code(phone: str, code: str) -> None:
-    """Dispatch the OTP.
+def _kavenegar_receptor(phone: str) -> str:
+    normalized = normalize_phone(phone)
+    return "+98" + normalized[1:]
 
-    ``mock`` intentionally does not expose the code to the API response. The
-    code is available to test fixtures by creating the challenge directly.
+
+def _kavenegar_config() -> tuple[str, str | None]:
+    api_key = os.getenv("KAVENEGAR_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("KAVENEGAR_API_KEY is not configured")
+    template = os.getenv("KAVENEGAR_OTP_TEMPLATE", "").strip() or None
+    return api_key, template
+
+
+def _raise_provider_error(response: httpx.Response) -> None:
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = None
+    detail = None
+    if isinstance(payload, dict):
+        result = payload.get("return")
+        if isinstance(result, dict):
+            detail = result.get("message")
+    raise RuntimeError(f"Kavenegar SMS failed ({response.status_code})" + (f": {detail}" if detail else ""))
+
+
+def _send_kavenegar_sms(phone: str, code: str) -> None:
+    api_key, template = _kavenegar_config()
+    receptor = _kavenegar_receptor(phone)
+    timeout = float(os.getenv("KAVENEGAR_TIMEOUT_SECONDS", "8"))
+
+    if template:
+        url = f"{KAVENEGAR_API_BASE}/{api_key}/verify/lookup.json"
+        params = {"receptor": receptor, "token": code, "template": template}
+    else:
+        message = os.getenv("KAVENEGAR_OTP_MESSAGE", "کد تأیید اسب سیاه: {code}").format(code=code)
+        sender = os.getenv("KAVENEGAR_SENDER", "").strip()
+        if not sender:
+            raise RuntimeError("KAVENEGAR_SENDER is required when KAVENEGAR_OTP_TEMPLATE is not configured")
+        url = f"{KAVENEGAR_API_BASE}/{api_key}/sms/send.json"
+        params = {"receptor": receptor, "message": message, "sender": sender}
+
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            response = client.post(url, params=params)
+    except httpx.HTTPError as exc:
+        raise RuntimeError("Kavenegar SMS request failed") from exc
+
+    if response.status_code >= 400:
+        _raise_provider_error(response)
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise RuntimeError("Kavenegar returned an invalid response") from exc
+    if not isinstance(payload, dict) or not isinstance(payload.get("return"), dict):
+        raise RuntimeError("Kavenegar returned an unexpected response")
+    status = payload["return"].get("status")
+    if status not in {200, 201}:
+        message = payload["return"].get("message")
+        raise RuntimeError("Kavenegar rejected the SMS" + (f": {message}" if message else ""))
+
+
+def send_code(phone: str, code: str) -> None:
+    """Dispatch the OTP using mock or Kavenegar.
+
+    ``OTP_EXPOSE_DEBUG_CODE`` is controlled by the API layer and remains
+    staging/test-only; this function never returns or logs the OTP.
     """
     provider = os.getenv("OTP_PROVIDER", "mock").strip().lower()
-    if provider not in {"mock", "sms"}:
-        raise RuntimeError("unsupported OTP provider")
     if provider == "mock":
         return
-    raise RuntimeError("OTP SMS provider is not configured")
+    if provider == "kavenegar":
+        _send_kavenegar_sms(phone, code)
+        return
+    raise RuntimeError("unsupported OTP provider")
