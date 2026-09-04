@@ -30,6 +30,7 @@ class User(Base):
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     entitlements = relationship("Entitlement", back_populates="user", cascade="all, delete-orphan")
     admin_audit_logs = relationship("AdminAuditLog", back_populates="admin_user")
+    saved_results = relationship("SavedResult", back_populates="user", cascade="all, delete-orphan")
 
 
 class AuthSession(Base):
@@ -44,6 +45,26 @@ class AuthSession(Base):
     user = relationship("User", back_populates="auth_sessions")
 
 
+class RegistrationChallenge(Base):
+    __tablename__ = "registration_challenges"
+    __table_args__ = (
+        UniqueConstraint("challenge_id", name="uq_registration_challenge_id"),
+        Index("idx_registration_challenge_phone", "phone"),
+        Index("idx_registration_challenge_expiry", "expires_at"),
+    )
+    id = Column(BigInteger, primary_key=True)
+    challenge_id = Column(String(36), nullable=False, unique=True)
+    name = Column(String(200), nullable=False)
+    phone = Column(String(32), nullable=False)
+    password_hash = Column(Text, nullable=False)
+    code_hash = Column(String(128), nullable=False)
+    attempts = Column(Integer, nullable=False, default=0, server_default="0")
+    max_attempts = Column(Integer, nullable=False, default=5, server_default="5")
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    consumed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class PremiumPlan(Base):
     __tablename__ = "premium_plans"
     __table_args__ = (UniqueConstraint("code", name="uq_premium_plan_code"),)
@@ -53,7 +74,7 @@ class PremiumPlan(Base):
     plan_type = Column(String(20), nullable=False, default="credits", server_default="credits")
     duration_days = Column(Integer, nullable=True)
     credits_granted = Column(Integer, nullable=False, default=0, server_default="0")
-    price_minor = Column(BigInteger, nullable=False)  # IRR rials; 249,000 Toman = 2,490,000 Rial.
+    price_minor = Column(BigInteger, nullable=False)
     currency = Column(String(8), nullable=False, default="IRR", server_default="IRR")
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
     features = Column(JSON, nullable=False, default=dict)
@@ -160,3 +181,17 @@ class AdminAuditLog(Base):
     ip_address = Column(String(45), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     admin_user = relationship("User", back_populates="admin_audit_logs")
+
+
+class SavedResult(Base):
+    __tablename__ = "saved_results"
+    __table_args__ = (
+        Index("idx_saved_results_user_created", "user_id", "created_at"),
+        Index("idx_saved_results_session", "session_uuid"),
+    )
+    id = Column(BigInteger, primary_key=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    session_uuid = Column(String(36), nullable=True)
+    result_summary = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    user = relationship("User", back_populates="saved_results")
