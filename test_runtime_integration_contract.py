@@ -52,7 +52,7 @@ def test_alembic_chain_is_linear_from_0001_to_0007():
         "0004_txn_unique",
         "0005_payment_txn_partial_unique",
         "0006_feedback_submissions",
-        "0007_auth_challenges_saved_results",
+        "0007_auth_saved_results",
     ]
     assert list(revisions) == expected
     assert revisions[expected[0]] is None
