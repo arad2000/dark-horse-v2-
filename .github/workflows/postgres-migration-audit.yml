@@ -1,0 +1,46 @@
+name: PostgreSQL Migration Audit
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  postgres-migration-audit:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dark_horse_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d dark_horse_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_ci
+      OTP_PROVIDER: mock
+      BILLING_PROVIDER: mock
+      ZARINPAL_SANDBOX: "true"
+      ZARINPAL_PRODUCTION_APPROVED: "false"
+      POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+      DARK_HORSE_SHADOW_PERSISTENCE: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Verify Alembic heads
+        run: python -m alembic heads
+      - name: Run PostgreSQL migration smoke audit
+        run: pytest -q test_postgres_migration_smoke.py
