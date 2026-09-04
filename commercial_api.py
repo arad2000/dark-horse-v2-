@@ -6,13 +6,14 @@ runtime cutover.
 """
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime, timezone
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -24,6 +25,8 @@ from database import get_db
 from otp_service import create_registration_challenge, send_code, verify_registration_challenge
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "billing"])
+
+MAX_SAVED_RESULT_BYTES = 64 * 1024
 
 
 class RegisterRequest(BaseModel):
@@ -45,6 +48,17 @@ class LoginRequest(BaseModel):
 class SaveResultRequest(BaseModel):
     result_summary: dict = Field(default_factory=dict)
     session_uuid: str | None = Field(default=None, min_length=1, max_length=36)
+
+    @field_validator("result_summary")
+    @classmethod
+    def validate_result_summary(cls, value: dict) -> dict:
+        try:
+            encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        except (TypeError, ValueError) as exc:
+            raise ValueError("result_summary must contain JSON-compatible values") from exc
+        if len(encoded) > MAX_SAVED_RESULT_BYTES:
+            raise ValueError("result_summary is too large")
+        return value
 
 
 def _public_user(user: User) -> dict[str, object]:
@@ -171,7 +185,7 @@ def me(user: User = Depends(_current_user)) -> dict[str, object]:
 
 @router.get("/me/quota")
 def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
-    return {"credits_remaining": _quota(db, user.id), "user_id": user.id}
+    return {"credits_remaining": _quota(db, user.id)}
 
 
 @router.post("/me/consume-test")
