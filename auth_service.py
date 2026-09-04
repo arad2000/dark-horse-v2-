@@ -104,6 +104,23 @@ def register_user(db: Session, *, name: str, phone: str, password: str) -> tuple
     return user, token
 
 
+def create_verified_user(db: Session, *, name: str, phone: str, password_hash: str) -> tuple[User, str]:
+    """Create an already-verified user from a persisted password hash."""
+    phone = normalize_phone(phone)
+    if db.scalar(select(User).where(User.phone == phone)) is not None:
+        raise ValueError("phone already registered")
+    clean_name = (name or "").strip()
+    if not clean_name:
+        raise ValueError("name is required")
+    if not password_hash:
+        raise ValueError("password hash is required")
+    user = User(public_id=str(uuid4()), name=clean_name, phone=phone, password_hash=password_hash)
+    db.add(user)
+    db.flush()
+    token, _ = issue_session(db, user)
+    return user, token
+
+
 def authenticate_user(db: Session, *, phone: str, password: str) -> tuple[User, str]:
     phone = normalize_phone(phone)
     user = db.scalar(select(User).where(User.phone == phone, User.status == "active"))
