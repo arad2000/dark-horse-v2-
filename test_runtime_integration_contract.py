@@ -5,10 +5,12 @@ def test_runtime_routes_are_mounted():
     paths = {route.path for route in app.routes}
     expected = {
         "/api/v1/auth/register",
+        "/api/v1/auth/register/verify",
         "/api/v1/auth/login",
         "/api/v1/me",
         "/api/v1/me/quota",
         "/api/v1/me/consume-test",
+        "/api/v1/me/save-result",
         "/api/v1/billing/create-payment",
         "/api/v1/billing/callback",
         "/api/v1/feedback",
