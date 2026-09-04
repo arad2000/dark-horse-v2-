@@ -9,9 +9,22 @@ import os
 from typing import Generator
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.types import BigInteger
 from sqlalchemy.orm import Session, sessionmaker
 
 from models import Base
+
+
+# SQLite does not autoincrement a BIGINT primary key unless the declared type is
+# exactly INTEGER. Keep PostgreSQL BIGINT semantics in production, while making
+# the CI/dev SQLite compatibility path behave like the production identity
+# columns. This is a DDL compilation detail only; it does not change the ORM
+# model or PostgreSQL schema.
+@compiles(BigInteger, "sqlite")
+def _compile_big_integer_for_sqlite(type_, compiler, **kw):
+    return "INTEGER"
+
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 engine = None
