@@ -138,25 +138,37 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
 
         recommendations = []
         for item in discovery.get("discovered_majors", []):
+            fit = item.get("individuality_fit", {}) or {}
             rec = {
-                "major_name_fa": item.get("major_name"),
-                "fit_score": item.get("individuality_fit", {}).get("score", 0),
-                "individuality_fit": item.get("individuality_fit", {}),
-                "components": item.get("components", {}),
-                "evidence": item.get("evidence", {}),
+                "major_id": item.get("major_id"),
+                "major_name_fa": item.get("major_name_fa") or item.get("major_name") or "",
+                "realm_fa": item.get("realm_fa"),
+                "fit_score": fit.get("score", 0),
+                "fit_level": fit.get("level", ""),
+                "market_demand_level": fit.get("market_demand_level"),
+                "raw_components": fit.get("raw_components", {}),
+                "evidence": fit.get("evidence", {}),
+                "personalized_description": fit.get("personalized_description", ""),
+                "individuality_fit": fit,
             }
-            if item.get("warning"):
-                rec["warning"] = item["warning"]
-            if item.get("alternative_paths"):
-                rec["alternative_paths"] = item["alternative_paths"]
+            if fit.get("archetype"):
+                rec["archetype"] = fit["archetype"]
+            if fit.get("alternative_paths"):
+                rec["alternative_paths"] = fit["alternative_paths"]
             recommendations.append(rec)
 
         recommendations.sort(key=lambda x: x["fit_score"], reverse=True)
+        high = sum(1 for r in recommendations if r["fit_score"] >= 80)
+        med = sum(1 for r in recommendations if 60 <= r["fit_score"] < 80)
+        low = sum(1 for r in recommendations if r["fit_score"] < 60)
 
         return {
             "session_id": str(uuid.uuid4()),
             "discovery_result": {
                 "total_matches": len(recommendations),
+                "high_fit_majors": high,
+                "medium_fit_majors": med,
+                "low_fit_majors": low,
                 "recommendations": recommendations,
                 "method": discovery.get("method", {}),
                 "summary": discovery.get("summary", {}),
@@ -179,14 +191,14 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             engine.recommend_school_branch,
             request.micro_motives,
             request.sjt_answers or {},
-            request.conjoint_choices or {}
+            request.conjoint_choices or {},
         )
 
         branches = []
         for branch in result.get("recommended_branches", []):
             branch_item = {
-                "branch_name_fa": branch.get("branch_name"),
-                "fit_score": branch.get("average_score", 0),
+                "branch_name_fa": branch.get("branch_name_fa") or branch.get("branch_name") or "",
+                "fit_score": branch.get("average_score", 0) or branch.get("fit_score", 0),
                 "count": branch.get("count", 0),
                 "avg_components": branch.get("avg_components", {}),
                 "evidence": branch.get("evidence", {}),
