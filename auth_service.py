@@ -30,6 +30,14 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _as_aware_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def normalize_phone(phone: str) -> str:
     value = "".join((phone or "").split())
     if not value:
@@ -136,7 +144,9 @@ def resolve_session(db: Session, raw_token: str) -> User:
         raise ValueError("token is required")
     session = db.scalar(select(AuthSession).where(AuthSession.token_hash == hash_token(raw_token)))
     now = utcnow()
-    if session is None or session.revoked_at is not None or session.expires_at <= now:
+    expires_at = _as_aware_utc(session.expires_at) if session is not None else None
+    revoked_at = _as_aware_utc(session.revoked_at) if session is not None else None
+    if session is None or revoked_at is not None or expires_at is None or expires_at <= now:
         raise ValueError("invalid or expired session")
     user = db.get(User, session.user_id)
     if user is None or user.status != "active":
