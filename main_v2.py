@@ -164,7 +164,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
             },
         }
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exp_info=True)
+        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exc_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
@@ -211,7 +211,7 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             },
         }
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/branch-discovery: {e}", exp_info=True)
+        logger.error(f"Error in /api/v2/darkhorse/branch-discovery: {e}", exc_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
