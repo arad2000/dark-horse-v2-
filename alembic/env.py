@@ -11,7 +11,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from models import Base
-import billing_models  # noqa: F401  # register billing/auth tables in metadata
+import billing_models  # noqa: F401  # register auth/billing/commercial tables in metadata
 
 config = context.config
 if config.config_file_name is not None:
