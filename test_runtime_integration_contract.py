@@ -50,7 +50,7 @@ def test_alembic_chain_is_linear_from_0001_to_0007():
         "0002_auth_billing",
         "0003_credit_based_entitlements",
         "0004_txn_unique",
-        "0005_payment_txn_partial_unique",
+        "0005_payment_transaction_partial_unique",
         "0006_feedback_submissions",
         "0007_auth_challenges_saved_results",
     ]
