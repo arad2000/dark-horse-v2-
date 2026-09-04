@@ -20,11 +20,21 @@ from billing_models import RegistrationChallenge
 
 OTP_TTL_SECONDS = 300
 OTP_MAX_ATTEMPTS = 5
-OTP_SECRET = os.getenv("OTP_SECRET", "development-only-change-me")
+DEV_OTP_SECRET = "development-only-change-me"
+
+
+def _otp_secret() -> str:
+    secret = os.getenv("OTP_SECRET", "").strip()
+    if secret:
+        return secret
+    provider = os.getenv("OTP_PROVIDER", "mock").strip().lower()
+    if provider == "mock":
+        return DEV_OTP_SECRET
+    raise RuntimeError("OTP_SECRET must be configured for non-mock OTP providers")
 
 
 def _hash_code(challenge_id: str, code: str) -> str:
-    material = f"{challenge_id}:{code}:{OTP_SECRET}".encode("utf-8")
+    material = f"{challenge_id}:{code}:{_otp_secret()}".encode("utf-8")
     return hashlib.sha256(material).hexdigest()
 
 
