@@ -1,13 +1,13 @@
 """Add durable registration OTP challenges and authenticated saved results.
 
-Revision ID: 0007_auth_challenges_saved_results
+Revision ID: 0007_auth_saved_results
 Revises: 0006_feedback_submissions
 """
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-revision = "0007_auth_challenges_saved_results"
+revision = "0007_auth_saved_results"
 down_revision = "0006_feedback_submissions"
 branch_labels = None
 depends_on = None
