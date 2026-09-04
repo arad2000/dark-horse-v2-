@@ -6,9 +6,6 @@ import pytest
 from sqlalchemy import create_engine, inspect, text
 
 
-pytestmark = pytest.mark.integration
-
-
 EXPECTED_TABLES = {
     "micro_motives",
     "value_poles",
@@ -76,7 +73,7 @@ def test_postgresql_full_migration_round_trip():
 
         with engine.connect() as conn:
             alembic_revision = _scalar(conn, "SELECT version_num FROM alembic_version")
-        assert alembic_revision == "0007_auth_challenges_saved_results"
+        assert alembic_revision == "0007_auth_saved_results"
 
         # PostgreSQL identity/autoincrement behavior for all newly-added BIGINT PKs.
         with engine.begin() as conn:
