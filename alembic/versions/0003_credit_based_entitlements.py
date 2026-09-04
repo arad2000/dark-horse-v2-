@@ -54,6 +54,24 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Rollback from the credit model to the legacy time-based model requires
+    # deterministic values because credit packs intentionally have NULL
+    # duration. Preserve the migration's reversibility by mapping NULL to a
+    # one-day legacy duration before restoring NOT NULL. This path is only for
+    # explicit rollback of the schema migration; normal product operation stays
+    # on the credit model.
+    op.execute(
+        sa.text(
+            "UPDATE premium_plans SET duration_days = 1 "
+            "WHERE duration_days IS NULL"
+        )
+    )
+    op.execute(
+        sa.text(
+            "UPDATE entitlements SET expires_at = COALESCE(expires_at, starts_at + INTERVAL '1 day') "
+            "WHERE expires_at IS NULL"
+        )
+    )
     op.drop_index("idx_entitlement_user_credits", table_name="entitlements")
     op.alter_column("entitlements", "expires_at", existing_type=sa.DateTime(timezone=True), nullable=False)
     op.drop_column("entitlements", "credits_remaining")
