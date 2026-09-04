@@ -9,7 +9,7 @@ def test_escape_html_is_real_escaping():
     assert ".replace(/&/g,'&amp;')" in UI
     assert ".replace(/</g,'&lt;')" in UI
     assert ".replace(/>/g,'&gt;')" in UI
-    assert ".replace(/\\\"/g,'&quot;')" in UI
+    assert ".replace(/\"/g,'&quot;')" in UI
     assert ".replace(/'/g,'&#39;')" in UI
 
 
