@@ -1,7 +1,7 @@
 /* feedback_bridge.js — server submit + visible yes/no/maybe selection */
 (function (global) {
   'use strict';
-  var API = (global.API_BASE || 'https://asbe-siah.liara.run');
+  var API = (global.API_BASE || 'https://api.asbe-siah.ir');
 
   function star(fb, k) {
     var n = Number(fb && fb[k]);

@@ -1,11 +1,11 @@
 // ==================== Dark Horse App V2.0 ====================
 // تغییرات نسبت به V1.0:
-//   • API_BASE → asbe-siah.liara.run
+//   • API_BASE → api.asbe-siah.ir
 //   • Endpointها → /api/v2/darkhorse/...
 //   • فایل سوالات → questions_v2.json
 //   • اضافه شدن صفحه انتخاب بین هدایت تحصیلی و انتخاب رشته دانشگاهی
 
-const API_BASE = 'https://asbe-siah.liara.run';
+const API_BASE = 'https://api.asbe-siah.ir';
 const DATA_BASE = './data/';
 
 // ==================== GLOBAL STATE ====================

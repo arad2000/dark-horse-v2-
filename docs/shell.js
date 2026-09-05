@@ -493,7 +493,7 @@
     return who + 'از سفر اکتشافی «اسب سیاه» برگشتم.\n' +
       kind + ' من:\n' + lines + '\n\n' +
       'مسیر را با جرقه‌های خودم دیدم، نه فقط با رتبه.\n' +
-      'https://arad2000.github.io/dark-horse-v2-/\n' +
+      'https://asbe-siah.ir/\n' +
       '#اسب‌سیاه #هدایت_تحصیلی #شهررؤیاها';
   }
 
@@ -505,7 +505,7 @@
       navigator.share({
         title: 'اسب سیاه',
         text: text,
-        url: 'https://arad2000.github.io/dark-horse-v2-/'
+        url: 'https://asbe-siah.ir/'
       }).catch(function () {});
       return;
     }
