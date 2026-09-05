@@ -1,6 +1,6 @@
 /* auth_api_client.js — Dark Horse Commercial Auth */
 (function (global) {
-  const API = (global.API_BASE || 'https://asbe-siah.liara.run');
+  const API = (global.API_BASE || 'https://api.asbe-siah.ir');
   const KEY = 'dh_auth_v1';
 
   function load() {
