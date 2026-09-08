@@ -555,6 +555,7 @@
         '<p id="dh-p-err" style="color:#f66;min-height:1.2em;font-size:0.85rem;"></p>' +
         '<button class="btn" style="width:100%;" id="dh-p-save">ثبت پروفایل محلی</button>' +
         '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
+        '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#b0a080;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
         '</div></div>';
       $('dh-p-home').onclick = function () { switchTab('home'); };
       var openAuth = function (mode) {
@@ -639,6 +640,7 @@
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;color:#c08080;border-color:#543;" id="dh-p-exit">خروج از اپ</button>' +
+      '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#b0a080;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
       '</div></div>';
 
     $('dh-p-home').onclick = function () { switchTab('home'); };
