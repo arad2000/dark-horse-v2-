@@ -1,6 +1,7 @@
 // ==================== Dark Horse App V2.0 ====================
 // تغییرات نسبت به V1.0:
 //   • API_BASE → api.asbe-siah.ir
+//   • AI counsel → /api/v2/darkhorse/counsel
 //   • Endpointها → /api/v2/darkhorse/...
 //   • فایل سوالات → questions_v2.json
 //   • اضافه شدن صفحه انتخاب بین هدایت تحصیلی و انتخاب رشته دانشگاهی
@@ -1265,6 +1266,60 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 }
 
 // ==================== DISPLAY RESULTS (نسخه نهایی با UI/UX بهبودیافته) ====================
+
+// ==================== توضیح مشاوره‌ای (Cloudflare Workers AI) ====================
+async function loadDeepCounsel() {
+  const box = document.getElementById('dh-counsel-box');
+  const btn = document.getElementById('dh-counsel-btn');
+  if (!box) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'در حال نوشتن...';
+  }
+  box.style.display = 'block';
+  box.innerHTML = '<p style="color:#b0a080;line-height:1.9;margin:0;">در حال آماده‌سازی توضیح مشاوره‌ای شخصی...</p>';
+
+  const tops = (state.lastCounselTops || []).slice(0, 5);
+  const profile = {
+    kind: state.lastCounselKind || 'majors',
+    micro_motives: state.likedCodes || [],
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    const res = await fetch(API_BASE + '/api/v2/darkhorse/counsel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile, top_results: tops }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    let data = null;
+    try { data = await res.json(); } catch (_) {}
+    if (!res.ok) {
+      const msg = (data && (data.detail || data.message)) || ('خطا ' + res.status);
+      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    }
+    const text = (data && data.counseling) ? String(data.counseling).trim() : '';
+    if (!text) throw new Error('پاسخ خالی');
+    const safe = escapeHtml(text).replace(/\n/g, '<br>');
+    box.innerHTML =
+      '<div style="background:#12121c;border:1px solid #d4af37;border-radius:12px;padding:16px;text-align:right;line-height:2;color:#e8dcc0;">' +
+      '<h3 style="color:#f0c040;margin:0 0 10px;">✨ توضیح مشاوره‌ای</h3>' +
+      '<div style="font-size:0.95rem;">' + safe + '</div></div>';
+  } catch (e) {
+    console.error(e);
+    box.innerHTML =
+      '<p style="color:#f88;line-height:1.8;margin:0;">الان نتوانستیم توضیح مشاوره‌ای را بگیریم. نتایج اصلی شما محفوظ است؛ کمی بعد دوباره تلاش کنید.</p>';
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '✨ توضیح مشاوره‌ای عمیق‌تر';
+    }
+  }
+}
+
 function displayResults(data, type) {
   // ===== ۱. استخراج آیتم‌ها =====
   let items = [];
@@ -1537,6 +1592,28 @@ function displayResults(data, type) {
         </div>`;
     });
   }
+
+  // ذخیره برای مشاوره AI + بخش دکمه
+  try {
+    state.lastCounselKind = isBranch ? 'branches' : 'majors';
+    state.lastCounselTops = (matched || []).slice(0, 5).map(function (r) {
+      return {
+        name: r.name,
+        score: r.fit_score,
+        micro_motives_matched: r.micro_motives_matched || []
+      };
+    });
+  } catch (e) {}
+
+  html += `
+    <div style="margin-top:22px;text-align:center;">
+      <button class="btn btn-primary" id="dh-counsel-btn" style="width:100%;padding:14px;font-size:1rem;" onclick="loadDeepCounsel()">
+        ✨ توضیح مشاوره‌ای عمیق‌تر
+      </button>
+      <p style="color:#8f845f;font-size:.8rem;margin:8px 0 0;line-height:1.7;">بر اساس فلسفه اسب سیاه — متن شخصی‌سازی‌شده</p>
+      <div id="dh-counsel-box" style="display:none;margin-top:14px;text-align:right;"></div>
+    </div>
+`;
 
   // ==================== دکمه‌های ناوبری ====================
   html += `
