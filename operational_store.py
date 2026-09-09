@@ -197,6 +197,48 @@ class OperationalStore:
                 db.expunge(row)
             return rows
 
+    def save_result_summary(
+        self,
+        session_uuid: str,
+        user_id: int,
+        result_summary: dict[str, Any],
+        *,
+        max_bytes: int = 100_000,
+    ) -> UserSession:
+        """Persist the final client summary and mark the owned session complete.
+
+        The endpoint is idempotent: repeating the same save updates the same session
+        rather than creating another result/session row.
+        """
+        if not isinstance(result_summary, dict) or not result_summary:
+            raise ValueError("result_summary must be a non-empty object")
+
+        import json
+        try:
+            encoded = json.dumps(result_summary, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        except (TypeError, ValueError) as exc:
+            raise ValueError("result_summary contains non-serializable values") from exc
+        if len(encoded) > max_bytes:
+            raise ValueError(f"result_summary exceeds {max_bytes} bytes")
+
+        with self.transaction() as db:
+            row = db.scalar(select(UserSession).where(UserSession.session_uuid == session_uuid))
+            if row is None:
+                raise ValueError("Unknown session_id")
+            if row.user_id != user_id:
+                raise PermissionError("session does not belong to this user")
+
+            major_count = db.query(DiscoveryResult).filter(DiscoveryResult.session_id == row.id).count()
+            branch_count = db.query(BranchRecommendation).filter(BranchRecommendation.session_id == row.id).count()
+            if major_count == 0 and branch_count == 0:
+                raise ValueError("no persisted analysis result exists for this session")
+
+            row.result_summary = result_summary
+            row.is_completed = True
+            db.flush()
+            db.expunge(row)
+            return row
+
     def complete_session(self, session_id: int) -> None:
         with self.transaction() as db:
             session = db.get(UserSession, session_id)
