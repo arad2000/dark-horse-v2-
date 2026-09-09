@@ -22,12 +22,13 @@ class OperationalPersistenceAdapter:
     def __init__(self, store: OperationalStore):
         self.store = store
 
-    def create_session(self, payload: dict[str, Any], *, request_meta: dict[str, Any] | None = None):
+    def create_session(self, payload: dict[str, Any], *, request_meta: dict[str, Any] | None = None, user_id: int | None = None):
         request_meta = request_meta or {}
         return self.store.create_session(
             payload.get("micro_motives") or [],
             payload.get("sjt_answers") or {},
             payload.get("conjoint_choices") or {},
+            user_id=user_id,
             session_uuid=payload.get("session_uuid"),
             user_ip=request_meta.get("user_ip"),
             user_agent=request_meta.get("user_agent"),
@@ -41,6 +42,9 @@ class OperationalPersistenceAdapter:
     def persist_branch_discovery(self, session_id: int, result: dict[str, Any]):
         branches = result.get("recommended_branches") or result.get("branches") or []
         return self.store.store_branch_recommendations(session_id, branches)
+
+    def save_result(self, session_uuid: str, user_id: int, result_summary: dict[str, Any]):
+        return self.store.save_result_summary(session_uuid, user_id, result_summary)
 
     def complete(self, session_id: int) -> None:
         self.store.complete_session(session_id)
