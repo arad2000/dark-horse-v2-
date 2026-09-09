@@ -19,6 +19,12 @@ class FakeDB:
         pass
 
 
+class FakeSavedSession:
+    id = 321
+    session_uuid = "sess-123456789"
+    is_completed = True
+
+
 class CommercialApiContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -82,6 +88,36 @@ class CommercialApiContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["consumed"], 1)
         self.assertEqual(response.json()["credits_remaining"], 2)
+
+    def test_save_result_requires_authentication(self):
+        response = self.client.post("/api/v1/me/save-result", json={"session_id": "sess-123456789", "result_summary": {"kind": "majors"}})
+        self.assertEqual(response.status_code, 401)
+
+    def test_save_result_contract_and_idempotent_service(self):
+        user = SimpleNamespace(id=15, public_id="public-15", name="Result User", phone="09120000005", role="user", status="active")
+        expected = {"saved": True, "completed": True, "session_id": "sess-123456789", "operational_session_id": 321}
+        with patch("commercial_api.resolve_session", return_value=user), patch("commercial_api.assert_safe_mode"), patch("commercial_api.OperationalPersistenceAdapter.save_result", return_value=FakeSavedSession()) as save:
+            response = self.client.post(
+                "/api/v1/me/save-result",
+                headers={"Authorization": "Bearer token"},
+                json={"session_id": "sess-123456789", "result_summary": {"kind": "majors", "session_id": "sess-123456789"}},
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json(), expected)
+        save.assert_called_once()
+        args = save.call_args.args
+        self.assertEqual(args[1], 15)
+        self.assertEqual(args[2]["session_id"], "sess-123456789")
+
+    def test_save_result_rejects_mismatched_nested_session(self):
+        user = SimpleNamespace(id=16)
+        with patch("commercial_api.resolve_session", return_value=user):
+            response = self.client.post(
+                "/api/v1/me/save-result",
+                headers={"Authorization": "Bearer token"},
+                json={"session_id": "sess-123456789", "result_summary": {"session_id": "sess-other", "kind": "majors"}},
+            )
+        self.assertEqual(response.status_code, 409)
 
     def test_create_payment_is_server_authoritative(self):
         user = SimpleNamespace(id=12)
