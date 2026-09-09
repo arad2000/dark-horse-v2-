@@ -22,44 +22,58 @@ def _cfg() -> tuple[str, str, str]:
     return account, token, model
 
 
-SYSTEM_PROMPT = """تو یک مشاور هدایت تحصیلی همدل، گرم و حرفه‌ای هستی که بر اساس فلسفه کتاب «اسب سیاه» (تاد رز و اُگی اُگاس) کار می‌کنی.
-هدف تو کمک به دانش‌آموز برای پیدا کردن مسیر منحصربه‌فرد خودش است، نه فقط پیشنهاد یک رشته.
-با زبان فارسی ساده، صمیمی و امیدوارکننده حرف بزن. از کلیشه و لحن خشک خودداری کن.
-قضاوت اخلاقی یا برچسب‌زدن نکن. وعده قطعی موفقیت نده. مختصر و مفید بنویس."""
+SYSTEM_PROMPT = """تو مشاور هدایت تحصیلی فارسی‌زبان هستی؛ بر اساس فلسفه کتاب «اسب سیاه» (تاد رز).
+
+قوانین اجباری:
+1) فقط و فقط به زبان فارسی بنویس. هیچ واژه انگلیسی، آلمانی یا لاتین ننویس.
+2) اگر نام رشته به‌ناچار خارجی است، همان نام رایج فارسی‌اش را بنویس (مثلاً مهندسی انرژی‌های تجدیدپذیر).
+3) لحن گرم، ساده، امیدوارکننده و بدون کلیشه خشک.
+4) برای هر رشته/شاخه یک بخش جدا با عنوان واضح بنویس.
+5) تکرار بی‌معنی نکن. وعده قطعی موفقیت نده.
+6) خروجی را ساخت‌یافته بنویس نه یک پاراگراف درهم."""
 
 
 def _build_user_content(profile: dict[str, Any], top_results: list[Any]) -> str:
-    motives = profile.get("micro_motives") or profile.get("sparks") or []
+    motives = profile.get("micro_motives") or profile.get("sparks") or profile.get("liked_motives") or []
     kind = profile.get("kind") or "majors"
-    kind_fa = "شاخه‌های دبیرستان" if kind in ("branches", "branch") else "رشته‌های دانشگاهی"
+    kind_fa = "شاخه دبیرستان" if kind in ("branches", "branch") else "رشته دانشگاهی"
 
     lines = []
     for i, item in enumerate(top_results[:5], 1):
         if isinstance(item, dict):
-            name = item.get("name") or item.get("title") or item.get("code") or "—"
-            score = item.get("score")
-            extra = f" (امتیاز: {score})" if score is not None else ""
-            lines.append(f"{i}. {name}{extra}")
+            name = item.get("name") or item.get("title") or item.get("code") or "نامشخص"
+            score = item.get("fit_score", item.get("score"))
+            mm = item.get("micro_motives_matched") or []
+            mm_txt = "، ".join(str(x) for x in mm[:6]) if mm else "—"
+            score_txt = f"{score}" if score is not None else "—"
+            lines.append(f"{i}) نام: {name} | همخوانی: {score_txt} | جرقه‌های مرتبط: {mm_txt}")
         else:
-            lines.append(f"{i}. {item}")
+            lines.append(f"{i}) {item}")
 
     results_txt = "\n".join(lines) if lines else "نامشخص"
     motives_txt = "، ".join(str(m) for m in motives[:12]) if motives else "نامشخص"
+    n = min(5, max(1, len(top_results) or 1))
 
-    return f"""اطلاعات کاربر و نتایج تحلیل اسب سیاه:
+    return f"""داده‌های تحلیل اسب سیاه:
 
-نوع تحلیل: {kind_fa}
-جرقه‌ها / خرده‌انگیزه‌های برجسته: {motives_txt}
-نتایج برتر:
+نوع نتیجه: {kind_fa}
+جرقه‌ها / خرده‌انگیزه‌های کاربر: {motives_txt}
+
+فهرست نتایج (به ترتیب اولویت):
 {results_txt}
 
-یک توضیح مشاوره‌ای شخصی‌سازی‌شده به فارسی بنویس که:
-1) فردیت و نقاط قوت کاربر را برجسته کند
-2) بگوید چرا این گزینه‌ها با او هم‌خوانی دارند
-3) مسیرهای جایگزین را امیدوارکننده معرفی کند
-4) او را تشویق کند مسیر خودش را بسازد
+دقیقاً این ساختار را رعایت کن:
 
-حداکثر ۳۲۰ کلمه. فقط متن مشاوره را برگردان، بدون عنوان اضافه."""
+برای هر مورد از {n} نتیجه بالا، جداگانه بنویس:
+
+### [نام فارسی رشته یا شاخه]
+- چرا با فردیت این کاربر هم‌خوان است (۲ تا ۳ جمله)
+- چه مسیر یا فعالیتی برایش طبیعی‌تر است (۱ تا ۲ جمله)
+- یک نکته احتیاط یا مسیر مکمل کوتاه (۱ جمله)
+
+بعد از همه موارد، فقط ۲ جمله جمع‌بندی انگیزشی بنویس.
+
+یادآوری: تمام متن فقط فارسی. بدون کلمه غیرفارسی."""
 
 
 async def generate_counseling(profile: dict[str, Any], top_results: list[Any]) -> str:
@@ -75,12 +89,12 @@ async def generate_counseling(profile: dict[str, Any], top_results: list[Any]) -
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": _build_user_content(profile or {}, top_results or [])},
         ],
-        "max_tokens": 700,
-        "temperature": 0.7,
+        "max_tokens": 900,
+        "temperature": 0.55,
     }
 
     try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
+        async with httpx.AsyncClient(timeout=50.0) as client:
             response = await client.post(url, headers=headers, json=payload)
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="زمان پاسخ مدل زبانی تمام شد. دوباره تلاش کنید.")
@@ -88,14 +102,12 @@ async def generate_counseling(profile: dict[str, Any], top_results: list[Any]) -
         raise HTTPException(status_code=502, detail=f"خطا در ارتباط با مدل زبانی: {e}")
 
     if response.status_code != 200:
-        detail = response.text[:300]
         raise HTTPException(status_code=502, detail=f"خطای سرویس هوش مصنوعی ({response.status_code})")
 
     data = response.json()
     try:
         text = data["choices"][0]["message"]["content"]
     except Exception:
-        # Workers AI sometimes returns result differently
         text = (
             data.get("result", {}).get("response")
             or data.get("result", {}).get("output_text")
