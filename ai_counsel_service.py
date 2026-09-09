@@ -8,8 +8,8 @@ from typing import Any
 import httpx
 from fastapi import HTTPException
 
-# مدل قوی‌تر برای فارسی ساخت‌یافته
-DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+# مدل پیشنهادی ارزیاب (Llama 4 Scout)
+DEFAULT_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct"
 
 
 def _cfg() -> tuple[str, str, str]:
@@ -121,7 +121,7 @@ async def generate_counseling(profile: dict[str, Any], top_results: list[Any]) -
             {"role": "user", "content": _build_user_content(profile or {}, top_results or [])},
         ],
         "max_tokens": 850,
-        "temperature": 0.4,
+        "temperature": 0.55,
     }
 
     try:
