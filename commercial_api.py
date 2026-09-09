@@ -1,8 +1,8 @@
 """Staged commercial API wiring for Dark Horse V2.
 
-This module exposes authentication, phone verification, test-credit, and sandbox
-billing endpoints without touching scoring/ranking or enabling PostgreSQL runtime
-cutover.
+This module exposes authentication, phone verification, test-credit, result
+persistence, and sandbox billing endpoints without touching scoring/ranking or
+enabling PostgreSQL runtime cutover.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from billing_models import Entitlement, User
 from database import get_db
 from phone_verification_service import request_registration_otp, verify_registration_otp
 
-router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "billing"])
+router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
 
 
 class RegisterRequest(BaseModel):
@@ -40,6 +40,11 @@ class VerifyRegistrationRequest(BaseModel):
 class LoginRequest(BaseModel):
     phone: str = Field(min_length=3, max_length=32)
     password: str = Field(min_length=8, max_length=256)
+
+
+class SaveResultRequest(BaseModel):
+    session_id: str = Field(min_length=8, max_length=64)
+    result_summary: dict = Field(min_length=1)
 
 
 def _public_user(user: User) -> dict[str, object]:
@@ -197,6 +202,42 @@ def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/me/save-result")
+def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> dict[str, object]:
+    """Persist the authenticated user's final journey summary exactly once per session."""
+    from api_persistence_adapter import OperationalPersistenceAdapter, assert_safe_mode
+    from operational_store import OperationalStore
+
+    try:
+        assert_safe_mode()
+        summary = dict(req.result_summary)
+        nested_session_id = summary.get("session_id")
+        if nested_session_id is not None and str(nested_session_id) != req.session_id:
+            raise ValueError("result_summary session_id does not match session_id")
+        summary["session_id"] = req.session_id
+        session = OperationalPersistenceAdapter(OperationalStore()).save_result(
+            req.session_id,
+            int(user.id),
+            summary,
+        )
+        return {
+            "saved": True,
+            "completed": bool(session.is_completed),
+            "session_id": session.session_uuid,
+            "operational_session_id": int(session.id),
+        }
+    except HTTPException:
+        raise
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        if "exceeds" in str(exc):
+            raise HTTPException(status_code=413, detail=str(exc)) from exc
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/billing/create-payment")
