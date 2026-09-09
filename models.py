@@ -225,10 +225,13 @@ class UserFeedback(Base):
     accuracy_rating = Column(Integer, nullable=True)
     comments = Column(Text, nullable=True)
     recommended_major_id = Column(Integer, ForeignKey("majors.id", ondelete="SET NULL"), nullable=True)
-    would_recommend = Column(Boolean, nullable=True)
+    would_recommend = Column(Boolean, default=False, nullable=False)
     contact_for_research = Column(Boolean, default=False, nullable=False)
     email = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now()
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    session = relationship("UserSession", back_populates="feedback")
+    recommended_major = relationship("Major", foreign_keys=[recommended_major_id])
 
 
 class AuditLog(Base):
