@@ -34,9 +34,18 @@
     logout() { clear(); },
 
     async register(name, phone, password) {
-      const data = await req('/api/v1/auth/register', {
+      // Registration is now a two-step flow: the server returns an OTP challenge.
+      // Do not persist the challenge response as an authenticated session.
+      return req('/api/v1/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, phone, password })
+      });
+    },
+
+    async registerVerify(challengeId, code) {
+      const data = await req('/api/v1/auth/register/verify', {
+        method: 'POST',
+        body: JSON.stringify({ challenge_id: challengeId, code })
       });
       save(data);
       return data;
