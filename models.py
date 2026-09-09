@@ -141,7 +141,7 @@ class UserSession(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     session_uuid = Column(String(36), nullable=False, unique=True)
     micro_motives = Column(JSON, nullable=False)
     sjt_answers = Column(JSON, nullable=False)
@@ -228,10 +228,7 @@ class UserFeedback(Base):
     would_recommend = Column(Boolean, nullable=True)
     contact_for_research = Column(Boolean, default=False, nullable=False)
     email = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    session = relationship("UserSession", back_populates="feedback")
-    recommended_major = relationship("Major", foreign_keys=[recommended_major_id])
+    created_at = Column(DateTime(timezone=True), server_default=func.now()
 
 
 class AuditLog(Base):
