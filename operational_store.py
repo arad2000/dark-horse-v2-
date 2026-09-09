@@ -66,9 +66,20 @@ class OperationalStore:
     ) -> UserSession:
         validate_session_payload(micro_motives, sjt_answers, conjoint_choices)
         with self.transaction() as db:
+            requested_uuid = session_uuid or str(uuid4())
+            existing = db.scalar(select(UserSession).where(UserSession.session_uuid == requested_uuid))
+            if existing is not None:
+                if user_id is not None and existing.user_id not in (None, user_id):
+                    raise ValueError("session_uuid belongs to another user")
+                if user_id is not None and existing.user_id is None:
+                    existing.user_id = user_id
+                    db.flush()
+                db.expunge(existing)
+                return existing
+
             row = UserSession(
                 user_id=user_id,
-                session_uuid=session_uuid or str(uuid4()),
+                session_uuid=requested_uuid,
                 micro_motives=micro_motives,
                 sjt_answers=sjt_answers,
                 conjoint_choices=conjoint_choices,
@@ -86,38 +97,48 @@ class OperationalStore:
         session_id: int,
         recommendations: list[dict[str, Any]],
     ) -> list[DiscoveryResult]:
-        """Persist a deterministic set of major results for an existing session."""
+        """Persist a deterministic set of major results idempotently for a session."""
         validate_discovery_payload(recommendations)
         with self.transaction() as db:
             session = db.get(UserSession, session_id)
             if session is None:
                 raise ValueError(f"Unknown session_id: {session_id}")
 
+            by_major = {
+                int(row.major_id): row
+                for row in db.scalars(
+                    select(DiscoveryResult).where(DiscoveryResult.session_id == session_id)
+                )
+            }
+
             rows: list[DiscoveryResult] = []
+            seen_major_ids: set[int] = set()
             for rank, item in enumerate(recommendations, start=1):
                 major_id = int(item["major_id"])
+                if major_id in seen_major_ids:
+                    raise ValueError(f"duplicate major_id in recommendations: {major_id}")
+                seen_major_ids.add(major_id)
                 if db.get(Major, major_id) is None:
                     raise ValueError(f"Unknown major_id: {major_id}")
                 fit = item.get("individuality_fit", item)
                 raw = fit.get("raw_components", {})
-                row = DiscoveryResult(
-                    session_id=session_id,
-                    major_id=major_id,
-                    m_score=float(raw.get("m_score", fit.get("m_score", 0.0))),
-                    s_score=float(raw.get("s_score", fit.get("s_score", 0.0))),
-                    v_score=float(raw.get("v_score", fit.get("v_score", 0.0))),
-                    total_score=float(fit.get("score", item.get("fit_score", 0.0))),
-                    fit_level=fit.get("level", item.get("fit_level")),
-                    matched_motives=fit.get("matched_motives"),
-                    strategy_highlights=fit.get("strategy_highlights"),
-                    value_alignment=fit.get("value_alignment"),
-                    warnings=fit.get("warnings"),
-                    personalized_description=fit.get("personalized_description"),
-                    archetype_info=fit.get("archetype"),
-                    alternative_paths=fit.get("alternative_paths"),
-                    rank=rank,
-                )
-                db.add(row)
+                row = by_major.get(major_id)
+                if row is None:
+                    row = DiscoveryResult(session_id=session_id, major_id=major_id)
+                    db.add(row)
+                row.m_score = float(raw.get("m_score", fit.get("m_score", 0.0)))
+                row.s_score = float(raw.get("s_score", fit.get("s_score", 0.0)))
+                row.v_score = float(raw.get("v_score", fit.get("v_score", 0.0)))
+                row.total_score = float(fit.get("score", item.get("fit_score", 0.0)))
+                row.fit_level = fit.get("level", item.get("fit_level"))
+                row.matched_motives = fit.get("matched_motives")
+                row.strategy_highlights = fit.get("strategy_highlights")
+                row.value_alignment = fit.get("value_alignment")
+                row.warnings = fit.get("warnings")
+                row.personalized_description = fit.get("personalized_description")
+                row.archetype_info = fit.get("archetype")
+                row.alternative_paths = fit.get("alternative_paths")
+                row.rank = rank
                 rows.append(row)
 
             db.flush()
@@ -130,6 +151,7 @@ class OperationalStore:
         session_id: int,
         branches: list[dict[str, Any]],
     ) -> list[BranchRecommendation]:
+        """Persist a deterministic set of branch results idempotently for a session."""
         validate_branch_payload(branches)
         with self.transaction() as db:
             session = db.get(UserSession, session_id)
@@ -137,27 +159,37 @@ class OperationalStore:
                 raise ValueError(f"Unknown session_id: {session_id}")
 
             branch_by_name = {b.name: b for b in db.query(SchoolBranch).all()}
+            by_branch = {
+                int(row.branch_id): row
+                for row in db.scalars(
+                    select(BranchRecommendation).where(BranchRecommendation.session_id == session_id)
+                )
+            }
+
             rows: list[BranchRecommendation] = []
+            seen_branch_ids: set[int] = set()
             for rank, item in enumerate(branches, start=1):
                 name = str(item.get("branch_name") or item.get("branch_name_fa") or "").strip()
                 branch = branch_by_name.get(name)
                 if branch is None:
                     raise ValueError(f"Unknown school branch: {name}")
+                if branch.id in seen_branch_ids:
+                    raise ValueError(f"duplicate branch in recommendations: {name}")
+                seen_branch_ids.add(branch.id)
                 components = item.get("avg_components", {})
-                row = BranchRecommendation(
-                    session_id=session_id,
-                    branch_id=branch.id,
-                    m_score=float(components.get("m_score", item.get("m_score", 0.0))),
-                    s_score=float(components.get("s_score", item.get("s_score", 0.0))),
-                    v_score=float(components.get("v_score", item.get("v_score", 0.0))),
-                    average_score=float(item.get("average_score", item.get("fit_score", 0.0))),
-                    matched_motives=item.get("matched_motives"),
-                    evidence=item.get("evidence"),
-                    warning=item.get("warning"),
-                    alternative_paths=item.get("alternative_paths"),
-                    rank=rank,
-                )
-                db.add(row)
+                row = by_branch.get(int(branch.id))
+                if row is None:
+                    row = BranchRecommendation(session_id=session_id, branch_id=branch.id)
+                    db.add(row)
+                row.m_score = float(components.get("m_score", item.get("m_score", 0.0)))
+                row.s_score = float(components.get("s_score", item.get("s_score", 0.0)))
+                row.v_score = float(components.get("v_score", item.get("v_score", 0.0)))
+                row.average_score = float(item.get("average_score", item.get("fit_score", 0.0)))
+                row.matched_motives = item.get("matched_motives")
+                row.evidence = item.get("evidence")
+                row.warning = item.get("warning")
+                row.alternative_paths = item.get("alternative_paths")
+                row.rank = rank
                 rows.append(row)
 
             db.flush()
