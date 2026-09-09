@@ -29,6 +29,8 @@ def dashboard_summary(db: Session, actor: User) -> dict[str, int]:
 
 
 def list_feedback(db: Session, actor: User, *, limit: int = 50) -> list[dict]:
+    """List recent feedback. Session lookup is best-effort so a missing/bad
+    UserSession row cannot break the whole admin panel."""
     require_admin(actor)
     if limit < 1 or limit > 200:
         raise ValueError("limit must be between 1 and 200")
@@ -39,21 +41,39 @@ def list_feedback(db: Session, actor: User, *, limit: int = 50) -> list[dict]:
 
     out: list[dict] = []
     for row in rows:
-        session = db.get(UserSession, row.session_id)
-        conjoint = (session.conjoint_choices if session else None) or {}
+        session_uuid = None
+        exam_code = None
+        suggested_major = None
+        try:
+            sid = row.session_id
+            if sid is not None:
+                session = db.get(UserSession, sid)
+                if session is not None:
+                    session_uuid = getattr(session, "session_uuid", None)
+                    conjoint = getattr(session, "conjoint_choices", None) or {}
+                    if isinstance(conjoint, dict):
+                        exam_code = conjoint.get("exam_code")
+                        suggested_major = conjoint.get("suggested_major")
+        except Exception:
+            # Detached/missing session or schema mismatch must not 500 the admin UI
+            try:
+                db.rollback()
+            except Exception:
+                pass
+
         out.append(
             {
                 "id": int(row.id),
-                "session_id": int(row.session_id),
-                "session_uuid": getattr(session, "session_uuid", None),
+                "session_id": int(row.session_id) if row.session_id is not None else None,
+                "session_uuid": session_uuid,
                 "satisfaction_score": row.satisfaction_score,
                 "accuracy_rating": row.accuracy_rating,
                 "would_recommend": row.would_recommend,
-                "contact_for_research": bool(row.contact_for_research),
-                "email": row.email,
+                "contact_for_research": bool(getattr(row, "contact_for_research", False)),
+                "email": getattr(row, "email", None),
                 "comments": row.comments,
-                "exam_code": conjoint.get("exam_code") if isinstance(conjoint, dict) else None,
-                "suggested_major": conjoint.get("suggested_major") if isinstance(conjoint, dict) else None,
+                "exam_code": exam_code,
+                "suggested_major": suggested_major,
                 "created_at": row.created_at.isoformat() if row.created_at else None,
             }
         )
