@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 import httpx
 from fastapi import HTTPException
 
-DEFAULT_MODEL = "@cf/meta/llama-3.2-3b-instruct"
+# مدل قوی‌تر برای فارسی ساخت‌یافته
+DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 
 
 def _cfg() -> tuple[str, str, str]:
@@ -22,58 +24,87 @@ def _cfg() -> tuple[str, str, str]:
     return account, token, model
 
 
-SYSTEM_PROMPT = """تو مشاور هدایت تحصیلی فارسی‌زبان هستی؛ بر اساس فلسفه کتاب «اسب سیاه» (تاد رز).
+SYSTEM_PROMPT = """تو مشاور هدایت تحصیلی در ایران هستی و بر فلسفه کتاب «اسب سیاه» کار می‌کنی.
 
-قوانین اجباری:
-1) فقط و فقط به زبان فارسی بنویس. هیچ واژه انگلیسی، آلمانی یا لاتین ننویس.
-2) اگر نام رشته به‌ناچار خارجی است، همان نام رایج فارسی‌اش را بنویس (مثلاً مهندسی انرژی‌های تجدیدپذیر).
-3) لحن گرم، ساده، امیدوارکننده و بدون کلیشه خشک.
-4) برای هر رشته/شاخه یک بخش جدا با عنوان واضح بنویس.
-5) تکرار بی‌معنی نکن. وعده قطعی موفقیت نده.
-6) خروجی را ساخت‌یافته بنویس نه یک پاراگراف درهم."""
+قوانین سخت:
+1) فقط فارسی معیار بنویس. هیچ کلمه انگلیسی/آلمانی/لاتین ننویس.
+2) هرگز یک پاراگراف را تکرار نکن.
+3) از روی جرقه‌های فنی، شغل مهندسی دانشگاهی نساز مگر کاربر در مسیر رشته دانشگاهی باشد.
+4) برای «شاخه دبیرستان» فقط درباره انتخاب رشته متوسطه حرف بزن (ریاضی‌فیزیک، علوم تجربی، علوم انسانی، فنی‌حرفه‌ای، کاردانش و ...).
+5) واقعیت‌های ساختگی (راکتور، پایلوت پلنت، Aspen و ...) را به عنوان مسیر شغلی شاخه دبیرستان ننویس.
+6) اگر داده ناکافی است، صادقانه کوتاه بگو؛ اغراق نکن.
+7) لحن گرم، روشن و قابل اعتماد."""
+
+
+def _short_motive(m: Any) -> str:
+    s = str(m or "").strip()
+    if ":" in s:
+        s = s.split(":", 1)[0].strip()
+    if "：" in s:
+        s = s.split("：", 1)[0].strip()
+    s = re.sub(r"\s+", " ", s)
+    return s[:40]
 
 
 def _build_user_content(profile: dict[str, Any], top_results: list[Any]) -> str:
-    motives = profile.get("micro_motives") or profile.get("sparks") or profile.get("liked_motives") or []
-    kind = profile.get("kind") or "majors"
-    kind_fa = "شاخه دبیرستان" if kind in ("branches", "branch") else "رشته دانشگاهی"
+    motives_raw = profile.get("micro_motives") or profile.get("sparks") or profile.get("liked_motives") or []
+    motives = [_short_motive(m) for m in motives_raw[:10]]
+    motives = [m for m in motives if m]
+    kind = (profile.get("kind") or "majors").lower()
+    is_branch = kind in ("branches", "branch")
+    kind_fa = "شاخه‌های دبیرستان (هدایت تحصیلی متوسطه)" if is_branch else "رشته‌های دانشگاهی"
 
     lines = []
     for i, item in enumerate(top_results[:5], 1):
         if isinstance(item, dict):
-            name = item.get("name") or item.get("title") or item.get("code") or "نامشخص"
+            name = item.get("name") or item.get("title") or "نامشخص"
             score = item.get("fit_score", item.get("score"))
+            try:
+                score_n = float(score)
+                if score_n <= 1:
+                    score_n *= 100
+                score_txt = f"{score_n:.0f}٪"
+            except Exception:
+                score_txt = "—"
             mm = item.get("micro_motives_matched") or []
-            mm_txt = "، ".join(str(x) for x in mm[:6]) if mm else "—"
-            score_txt = f"{score}" if score is not None else "—"
-            lines.append(f"{i}) نام: {name} | همخوانی: {score_txt} | جرقه‌های مرتبط: {mm_txt}")
+            mm_s = "، ".join(_short_motive(x) for x in mm[:5] if _short_motive(x)) or "—"
+            lines.append(f"{i}) {name} | همخوانی {score_txt} | نشانه‌ها: {mm_s}")
         else:
             lines.append(f"{i}) {item}")
 
     results_txt = "\n".join(lines) if lines else "نامشخص"
-    motives_txt = "، ".join(str(m) for m in motives[:12]) if motives else "نامشخص"
+    motives_txt = "، ".join(motives) if motives else "نامشخص"
     n = min(5, max(1, len(top_results) or 1))
 
-    return f"""داده‌های تحلیل اسب سیاه:
+    if is_branch:
+        task = f"""برای هر کدام از {n} شاخه بالا، جدا و بدون تکرار بنویس:
 
-نوع نتیجه: {kind_fa}
-جرقه‌ها / خرده‌انگیزه‌های کاربر: {motives_txt}
+### نام شاخه
+- چرا با سبک یادگیری و جرقه‌های این دانش‌آموز جور است (۲ جمله، بدون داستان صنعتی)
+- در دبیرستان چه مهارت‌ها یا درس‌هایی برایش طبیعی‌تر است (۱–۲ جمله)
+- یک مسیر مکمل یا نکته واقع‌بینانه (۱ جمله)
 
-فهرست نتایج (به ترتیب اولویت):
+در پایان فقط ۲ جمله جمع‌بندی برای انتخاب شاخه دبیرستان بنویس.
+یادآوری: این مرحله متوسطه است، نه انتخاب شغل مهندسی دانشگاه."""
+    else:
+        task = f"""برای هر کدام از {n} رشته دانشگاهی بالا، جدا و بدون تکرار بنویس:
+
+### نام رشته
+- چرا با فردیت و جرقه‌های این فرد هم‌خوان است (۲–۳ جمله واقعی)
+- چه نوع فعالیت یا محیط کاری برایش مناسب‌تر است (۱–۲ جمله)
+- یک نکته احتیاط یا مسیر مکمل (۱ جمله)
+
+در پایان فقط ۲ جمله جمع‌بندی انگیزشی بنویس."""
+
+    return f"""نوع تحلیل: {kind_fa}
+خلاصه جرقه‌های کاربر (کوتاه): {motives_txt}
+
+نتایج به ترتیب:
 {results_txt}
 
-دقیقاً این ساختار را رعایت کن:
+{task}
 
-برای هر مورد از {n} نتیجه بالا، جداگانه بنویس:
-
-### [نام فارسی رشته یا شاخه]
-- چرا با فردیت این کاربر هم‌خوان است (۲ تا ۳ جمله)
-- چه مسیر یا فعالیتی برایش طبیعی‌تر است (۱ تا ۲ جمله)
-- یک نکته احتیاط یا مسیر مکمل کوتاه (۱ جمله)
-
-بعد از همه موارد، فقط ۲ جمله جمع‌بندی انگیزشی بنویس.
-
-یادآوری: تمام متن فقط فارسی. بدون کلمه غیرفارسی."""
+فقط فارسی. بدون تکرار. بدون واژه غیرفارسی."""
 
 
 async def generate_counseling(profile: dict[str, Any], top_results: list[Any]) -> str:
@@ -89,12 +120,12 @@ async def generate_counseling(profile: dict[str, Any], top_results: list[Any]) -
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": _build_user_content(profile or {}, top_results or [])},
         ],
-        "max_tokens": 900,
-        "temperature": 0.55,
+        "max_tokens": 850,
+        "temperature": 0.4,
     }
 
     try:
-        async with httpx.AsyncClient(timeout=50.0) as client:
+        async with httpx.AsyncClient(timeout=55.0) as client:
             response = await client.post(url, headers=headers, json=payload)
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="زمان پاسخ مدل زبانی تمام شد. دوباره تلاش کنید.")
