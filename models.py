@@ -1,11 +1,12 @@
 """Dark Horse V2 — SQLAlchemy models for the Hybrid data layer.
 
-Reference/psychometric data remains versioned in JSON under Git.
+Reference/psychometric data remains versioned in JSON.
 Operational user/session/result data is modeled for PostgreSQL.
 No scoring or recommendation logic lives in this module.
 """
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Column,
     DateTime,
@@ -134,9 +135,13 @@ class SchoolBranch(Base):
 
 class UserSession(Base):
     __tablename__ = "user_sessions"
-    __table_args__ = (Index("idx_session_created", "created_at"),)
+    __table_args__ = (
+        Index("idx_session_user_created", "user_id", "created_at"),
+        Index("idx_session_created", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     session_uuid = Column(String(36), nullable=False, unique=True)
     micro_motives = Column(JSON, nullable=False)
     sjt_answers = Column(JSON, nullable=False)
@@ -149,6 +154,7 @@ class UserSession(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    user = relationship("User", foreign_keys=[user_id], backref="journey_sessions")
     discovery_results = relationship("DiscoveryResult", back_populates="session", cascade="all, delete-orphan")
     branch_recommendations = relationship("BranchRecommendation", back_populates="session", cascade="all, delete-orphan")
     feedback = relationship("UserFeedback", back_populates="session", uselist=False, cascade="all, delete-orphan")
