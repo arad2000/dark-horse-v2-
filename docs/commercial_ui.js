@@ -8,15 +8,6 @@
 
   function el(id) { return document.getElementById(id); }
   function safeText(v) { return String(v == null ? '' : v); }
-  function normalizeDigits(v) {
-    return safeText(v).translate(String.prototype.translate ? undefined : undefined);
-  }
-
-  function normalizePersianDigits(v) {
-    return safeText(v)
-      .replace(/[۰-۹]/g, function (d) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); })
-      .replace(/[٠-٩]/g, function (d) { return String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)); });
-  }
 
   function saveLocalUser(user) {
     try { localStorage.setItem(USER_KEY, JSON.stringify(user || null)); } catch (_) {}
@@ -47,7 +38,6 @@
       .dh-commercial-price{font-size:2rem;color:#f0c040;font-weight:800;text-align:center;margin:8px 0}
       .dh-commercial-pack{background:#10101a;border:1px solid rgba(212,175,55,.22);border-radius:12px;padding:12px;margin:12px 0;color:#cbb98a;line-height:2;text-align:center}
       .dh-commercial-link{background:none;border:0;color:#d4af37;text-decoration:underline;cursor:pointer;font:inherit;padding:4px}
-      .dh-commercial-code{font-size:1.25rem;text-align:center;letter-spacing:.25em;direction:ltr}
     `;
     document.head.appendChild(s);
   }
@@ -66,55 +56,6 @@
     ov.innerHTML = '<div class="dh-commercial-modal">' + html + '</div>';
     ov.addEventListener('click', function (e) { if (e.target === ov) closeModal(); });
     document.body.appendChild(ov);
-    return ov;
-  }
-
-  function completeAuthenticatedSession(data) {
-    if (data && data.user) saveLocalUser(data.user);
-    if (data && typeof data.quota === 'number') {
-      setLocalQuota({ used: data.quota > 0 ? 0 : 1, premium: false });
-    }
-  }
-
-  function showRegistrationVerifyModal(challengeId) {
-    var ov = showModal(
-      '<h2 class="dh-commercial-title">تأیید شماره موبایل</h2>' +
-      '<p class="dh-commercial-sub">کد ۶ رقمی ارسال‌شده با پیامک را وارد کنید.</p>' +
-      '<input id="dh-c-otp" class="dh-commercial-input dh-commercial-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="کد تأیید">' +
-      '<div id="dh-c-otp-err" class="dh-commercial-error"></div>' +
-      '<div class="dh-commercial-actions">' +
-        '<button type="button" class="btn btn-primary" id="dh-c-otp-submit">تأیید</button>' +
-        '<button type="button" class="btn" id="dh-c-otp-close">انصراف</button>' +
-      '</div>' +
-      '<p class="dh-commercial-note">کد تأیید تا ۵ دقیقه معتبر است.</p>'
-    );
-
-    el('dh-c-otp-close').onclick = closeModal;
-    el('dh-c-otp-submit').onclick = async function () {
-      if (BUSY) return;
-      BUSY = true;
-      var err = el('dh-c-otp-err');
-      if (err) err.textContent = '';
-      var code = normalizePersianDigits(el('dh-c-otp').value).trim();
-      if (!/^\d{6}$/.test(code)) {
-        if (err) err.textContent = 'کد تأیید باید ۶ رقم باشد.';
-        BUSY = false;
-        return;
-      }
-      try {
-        var data = await global.DHAuth.registerVerify(challengeId, code);
-        completeAuthenticatedSession(data);
-        closeModal();
-        await continueAfterAuth();
-      } catch (e) {
-        if (err) err.textContent = safeText(e && e.message ? e.message : e);
-      } finally {
-        BUSY = false;
-      }
-    };
-
-    var input = el('dh-c-otp');
-    if (input) input.focus();
     return ov;
   }
 
@@ -157,19 +98,13 @@
         if (!/^09\d{9}$/.test(phone)) { if (err) err.textContent = 'شماره موبایل را درست وارد کن.'; BUSY = false; return; }
         if (pass.length < 8) { if (err) err.textContent = 'رمز عبور باید حداقل ۸ کاراکتر باشد.'; BUSY = false; return; }
         try {
-          if (mode === 'register') {
-            var registration = await global.DHAuth.register(name, phone, pass);
-            if (!registration || !registration.otp_required || !registration.challenge_id) {
-              throw new Error('درخواست کد تأیید از سرور کامل نشد.');
-            }
-            closeModal();
-            showRegistrationVerifyModal(registration.challenge_id);
-          } else {
-            var data = await global.DHAuth.login(phone, pass);
-            completeAuthenticatedSession(data);
-            closeModal();
-            await continueAfterAuth();
-          }
+          var data = mode === 'register'
+            ? await global.DHAuth.register(name, phone, pass)
+            : await global.DHAuth.login(phone, pass);
+          if (data && data.user) saveLocalUser(data.user);
+          if (data && typeof data.quota === 'number') setLocalQuota({ used: data.quota > 0 ? 0 : 1, premium: false });
+          closeModal();
+          await continueAfterAuth();
         } catch (e) {
           if (err) err.textContent = safeText(e && e.message ? e.message : e);
         } finally {
