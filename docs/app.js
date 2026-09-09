@@ -1268,30 +1268,44 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 // ==================== DISPLAY RESULTS (نسخه نهایی با UI/UX بهبودیافته) ====================
 
 // ==================== توضیح مشاوره‌ای (Cloudflare Workers AI) ====================
-async function loadDeepCounsel() {
+async function loadDeepCounsel(mode) {
+  mode = mode || 'main';
   const box = document.getElementById('dh-counsel-box');
-  const btn = document.getElementById('dh-counsel-btn');
+  const btnMain = document.getElementById('dh-counsel-btn');
+  const btnAlt = document.getElementById('dh-counsel-alt-btn');
   if (!box) return;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'در حال نوشتن...';
-  }
-  box.style.display = 'block';
-  box.innerHTML = '<p style="color:#b0a080;line-height:1.9;margin:0;">در حال آماده‌سازی توضیح مشاوره‌ای شخصی...</p>';
 
-  const tops = (state.lastCounselTops || []).slice(0, 5);
+  const active = mode === 'alternatives' ? btnAlt : btnMain;
+  if (btnMain) btnMain.disabled = true;
+  if (btnAlt) btnAlt.disabled = true;
+  if (active) {
+    active.textContent = mode === 'alternatives'
+      ? '⏳ در حال تحلیل مسیرهای جایگزین...'
+      : '⏳ در حال نوشتن مشاوره شخصی...';
+  }
+
+  box.style.display = 'block';
+  box.innerHTML = '<p style="color:#f0c040;line-height:1.9;margin:0;text-align:center;">در حال آماده‌سازی توضیح بر اساس پروفایل تو...</p>';
+
+  const tops = (state.lastCounselTops || []).slice(0, 4);
   const profile = {
     kind: state.lastCounselKind || 'majors',
     micro_motives: state.likedCodes || [],
+    liked_motives: state.likedCodes || []
   };
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000);
+    const timeout = setTimeout(() => controller.abort(), 65000);
     const res = await fetch(API_BASE + '/api/v2/darkhorse/counsel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile, top_results: tops }),
+      body: JSON.stringify({
+        profile: profile,
+        top_results: tops,
+        journey_type: state.lastCounselKind || 'majors',
+        mode: mode
+      }),
       signal: controller.signal
     });
     clearTimeout(timeout);
@@ -1304,18 +1318,25 @@ async function loadDeepCounsel() {
     const text = (data && data.counseling) ? String(data.counseling).trim() : '';
     if (!text) throw new Error('پاسخ خالی');
     const safe = escapeHtml(text).replace(/\n/g, '<br>');
+    const title = mode === 'alternatives'
+      ? '🔄 تحلیل مسیرهای جایگزین'
+      : '✨ مشاوره شخصی‌سازی‌شده برای تو';
     box.innerHTML =
-      '<div style="background:#12121c;border:1px solid #d4af37;border-radius:12px;padding:16px;text-align:right;line-height:2;color:#e8dcc0;">' +
-      '<h3 style="color:#f0c040;margin:0 0 10px;">✨ توضیح مشاوره‌ای</h3>' +
+      '<div style="background:linear-gradient(145deg,#14141f,#0f0f18);border:1px solid rgba(212,175,55,.45);border-radius:16px;padding:20px;text-align:right;line-height:2;color:#e8dcc0;box-shadow:0 8px 30px rgba(0,0,0,.35);">' +
+      '<h3 style="color:#f0c040;margin:0 0 12px;font-size:1.05rem;">' + title + '</h3>' +
       '<div style="font-size:0.95rem;">' + safe + '</div></div>';
   } catch (e) {
     console.error(e);
     box.innerHTML =
-      '<p style="color:#f88;line-height:1.8;margin:0;">الان نتوانستیم توضیح مشاوره‌ای را بگیریم. نتایج اصلی شما محفوظ است؛ کمی بعد دوباره تلاش کنید.</p>';
+      '<p style="color:#f88;line-height:1.8;margin:0;text-align:center;">الان نتوانستیم توضیح مشاوره‌ای را بگیریم. نتایج اصلی شما محفوظ است؛ کمی بعد دوباره تلاش کنید.</p>';
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '✨ توضیح مشاوره‌ای عمیق‌تر';
+    if (btnMain) {
+      btnMain.disabled = false;
+      btnMain.innerHTML = '<span style="font-size:1.25rem;">✨</span><span>توضیح مشاوره‌ای عمیق‌تر</span>';
+    }
+    if (btnAlt) {
+      btnAlt.disabled = false;
+      btnAlt.innerHTML = '<span style="font-size:1.25rem;">🔄</span><span>تحلیل مسیرهای جایگزین</span>';
     }
   }
 }
@@ -1593,25 +1614,46 @@ function displayResults(data, type) {
     });
   }
 
-  // ذخیره برای مشاوره AI + بخش دکمه
+    // ذخیره برای مشاوره AI + دو دکمه
   try {
     state.lastCounselKind = isBranch ? 'branches' : 'majors';
     state.lastCounselTops = (matched || []).slice(0, 5).map(function (r) {
       return {
         name: r.name,
         score: r.fit_score,
+        fit_score: r.fit_score,
+        raw_components: r.raw_components || r.avg_components || {},
+        avg_components: r.avg_components || r.raw_components || {},
+        archetype: r.archetype || null,
+        fulfillment_source: r.fulfillment_source || null,
+        alternative_paths: r.alternative_paths || [],
         micro_motives_matched: r.micro_motives_matched || []
       };
     });
   } catch (e) {}
 
   html += `
-    <div style="margin-top:22px;text-align:center;">
-      <button class="btn btn-primary" id="dh-counsel-btn" style="width:100%;padding:14px;font-size:1rem;" onclick="loadDeepCounsel()">
-        ✨ توضیح مشاوره‌ای عمیق‌تر
+    <div style="display:flex;flex-direction:column;gap:12px;margin:28px 0 10px 0;">
+      <button id="dh-counsel-btn" class="btn btn-primary"
+        style="width:100%;padding:15px 18px;font-size:1.02rem;font-weight:600;border:none;border-radius:14px;
+               background:linear-gradient(135deg,#f0c040,#d4af37);color:#0a0a0f;
+               box-shadow:0 6px 20px rgba(240,192,64,.35);cursor:pointer;
+               display:flex;align-items:center;justify-content:center;gap:10px;"
+        onclick="loadDeepCounsel('main')">
+        <span style="font-size:1.25rem;">✨</span>
+        <span>توضیح مشاوره‌ای عمیق‌تر</span>
       </button>
-      <p style="color:#8f845f;font-size:.8rem;margin:8px 0 0;line-height:1.7;">بر اساس فلسفه اسب سیاه — متن شخصی‌سازی‌شده</p>
-      <div id="dh-counsel-box" style="display:none;margin-top:14px;text-align:right;"></div>
+      <button id="dh-counsel-alt-btn" class="btn"
+        style="width:100%;padding:15px 18px;font-size:1.02rem;font-weight:600;border:1px solid rgba(212,175,55,.55);
+               border-radius:14px;background:rgba(240,192,64,.08);color:#f0c040;
+               box-shadow:0 4px 15px rgba(0,0,0,.25);cursor:pointer;
+               display:flex;align-items:center;justify-content:center;gap:10px;"
+        onclick="loadDeepCounsel('alternatives')">
+        <span style="font-size:1.25rem;">🔄</span>
+        <span>تحلیل مسیرهای جایگزین</span>
+      </button>
+      <p style="color:#8f845f;font-size:.8rem;margin:0;line-height:1.7;text-align:center;">بر اساس فلسفه اسب سیاه — متن شخصی‌سازی‌شده</p>
+      <div id="dh-counsel-box" style="display:none;margin-top:6px;text-align:right;"></div>
     </div>
 `;
 
