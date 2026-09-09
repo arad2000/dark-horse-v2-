@@ -58,6 +58,7 @@ class OperationalStore:
         sjt_answers: dict[str, Any],
         conjoint_choices: dict[str, Any],
         *,
+        user_id: int | None = None,
         session_uuid: str | None = None,
         user_ip: str | None = None,
         user_agent: str | None = None,
@@ -66,6 +67,7 @@ class OperationalStore:
         validate_session_payload(micro_motives, sjt_answers, conjoint_choices)
         with self.transaction() as db:
             row = UserSession(
+                user_id=user_id,
                 session_uuid=session_uuid or str(uuid4()),
                 micro_motives=micro_motives,
                 sjt_answers=sjt_answers,
