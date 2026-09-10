@@ -10,10 +10,12 @@ class CommercialUIContractTests(unittest.TestCase):
         self.ui = (self.docs / "commercial_ui.js").read_text(encoding="utf-8")
         self.app = (self.docs / "app.js").read_text(encoding="utf-8")
 
-    def test_liara_is_canonical_frontend_backend(self):
-        self.assertIn("https://asbe-siah.liara.run", self.app)
-        self.assertIn("https://asbe-siah.liara.run", self.auth)
+    def test_canonical_frontend_backend_domain(self):
+        self.assertIn("https://api.asbe-siah.ir", self.app)
+        self.assertIn("https://api.asbe-siah.ir", self.auth)
         self.assertNotIn("dark-horse-v2.onrender.com", self.auth)
+        self.assertNotIn("https://asbe-siah.liara.run", self.app)
+        self.assertNotIn("https://asbe-siah.liara.run", self.auth)
 
     def test_auth_client_exposes_server_authoritative_billing(self):
         for marker in (
