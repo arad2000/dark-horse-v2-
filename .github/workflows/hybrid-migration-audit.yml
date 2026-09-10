@@ -73,6 +73,9 @@ jobs:
       - name: Run commercial API contract tests
         run: python -m unittest -v test_commercial_api.py
 
+      - name: Run hybrid result-flow integration tests
+        run: python -m unittest -v test_hybrid_result_flow.py
+
       - name: Run commercial billing PostgreSQL E2E tests
         run: python -m unittest -v test_commercial_billing_e2e.py
 
