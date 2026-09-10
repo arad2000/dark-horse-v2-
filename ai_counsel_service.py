@@ -100,17 +100,18 @@ def _build_main_prompt(profile: dict[str, Any], top_results: list[Any], journey_
     if is_branch:
         task = """برای هر شاخه جدا بنویس (بدون تکرار):
 ### نام شاخه
-- همخوانی با جرقه‌ها و سبک یادگیری (۲ جمله)
+- همخوانی با جرقه‌ها (۲ جمله)
+- اشاره کوتاه به ترکیب انگیزه/راهبرد/ارزش اگر عدد دارند (۱ جمله)
 - درس/مهارت طبیعی در دبیرستان (۱–۲ جمله)
 - نکته واقع‌بینانه (۱ جمله)
 پایان: ۲ جمله جمع‌بندی برای انتخاب شاخه متوسطه."""
     else:
         task = """شامل این بخش‌ها بنویس:
-1) بازتاب فردیت و کهن‌الگو بر اساس جرقه‌ها
-2) معنای ترکیب امتیازهای M و S و V
+1) بازتاب فردیت و کهن‌الگو (اگر کهن‌الگو «—» بود، از روی جرقه‌ها بگو)
+2) صریحاً بگو ترکیب M و S و V چه معنایی دارد (از اعداد داده‌شده استفاده کن)
 3) چرا این رشته‌ها با فلسفه اسب سیاه برای او مناسب‌اند
 4) پیام پایانی کوتاه و واقعی
-حداکثر ۳۵۰ کلمه."""
+حداکثر ۳۵۰ کلمه. اگر برای شاخه دبیرستان هستی از ساختار شاخه‌ای بالا استفاده کن نه این لیست."""
 
     user = f"""نوع تحلیل: {kind_fa}
 جرقه‌های اصلی: {motives_txt}
@@ -125,46 +126,69 @@ def _build_main_prompt(profile: dict[str, Any], top_results: list[Any], journey_
 
 def _build_alt_prompt(profile: dict[str, Any], top_results: list[Any], journey_type: str) -> tuple[str, str]:
     system = """تو مشاور هدایت تحصیلی همدل هستی (فلسفه اسب سیاه).
-وظیفه: معرفی مسیرهای جایگزین به‌صورت امیدوارکننده و واقعی، بدون تضعیف مسیر اصلی.
-فقط فارسی. بدون واژه غیرفارسی. تکرار نکن."""
+
+وظیفهٔ این پیام فقط «مسیرهای جایگزین» است، نه تکرار توضیح مسیر اصلی.
+
+قوانین:
+1) فقط فارسی. بدون واژه انگلیسی/آلمانی
+2) هرگز مسیر اصلی را دوباره مثل مشاوره اصلی توضیح نده
+3) تمرکز روی نام‌های مسیر جایگزین که در داده آمده
+4) اگر لیست جایگزین خالی بود، صادقانه بگو داده کافی نیست؛ از خودت شاخه نساز
+5) لحن امیدوارکننده و بدون اجبار"""
 
     motives_raw = profile.get("micro_motives") or profile.get("liked_motives") or []
     motives = [_short_motive(m) for m in motives_raw[:12]]
     motives_txt = "، ".join(m for m in motives if m) or "نامشخص"
 
+    primary_names = []
+    alt_names_flat = []
     alt_lines = []
     for r in (top_results or [])[:4]:
         if not isinstance(r, dict):
             continue
         name = r.get("name") or "—"
+        primary_names.append(name)
         alts = r.get("alternative_paths") or []
         names = []
-        for a in alts[:4]:
+        for a in alts[:6]:
             if isinstance(a, dict):
-                names.append(a.get("branch_name") or a.get("major_name") or a.get("name") or "")
+                n = a.get("branch_name") or a.get("major_name") or a.get("name") or a.get("title") or ""
             else:
-                names.append(str(a))
-        names = [n for n in names if n]
+                n = str(a)
+            n = (n or "").strip()
+            if n and n not in names:
+                names.append(n)
+            if n and n not in alt_names_flat:
+                alt_names_flat.append(n)
         if names:
-            alt_lines.append(f"• برای {name}: {', '.join(names)}")
+            alt_lines.append(f"• کنار «{name}» سیستم این جایگزین‌ها را داده: {', '.join(names)}")
         else:
-            alt_lines.append(f"• برای {name}: مسیر جایگزین ثبت‌نشده")
+            alt_lines.append(f"• برای «{name}» جایگزین ثبت نشده")
+
     alt_txt = "\n".join(alt_lines) if alt_lines else "مسیر جایگزین مشخصی در داده‌ها نیست."
+    primary_txt = "، ".join(primary_names) if primary_names else "نامشخص"
+    flat_txt = "، ".join(alt_names_flat) if alt_names_flat else "هیچ"
 
     kind = (journey_type or "majors").lower()
     kind_fa = "شاخه دبیرستان" if kind in ("branches", "branch") else "رشته دانشگاهی"
 
-    user = f"""نوع: {kind_fa}
+    user = f"""نوع تحلیل: {kind_fa}
 جرقه‌های کاربر: {motives_txt}
 
-مسیرهای جایگزین سیستم:
+مسیر(های) اصلی فعلی کاربر: {primary_txt}
+فهرست یکتای مسیرهای جایگزین: {flat_txt}
+
+جزئیات:
 {alt_txt}
 
-بنویس:
-1) چرا این مسیرها ممکن است با جرقه‌ها جور شوند
-2) معرفی به‌عنوان مکمل/جایگزین اختیاری (نه اجباری)
-3) افق باز بدون تضعیف مسیر اصلی
-4) پایان امیدوارکننده
+ساختار پاسخ (اجباری):
+### مسیرهای جایگزین
+برای هر نام جایگزین (نه مسیر اصلی)، ۲–۳ جمله بنویس: چرا ممکن است با جرقه‌ها جور شود و چه تفاوتی با مسیر اصلی دارد.
+
+### جمع‌بندی
+۲ جمله: این‌ها گزینه مکمل‌اند نه اجبار؛ مسیر اصلی تضعیف نشود.
+
+اگر فهرست جایگزین «هیچ» بود، فقط بگو داده جایگزین کافی نیست و ۱ جمله راهنمایی کلی بده.
 حداکثر ۲۸۰ کلمه. فقط فارسی."""
     return system, user
 
