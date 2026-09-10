@@ -125,86 +125,111 @@ def _build_main_prompt(profile: dict[str, Any], top_results: list[Any], journey_
 
 
 def _build_alt_prompt(profile: dict[str, Any], top_results: list[Any], journey_type: str) -> tuple[str, str]:
-    system = """تو مشاور هدایت تحصیلی هستی و بر فلسفه اسب سیاه کار می‌کنی.
+    """پرامپت مسیرهای جایگزین — بر اساس نسخه ارزیاب + فاصله V/S موتور."""
+    system = """تو یک مشاور هدایت تحصیلی هستی که کاملاً بر اساس فلسفه کتاب «اسب سیاه» (تاد رز و اُگی اُگاس) کار می‌کنی.
 
-موضوع این پیام فقط «مسیرهای جایگزین» است.
+قوانین قطعی فلسفه اسب سیاه که باید رعایت کنی:
+1. خرده‌انگیزه‌ها (جرقه‌ها) پایدارترین و مهم‌ترین لایه هویت فرد هستند.
+2. ارزش‌های بنیادی نیز نسبتاً پایدارند.
+3. راهبردها پویا هستند و با آزمون و خطا قابل تقویت‌اند.
+4. مسیر جایگزین عمدتاً به‌خاطر هم‌راستایی «ارزش‌ها» یا «راهبردها» پیشنهاد می‌شود، نه به‌خاطر شباهت جرقه‌ها.
+5. جرقه‌ها اولویت اصلی باقی می‌مانند؛ مسیر جایگزین نباید جرقه‌ها را بی‌اهمیت نشان دهد.
 
-منطق علمی سیستم (اجباری رعایت کن):
-- مسیر جایگزین به‌خاطر جرقه/خرده‌انگیزه انتخاب نشده است.
-- نزدیکی مسیرها بر اساس شباهت «ارزش‌ها (V)» و/یا «راهبردها (S)» محاسبه شده است.
-- بنابراین توضیحت باید روی تناسب ارزش یا راهبرد تمرکز کند، نه روی جرقه‌ها.
+وظیفه تو:
+- توضیح بدهی چرا این مسیرهای جایگزین بر اساس ارزش‌ها یا راهبردهای فرد معنا دارند
+- آن‌ها را به‌عنوان گزینه مکمل یا جایگزین واقعی معرفی کنی
+- بدون تضعیف مسیر اصلی و بدون کلیشه صحبت کنی
 
-قوانین:
-1) فقط فارسی
-2) مسیر اصلی را دوباره مثل مشاوره اصلی شرح نده
-3) برای هر جایگزین بگو از نظر ارزش نزدیک‌تر است یا از نظر راهبرد (بر اساس اعداد فاصله)
-4) جرقه‌ها را محور توضیح جایگزین نکن
-5) اگر داده فاصله نبود، فقط بگو سیستم این مسیر را از نظر نیمرخ ارزش/راهبرد نزدیک دانسته است
-6) لحن واقعی و بدون اجبار"""
+فقط فارسی. بدون واژه انگلیسی/آلمانی. تکرار نکن."""
 
     kind = (journey_type or "majors").lower()
     kind_fa = "شاخه دبیرستان" if kind in ("branches", "branch") else "رشته دانشگاهی"
 
-    primary_names = []
-    detail_lines = []
+    blocks = []
     for r in (top_results or [])[:4]:
         if not isinstance(r, dict):
             continue
-        primary = r.get("name") or "—"
-        primary_names.append(primary)
+        name = r.get("name") or "نامشخص"
+        raw = r.get("raw_components") or r.get("avg_components") or {}
+        m = _pct(raw.get("m_score", r.get("m_score")))
+        s = _pct(raw.get("s_score", r.get("s_score")))
+        v = _pct(raw.get("v_score", r.get("v_score")))
+
+        archetype = r.get("archetype") or {}
+        if isinstance(archetype, str):
+            archetype = {"archetype": archetype}
+        dominant_values = archetype.get("dominant_values") or []
+        dominant_traits = archetype.get("dominant_traits") or []
+
         alts = r.get("alternative_paths") or []
-        if not alts:
-            detail_lines.append(f"مسیر اصلی «{primary}»: جایگزین ثبت نشده.")
-            continue
-        detail_lines.append(f"مسیر اصلی: «{primary}»")
+        alt_lines = []
         for a in alts[:5]:
             if isinstance(a, dict):
-                an = a.get("branch_name") or a.get("major_name") or a.get("name") or a.get("title") or "—"
+                an = a.get("branch_name") or a.get("major_name") or a.get("name") or a.get("title") or ""
+                an = (an or "").strip()
+                if not an:
+                    continue
                 try:
-                    vd = float(a.get("value_distance")) if a.get("value_distance") is not None else None
+                    vd = float(a["value_distance"]) if a.get("value_distance") is not None else None
                 except Exception:
                     vd = None
                 try:
-                    sd = float(a.get("strategy_distance")) if a.get("strategy_distance") is not None else None
+                    sd = float(a["strategy_distance"]) if a.get("strategy_distance") is not None else None
                 except Exception:
                     sd = None
                 if vd is not None and sd is not None:
                     if vd < sd:
-                        reason = "نزدیک‌تر از نظر ارزش‌ها (V)"
+                        why = "نزدیک‌تر از نظر ارزش‌ها (V)"
                     elif sd < vd:
-                        reason = "نزدیک‌تر از نظر راهبردها (S)"
+                        why = "نزدیک‌تر از نظر راهبردها (S)"
                     else:
-                        reason = "نزدیک از نظر ترکیب ارزش و راهبرد"
-                    detail_lines.append(
-                        f"  - جایگزین: {an} | دلیل سیستم: {reason} | فاصله ارزش={vd:.3f} | فاصله راهبرد={sd:.3f}"
-                    )
+                        why = "نزدیک از نظر ترکیب ارزش و راهبرد"
+                    alt_lines.append(f"{an} ({why}; فاصله‌V={vd:.3f}, فاصله‌S={sd:.3f})")
                 else:
-                    detail_lines.append(f"  - جایگزین: {an} | دلیل سیستم: نزدیکی نیمرخ ارزش/راهبرد")
+                    alt_lines.append(an)
             else:
-                detail_lines.append(f"  - جایگزین: {a}")
+                s_a = str(a).strip()
+                if s_a:
+                    alt_lines.append(s_a)
 
-    primary_txt = "، ".join(primary_names) if primary_names else "نامشخص"
-    details = "\n".join(detail_lines) if detail_lines else "داده جایگزین موجود نیست."
+        if not alt_lines:
+            continue
+
+        val_txt = "، ".join(str(x) for x in dominant_values[:6]) if dominant_values else "نامشخص"
+        trait_txt = "، ".join(str(x) for x in dominant_traits[:6]) if dominant_traits else "نامشخص"
+        blocks.append(
+            f"مسیر اصلی: {name}\n"
+            f"- امتیاز انگیزه (M): {m}%\n"
+            f"- امتیاز راهبرد (S): {s}%\n"
+            f"- امتیاز ارزش (V): {v}%\n"
+            f"- ارزش‌های غالب مرتبط: {val_txt}\n"
+            f"- راهبردهای غالب مرتبط: {trait_txt}\n"
+            f"- مسیرهای جایگزین ثبت‌شده: {', '.join(alt_lines)}"
+        )
+
+    results_block = "\n\n".join(blocks) if blocks else "مسیر جایگزین مشخصی در داده‌ها نیست."
+
+    motives_raw = profile.get("liked_motives") or profile.get("micro_motives") or profile.get("likedCodes") or []
+    motives = [_short_motive(m) for m in motives_raw[:12]]
+    motives_text = "، ".join(m for m in motives if m) or "مشخص نشده"
 
     user = f"""نوع تحلیل: {kind_fa}
-مسیر اصلی کاربر: {primary_txt}
 
-داده‌های مسیر جایگزین (خروجی موتور اسب سیاه):
-{details}
+جرقه‌های اصلی کاربر (فقط برای زمینه؛ محور توضیح جایگزین‌ها نباشند):
+{motives_text}
 
-ساختار پاسخ:
-### مسیرهای جایگزین
-برای هر جایگزین جدا بنویس:
-- نام مسیر
-- چرا سیستم آن را نزدیک دانسته (ارزش یا راهبرد؛ از دلیل داده‌شده استفاده کن)
-- این نزدیکی برای انتخاب دانش‌آموز چه معنایی دارد (۱–۲ جمله عملی)
-- تأکید کن مکمل است نه اجبار
+داده‌های مسیرهای اصلی و جایگزین:
+{results_block}
 
-### جمع‌بندی
-۲ جمله: مسیر اصلی تضعیف نشود؛ جایگزین‌ها افق دید را باز می‌کنند.
+حالا یک تحلیل مشاوره‌ای دقیق برای «مسیرهای جایگزین» بنویس که:
 
-ممنوع: محور قرار دادن جرقه‌ها برای توجیه جایگزین.
-حداکثر ۲۸۰ کلمه. فقط فارسی."""
+1. صریحاً بگوید این جایگزین‌ها عمدتاً به‌خاطر هم‌راستایی ارزش‌ها (V) یا راهبردها (S) مطرح شده‌اند
+2. توضیح دهد کدام‌یک بیشتر به ارزش‌های بنیادی وصل است و کدام‌یک به راهبردهای فرد (از دلیل فاصله‌ها استفاده کن)
+3. یادآوری کند که جرقه‌ها همچنان اولویت اصلی‌اند و این مسیرها مکمل/جایگزین هستند نه جایگزینِ کور
+4. راهبردها را پویا بداند (قابل تقویت با آزمون و خطا) و ارزش‌ها را پایدارتر
+5. لحن واقعی، شخصی و امیدوارکننده داشته باشد؛ بدون شعار
+
+حداکثر ۲۸۰ کلمه. فقط فارسی روان و مشاوره‌ای."""
     return system, user
 
 
