@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import billing_models  # noqa: F401  # register User/auth tables on shared Base metadata
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
