@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
@@ -13,7 +14,7 @@ from models import Base
 
 
 class CommercialBillingE2ETests(unittest.TestCase):
-    """Validate register -> consume free -> mock payment -> callback -> consume."""
+    """Validate verified register -> consume free -> mock payment -> callback -> consume."""
 
     @classmethod
     def setUpClass(cls):
@@ -59,13 +60,24 @@ class CommercialBillingE2ETests(unittest.TestCase):
             db.commit()
 
     def test_register_consume_buy_callback_replay_consume(self):
-        register = self.client.post(
-            "/api/v1/auth/register",
-            json={"name": "E2E User", "phone": "09001112233", "password": "strong-pass-123"},
-        )
-        self.assertEqual(register.status_code, 200, register.text)
-        token = register.json()["token"]
-        self.assertEqual(register.json()["quota"], 1)
+        with patch("phone_verification_service._send_kavenegar_otp"), patch("phone_verification_service.secrets.randbelow", return_value=123456):
+            register = self.client.post(
+                "/api/v1/auth/register",
+                json={"name": "E2E User", "phone": "09001112233", "password": "strong-pass-123"},
+            )
+            self.assertEqual(register.status_code, 200, register.text)
+            register_body = register.json()
+            self.assertTrue(register_body["otp_required"])
+            challenge_id = register_body["challenge_id"]
+
+            verify = self.client.post(
+                "/api/v1/auth/register/verify",
+                json={"challenge_id": challenge_id, "code": "123456"},
+            )
+            self.assertEqual(verify.status_code, 200, verify.text)
+            token = verify.json()["token"]
+            self.assertEqual(verify.json()["quota"], 1)
+
         headers = {"Authorization": f"Bearer {token}"}
 
         consumed_free = self.client.post("/api/v1/me/consume-test", headers=headers)
