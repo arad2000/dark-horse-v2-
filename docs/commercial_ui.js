@@ -21,6 +21,56 @@
     try { localStorage.setItem(QUOTA_KEY, JSON.stringify(q || { used: 0, premium: false })); } catch (_) {}
   }
 
+  function currentJourneySessionId() {
+    try {
+      var journey = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
+      return journey && journey.sessionId ? String(journey.sessionId) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // app.js is intentionally kept unchanged here; this narrow fetch bridge makes the
+  // server-issued discovery session reusable by the second analysis and save-result flow.
+  function installDiscoverySessionBridge() {
+    if (global.__dhDiscoverySessionBridgeInstalled || typeof global.fetch !== 'function') return;
+    global.__dhDiscoverySessionBridgeInstalled = true;
+    var nativeFetch = global.fetch.bind(global);
+    global.fetch = async function (input, init) {
+      var url = '';
+      try { url = typeof input === 'string' ? input : String(input && input.url || ''); } catch (_) {}
+      var isDiscovery = /\/api\/v2\/darkhorse\/(discover|branch-discovery)(?:\?|$)/.test(url);
+      var nextInit = init;
+
+      if (isDiscovery && init && typeof init.body === 'string') {
+        try {
+          var payload = JSON.parse(init.body);
+          var sessionId = currentJourneySessionId();
+          if (sessionId && !payload.session_id) {
+            payload.session_id = sessionId;
+            nextInit = Object.assign({}, init, { body: JSON.stringify(payload) });
+          }
+        } catch (_) {}
+      }
+
+      var response = await nativeFetch(input, nextInit);
+      if (isDiscovery && response && response.ok) {
+        try {
+          var clone = response.clone();
+          var body = await clone.json();
+          if (body && body.session_id) {
+            var journey = null;
+            try { journey = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
+            journey = journey && typeof journey === 'object' ? journey : {};
+            journey.sessionId = String(body.session_id);
+            try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
+          }
+        } catch (_) {}
+      }
+      return response;
+    };
+  }
+
   function addStyles() {
     if (el('dh-commercial-styles')) return;
     var s = document.createElement('style');
@@ -218,6 +268,7 @@
 
   function boot() {
     if (!global.DHAuth) return;
+    installDiscoverySessionBridge();
     installCaptureGuards();
     observeShell();
   }
