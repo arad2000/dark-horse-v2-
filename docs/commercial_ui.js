@@ -64,6 +64,9 @@
             journey = journey && typeof journey === 'object' ? journey : {};
             journey.sessionId = String(body.session_id);
             try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
+            if (typeof global.DHCommercialUI?.persistFinalResultSummary === 'function') {
+              try { await global.DHCommercialUI.persistFinalResultSummary(body, /branch-discovery/.test(url) ? 'branches' : 'majors'); } catch (_) {}
+            }
           }
         } catch (_) {}
       }
