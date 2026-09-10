@@ -125,70 +125,85 @@ def _build_main_prompt(profile: dict[str, Any], top_results: list[Any], journey_
 
 
 def _build_alt_prompt(profile: dict[str, Any], top_results: list[Any], journey_type: str) -> tuple[str, str]:
-    system = """تو مشاور هدایت تحصیلی همدل هستی (فلسفه اسب سیاه).
+    system = """تو مشاور هدایت تحصیلی هستی و بر فلسفه اسب سیاه کار می‌کنی.
 
-وظیفهٔ این پیام فقط «مسیرهای جایگزین» است، نه تکرار توضیح مسیر اصلی.
+موضوع این پیام فقط «مسیرهای جایگزین» است.
+
+منطق علمی سیستم (اجباری رعایت کن):
+- مسیر جایگزین به‌خاطر جرقه/خرده‌انگیزه انتخاب نشده است.
+- نزدیکی مسیرها بر اساس شباهت «ارزش‌ها (V)» و/یا «راهبردها (S)» محاسبه شده است.
+- بنابراین توضیحت باید روی تناسب ارزش یا راهبرد تمرکز کند، نه روی جرقه‌ها.
 
 قوانین:
-1) فقط فارسی. بدون واژه انگلیسی/آلمانی
-2) هرگز مسیر اصلی را دوباره مثل مشاوره اصلی توضیح نده
-3) تمرکز روی نام‌های مسیر جایگزین که در داده آمده
-4) اگر لیست جایگزین خالی بود، صادقانه بگو داده کافی نیست؛ از خودت شاخه نساز
-5) لحن امیدوارکننده و بدون اجبار"""
-
-    motives_raw = profile.get("micro_motives") or profile.get("liked_motives") or []
-    motives = [_short_motive(m) for m in motives_raw[:12]]
-    motives_txt = "، ".join(m for m in motives if m) or "نامشخص"
-
-    primary_names = []
-    alt_names_flat = []
-    alt_lines = []
-    for r in (top_results or [])[:4]:
-        if not isinstance(r, dict):
-            continue
-        name = r.get("name") or "—"
-        primary_names.append(name)
-        alts = r.get("alternative_paths") or []
-        names = []
-        for a in alts[:6]:
-            if isinstance(a, dict):
-                n = a.get("branch_name") or a.get("major_name") or a.get("name") or a.get("title") or ""
-            else:
-                n = str(a)
-            n = (n or "").strip()
-            if n and n not in names:
-                names.append(n)
-            if n and n not in alt_names_flat:
-                alt_names_flat.append(n)
-        if names:
-            alt_lines.append(f"• کنار «{name}» سیستم این جایگزین‌ها را داده: {', '.join(names)}")
-        else:
-            alt_lines.append(f"• برای «{name}» جایگزین ثبت نشده")
-
-    alt_txt = "\n".join(alt_lines) if alt_lines else "مسیر جایگزین مشخصی در داده‌ها نیست."
-    primary_txt = "، ".join(primary_names) if primary_names else "نامشخص"
-    flat_txt = "، ".join(alt_names_flat) if alt_names_flat else "هیچ"
+1) فقط فارسی
+2) مسیر اصلی را دوباره مثل مشاوره اصلی شرح نده
+3) برای هر جایگزین بگو از نظر ارزش نزدیک‌تر است یا از نظر راهبرد (بر اساس اعداد فاصله)
+4) جرقه‌ها را محور توضیح جایگزین نکن
+5) اگر داده فاصله نبود، فقط بگو سیستم این مسیر را از نظر نیمرخ ارزش/راهبرد نزدیک دانسته است
+6) لحن واقعی و بدون اجبار"""
 
     kind = (journey_type or "majors").lower()
     kind_fa = "شاخه دبیرستان" if kind in ("branches", "branch") else "رشته دانشگاهی"
 
+    primary_names = []
+    detail_lines = []
+    for r in (top_results or [])[:4]:
+        if not isinstance(r, dict):
+            continue
+        primary = r.get("name") or "—"
+        primary_names.append(primary)
+        alts = r.get("alternative_paths") or []
+        if not alts:
+            detail_lines.append(f"مسیر اصلی «{primary}»: جایگزین ثبت نشده.")
+            continue
+        detail_lines.append(f"مسیر اصلی: «{primary}»")
+        for a in alts[:5]:
+            if isinstance(a, dict):
+                an = a.get("branch_name") or a.get("major_name") or a.get("name") or a.get("title") or "—"
+                try:
+                    vd = float(a.get("value_distance")) if a.get("value_distance") is not None else None
+                except Exception:
+                    vd = None
+                try:
+                    sd = float(a.get("strategy_distance")) if a.get("strategy_distance") is not None else None
+                except Exception:
+                    sd = None
+                if vd is not None and sd is not None:
+                    if vd < sd:
+                        reason = "نزدیک‌تر از نظر ارزش‌ها (V)"
+                    elif sd < vd:
+                        reason = "نزدیک‌تر از نظر راهبردها (S)"
+                    else:
+                        reason = "نزدیک از نظر ترکیب ارزش و راهبرد"
+                    detail_lines.append(
+                        f"  - جایگزین: {an} | دلیل سیستم: {reason} | فاصله ارزش={vd:.3f} | فاصله راهبرد={sd:.3f}"
+                    )
+                else:
+                    detail_lines.append(f"  - جایگزین: {an} | دلیل سیستم: نزدیکی نیمرخ ارزش/راهبرد")
+            else:
+                detail_lines.append(f"  - جایگزین: {a}")
+
+    primary_txt = "، ".join(primary_names) if primary_names else "نامشخص"
+    details = "\n".join(detail_lines) if detail_lines else "داده جایگزین موجود نیست."
+
     user = f"""نوع تحلیل: {kind_fa}
-جرقه‌های کاربر: {motives_txt}
+مسیر اصلی کاربر: {primary_txt}
 
-مسیر(های) اصلی فعلی کاربر: {primary_txt}
-فهرست یکتای مسیرهای جایگزین: {flat_txt}
+داده‌های مسیر جایگزین (خروجی موتور اسب سیاه):
+{details}
 
-جزئیات:
-{alt_txt}
-
-ساختار پاسخ (اجباری):
+ساختار پاسخ:
 ### مسیرهای جایگزین
-برای هر نام جایگزین (نه مسیر اصلی)، ۲–۳ جمله بنویس: چرا ممکن است با جرقه‌ها جور شود و چه تفاوتی با مسیر اصلی دارد.
+برای هر جایگزین جدا بنویس:
+- نام مسیر
+- چرا سیستم آن را نزدیک دانسته (ارزش یا راهبرد؛ از دلیل داده‌شده استفاده کن)
+- این نزدیکی برای انتخاب دانش‌آموز چه معنایی دارد (۱–۲ جمله عملی)
+- تأکید کن مکمل است نه اجبار
 
 ### جمع‌بندی
-۲ جمله: این‌ها گزینه مکمل‌اند نه اجبار؛ مسیر اصلی تضعیف نشود.
+۲ جمله: مسیر اصلی تضعیف نشود؛ جایگزین‌ها افق دید را باز می‌کنند.
 
-اگر فهرست جایگزین «هیچ» بود، فقط بگو داده جایگزین کافی نیست و ۱ جمله راهنمایی کلی بده.
+ممنوع: محور قرار دادن جرقه‌ها برای توجیه جایگزین.
 حداکثر ۲۸۰ کلمه. فقط فارسی."""
     return system, user
 
