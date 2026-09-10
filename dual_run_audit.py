@@ -78,13 +78,18 @@ def materialize_engine_from_db(db: Session) -> DarkHorseEngineV2:
             "micro_motive_codes": branch_links.get(int(row.id), []),
         })
 
+    # Materialize without rereading JSON, while preserving the runtime state that
+    # DarkHorseEngineV2.__init__ establishes for alternative-path calculations.
     eng = DarkHorseEngineV2.__new__(DarkHorseEngineV2)
     eng.motives_map = motives
     eng.majors_db = majors
     eng.trait_map = traits
     eng.value_poles = values
     eng.school_branches = {row["name"]: row for row in branches}
+    eng._alt_paths_cache = {}
+    eng._branch_alt_paths_cache = {}
     eng._validate_schema_consistency()
+    eng._precompute_alternative_paths()
     return eng
 
 
