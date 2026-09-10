@@ -96,7 +96,7 @@ class CommercialApiContractTests(unittest.TestCase):
     def test_save_result_contract_and_idempotent_service(self):
         user = SimpleNamespace(id=15, public_id="public-15", name="Result User", phone="09120000005", role="user", status="active")
         expected = {"saved": True, "completed": True, "session_id": "sess-123456789", "operational_session_id": 321}
-        with patch("commercial_api.resolve_session", return_value=user), patch("commercial_api.OperationalPersistenceAdapter.save_result", return_value=FakeSavedSession()) as save:
+        with patch("commercial_api.resolve_session", return_value=user), patch("api_persistence_adapter.OperationalPersistenceAdapter.save_result", return_value=FakeSavedSession()) as save:
             response = self.client.post(
                 "/api/v1/me/save-result",
                 headers={"Authorization": "Bearer token"},
