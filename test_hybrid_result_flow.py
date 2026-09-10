@@ -208,6 +208,9 @@ class HybridResultFlowTests(unittest.TestCase):
         self.assertTrue(session_uuid)
         self.assertIsNotNone(operational_session_id)
 
+        with self.SessionLocal() as db:
+            sessions_before_branch = db.query(UserSession).count()
+
         with patch("main_v2._authenticated_user_id", return_value=1), \
              patch("database.SessionLocal", self.SessionLocal), \
              patch("operational_store.SessionLocal", self.SessionLocal):
@@ -232,7 +235,7 @@ class HybridResultFlowTests(unittest.TestCase):
         with self.SessionLocal() as db:
             session = db.query(UserSession).filter_by(session_uuid=session_uuid).one()
             self.assertEqual(session.user_id, 1)
-            self.assertEqual(db.query(UserSession).count(), 1)
+            self.assertEqual(db.query(UserSession).count(), sessions_before_branch)
             self.assertEqual(
                 db.query(DiscoveryResult).filter_by(session_id=session.id, major_id=1).count(),
                 1,
