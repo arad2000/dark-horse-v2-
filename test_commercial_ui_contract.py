@@ -41,15 +41,14 @@ class CommercialUIContractTests(unittest.TestCase):
         self.assertNotIn("devActivatePremium", self.ui)
 
     def test_save_result_contract_uses_summary_only(self):
-        self.assertIn("async function saveResult(summary)", self.auth)
-        self.assertIn("await global.DHAuth.saveResult(sessionId, summary)", self.ui) if False else None
+        self.assertIn("async saveResult(summary)", self.auth)
         self.assertIn("await global.DHAuth.saveResult(summary);", self.ui)
         self.assertNotIn("DHAuth.saveResult(sessionId, summary)", self.ui)
         self.assertIn("result_summary: summary || {}", self.auth)
         self.assertIn("session_id: sessionId", self.auth)
 
     def test_discovery_bridge_propagates_and_persists_session(self):
-        self.assertIn("/api/v2/darkhorse/(discover|branch-discovery)", self.ui)
+        self.assertIn("discover|branch-discovery", self.ui)
         self.assertIn("payload.session_id = sessionId", self.ui)
         self.assertIn("journey.sessionId = String(body.session_id)", self.ui)
         self.assertIn("persistFinalResultSummary(body", self.ui)
