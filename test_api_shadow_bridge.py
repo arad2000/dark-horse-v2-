@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import billing_models  # noqa: F401  # register User/auth tables on shared Base metadata
 from api_persistence_adapter import OperationalPersistenceAdapter
 from api_shadow_bridge import persist_api_shadow
 from models import Base, Major, SchoolBranch, UserSession
