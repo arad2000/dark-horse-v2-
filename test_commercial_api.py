@@ -131,7 +131,11 @@ class CommercialApiContractTests(unittest.TestCase):
 
     def test_billing_callback_delegates_server_verification_and_redirects(self):
         with patch("commercial_api.handle_payment_callback", return_value={"status": "paid", "order_id": "order-12"}):
-            response = self.client.get("/api/v1/billing/callback", params={"order_id": "order-12", "Authority": "MOCK-AUTH-001", "Status": "OK"})
+            response = self.client.get(
+                "/api/v1/billing/callback",
+                params={"order_id": "order-12", "Authority": "MOCK-AUTH-001", "Status": "OK"},
+                follow_redirects=False,
+            )
         self.assertEqual(response.status_code, 303)
 
     def test_live_zarinpal_requires_explicit_production_approval(self):
