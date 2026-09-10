@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from api_persistence_adapter import OperationalPersistenceAdapter, assert_safe_mode
 from models import Base, Major, SchoolBranch, UserSession, DiscoveryResult, BranchRecommendation, UserFeedback
 from operational_store import OperationalStore
+import billing_models  # noqa: F401  # register User/auth tables on shared Base metadata
 
 
 class AdapterTests(unittest.TestCase):
