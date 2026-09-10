@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from billing_models import User
 from main_v2 import app
-from models import Base, Major, UserSession, DiscoveryResult
+from models import Base, BranchRecommendation, Major, SchoolBranch, UserSession, DiscoveryResult
 
 
 class _FakeEngine:
@@ -30,6 +30,25 @@ class _FakeEngine:
                     },
                 }
             ]
+        }
+
+    def recommend_school_branch(self, micro_motives, sjt_answers, conjoint_choices):
+        return {
+            "recommended_branches": [
+                {
+                    "branch_name": "Test Branch",
+                    "average_score": 88.0,
+                    "count": 3,
+                    "avg_components": {"m_score": 89.0, "s_score": 87.0, "v_score": 88.0},
+                    "evidence": {"matched": ["MOT-001"]},
+                    "warning": "هشدار آزمایشی",
+                    "alternative_paths": ["مسیر جایگزین"],
+                }
+            ],
+            "best_branch": "Test Branch",
+            "method": {"name": "test"},
+            "summary": {"ok": True},
+            "next_step": "ادامه",
         }
 
 
@@ -57,6 +76,15 @@ class HybridResultFlowTests(unittest.TestCase):
                 Major(
                     id=1,
                     name="رشته آزمون",
+                    group="آزمون",
+                    strategy_weights=[[0.0] * 5 for _ in range(25)],
+                    value_weights={},
+                )
+            )
+            db.add(
+                SchoolBranch(
+                    id=1,
+                    name="Test Branch",
                     group="آزمون",
                     strategy_weights=[[0.0] * 5 for _ in range(25)],
                     value_weights={},
@@ -155,6 +183,62 @@ class HybridResultFlowTests(unittest.TestCase):
             self.assertTrue(session.is_completed)
             self.assertEqual(
                 db.query(DiscoveryResult).filter_by(session_id=session.id, major_id=1).count(),
+                1,
+            )
+
+    def test_branch_discovery_reuses_same_session_after_claim(self):
+        app.state.engine = _FakeEngine()
+        app.state.branch_engine = app.state.engine
+        anonymous_client = TestClient(app)
+
+        with patch("main_v2._authenticated_user_id", return_value=None), \
+             patch("database.SessionLocal", self.SessionLocal), \
+             patch("operational_store.SessionLocal", self.SessionLocal):
+            discovery = anonymous_client.post(
+                "/api/v2/darkhorse/discover",
+                json={
+                    "micro_motives": ["MOT-001"],
+                    "sjt_answers": {"S01": "A"},
+                    "conjoint_choices": {"Q1": "A"},
+                },
+            )
+        self.assertEqual(discovery.status_code, 200, discovery.text)
+        session_uuid = discovery.json()["session_id"]
+        operational_session_id = discovery.json()["operational_session_id"]
+        self.assertTrue(session_uuid)
+        self.assertIsNotNone(operational_session_id)
+
+        with patch("main_v2._authenticated_user_id", return_value=1), \
+             patch("database.SessionLocal", self.SessionLocal), \
+             patch("operational_store.SessionLocal", self.SessionLocal):
+            branches = anonymous_client.post(
+                "/api/v2/darkhorse/branch-discovery",
+                headers={"Authorization": "Bearer user-token"},
+                json={
+                    "session_id": session_uuid,
+                    "micro_motives": ["MOT-001"],
+                    "sjt_answers": {"S01": "A"},
+                    "conjoint_choices": {"Q1": "A"},
+                },
+            )
+
+        self.assertEqual(branches.status_code, 200, branches.text)
+        branch_body = branches.json()
+        self.assertEqual(branch_body["session_id"], session_uuid)
+        self.assertEqual(branch_body["operational_session_id"], operational_session_id)
+        self.assertTrue(branch_body["operational_result_persisted"])
+        self.assertEqual(branch_body["branch_discovery_result"]["best_branch"], "Test Branch")
+
+        with self.SessionLocal() as db:
+            session = db.query(UserSession).filter_by(session_uuid=session_uuid).one()
+            self.assertEqual(session.user_id, 1)
+            self.assertEqual(db.query(UserSession).count(), 1)
+            self.assertEqual(
+                db.query(DiscoveryResult).filter_by(session_id=session.id, major_id=1).count(),
+                1,
+            )
+            self.assertEqual(
+                db.query(BranchRecommendation).filter_by(session_id=session.id, branch_id=1).count(),
                 1,
             )
 
