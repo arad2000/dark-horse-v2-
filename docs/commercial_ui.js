@@ -30,8 +30,6 @@
     }
   }
 
-  // app.js is intentionally kept unchanged here; this narrow fetch bridge makes the
-  // server-issued discovery session reusable by the second analysis and save-result flow.
   function installDiscoverySessionBridge() {
     if (global.__dhDiscoverySessionBridgeInstalled || typeof global.fetch !== 'function') return;
     global.__dhDiscoverySessionBridgeInstalled = true;
@@ -249,8 +247,6 @@
       result: data
     };
 
-    // Bound the client summary to the server contract size; discovery results themselves
-    // are already persisted operationally, so the final summary is a convenience snapshot.
     try {
       var encoded = JSON.stringify(summary);
       if (new TextEncoder().encode(encoded).length > 100000) {
@@ -263,7 +259,7 @@
             : { discovery_result: data.discovery_result || data }
         };
       }
-      await global.DHAuth.saveResult(sessionId, summary);
+      await global.DHAuth.saveResult(summary);
     } catch (e) {
       console.warn('Final result summary persistence skipped:', e);
     }
