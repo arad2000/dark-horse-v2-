@@ -128,7 +128,7 @@ jobs:
         run: python seed_reference_data.py --confirm-staging
 
       - name: Verify staged reference data
-        run: python verify_hybrid_staging.py --confirm-staging
+        run: python -c "import billing_models; import runpy; runpy.run_path('verify_hybrid_staging.py', run_name='__main__')" --confirm-staging
 
       - name: Run controlled JSON vs PostgreSQL dual-run
         run: python dual_run_audit.py --confirm-staging
