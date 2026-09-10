@@ -10,6 +10,7 @@ from api_persistence_adapter import OperationalPersistenceAdapter
 from models import Base, Major, SchoolBranch
 from operational_store import OperationalStore
 from shadow_persistence import ShadowPersistenceReport, persist_shadow, shadow_enabled
+import billing_models  # noqa: F401  # register User/auth tables on shared Base metadata
 
 
 class ShadowPersistenceTests(unittest.TestCase):
