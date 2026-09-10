@@ -73,7 +73,10 @@ class FakeEngine:
 
 
 def request_for(engine):
-    return SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(engine=engine, branch_engine=engine)))
+    return SimpleNamespace(
+        headers={},
+        app=SimpleNamespace(state=SimpleNamespace(engine=engine, branch_engine=engine)),
+    )
 
 
 class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
@@ -121,7 +124,10 @@ class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("alternative_paths", branch_result["branches"][0])
 
     async def test_missing_engine_fails_closed(self):
-        req = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(engine=None, branch_engine=None)))
+        req = SimpleNamespace(
+            headers={},
+            app=SimpleNamespace(state=SimpleNamespace(engine=None, branch_engine=None)),
+        )
         request = DarkHorseDiscoverRequest()
         with self.assertRaises(HTTPException) as ctx:
             await discover_v2(request, req)
