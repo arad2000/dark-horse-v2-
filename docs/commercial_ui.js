@@ -234,6 +234,38 @@
     }
   }
 
+  async function persistFinalResultSummary(data, type) {
+    if (!data || !global.DHAuth || !global.DHAuth.isLoggedIn || !global.DHAuth.isLoggedIn()) return;
+    var sessionId = currentJourneySessionId();
+    if (!sessionId || typeof global.DHAuth.saveResult !== 'function') return;
+
+    var summary = {
+      type: type === 'branches' ? 'branches' : 'majors',
+      session_id: sessionId,
+      saved_at: new Date().toISOString(),
+      result: data
+    };
+
+    // Bound the client summary to the server contract size; discovery results themselves
+    // are already persisted operationally, so the final summary is a convenience snapshot.
+    try {
+      var encoded = JSON.stringify(summary);
+      if (new TextEncoder().encode(encoded).length > 100000) {
+        summary = {
+          type: summary.type,
+          session_id: sessionId,
+          saved_at: summary.saved_at,
+          result: type === 'branches'
+            ? { branch_discovery_result: data.branch_discovery_result || data }
+            : { discovery_result: data.discovery_result || data }
+        };
+      }
+      await global.DHAuth.saveResult(sessionId, summary);
+    } catch (e) {
+      console.warn('Final result summary persistence skipped:', e);
+    }
+  }
+
   function installCaptureGuards() {
     document.addEventListener('click', function (e) {
       var journey = e.target && typeof e.target.closest === 'function'
@@ -276,7 +308,8 @@
   global.DHCommercialUI = {
     showAuth: showAuthModal,
     showPurchase: openPurchaseModal,
-    startServerAuthorizedJourney: continueAfterAuth
+    startServerAuthorizedJourney: continueAfterAuth,
+    persistFinalResultSummary: persistFinalResultSummary
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
