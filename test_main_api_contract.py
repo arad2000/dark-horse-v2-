@@ -4,8 +4,9 @@ import unittest
 from types import SimpleNamespace
 
 from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
-from main_v2 import DarkHorseDiscoverRequest, branch_discovery_v2, discover_v2, root
+from main_v2 import DarkHorseDiscoverRequest, app, branch_discovery_v2, discover_v2, root
 
 
 class FakeEngine:
@@ -85,6 +86,13 @@ class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
             await root(),
             {"name": "Dark Horse API V2.0", "status": "online"},
         )
+
+    async def test_cors_contract_is_restricted_to_canonical_frontend(self):
+        cors_middleware = next(
+            middleware for middleware in app.user_middleware if middleware.cls is CORSMiddleware
+        )
+        self.assertEqual(cors_middleware.kwargs["allow_origins"], ["https://asbe-siah.ir"])
+        self.assertNotIn("*", cors_middleware.kwargs["allow_origins"])
 
     async def test_discover_contract_is_json_engine_owned(self):
         engine = FakeEngine()
