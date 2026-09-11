@@ -887,12 +887,18 @@ function renderSwipe() {
     <h2>🔥 جرقهٔ انرژی</h2>
     <div style="color:#f0c040;">💛 <strong id="dh-spark-count">${n}</strong> جرقه <span style="font-size:0.8rem;color:#888;">(حداقل ۲۰ - حداکثر ۸۰)</span></div>
     <div class="progress-bar"><div class="progress-fill" id="dh-swipe-progress-fill" style="width:${progress}%"></div></div>
-    <div class="swipe-card" id="dh-swipe-card">
-      <p id="dh-swipe-text" style="font-size:1.2rem;line-height:2.2;">${escapeHtml(card.description_fa || '')}</p>
-      <button type="button" class="btn btn-heart" id="dh-btn-heart" onclick="likeCard(true, this)">❤️ جرقه زد</button>
-      <button type="button" class="btn btn-skip" id="dh-btn-skip" onclick="likeCard(false, this)">❌ جذبم نکرد</button>
-      <div id="dh-spark-need" style="margin-top:12px;"></div>
-      <div id="dh-prev-wrap"></div>
+    <div class="swipe-card" id="dh-swipe-card" style="min-height:280px;">
+      <p id="dh-swipe-text" style="font-size:1.15rem;line-height:2.1;min-height:6.5em;margin:0 0 18px 0;">${escapeHtml(card.description_fa || '')}</p>
+      <div id="dh-spark-actions" style="display:flex;flex-direction:column;gap:14px;margin:8px 0 4px 0;">
+        <button type="button" class="btn btn-heart" id="dh-btn-heart"
+          style="width:100%;min-height:54px;font-size:1.05rem;border-radius:14px;touch-action:manipulation;"
+          onclick="likeCard(true, this)">❤️ جرقه زد</button>
+        <button type="button" class="btn btn-skip" id="dh-btn-skip"
+          style="width:100%;min-height:54px;font-size:1.05rem;border-radius:14px;touch-action:manipulation;margin-top:0;"
+          onclick="likeCard(false, this)">❌ جذبم نکرد</button>
+      </div>
+      <div id="dh-spark-need" style="margin-top:14px;min-height:48px;"></div>
+      <div id="dh-prev-wrap" style="min-height:40px;"></div>
     </div>`;
   updateSwipeChrome();
 }
@@ -937,8 +943,6 @@ function updateSwipeCardInPlace() {
   textEl.textContent = card.description_fa || card.description || '';
   if (box) {
     box.classList.remove('dh-card-swap');
-    void box.offsetWidth;
-    box.classList.add('dh-card-swap');
   }
   updateSwipeChrome();
 }
@@ -1047,16 +1051,21 @@ function renderStrategy() {
     html += `<button class="btn" style="display:block;width:100%;text-align:right;margin-bottom:8px;${isSelected ? 'border:2px solid #f0c040;' : ''}" onclick="answerStrategy(${o.index})">${escapeHtml(o.text)}</button>`;
   });
   html += `</div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;">
       ${state.currentQuestion > 0 ? `<button class="btn" onclick="previousStrategy()">⬅️ سوال قبل</button>` : ''}
+      <button class="btn btn-primary" onclick="continueStrategy()">ادامه ➡️</button>
       <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
-    </div>`;
+    </div>
+    <p style="text-align:center;color:#8f845f;font-size:0.8rem;margin-top:8px;line-height:1.7;">اگر فقط یک سوال را اصلاح کردی، با «ادامه» به اولین سوال بی‌پاسخ می‌روی.</p>`;
   app.innerHTML = html;
 }
 
 function answerStrategy(idx) {
   state.strategyAnswers[state.currentQuestion] = idx;
-  state.currentQuestion++;
+  const total = (state.strategyQuestions || []).length;
+  let next = state.currentQuestion + 1;
+  while (next < total && state.strategyAnswers[next] !== undefined && state.strategyAnswers[next] !== null) next++;
+  state.currentQuestion = next;
   saveSession();
   render();
 }
@@ -1066,6 +1075,22 @@ function previousStrategy() {
     saveSession();
     render();
   }
+}
+function continueStrategy() {
+  const total = (state.strategyQuestions || []).length;
+  if (!total) return;
+  syncStrategyCursor();
+  let answered = 0;
+  for (let i = 0; i < total; i++) {
+    if (state.strategyAnswers[i] !== undefined && state.strategyAnswers[i] !== null) answered++;
+  }
+  if (answered >= total) {
+    state.currentValueQuestion = state.currentValueQuestion || 0;
+    goTo('introValues');
+    return;
+  }
+  saveSession();
+  render();
 }
 /** پرش به اولین سوال بی‌پاسخ (برای ادامه نشست) */
 function syncStrategyCursor() {
@@ -1139,14 +1164,39 @@ function renderValue() {
       <button class="btn" style="display:block;width:100%;margin-bottom:10px;text-align:right;${currentAnswer === opts[0].code ? 'border:2px solid #f0c040;' : ''}" onclick="answerValue('${opts[0].code}')">${escapeHtml(opts[0].text)}</button>
       <button class="btn" style="display:block;width:100%;text-align:right;${currentAnswer === opts[1].code ? 'border:2px solid #f0c040;' : ''}" onclick="answerValue('${opts[1].code}')">${escapeHtml(opts[1].text)}</button>
     </div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;">
       ${state.currentValueQuestion > 0 ? `<button class="btn" onclick="previousValue()">⬅️ سوال قبل</button>` : ''}
+      <button class="btn btn-primary" onclick="continueValue()">ادامه ➡️</button>
       <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
-    </div>`;
+    </div>
+    <p style="text-align:center;color:#8f845f;font-size:0.8rem;margin-top:8px;line-height:1.7;">اگر فقط یک سوال را اصلاح کردی، با «ادامه» به اولین سوال بی‌پاسخ می‌روی.</p>`;
 }
 
-function answerValue(code) { state.valueAnswers[state.currentValueQuestion] = code; state.currentValueQuestion++; saveSession(); render(); }
+function answerValue(code) {
+  state.valueAnswers[state.currentValueQuestion] = code;
+  const total = (state.valueQuestions || []).length;
+  let next = state.currentValueQuestion + 1;
+  while (next < total && state.valueAnswers[next] !== undefined && state.valueAnswers[next] !== null) next++;
+  state.currentValueQuestion = next;
+  saveSession();
+  render();
+}
 function previousValue() { if (state.currentValueQuestion > 0) { state.currentValueQuestion--; saveSession(); render(); } }
+function continueValue() {
+  const total = (state.valueQuestions || []).length;
+  if (!total) return;
+  syncValueCursor();
+  let answered = 0;
+  for (let i = 0; i < total; i++) {
+    if (state.valueAnswers[i] !== undefined && state.valueAnswers[i] !== null) answered++;
+  }
+  if (answered >= total) {
+    goTo('choice');
+    return;
+  }
+  saveSession();
+  render();
+}
 
 // ==================== صفحه انتخاب (جدید) ====================
 function renderChoice() {
@@ -1268,26 +1318,22 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 // ==================== DISPLAY RESULTS (نسخه نهایی با UI/UX بهبودیافته) ====================
 
 // ==================== توضیح مشاوره‌ای (Cloudflare Workers AI) ====================
-async function loadDeepCounsel(mode) {
+async function loadDeepCounselItem(index, mode) {
   mode = mode || 'main';
-  const box = document.getElementById('dh-counsel-box');
-  const btnMain = document.getElementById('dh-counsel-btn');
-  const btnAlt = document.getElementById('dh-counsel-alt-btn');
+  const box = document.getElementById('dh-counsel-box-' + index);
   if (!box) return;
 
-  const active = mode === 'alternatives' ? btnAlt : btnMain;
-  if (btnMain) btnMain.disabled = true;
-  if (btnAlt) btnAlt.disabled = true;
-  if (active) {
-    active.textContent = mode === 'alternatives'
-      ? '⏳ در حال تحلیل مسیرهای جایگزین...'
-      : '⏳ در حال نوشتن مشاوره شخصی...';
+  const tops = state.lastCounselTops || [];
+  const item = tops[index];
+  if (!item) {
+    box.style.display = 'block';
+    box.innerHTML = '<p style="color:#f88;text-align:center;">داده‌ای برای این مسیر در دسترس نیست.</p>';
+    return;
   }
 
   box.style.display = 'block';
-  box.innerHTML = '<p style="color:#f0c040;line-height:1.9;margin:0;text-align:center;">در حال آماده‌سازی توضیح بر اساس پروفایل تو...</p>';
+  box.innerHTML = '<p style="color:#f0c040;line-height:1.9;margin:0;text-align:center;">در حال آماده‌سازی توضیح مشاوره‌ای برای «' + escapeHtml(item.name || '') + '»...</p>';
 
-  const tops = (state.lastCounselTops || []).slice(0, 4);
   const profile = {
     kind: state.lastCounselKind || 'majors',
     micro_motives: state.likedCodes || [],
@@ -1302,7 +1348,7 @@ async function loadDeepCounsel(mode) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         profile: profile,
-        top_results: tops,
+        top_results: [item],
         journey_type: state.lastCounselKind || 'majors',
         mode: mode
       }),
@@ -1319,27 +1365,23 @@ async function loadDeepCounsel(mode) {
     if (!text) throw new Error('پاسخ خالی');
     const safe = escapeHtml(text).replace(/\n/g, '<br>');
     const title = mode === 'alternatives'
-      ? '🔄 تحلیل مسیرهای جایگزین'
-      : '✨ مشاوره شخصی‌سازی‌شده برای تو';
+      ? ('🔄 مسیرهای جایگزین «' + escapeHtml(item.name || '') + '»')
+      : ('✨ مشاوره «' + escapeHtml(item.name || '') + '»');
     box.innerHTML =
-      '<div style="background:linear-gradient(145deg,#14141f,#0f0f18);border:1px solid rgba(212,175,55,.45);border-radius:16px;padding:20px;text-align:right;line-height:2;color:#e8dcc0;box-shadow:0 8px 30px rgba(0,0,0,.35);">' +
-      '<h3 style="color:#f0c040;margin:0 0 12px;font-size:1.05rem;">' + title + '</h3>' +
+      '<div style="background:linear-gradient(145deg,#14141f,#0f0f18);border:1px solid rgba(212,175,55,.45);border-radius:16px;padding:18px;text-align:right;line-height:2;color:#e8dcc0;">' +
+      '<h3 style="color:#f0c040;margin:0 0 12px;font-size:1.02rem;">' + title + '</h3>' +
       '<div style="font-size:0.95rem;">' + safe + '</div></div>';
   } catch (e) {
     console.error(e);
-    box.innerHTML =
-      '<p style="color:#f88;line-height:1.8;margin:0;text-align:center;">الان نتوانستیم توضیح مشاوره‌ای را بگیریم. نتایج اصلی شما محفوظ است؛ کمی بعد دوباره تلاش کنید.</p>';
-  } finally {
-    if (btnMain) {
-      btnMain.disabled = false;
-      btnMain.innerHTML = '<span style="font-size:1.25rem;">✨</span><span>توضیح مشاوره‌ای عمیق‌تر</span>';
-    }
-    if (btnAlt) {
-      btnAlt.disabled = false;
-      btnAlt.innerHTML = '<span style="font-size:1.25rem;">🔄</span><span>تحلیل مسیرهای جایگزین</span>';
-    }
+    box.innerHTML = '<p style="color:#f88;line-height:1.8;margin:0;text-align:center;">الان نتوانستیم توضیح مشاوره‌ای را بگیریم. کمی بعد دوباره تلاش کنید.</p>';
   }
 }
+
+async function loadDeepCounsel(mode) {
+  // سازگاری عقب‌رو: اگر هنوز جایی سراسری صدا بزند، اولین نتیجه
+  return loadDeepCounselItem(0, mode || 'main');
+}
+
 
 function displayResults(data, type) {
   // ===== ۱. استخراج آیتم‌ها =====
@@ -1483,7 +1525,7 @@ function displayResults(data, type) {
   if (matched.length === 0) {
     html += `<p style="color:#f0c040;text-align:center;">با همین خرده‌انگیزه‌ها، هیچ ${isBranch ? 'شاخه‌ای' : 'رشته‌ای'} به آستانهٔ ۳۰٪ نرسیده است.</p>`;
   } else {
-    matched.forEach(r => {
+    matched.forEach((r, ri) => {
       const score = r.fit_score || 0;
       const raw = r.raw_components || {};
       const mPct = raw.m_score !== undefined ? raw.m_score : (r.avg_components?.m_score || 0);
@@ -1610,14 +1652,42 @@ function displayResults(data, type) {
             </div>` : ''}
 
           ${isBranch && r.count ? `<div style="font-size:0.75rem;color:#888;margin-top:8px;">📌 تعداد کدهای تحلیل‌شده: ${r.count}</div>` : ''}
+
+          ${!isBranch ? `
+          <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(212,175,55,0.25);">
+            <button type="button" class="btn btn-primary"
+              style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#f0c040,#d4af37);color:#0a0a0f;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'main')">
+              ✨ توضیح مشاوره‌ای این رشته
+            </button>
+            <button type="button" class="btn"
+              style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid rgba(212,175,55,0.55);background:rgba(240,192,64,0.08);color:#f0c040;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'alternatives')">
+              🔄 مسیرهای جایگزین این رشته
+            </button>
+            <div id="dh-counsel-box-${ri}" style="display:none;margin-top:12px;text-align:right;"></div>
+          </div>` : `
+          <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(212,175,55,0.25);">
+            <button type="button" class="btn btn-primary"
+              style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#f0c040,#d4af37);color:#0a0a0f;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'main')">
+              ✨ توضیح مشاوره‌ای این شاخه
+            </button>
+            <button type="button" class="btn"
+              style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid rgba(212,175,55,0.55);background:rgba(240,192,64,0.08);color:#f0c040;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'alternatives')">
+              🔄 مسیرهای جایگزین این شاخه
+            </button>
+            <div id="dh-counsel-box-${ri}" style="display:none;margin-top:12px;text-align:right;"></div>
+          </div>`}
         </div>`;
     });
   }
 
-    // ذخیره برای مشاوره AI + دو دکمه
+    // ذخیره برای مشاوره AI (بدون دکمه سراسری — دکمه زیر هر نتیجه است)
   try {
     state.lastCounselKind = isBranch ? 'branches' : 'majors';
-    state.lastCounselTops = (matched || []).slice(0, 5).map(function (r) {
+    state.lastCounselTops = (matched || []).map(function (r) {
       return {
         name: r.name,
         score: r.fit_score,
@@ -1632,30 +1702,8 @@ function displayResults(data, type) {
     });
   } catch (e) {}
 
-  html += `
-    <div style="display:flex;flex-direction:column;gap:12px;margin:28px 0 10px 0;">
-      <button id="dh-counsel-btn" class="btn btn-primary"
-        style="width:100%;padding:15px 18px;font-size:1.02rem;font-weight:600;border:none;border-radius:14px;
-               background:linear-gradient(135deg,#f0c040,#d4af37);color:#0a0a0f;
-               box-shadow:0 6px 20px rgba(240,192,64,.35);cursor:pointer;
-               display:flex;align-items:center;justify-content:center;gap:10px;"
-        onclick="loadDeepCounsel('main')">
-        <span style="font-size:1.25rem;">✨</span>
-        <span>توضیح مشاوره‌ای عمیق‌تر</span>
-      </button>
-      <button id="dh-counsel-alt-btn" class="btn"
-        style="width:100%;padding:15px 18px;font-size:1.02rem;font-weight:600;border:1px solid rgba(212,175,55,.55);
-               border-radius:14px;background:rgba(240,192,64,.08);color:#f0c040;
-               box-shadow:0 4px 15px rgba(0,0,0,.25);cursor:pointer;
-               display:flex;align-items:center;justify-content:center;gap:10px;"
-        onclick="loadDeepCounsel('alternatives')">
-        <span style="font-size:1.25rem;">🔄</span>
-        <span>تحلیل مسیرهای جایگزین</span>
-      </button>
-      <p style="color:#8f845f;font-size:.8rem;margin:0;line-height:1.7;text-align:center;">بر اساس فلسفه اسب سیاه — متن شخصی‌سازی‌شده</p>
-      <div id="dh-counsel-box" style="display:none;margin-top:6px;text-align:right;"></div>
-    </div>
-`;
+    // دکمه‌های سراسری مشاوره حذف شد — زیر هر رشته/شاخه جداگانه است
+
 
   // ==================== دکمه‌های ناوبری ====================
   html += `
@@ -1738,7 +1786,6 @@ function displayResults(data, type) {
       <p style="margin:0 0 12px;font-size:.8rem;">بدون دادهٔ خصوصی — فقط خلاصهٔ مسیر</p>
       <button class="btn btn-primary" style="width:100%;" onclick="dhCopyShare()">کپی متن نتیجه</button>
     </div>`;
-  html += `<button class="btn" style="margin-top:16px;width:100%;font-size:0.8rem;background:#333;color:#aaa;" onclick="showAllFeedback()">📋 بازخوردها (مدیر)</button>`;
   app.innerHTML = html;
 }   
 // ==================== تحلیل سبک شخصی (اصلاح‌شده) ====================
