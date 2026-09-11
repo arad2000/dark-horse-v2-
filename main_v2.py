@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
         app.state.engine = DarkHorseEngineV2(
             motives_path="docs/data/micro_motives.json",
             majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",
+            trait_map_path="docs/data/trait_map_v3.json",
             value_poles_path="value_poles_v2.json",
             school_branches_path="school_branches_v2.json"
         )
@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
         app.state.branch_engine = DarkHorseEngineV2(
             motives_path="docs/data/micro_motives.json",
             majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",
+            trait_map_path="docs/data/trait_map_v3.json",
             value_poles_path="value_poles_v2.json",
             school_branches_path="school_branches_v2.json"
         )
