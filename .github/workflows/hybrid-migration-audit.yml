@@ -6,6 +6,7 @@ on:
       - feature/postgresql-hybrid
       - feature/commercial-api-wiring
       - deploy/liara-commercial-sandbox
+      - hardening/cors-production
   pull_request:
     branches:
       - main
