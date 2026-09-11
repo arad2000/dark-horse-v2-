@@ -83,7 +83,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Dark Horse API V2.0", version="2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://asbe-siah.ir"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
