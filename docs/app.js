@@ -390,6 +390,36 @@ async function loadTraitMap() {
 }
 
 // ==================== NAVIGATION ====================
+
+function scrollPageToTop() {
+  try {
+    const nodes = [
+      window,
+      document.scrollingElement,
+      document.documentElement,
+      document.body,
+      document.getElementById('app'),
+      document.querySelector('.container'),
+      document.querySelector('.shell-main'),
+      document.querySelector('.shell-content'),
+      document.querySelector('main'),
+      document.querySelector('[data-scroll]')
+    ];
+    nodes.forEach(function (el) {
+      if (!el) return;
+      try {
+        if (el === window) {
+          window.scrollTo(0, 0);
+        } else if (typeof el.scrollTo === 'function') {
+          el.scrollTo(0, 0);
+        } else {
+          el.scrollTop = 0;
+        }
+      } catch (_) {}
+    });
+  } catch (_) {}
+}
+
 function goTo(stage) {
   state.history.push(state.stage);
   state.stage = stage;
@@ -397,6 +427,7 @@ function goTo(stage) {
   if (stage === 'values') syncValueCursor();
   saveSession();
   render();
+  scrollPageToTop();
 }
 window.goTo = goTo;
 
@@ -410,6 +441,7 @@ function goBack() {
   state.currentValueQuestion = 0;
   saveSession();
   render();
+  scrollPageToTop();
 }
 
 // ==================== RENDER ====================
@@ -436,6 +468,9 @@ function render() {
         state.stage = 'splash';
         renderSplash();
     }
+    scrollPageToTop();
+    requestAnimationFrame(function () { scrollPageToTop(); });
+    setTimeout(scrollPageToTop, 50);
   } catch (e) {
     console.error('render failed', state.stage, e);
     const root = document.getElementById('app');
