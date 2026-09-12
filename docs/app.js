@@ -1580,7 +1580,7 @@ function displayResults(data, type) {
       if (motiveMatched < 0) motiveMatched = 0;
       if (motiveMatched > 7) motiveMatched = 7;
       const motiveDenom = 7;
-      const motiveCountHtml = `<div class="dh-motive-count">جرقه‌های این رشته: ${motiveMatched} از ${motiveDenom}${motiveMatched < motiveDenom ? ' (کامل لایک نشده)' : ' (کامل)'}</div>`;
+      const motiveCountHtml = ''; // شمارش تستی «X از 7» برای انتشار عمومی حذف شد
 
       let sparkText = '';
       if (microMatch.length > 0) {
