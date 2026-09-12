@@ -1398,7 +1398,7 @@ h2 {
 }
 .dh-mk2-hero-bg {
   position: absolute; inset: 0;
-  background-color: #080a12;
+  background-color: #10121c;
   background-size: cover !important;
   background-position: 70% center !important;
 }
@@ -2021,4 +2021,47 @@ body, #app, .dh-home-wrap, .dh-mk2 {
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+
+/* ===== visual tune v59: خوانایی جوان‌پسند بدون تغییر هویت ===== */
+body {
+  background: #12121a !important;
+  color: #e8e0d0;
+}
+.dh-fardiyat {
+  color: #f0c040 !important;
+  font-weight: 800 !important;
+  font-size: 1.05em;
+  letter-spacing: 0.02em;
+}
+.dh-mk2-sub {
+  color: #d4c9a8 !important;
+  font-weight: 600 !important;
+}
+.dh-mk2-sub .dh-fardiyat {
+  color: #f0d060 !important;
+  font-weight: 800 !important;
+}
+
+/* از صفحه سفر به بعد: متن بدنه کرم، نه طلا */
+#app p {
+  color: #e8e0d0;
+}
+#app .card > p {
+  color: #e8e0d0 !important;
+}
+#app .card > p strong {
+  color: #f0c040 !important;
+}
+#app h2 {
+  color: #f0c040;
+}
+#app .dh-stage-hint,
+#app .dh-progress-labels {
+  color: #c9b896 !important;
+}
+/* طلا برای دکمه اصلی و جرقه می‌ماند */
+#app .btn-primary {
+  color: #0a0a0f !important;
 }
