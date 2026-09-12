@@ -17,6 +17,7 @@ from commercial_api import router as commercial_router
 from dark_horse_engine_v2 import DarkHorseEngineV2
 from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
 from ai_counsel_service import generate_counseling
+from ai_rate_limit import COUNSEL_RATE_LIMITER
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("darkhorse_api_v2")
@@ -154,7 +155,6 @@ def _persist_discovery_session(
         assert_safe_mode()
         requested_uuid = request.session_id.strip() if request.session_id else None
 
-        # Reusing a session is intentionally allowed only for an authenticated owner.
         if requested_uuid and user_id is not None:
             db = SessionLocal()
             try:
@@ -169,7 +169,6 @@ def _persist_discovery_session(
             finally:
                 db.close()
 
-        # An anonymous request never reuses a caller-supplied UUID; create a new one.
         session_uuid = requested_uuid if (requested_uuid and user_id is not None) else str(uuid.uuid4())
         payload = {
             "micro_motives": request.micro_motives,
@@ -365,8 +364,17 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
 
 
 @app.post("/api/v2/darkhorse/counsel")
-async def darkhorse_counsel(request: dict):
+async def darkhorse_counsel(request: dict, req: Request):
     """Personalized counseling text for discovery results (Dark Horse philosophy)."""
+    client_key = req.client.host if req.client else "unknown"
+    allowed, retry_after = COUNSEL_RATE_LIMITER.allow(client_key)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="تعداد درخواست‌های مشاوره هوش مصنوعی بیش از حد مجاز است؛ لطفاً کمی بعد دوباره تلاش کنید.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     profile = request.get("profile") or {}
     top_results = request.get("top_results") or request.get("results") or []
     journey_type = request.get("journey_type") or profile.get("kind") or "majors"
