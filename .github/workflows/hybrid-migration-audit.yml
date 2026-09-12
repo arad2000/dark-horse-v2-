@@ -12,6 +12,7 @@ on:
     branches:
       - main
       - feature/postgresql-hybrid
+      - deploy/liara-commercial-sandbox
 
 jobs:
   postgres-staging-audit:
