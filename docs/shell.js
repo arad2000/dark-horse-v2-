@@ -296,13 +296,64 @@
   var __dhFardiyatTickerTimer = null;
   var __dhFardiyatTickerIdx = 0;
   var DH_FARDIYAT_LINES = [
-    'مسیرت را با <strong class="dh-fardiyat">فردیت</strong> خودت بساز',
+    'مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز',
     'رتبه مقصد نیست؛ <strong class="dh-fardiyat">جرقه</strong> مسیر است',
-    'استاندارد برای همه ساخته شد؛ تو <strong class="dh-fardiyat">ناهموار</strong>ی',
-    'امروز کدام انرژی در تو زنده است؟',
-    'کشف کن چه چیزی واقعاً به تو انرژی می‌دهد',
-    'انتخاب رشته از روی <strong class="dh-fardiyat">فردیت</strong>، نه فقط دفترچه'
+    'استاندارد برای همه ساخته شد؛ تو <strong class="dh-fardiyat">ناهمواری</strong>',
+    'موفقیت شخصی یعنی <strong class="dh-fardiyat">رضایت</strong> همراه با <strong class="dh-fardiyat">فردیت‌ات</strong>',
+    'مثل بقیه، فقط بهتر؟ این همان <strong class="dh-fardiyat">میثاق استاندارد</strong> است',
+    'اسب‌های سیاه اول <strong class="dh-fardiyat">رضایت</strong> را می‌جویند، بعد اوج می‌گیرند',
+    '<strong class="dh-fardiyat">خرده‌انگیزه‌ات</strong> را بشناس؛ موتور پنهان تو همان است',
+    'استعداد یک قالب نیست؛ <strong class="dh-fardiyat">فردیت‌ات</strong> راهش را می‌سازد',
+    'مقصد را رها کن؛ <strong class="dh-fardiyat">انتخاب‌های</strong> هم‌راستا با خودت را جدی بگیر',
+    'راهبرد واحد برای همه وجود ندارد؛ فقط بهترین راهبرد برای <strong class="dh-fardiyat">تو</strong>',
+    'شوق را فقط دنبال نکن؛ با شناخت جرقه‌ها <strong class="dh-fardiyat">مهندسی</strong>اش کن',
+    'تقلید مسیر دیگران، <strong class="dh-fardiyat">فردیت‌ات</strong> را خاموش می‌کند',
+    'انرژی‌ات کجاست؟ همان‌جا <strong class="dh-fardiyat">نقشه</strong> شروع می‌شود',
+    'جامعه می‌گوید یکسان باش؛ کتاب می‌گوید <strong class="dh-fardiyat">ناهموار</strong> بمان',
+    '<strong class="dh-fardiyat">جرقه</strong> کوچک امروز، مسیر بزرگ فرداست',
+    'امتیاز کنکور برچسب است؛ <strong class="dh-fardiyat">رضایت</strong> جهت است',
+    'فرصت وقتی معنا دارد که با <strong class="dh-fardiyat">فردیت‌ات</strong> جور باشد',
+    'اسب سیاه از ناکجا می‌آید؛ چون مسیرش <strong class="dh-fardiyat">مال خودش</strong> است',
+    'بهتر شدن در چیزی که برایت مهم است؛ نسخه <strong class="dh-fardiyat">اسب سیاه</strong>',
+    'دفترچه انتخاب رشته عمومی است؛ <strong class="dh-fardiyat">تو</strong> عمومی نیستی',
+    'استاندارد وعده امنیت داد؛ <strong class="dh-fardiyat">فردیت‌ات</strong> وعده زندگی می‌دهد',
+    'اگر پرانرژی نیستی، شاید مسیر از آنِ <strong class="dh-fardiyat">تو</strong> نیست',
+    'شناخت خود، کوتاه‌ترین راه به <strong class="dh-fardiyat">انتخاب درست</strong> است',
+    'امروز یک سؤال: از چه چیزی واقعاً <strong class="dh-fardiyat">انرژی</strong> می‌گیری؟'
   ];
+
+
+  
+  function dhTickerJalaliDateLine() {
+    try {
+      var fmt = new Intl.DateTimeFormat('fa-IR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      return 'امروز: ' + fmt.format(new Date());
+    } catch (e) {
+      try {
+        return 'امروز: ' + new Date().toLocaleDateString('fa-IR');
+      } catch (e2) {
+        return '';
+      }
+    }
+  }
+
+  function dhBuildTickerQueue() {
+    var out = [];
+    var i;
+    for (i = 0; i < DH_FARDIYAT_LINES.length; i++) {
+      out.push(DH_FARDIYAT_LINES[i]);
+      if ((i + 1) % 3 === 0) {
+        var d = dhTickerJalaliDateLine();
+        if (d) out.push(d);
+      }
+    }
+    return out;
+  }
 
   function stopFardiyatTicker() {
     if (__dhFardiyatTickerTimer) {
@@ -315,23 +366,27 @@
     stopFardiyatTicker();
     var el = document.getElementById('dh-fardiyat-ticker-text');
     if (!el) return;
+    var queue = dhBuildTickerQueue();
+    if (!queue.length) return;
     __dhFardiyatTickerIdx = 0;
-    el.innerHTML = DH_FARDIYAT_LINES[0];
+    el.innerHTML = queue[0];
     el.classList.add('dh-ticker-in');
     __dhFardiyatTickerTimer = setInterval(function () {
       var node = document.getElementById('dh-fardiyat-ticker-text');
       if (!node) { stopFardiyatTicker(); return; }
+      var q = dhBuildTickerQueue();
+      if (!q.length) return;
       node.classList.remove('dh-ticker-in');
       node.classList.add('dh-ticker-out');
       setTimeout(function () {
         var n2 = document.getElementById('dh-fardiyat-ticker-text');
         if (!n2) return;
-        __dhFardiyatTickerIdx = (__dhFardiyatTickerIdx + 1) % DH_FARDIYAT_LINES.length;
-        n2.innerHTML = DH_FARDIYAT_LINES[__dhFardiyatTickerIdx];
+        __dhFardiyatTickerIdx = (__dhFardiyatTickerIdx + 1) % q.length;
+        n2.innerHTML = q[__dhFardiyatTickerIdx];
         n2.classList.remove('dh-ticker-out');
         n2.classList.add('dh-ticker-in');
       }, 280);
-    }, 3800);
+    }, 4000);
   }
 
   function renderHome() {
@@ -389,7 +444,7 @@
         '</header>' +
         '<div class="dh-fardiyat-ticker" id="dh-fardiyat-ticker" aria-live="polite">' +
           '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
-          '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت</strong> خودت بساز</span>' +
+          '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
