@@ -292,6 +292,48 @@
     paint();
   }
 
+
+  var __dhFardiyatTickerTimer = null;
+  var __dhFardiyatTickerIdx = 0;
+  var DH_FARDIYAT_LINES = [
+    'مسیرت را با <strong class="dh-fardiyat">فردیت</strong> خودت بساز',
+    'رتبه مقصد نیست؛ <strong class="dh-fardiyat">جرقه</strong> مسیر است',
+    'استاندارد برای همه ساخته شد؛ تو <strong class="dh-fardiyat">ناهموار</strong>ی',
+    'امروز کدام انرژی در تو زنده است؟',
+    'کشف کن چه چیزی واقعاً به تو انرژی می‌دهد',
+    'انتخاب رشته از روی <strong class="dh-fardiyat">فردیت</strong>، نه فقط دفترچه'
+  ];
+
+  function stopFardiyatTicker() {
+    if (__dhFardiyatTickerTimer) {
+      clearInterval(__dhFardiyatTickerTimer);
+      __dhFardiyatTickerTimer = null;
+    }
+  }
+
+  function startFardiyatTicker() {
+    stopFardiyatTicker();
+    var el = document.getElementById('dh-fardiyat-ticker-text');
+    if (!el) return;
+    __dhFardiyatTickerIdx = 0;
+    el.innerHTML = DH_FARDIYAT_LINES[0];
+    el.classList.add('dh-ticker-in');
+    __dhFardiyatTickerTimer = setInterval(function () {
+      var node = document.getElementById('dh-fardiyat-ticker-text');
+      if (!node) { stopFardiyatTicker(); return; }
+      node.classList.remove('dh-ticker-in');
+      node.classList.add('dh-ticker-out');
+      setTimeout(function () {
+        var n2 = document.getElementById('dh-fardiyat-ticker-text');
+        if (!n2) return;
+        __dhFardiyatTickerIdx = (__dhFardiyatTickerIdx + 1) % DH_FARDIYAT_LINES.length;
+        n2.innerHTML = DH_FARDIYAT_LINES[__dhFardiyatTickerIdx];
+        n2.classList.remove('dh-ticker-out');
+        n2.classList.add('dh-ticker-in');
+      }, 280);
+    }, 3800);
+  }
+
   function renderHome() {
     ensureTabbar();
     setActiveTab('home');
@@ -345,6 +387,10 @@
           '<h1 class="dh-mk2-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</h1>' +
           '<p class="dh-mk2-sub">بر اساس <strong class="dh-fardiyat">فردیت</strong></p>' +
         '</header>' +
+        '<div class="dh-fardiyat-ticker" id="dh-fardiyat-ticker" aria-live="polite">' +
+          '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
+          '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت</strong> خودت بساز</span>' +
+        '</div>' +
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
@@ -392,6 +438,7 @@
         '</section></div>';
 
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
+    try { startFardiyatTicker(); } catch (eTicker) {}
     on('dh-start-journey', function () { startJourneyFromShell(); });
     on('dh-continue-journey', function () { startJourneyFromShell(); });
     on('dh-open-spark', function () {
@@ -666,6 +713,8 @@
   }
 
   function switchTab(tab) {
+    try { if (tab !== 'home') stopFardiyatTicker(); } catch (e) {}
+
     if (tab === 'home') {
       try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}
       window.__dhInJourney = false;
