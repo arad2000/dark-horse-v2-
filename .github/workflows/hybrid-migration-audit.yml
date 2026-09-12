@@ -7,6 +7,7 @@ on:
       - feature/commercial-api-wiring
       - deploy/liara-commercial-sandbox
       - hardening/cors-production
+      - hardening/ai-counsel-rate-limit
   pull_request:
     branches:
       - main
@@ -121,6 +122,9 @@ jobs:
 
       - name: Run main API contract tests
         run: python -m unittest -v test_main_api_contract.py
+
+      - name: Run AI counsel rate-limit tests
+        run: python -m unittest -v test_ai_rate_limit.py
 
       - name: Run strict offline reference contract audit
         run: python reference_contract_audit.py
