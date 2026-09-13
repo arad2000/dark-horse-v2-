@@ -9,6 +9,7 @@ on:
       - hardening/cors-production
       - hardening/ai-counsel-rate-limit
       - hardening/production-billing-guard
+      - ux/gen-z-layer
   pull_request:
     branches:
       - main
@@ -58,6 +59,9 @@ jobs:
 
       - name: Verify commercial UI contract
         run: python -m unittest -v test_commercial_ui_contract.py
+
+      - name: Verify Gen-Z visual layer contract
+        run: python -m unittest -v test_genz_visual_layer.py
 
       - name: Verify PostgreSQL connectivity
         run: python -c "from database import healthcheck; assert healthcheck() is True"
