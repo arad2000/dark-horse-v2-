@@ -230,6 +230,8 @@
 
 
   function openSystemGuide() {
+    try { shellScrollTop(); } catch (eS) {}
+
     var existing = document.getElementById('dh-sys-guide');
     if (existing) existing.remove();
     var page = 0;
@@ -398,6 +400,8 @@
   }
 
   function renderHome() {
+    try { shellScrollTop(); } catch (eS) {}
+
     ensureTabbar();
     setActiveTab('home');
     window.__dhInJourney = false;
@@ -513,25 +517,33 @@
     on('dh-start-journey', function () { startJourneyFromShell(); });
     on('dh-continue-journey', function () { startJourneyFromShell(); });
     on('dh-open-spark', function () {
+      try { shellScrollTop(); } catch (eS) {}
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
       else alert('ماژول جرقه‌یاب بارگذاری نشده.');
+      try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
     });
     on('dh-open-stories', function () {
+      try { shellScrollTop(); } catch (eS) {}
       if (window.DHStories && DHStories.open) DHStories.open();
       else alert('بخش داستان‌ها بارگذاری نشده.');
+      try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
     });
     on('dh-open-poems', function () {
       if (window.DHPoems && DHPoems.open) DHPoems.open();
       else alert('بخش سخن بزرگان بارگذاری نشده.');
     });
     on('dh-open-parents', function () {
+      try { shellScrollTop(); } catch (eS) {}
       if (window.DHParents && DHParents.open) DHParents.open();
       else alert('بخش والدین بارگذاری نشده.');
+      try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
     });
-    on('dh-open-guide', function () { openSystemGuide(); });
+    on('dh-open-guide', function () { try { shellScrollTop(); } catch (eS) {} openSystemGuide(); try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {} });
   }
 
   function startJourneyFromShell() {
+    try { shellScrollTop(); } catch (eS) {}
+
     if (!canRunTest()) {
       switchTab('profile');
       setTimeout(function () { alert('سهمیه رایگان تمام شده. از پروفایل اشتراک تستی را فعال کن.'); }, 150);
@@ -645,6 +657,8 @@
   }
 
   function renderProfile() {
+    try { shellScrollTop(); } catch (eS) {}
+
     ensureTabbar();
     setActiveTab('profile');
     window.__dhInJourney = false;
@@ -783,8 +797,28 @@
     };
   }
 
+  
+  function shellScrollTop() {
+    try {
+      if (typeof window.scrollPageToTop === 'function') {
+        window.scrollPageToTop();
+        return;
+      }
+    } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e2) {}
+    try {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+    } catch (e3) {}
+    try {
+      setTimeout(function () { try { window.scrollTo(0, 0); } catch (e4) {} }, 40);
+    } catch (e5) {}
+  }
+
   function switchTab(tab) {
     try { if (tab !== 'home') stopFardiyatTicker(); } catch (e) {}
+    try { shellScrollTop(); } catch (eS) {}
 
     if (tab === 'home') {
       try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}

@@ -393,32 +393,52 @@ async function loadTraitMap() {
 
 function scrollPageToTop() {
   try {
-    const nodes = [
-      window,
-      document.scrollingElement,
-      document.documentElement,
-      document.body,
-      document.getElementById('app'),
-      document.querySelector('.container'),
-      document.querySelector('.shell-main'),
-      document.querySelector('.shell-content'),
-      document.querySelector('main'),
-      document.querySelector('[data-scroll]')
-    ];
-    nodes.forEach(function (el) {
+    var y = 0;
+    try { window.scrollTo(0, 0); } catch (e0) {}
+    try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch (e1) {}
+    try {
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+    } catch (e2) {}
+    try { document.documentElement.scrollTop = 0; } catch (e3) {}
+    try { document.body.scrollTop = 0; } catch (e4) {}
+
+    var ids = ['app', 'dh-home-wrap'];
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
       if (!el) return;
-      try {
-        if (el === window) {
-          window.scrollTo(0, 0);
-        } else if (typeof el.scrollTo === 'function') {
-          el.scrollTo(0, 0);
-        } else {
-          el.scrollTop = 0;
-        }
-      } catch (_) {}
+      try { el.scrollTop = 0; } catch (e5) {}
+      try { if (el.scrollTo) el.scrollTo(0, 0); } catch (e6) {}
     });
-  } catch (_) {}
+
+    // همه ظرف‌های اسکرول‌دار داخل صفحه
+    try {
+      var all = document.querySelectorAll('#app, .container, .dh-home-wrap, .card, .dh-guide-body, [style*="overflow"]');
+      for (var i = 0; i < all.length; i++) {
+        try { all[i].scrollTop = 0; } catch (e7) {}
+      }
+    } catch (e8) {}
+
+    // موبایل / PWA: دوباره بعد از رسم
+    try {
+      requestAnimationFrame(function () {
+        try { window.scrollTo(0, 0); } catch (e9) {}
+        try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch (e10) {}
+      });
+    } catch (e11) {}
+    try {
+      setTimeout(function () {
+        try { window.scrollTo(0, 0); } catch (e12) {}
+        try {
+          if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+        } catch (e13) {}
+      }, 30);
+      setTimeout(function () {
+        try { window.scrollTo(0, 0); } catch (e14) {}
+      }, 120);
+    } catch (e15) {}
+  } catch (eAll) {}
 }
+window.scrollPageToTop = scrollPageToTop;
 
 function goTo(stage) {
   state.history.push(state.stage);
