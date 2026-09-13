@@ -1,0 +1,127 @@
+/* Dark Horse — Gen-Z Visual Layer v1
+ * Visual-only: no scoring, state, content, API or assessment semantics are changed.
+ * Brand rule: gold remains the primary brand/action color; electric violet is a restrained secondary accent.
+ */
+
+:root {
+  --dh-youth: #9b8cff;
+  --dh-youth-soft: rgba(155, 140, 255, 0.12);
+  --dh-youth-border: rgba(155, 140, 255, 0.24);
+}
+
+/* A little more energy without changing the Dark Horse identity. */
+body {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(155, 140, 255, 0.075), transparent 28%),
+    radial-gradient(circle at 10% 92%, rgba(240, 192, 64, 0.055), transparent 30%),
+    radial-gradient(ellipse at top, #16141f 0%, var(--dh-bg, #0c0c12) 55%) !important;
+}
+
+/* Youth-oriented micro badges. */
+.dh-chip,
+.dh-spark-chip {
+  box-shadow: 0 0 0 1px rgba(155, 140, 255, 0.04), 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+.dh-chip {
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.14), var(--dh-youth-soft));
+  border-color: rgba(240, 192, 64, 0.32);
+}
+
+.dh-spark-chip {
+  border: 1px solid var(--dh-youth-border);
+  background: linear-gradient(135deg, rgba(155, 140, 255, 0.11), rgba(240, 192, 64, 0.09));
+}
+
+/* CTA stays gold; the violet edge adds a modern digital-product cue. */
+.dh-cta-card,
+.dh-feature,
+.dh-last-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.dh-cta-card::before,
+.dh-feature::before,
+.dh-last-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 72px;
+  height: 72px;
+  background: radial-gradient(circle, rgba(155, 140, 255, 0.13), transparent 70%);
+  pointer-events: none;
+}
+
+/* Buttons feel more responsive on touch and pointer devices, while gold remains dominant. */
+.btn,
+button.btn,
+.dh-mini,
+.option {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover,
+  .dh-mini:hover,
+  .option:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:hover,
+  .btn-heart:hover {
+    box-shadow: 0 8px 24px rgba(240, 192, 64, 0.24), 0 0 0 1px rgba(155, 140, 255, 0.10);
+  }
+
+  .dh-mini:hover,
+  .option:hover {
+    border-color: rgba(155, 140, 255, 0.34);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20), 0 0 0 1px rgba(155, 140, 255, 0.06);
+  }
+}
+
+/* Swipe cards get a subtle layered depth instead of a generic flat card feel. */
+.swipe-card {
+  background:
+    radial-gradient(circle at 82% 15%, rgba(155, 140, 255, 0.07), transparent 26%),
+    var(--dh-card, #14141c) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(155, 140, 255, 0.025);
+}
+
+/* Result values remain readable: the secondary accent is decorative, not semantic. */
+.dh-score-note,
+.dh-alt-reason {
+  letter-spacing: 0;
+}
+
+/* The progress track gets a faint dual-tone glow while the fill remains gold. */
+.dh-progress-wrap,
+.dh-edu-header {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 28px rgba(155, 140, 255, 0.045);
+}
+
+.dh-progress-fill {
+  box-shadow: 0 0 14px rgba(240, 192, 64, 0.42), 12px 0 28px rgba(155, 140, 255, 0.08);
+}
+
+/* Keep the tab bar unmistakably Dark Horse: gold active state, violet only as a tiny inactive cue. */
+#dh-tabbar {
+  box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.22);
+}
+
+#dh-tabbar button:not(.active) .ico::before {
+  filter: saturate(.62) brightness(.82);
+}
+
+/* Respect users who disable motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
