@@ -296,20 +296,26 @@
   var __dhFardiyatTickerTimer = null;
   var __dhFardiyatTickerIdx = 0;
   var DH_FARDIYAT_LINES = [
+    'این سامانه بر پایه <strong class="dh-fardiyat">پژوهش هاروارد</strong> درباره اسب‌های سیاه است',
     'مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز',
+    'نه حدس مشاور؛ <strong class="dh-fardiyat">علم هاروارد</strong> درباره <strong class="dh-fardiyat">فردیت‌ات</strong>',
     'رتبه مقصد نیست؛ <strong class="dh-fardiyat">جرقه</strong> مسیر است',
+    'پروژه <strong class="dh-fardiyat">Dark Horse</strong> در <strong class="dh-fardiyat">هاروارد</strong>؛ الهام مسیر ما',
     'استاندارد برای همه ساخته شد؛ تو <strong class="dh-fardiyat">ناهمواری</strong>',
+    'موفقیت شخصی را <strong class="dh-fardiyat">هاروارد</strong> این‌طور دید: <strong class="dh-fardiyat">فردیت</strong> + رضایت',
     'موفقیت شخصی یعنی <strong class="dh-fardiyat">رضایت</strong> همراه با <strong class="dh-fardiyat">فردیت‌ات</strong>',
+    'همان منطق <strong class="dh-fardiyat">پژوهش علمی هاروارد</strong>؛ نه فقط تجربه یک مشاور',
     'مثل بقیه، فقط بهتر؟ این همان <strong class="dh-fardiyat">میثاق استاندارد</strong> است',
     'اسب‌های سیاه اول <strong class="dh-fardiyat">رضایت</strong> را می‌جویند، بعد اوج می‌گیرند',
     '<strong class="dh-fardiyat">خرده‌انگیزه‌ات</strong> را بشناس؛ موتور پنهان تو همان است',
+    'چارچوب ما از <strong class="dh-fardiyat">پژوهش هاروارد</strong> می‌آید؛ مزیت ما همین است',
     'استعداد یک قالب نیست؛ <strong class="dh-fardiyat">فردیت‌ات</strong> راهش را می‌سازد',
     'مقصد را رها کن؛ <strong class="dh-fardiyat">انتخاب‌های</strong> هم‌راستا با خودت را جدی بگیر',
     'راهبرد واحد برای همه وجود ندارد؛ فقط بهترین راهبرد برای <strong class="dh-fardiyat">تو</strong>',
     'شوق را فقط دنبال نکن؛ با شناخت جرقه‌ها <strong class="dh-fardiyat">مهندسی</strong>اش کن',
     'تقلید مسیر دیگران، <strong class="dh-fardiyat">فردیت‌ات</strong> را خاموش می‌کند',
     'انرژی‌ات کجاست؟ همان‌جا <strong class="dh-fardiyat">نقشه</strong> شروع می‌شود',
-    'جامعه می‌گوید یکسان باش؛ کتاب می‌گوید <strong class="dh-fardiyat">ناهموار</strong> بمان',
+    'جامعه می‌گوید یکسان باش؛ <strong class="dh-fardiyat">هاروارد</strong> می‌گوید <strong class="dh-fardiyat">ناهموار</strong> بمان',
     '<strong class="dh-fardiyat">جرقه</strong> کوچک امروز، مسیر بزرگ فرداست',
     'امتیاز کنکور برچسب است؛ <strong class="dh-fardiyat">رضایت</strong> جهت است',
     'فرصت وقتی معنا دارد که با <strong class="dh-fardiyat">فردیت‌ات</strong> جور باشد',
@@ -319,8 +325,10 @@
     'استاندارد وعده امنیت داد؛ <strong class="dh-fardiyat">فردیت‌ات</strong> وعده زندگی می‌دهد',
     'اگر پرانرژی نیستی، شاید مسیر از آنِ <strong class="dh-fardiyat">تو</strong> نیست',
     'شناخت خود، کوتاه‌ترین راه به <strong class="dh-fardiyat">انتخاب درست</strong> است',
+    'جرقه‌هایت را با چارچوب <strong class="dh-fardiyat">پژوهش هاروارد</strong> جدی بگیر',
     'امروز یک سؤال: از چه چیزی واقعاً <strong class="dh-fardiyat">انرژی</strong> می‌گیری؟'
   ];
+
 
 
   
@@ -490,7 +498,15 @@
             '<strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></button>' +
             '<button type="button" class="dh-mk2-tile" id="dh-open-guide">' + ico('ico-compass.svg') +
             '<strong>راهنمای سامانه</strong><span>مشاور و معرفی سامانه</span></button></div>' +
-        '</section></div>';
+        '</section>' +
+        '<section class="dh-sanjesh-box" id="dh-sanjesh-box">' +
+          '<p class="dh-sanjesh-title">اخبار و اطلاع‌رسانی سازمان سنجش</p>' +
+          '<p class="dh-sanjesh-desc">زمان‌بندی دفترچه، انتخاب رشته و اطلاعیه‌های رسمی را از پرتال سنجش دنبال کنید.</p>' +
+          '<a class="dh-sanjesh-link" href="https://www.sanjesh.org" target="_blank" rel="noopener noreferrer">ورود به پرتال سازمان سنجش</a>' +
+          '<p class="dh-sanjesh-note">تاریخ‌ها و جزئیات فقط از منبع رسمی سنجش معتبر است.</p>' +
+        '</section>' +
+        '</div>';
+
 
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
     try { startFardiyatTicker(); } catch (eTicker) {}

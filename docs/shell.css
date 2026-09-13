@@ -2105,3 +2105,46 @@ body {
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.15); }
 }
+
+
+/* بلوک سنجش — پایین خانه */
+.dh-sanjesh-box {
+  margin: 8px 12px 20px;
+  padding: 16px 14px 14px;
+  text-align: center;
+  border-radius: 16px;
+  background: rgba(18, 22, 32, 0.95);
+  border: 1px solid rgba(201, 184, 150, 0.22);
+}
+.dh-sanjesh-title {
+  margin: 0 0 8px !important;
+  color: #e8e0d0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+}
+.dh-sanjesh-desc {
+  margin: 0 0 12px !important;
+  color: #c9b896 !important;
+  font-size: 0.82rem !important;
+  line-height: 1.75 !important;
+}
+.dh-sanjesh-link {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(240, 192, 64, 0.12);
+  border: 1px solid rgba(240, 192, 64, 0.4);
+  color: #f0c040 !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.dh-sanjesh-link:active {
+  transform: scale(0.98);
+}
+.dh-sanjesh-note {
+  margin: 10px 0 0 !important;
+  color: #8a8270 !important;
+  font-size: 0.72rem !important;
+  line-height: 1.6 !important;
+}
