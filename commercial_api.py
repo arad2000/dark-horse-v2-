@@ -22,6 +22,7 @@ from billing_credit_service import consume_one_test, ensure_free_entitlement, is
 from billing_models import Entitlement, User
 from database import get_db
 from phone_verification_service import request_registration_otp, verify_registration_otp
+from production_billing_guard import assert_production_billing_configuration
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
 
@@ -93,6 +94,7 @@ def _current_user(
 
 
 def _server_billing_provider() -> str:
+    assert_production_billing_configuration()
     provider = os.getenv("BILLING_PROVIDER", "mock").strip().lower()
     if provider not in {"mock", "zarinpal"}:
         raise HTTPException(status_code=503, detail="billing provider is misconfigured")
@@ -119,6 +121,7 @@ def _frontend_redirect(payment: str) -> str:
 @router.post("/auth/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, object]:
     """Start a verified registration. No user is created before OTP validation."""
+    assert_production_billing_configuration()
     try:
         result = request_registration_otp(db, name=req.name, phone=req.phone, password=req.password)
         db.commit()
@@ -136,6 +139,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, o
 
 @router.post("/auth/register/verify")
 def verify_register(req: VerifyRegistrationRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
     try:
         user, token = verify_registration_otp(db, challenge_id=req.challenge_id, code=req.code)
         ensure_free_entitlement(db, user.id)
@@ -159,6 +163,7 @@ def verify_register(req: VerifyRegistrationRequest, db: Session = Depends(get_db
 
 @router.post("/auth/login")
 def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
     try:
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
         ensure_free_entitlement(db, user.id)
@@ -177,6 +182,7 @@ def me(user: User = Depends(_current_user)) -> dict[str, object]:
 @router.get("/me/quota")
 def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     """Return remaining credits; in free mode top-up first so UI does not paywall."""
+    assert_production_billing_configuration()
     if is_billing_free_mode():
         try:
             ensure_free_entitlement(db, user.id)
@@ -189,6 +195,7 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
 
 @router.post("/me/consume-test")
 def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
     try:
         entitlement = consume_one_test(db, user.id)
         remaining = _quota(db, user.id)
