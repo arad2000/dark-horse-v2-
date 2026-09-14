@@ -24,31 +24,37 @@
         var p=await global.DHAuth.createPayment();
         var url=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
         if(!url)throw new Error('آدرس درگاه از سرور دریافت نشد.');
-        if(s){var sp=s.querySelector('span:last-child');if(sp)sp.textContent='در حال انتقال به زرین‌پال…';}
-        // هدایت مقاوم برای مرورگر / PWA / WebView اپ
+        if(s){var sp=s.querySelector('span:last-child');if(sp)sp.textContent='لینک درگاه آماده است';}
+        // نمایش لینک قابل کلیک — در WebView اپ مطمئن‌تر از location.assign
+        if(e){
+          e.innerHTML='درگاه آماده است. اگر خودکار باز نشد روی دکمه زیر بزنید:<br><a id="dh-pay-open" href="'+url.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:10px;padding:12px 16px;background:#f0c040;color:#1a1200;border-radius:12px;font-weight:800;text-decoration:none;">باز کردن صفحه پرداخت زرین‌پال</a>';
+        }
         var opened=false;
         try{
           if(global.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Browser&&Capacitor.Plugins.Browser.open){
-            await Capacitor.Plugins.Browser.open({url:url});
+            Capacitor.Plugins.Browser.open({url:url});
             opened=true;
           }
         }catch(_){}
         if(!opened){
           try{
             var a=document.createElement('a');
-            a.href=url;a.target='_blank';a.rel='noopener noreferrer';
-            a.style.display='none';document.body.appendChild(a);a.click();a.remove();
-            opened=true;
+            a.href=url;a.target='_system';a.rel='noopener noreferrer';
+            a.setAttribute('data-external','true');
+            a.style.display='none';document.body.appendChild(a);a.click();
+            setTimeout(function(){try{a.remove();}catch(_){}},500);
           }catch(_){}
+          try{window.open(url,'_blank','noopener,noreferrer');}catch(_){}
         }
-        try{window.location.href=url;}catch(_){}
-        // اگر WebView گیر کرد، بعد از چند ثانیه مودال را باز کن تا کاربر خارج شود
-        setTimeout(function(){
-          BUSY=false;
-          try{setBusy(b,'','ادامه به درگاه',false);}catch(_){}
-          try{if(s)s.hidden=true;}catch(_){}
-          try{if(e)e.textContent='اگر صفحه درگاه باز نشد، دوباره «ادامه به درگاه» را بزنید. می‌توانید انصراف هم بزنید.';}catch(_){}
-        },3000);
+        // تلاش آخر در مرورگر معمولی
+        try{
+          if(!/; wv\)|WebView|Capacitor/i.test(navigator.userAgent||'')){
+            window.location.href=url;
+          }
+        }catch(_){}
+        BUSY=false;
+        try{setBusy(b,'','ادامه به درگاه',false);}catch(_){}
+        try{if(s)s.hidden=true;}catch(_){}
       }catch(x){
         if(e)e.textContent=paymentErrorText(x);
         BUSY=false;
