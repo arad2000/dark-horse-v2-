@@ -11,57 +11,74 @@
   function showOtpModal(reg){var o=showModal('<h2 class="dh-commercial-title">تأیید شماره موبایل</h2><p class="dh-commercial-sub">کد ۶ رقمی ارسال‌شده به شماره <strong dir="ltr">'+escapeHtml(reg.phone)+'</strong> را وارد کنید.</p><div class="dh-otp-box">'+[1,2,3,4,5,6].map(function(i){return '<input id="dh-otp-'+i+'" class="dh-commercial-input" inputmode="numeric" maxlength="1" autocomplete="one-time-code">';}).join('')+'</div><div id="dh-otp-err" class="dh-commercial-error"></div><div id="dh-otp-timer" class="dh-otp-timer">اعتبار کد: ۵:۰۰</div><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-otp-submit">تأیید و ساخت حساب</button><button type="button" class="btn" id="dh-otp-cancel">انصراف</button></div><p class="dh-commercial-note">کد یک‌بارمصرف ۵ دقیقه معتبر است و تلاش‌های ناموفق محدود هستند.</p>');var fs=[1,2,3,4,5,6].map(function(i){return el('dh-otp-'+i);});fs.forEach(function(f,i){f.addEventListener('input',function(){f.value=digits(f.value).replace(/\D/g,'').slice(0,1);if(f.value&&fs[i+1])fs[i+1].focus();});f.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!f.value&&fs[i-1])fs[i-1].focus();});});fs[0].focus();var n=Number(reg.expires_in||300),tm=el('dh-otp-timer'),iv=setInterval(function(){n--;if(n<=0){clearInterval(iv);if(tm)tm.textContent='کد منقضی شده است.';}else if(tm)tm.textContent='اعتبار کد: '+Math.floor(n/60)+':'+String(n%60).padStart(2,'0');},1000);el('dh-otp-cancel').onclick=function(){clearInterval(iv);closeModal();};el('dh-otp-submit').onclick=async function(){if(BUSY)return;BUSY=true;var b=el('dh-otp-submit'),err=el('dh-otp-err');setBusy(b,'در حال تأیید…','تأیید و ساخت حساب',true);var code=fs.map(function(f){return f.value;}).join('');if(code.length!==6){if(err)err.textContent='کد ۶ رقمی را کامل وارد کنید.';BUSY=false;setBusy(b,'','تأیید و ساخت حساب',false);return;}try{var d=await global.DHAuth.verifyRegistration(reg.challenge_id,code);if(d&&d.user)saveLocalUser(d.user);if(d&&typeof d.quota==='number')setLocalQuota({remaining:d.quota});clearInterval(iv);closeModal();await continueAfterAuth();}catch(e){if(err)err.textContent=text(e&&e.message?e.message:e)||'تأیید کد ناموفق بود.';BUSY=false;setBusy(b,'','تأیید و ساخت حساب',false);}};}
   function showAuthModal(initial){var mode=initial==='login'?'login':'register',o=showModal('');function paint(){var title=mode==='login'?'ورود به حساب':'ساخت حساب',action=mode==='login'?'ورود':'ثبت‌نام';o.querySelector('.dh-commercial-modal').innerHTML='<h2 class="dh-commercial-title">'+title+'</h2><p class="dh-commercial-sub">'+(mode==='login'?'با شماره موبایل و رمز عبور وارد حساب خود شوید.':'برای ساخت حساب، شماره موبایل خود را با کد پیامکی تأیید کنید.')+'</p>'+(mode==='register'?'<label class="dh-commercial-label" for="dh-c-name">نام و نام خانوادگی</label><input id="dh-c-name" class="dh-commercial-input" autocomplete="name" placeholder="نام و نام خانوادگی">':'')+'<label class="dh-commercial-label" for="dh-c-phone">شماره موبایل</label><input id="dh-c-phone" class="dh-commercial-input" type="tel" inputmode="numeric" dir="ltr" placeholder="09xxxxxxxxx" autocomplete="tel"><label class="dh-commercial-label" for="dh-c-pass">رمز عبور</label><div class="dh-commercial-field"><input id="dh-c-pass" class="dh-commercial-input has-toggle" type="password" placeholder="حداقل ۸ کاراکتر" autocomplete="current-password"><button type="button" class="dh-commercial-toggle" id="dh-c-pass-toggle" aria-label="نمایش رمز عبور">◉</button></div><div id="dh-c-err" class="dh-commercial-error"></div><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-c-submit">'+action+'</button><button type="button" class="btn" id="dh-c-close">انصراف</button></div><p class="dh-commercial-note">احراز هویت و اعتباردهی در سرور انجام می‌شود.</p><div style="text-align:center;margin-top:4px"><button type="button" class="dh-commercial-link" id="dh-c-switch">'+(mode==='login'?'ساخت حساب جدید':'حساب دارم؛ ورود')+'</button></div>';addPasswordToggle('dh-c-pass','dh-c-pass-toggle');el('dh-c-close').onclick=function(){if(!BUSY)closeModal();};el('dh-c-switch').onclick=function(){if(!BUSY){mode=mode==='login'?'register':'login';paint();}};el('dh-c-submit').onclick=async function(){if(BUSY)return;BUSY=true;var b=el('dh-c-submit'),err=el('dh-c-err');setBusy(b,mode==='login'?'در حال ورود…':'در حال ارسال کد…',action,true);var phone=digits(el('dh-c-phone').value).replace(/\s+/g,''),pass=el('dh-c-pass').value,name=mode==='register'?el('dh-c-name').value.trim():'';if(mode==='register'&&name.length<2){if(err)err.textContent='نام را کامل وارد کنید.';BUSY=false;setBusy(b,'',action,false);return;}if(!/^09\d{9}$/.test(phone)){if(err)err.textContent='شماره موبایل را به‌صورت 09xxxxxxxxx وارد کنید.';BUSY=false;setBusy(b,'',action,false);return;}if(pass.length<8){if(err)err.textContent='رمز عبور باید حداقل ۸ کاراکتر داشته باشد.';BUSY=false;setBusy(b,'',action,false);return;}try{if(mode==='login'){var d=await global.DHAuth.login(phone,pass);if(d.user)saveLocalUser(d.user);if(typeof d.quota==='number')setLocalQuota({remaining:d.quota});closeModal();await continueAfterAuth();}else{var c=await global.DHAuth.register(name,phone,pass);closeModal();showOtpModal({phone:phone,challenge_id:c.challenge_id,expires_in:c.expires_in});}}catch(e){if(err)err.textContent=text(e&&e.message?e.message:e)||'خطا در ارتباط با سرور.';}finally{BUSY=false;if(el('dh-c-submit'))setBusy(el('dh-c-submit'),'',action,false);};};}paint();}
   function paymentErrorText(e){var m=text(e&&e.message?e.message:e);if(/merchant|not configured|credential|authority/i.test(m))return 'درگاه هنوز آماده تراکنش نیست؛ وضعیت Merchant ID و فعال‌سازی زرین‌پال را بررسی کنید.';if(/timeout|network|failed to fetch/i.test(m))return 'ارتباط با درگاه برقرار نشد؛ اتصال شبکه یا وضعیت سرویس زرین‌پال را بررسی کنید.';return m||'ایجاد درخواست پرداخت ناموفق بود.';}
-  async function openPurchaseModal(){if(BUSY)return;showModal('<h2 class="dh-commercial-title">خرید بسته ۳ تست</h2><p class="dh-commercial-sub">پرداخت امن از طریق زرین‌پال انجام می‌شود.</p><div class="dh-commercial-pack"><span class="badge">بسته استاندارد</span><div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div><p class="dh-commercial-sub">مبلغ و تعداد اعتبار فقط از سمت سرور تعیین می‌شود.</p><div id="dh-buy-err" class="dh-commercial-error"></div><div id="dh-buy-status" class="dh-commercial-status" hidden><span class="dh-commercial-spinner"></span><span>در حال اتصال به درگاه…</span></div><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-buy-now">ادامه به درگاه</button><button type="button" class="btn" id="dh-buy-close">انصراف</button></div><div class="dh-commercial-divider"></div><p class="dh-commercial-note">پس از پرداخت، تراکنش توسط سرور Verify می‌شود و اعتبار به حساب شما اضافه می‌شود.</p>');el('dh-buy-close').onclick=function(){BUSY=false;try{var b=el('dh-buy-now');if(b)setBusy(b,'','ادامه به درگاه',false);}catch(_){}try{var s=el('dh-buy-status');if(s)s.hidden=true;}catch(_){}closeModal();};
-    el('dh-buy-now').onclick=async function(){
+  async function openPurchaseModal(){
+    if(BUSY)return;
+    showModal(
+      '<h2 class="dh-commercial-title">خرید بسته ۳ تست</h2>'+
+      '<p class="dh-commercial-sub">پرداخت امن از طریق زرین‌پال (محیط تست)</p>'+
+      '<div class="dh-commercial-pack"><span class="badge">بسته استاندارد</span>'+
+      '<div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>'+
+      '<p class="dh-commercial-sub">مبلغ فقط از سمت سرور تعیین می‌شود.</p>'+
+      '<div id="dh-buy-err" class="dh-commercial-error"></div>'+
+      '<div id="dh-buy-status" class="dh-commercial-status" hidden><span class="dh-commercial-spinner"></span><span>در حال آماده‌سازی درگاه…</span></div>'+
+      '<div class="dh-commercial-actions">'+
+        '<button type="button" class="btn btn-primary" id="dh-buy-now">پرداخت</button>'+
+        '<button type="button" class="btn" id="dh-buy-close">بستن</button>'+
+      '</div>'+
+      '<p class="dh-commercial-note">پس از پرداخت موفق، ۳ اعتبار به حساب اضافه می‌شود.</p>'
+    );
+
+    function unlock(){
+      BUSY=false;
+      try{var b=el('dh-buy-now');if(b){b.disabled=false;setBusy(b,'','پرداخت',false);}}catch(_){}
+      try{var s=el('dh-buy-status');if(s)s.hidden=true;}catch(_){}
+    }
+
+    el('dh-buy-close').onclick=function(ev){
+      if(ev){ev.preventDefault();ev.stopPropagation();}
+      unlock();
+      closeModal();
+    };
+
+    el('dh-buy-now').onclick=async function(ev){
+      if(ev){ev.preventDefault();ev.stopPropagation();}
       if(BUSY)return;
-      BUSY=true;
       var b=el('dh-buy-now'),e=el('dh-buy-err'),s=el('dh-buy-status');
-      if(s)s.hidden=false;
       if(e)e.textContent='';
-      setBusy(b,'در حال اتصال…','ادامه به درگاه',true);
+      if(!global.DHAuth||!global.DHAuth.isLoggedIn()){
+        closeModal();showAuthModal('login');return;
+      }
+
+      // مهم: باز کردن پنجره هم‌زمان با کلیک کاربر (قبل از await)
+      // وگرنه مرورگر/WebView بعد از await مسدود می‌کند
+      var payWin=null;
+      try{payWin=window.open('about:blank','_blank');}catch(_){payWin=null;}
+
+      BUSY=true;
+      if(s)s.hidden=false;
+      setBusy(b,'صبر کنید…','پرداخت',true);
+
       try{
-        if(!global.DHAuth.isLoggedIn()){closeModal();BUSY=false;showAuthModal('login');return;}
         var p=await global.DHAuth.createPayment();
         var url=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
-        if(!url)throw new Error('آدرس درگاه از سرور دریافت نشد.');
-        if(s){var sp=s.querySelector('span:last-child');if(sp)sp.textContent='لینک درگاه آماده است';}
-        // نمایش لینک قابل کلیک — در WebView اپ مطمئن‌تر از location.assign
-        if(e){
-          e.innerHTML='درگاه آماده است. اگر خودکار باز نشد روی دکمه زیر بزنید:<br><a id="dh-pay-open" href="'+url.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:10px;padding:12px 16px;background:#f0c040;color:#1a1200;border-radius:12px;font-weight:800;text-decoration:none;">باز کردن صفحه پرداخت زرین‌پال</a>';
+        if(!url)throw new Error('آدرس درگاه از سرور نیامد.');
+
+        if(payWin&&!payWin.closed){
+          try{payWin.location.href=url;}catch(_){try{payWin.location=url;}catch(__){}}
+        }else{
+          // همان پنجره — در WebView اپ معمولاً تنها راه است
+          window.location.href=url;
+          return;
         }
-        var opened=false;
-        try{
-          if(global.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Browser&&Capacitor.Plugins.Browser.open){
-            Capacitor.Plugins.Browser.open({url:url});
-            opened=true;
-          }
-        }catch(_){}
-        if(!opened){
-          try{
-            var a=document.createElement('a');
-            a.href=url;a.target='_system';a.rel='noopener noreferrer';
-            a.setAttribute('data-external','true');
-            a.style.display='none';document.body.appendChild(a);a.click();
-            setTimeout(function(){try{a.remove();}catch(_){}},500);
-          }catch(_){}
-          try{window.open(url,'_blank','noopener,noreferrer');}catch(_){}
-        }
-        // تلاش آخر در مرورگر معمولی
-        try{
-          if(!/; wv\)|WebView|Capacitor/i.test(navigator.userAgent||'')){
-            window.location.href=url;
-          }
-        }catch(_){}
-        BUSY=false;
-        try{setBusy(b,'','ادامه به درگاه',false);}catch(_){}
-        try{if(s)s.hidden=true;}catch(_){}
+        unlock();
+        if(e)e.textContent='صفحه پرداخت باز شد. اگر ندیدید، داخل مرورگر کروم سایت را باز کنید و دوباره پرداخت کنید.';
       }catch(x){
+        try{if(payWin&&!payWin.closed)payWin.close();}catch(_){}
         if(e)e.textContent=paymentErrorText(x);
-        BUSY=false;
-        setBusy(b,'','ادامه به درگاه',false);
-        if(s)s.hidden=true;
+        unlock();
       }
-    };}
+    };
+  }
   async function continueAfterAuth(){if(!global.DHAuth||!global.DHAuth.isLoggedIn()){showAuthModal('login');return;}try{var q=await global.DHAuth.quota(),r=Number(q&&q.credits_remaining||0);if(r<=0){await openPurchaseModal();return;}await global.DHAuth.consumeTest();setLocalQuota({remaining:r-1});closeModal();if(global.DHShell&&typeof global.DHShell.startJourney==='function')global.DHShell.startJourney();}catch(e){var m=text(e&&e.message?e.message:e);if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">'+escapeHtml(m)+'</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');el('dh-error-close').onclick=closeModal;}}
   function doLogout(){try{if(global.DHAuth)global.DHAuth.logout();}catch(_){}clearLocalUser();try{localStorage.removeItem(QUOTA_KEY);}catch(_){}try{localStorage.removeItem('dh_local_user_v1');}catch(_){}try{localStorage.removeItem('dh_local_quota_v1');}catch(_){}closeModal();if(global.DHShell&&typeof global.DHShell.renderProfile==='function'){try{global.DHShell.renderProfile();}catch(_){location.reload();}}else{location.reload();}}
   function isAdminUser(){try{var u=global.DHAuth&&global.DHAuth.getUser&&global.DHAuth.getUser();return !!(u&&(u.role==='admin'||u.role==='support'));}catch(_){return false;}}
