@@ -75,6 +75,7 @@
     if (u && u.is_premium) return true;
     var q = localQuota();
     if (q.premium) return true;
+    if (typeof q.serverRemaining === 'number' && isFinite(q.serverRemaining) && q.serverRemaining > 0) return true;
     return (q.used || 0) < 1;
   }
 
@@ -717,7 +718,14 @@
 
     var initial = (u.name || '؟').trim().charAt(0);
     var premium = !!(u.is_premium || q.premium);
-    var remain = premium ? '∞' : (canRunTest() ? '1' : '0');
+    var remain;
+    if (premium) {
+      remain = '∞';
+    } else if (q && typeof q.serverRemaining === 'number' && isFinite(q.serverRemaining)) {
+      remain = String(Math.max(0, Math.floor(q.serverRemaining)));
+    } else {
+      remain = canRunTest() ? '1' : '0';
+    }
     var used = q.used || 0;
 
     var lastHtml = '';

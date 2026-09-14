@@ -62,7 +62,10 @@
         var p=await global.DHAuth.createPayment();
         var url=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
         if(!url)throw new Error('آدرس درگاه از سرور نیامد.');
-
+        if(s)s.hidden=true;
+        unlock();
+        if(s)s.hidden=true;
+        unlock();
         if(payWin&&!payWin.closed){
           try{payWin.location.href=url;}catch(_){try{payWin.location=url;}catch(__){}}
         }else{
@@ -90,7 +93,6 @@
       var q=new URLSearchParams(window.location.search||'');
       var pay=q.get('payment');
       if(!pay)return;
-      // پاک کردن query تا با رفرش دوباره پیام ندهد
       try{
         var clean=window.location.pathname+(window.location.hash||'');
         window.history.replaceState({},'',clean||'/');
@@ -98,20 +100,39 @@
       if(pay==='success'){
         if(global.DHAuth&&global.DHAuth.isLoggedIn()){
           global.DHAuth.quota().then(function(d){
-            var r=Number(d&&d.credits_remaining||0);
-            setLocalQuota({remaining:r});
-            alert('پرداخت موفق بود. اعتبار باقی‌مانده: '+r);
-            try{if(global.DHShell&&DHShell.renderProfile)DHShell.renderProfile();else if(global.renderProfile)renderProfile();}catch(_){}
-          }).catch(function(){alert('پرداخت ثبت شد؛ برای دیدن اعتبار صفحه را یک‌بار تازه کنید.');});
+            var r=Number(d&&d.credits_remaining);
+            if(!isFinite(r)||r<0)r=0;
+            // همگام‌سازی با پروفایل shell (فرمت used/premium)
+            try{
+              localStorage.setItem('dh_local_quota_v1', JSON.stringify({
+                used: r>0 ? 0 : 1,
+                premium: false,
+                serverRemaining: r
+              }));
+            }catch(_){}
+            setLocalQuota({remaining:r, serverRemaining:r});
+            var msg = (r>100)
+              ? ('پرداخت موفق بود. اعتبار سرور: '+r+' (عدد غیرعادی است؛ در دیتابیس entitlementها را چک کنید).')
+              : ('پرداخت موفق بود. اعتبار باقی‌مانده: '+r);
+            alert(msg);
+            try{
+              if(global.DHShell&&typeof DHShell.renderProfile==='function')DHShell.renderProfile();
+              else if(typeof global.renderProfile==='function')global.renderProfile();
+              // رفرش پروفایل با کلیک مجدد روی تب
+              var tab=document.querySelector('[data-page="profile"],#tab-profile,.tab-profile');
+              if(tab)tab.click();
+            }catch(_){}
+          }).catch(function(){
+            alert('پرداخت موفق بود. یک‌بار از حساب خارج و دوباره وارد شوید تا اعتبار به‌روز شود.');
+          });
         }else{
           alert('پرداخت موفق بود. وارد حساب شوید تا اعتبار را ببینید.');
         }
       }else if(pay==='failed'){
-        alert('پرداخت تأیید نشد یا لغو شد. اگر مبلغ کم شده با پشتیبانی زرین‌پال/ما تماس بگیرید.');
+        alert('پرداخت تأیید نشد یا لغو شد.');
       }
     }catch(e){}
   }
-
   function boot(){if(!global.DHAuth)return;installButtonHooks();try{handlePaymentReturn();}catch(_){}}
   global.DHCommercialUI={showAuth:showAuthModal,showPurchase:openPurchaseModal,startServerAuthorizedJourney:continueAfterAuth,logout:doLogout};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
