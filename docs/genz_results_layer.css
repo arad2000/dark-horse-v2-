@@ -1,0 +1,32 @@
+/* Dark Horse — Gen-Z Results Experience v1
+ * Presentation-only. No scoring, API, assessment state, or result data is changed.
+ */
+
+.dh-result-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(155, 140, 255, 0.16) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #1a1a2e 0%, #111118 72%, #17120e 100%) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(240, 192, 64, 0.025) !important;
+}
+.dh-result-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 88% 10%, rgba(155, 140, 255, 0.075), transparent 24%);
+}
+.dh-result-card > * { position: relative; z-index: 1; }
+.dh-result-card [style*="height:6px"] { border-radius: 99px !important; }
+
+@media (hover: hover) and (pointer: fine) {
+  .dh-result-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .dh-result-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(155, 140, 255, 0.28) !important;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.38), 0 0 20px rgba(155, 140, 255, 0.06) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) { .dh-result-card { transition: none !important; } }

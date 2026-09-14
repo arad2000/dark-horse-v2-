@@ -10,6 +10,7 @@ on:
       - hardening/ai-counsel-rate-limit
       - hardening/production-billing-guard
       - ux/gen-z-layer
+      - ux/gen-z-results
   pull_request:
     branches:
       - main
@@ -62,6 +63,9 @@ jobs:
 
       - name: Verify Gen-Z visual layer contract
         run: python -m unittest -v test_genz_visual_layer.py
+
+      - name: Verify Gen-Z results layer contract
+        run: python -m unittest -v test_genz_results_layer.py
 
       - name: Verify PostgreSQL connectivity
         run: python -c "from database import healthcheck; assert healthcheck() is True"
