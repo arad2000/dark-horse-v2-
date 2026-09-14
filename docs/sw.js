@@ -1,5 +1,5 @@
-/* Dark Horse SW v58 — nuclear cache reset */
-const CACHE = 'darkhorse-v58';
+/* Dark Horse SW v59 — nuclear cache reset */
+const CACHE = 'darkhorse-v59';
 const PRECACHE = [
   './index.html',
   './shell.js',
@@ -27,6 +27,15 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // JS/CSS همیشه از شبکه (جلوگیری از کش کهنه دکمه خرید)
+  try {
+    const u = new URL(e.request.url);
+    if (/\.(js|css)(\?|$)/i.test(u.pathname+u.search) || /commercial_ui|shell\.js|auth_api/i.test(u.href)) {
+      e.respondWith(fetch(e.request).catch(function(){ return caches.match(e.request); }));
+      return;
+    }
+  } catch (_) {}
+
   const req = e.request;
   if (req.method !== 'GET') return;
   let url;

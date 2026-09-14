@@ -796,18 +796,21 @@
     if (ex) ex.onclick = function () { exitApp(); };
     var buyBtn = $('dh-p-buy');
     if (buyBtn) {
-      buyBtn.onclick = function () {
+      buyBtn.onclick = function (ev) {
+        if (ev) { try { ev.preventDefault(); ev.stopPropagation(); } catch (_) {} }
+        var opened = false;
         try {
           if (window.DHCommercialUI && typeof window.DHCommercialUI.showPurchase === 'function') {
             window.DHCommercialUI.showPurchase();
-            return;
+            opened = true;
           }
-        } catch (e1) {}
-        try {
-          window.dispatchEvent(new CustomEvent('dh-open-purchase'));
-          return;
-        } catch (e2) {}
-        alert('خطا در باز کردن خرید. یک‌بار کش مرورگر را خالی کنید.');
+        } catch (e1) { console.error(e1); }
+        if (!opened) {
+          try { window.dispatchEvent(new CustomEvent('dh-open-purchase')); opened = true; } catch (e2) {}
+        }
+        if (!opened) {
+          alert('ماژول خرید لود نشده. کش را پاک کنید یا از کروم با حالت ناشناس تست کنید.');
+        }
       };
     }
     $('dh-p-prem').onclick = function () {
