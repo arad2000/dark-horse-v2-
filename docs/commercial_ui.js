@@ -135,7 +135,25 @@
   patch();
   new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});
   }
-  function boot(){if(!global.DHAuth)return;installButtonHooks();try{handlePaymentReturn();}catch(_){}}
-  global.DHCommercialUI={showAuth:showAuthModal,showPurchase:openPurchaseModal,startServerAuthorizedJourney:continueAfterAuth,logout:doLogout};
+  function boot(){
+    // حتی بدون DHAuth هم UI خرید را در دسترس بگذار
+    global.DHCommercialUI={
+      showAuth:showAuthModal,
+      showPurchase:openPurchaseModal,
+      startServerAuthorizedJourney:continueAfterAuth,
+      logout:doLogout
+    };
+    try{installButtonHooks();}catch(_){}
+    try{handlePaymentReturn();}catch(_){}
+  }
+  global.DHCommercialUI={
+    showAuth:showAuthModal,
+    showPurchase:openPurchaseModal,
+    startServerAuthorizedJourney:continueAfterAuth,
+    logout:doLogout
+  };
+  window.addEventListener('dh-open-purchase', function(){
+    try{openPurchaseModal();}catch(e){console.error(e);}
+  });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })(window);

@@ -797,11 +797,17 @@
     var buyBtn = $('dh-p-buy');
     if (buyBtn) {
       buyBtn.onclick = function () {
-        if (window.DHCommercialUI && typeof window.DHCommercialUI.showPurchase === 'function') {
-          window.DHCommercialUI.showPurchase();
-        } else {
-          alert('بخش خرید آماده نیست. صفحه را تازه کنید.');
-        }
+        try {
+          if (window.DHCommercialUI && typeof window.DHCommercialUI.showPurchase === 'function') {
+            window.DHCommercialUI.showPurchase();
+            return;
+          }
+        } catch (e1) {}
+        try {
+          window.dispatchEvent(new CustomEvent('dh-open-purchase'));
+          return;
+        } catch (e2) {}
+        alert('خطا در باز کردن خرید. یک‌بار کش مرورگر را خالی کنید.');
       };
     }
     $('dh-p-prem').onclick = function () {
