@@ -115,52 +115,25 @@
   function doLogout(){try{if(global.DHAuth)global.DHAuth.logout();}catch(_){}clearLocalUser();try{localStorage.removeItem(QUOTA_KEY);}catch(_){}try{localStorage.removeItem('dh_local_user_v1');}catch(_){}try{localStorage.removeItem('dh_local_quota_v1');}catch(_){}closeModal();if(global.DHShell&&typeof global.DHShell.renderProfile==='function'){try{global.DHShell.renderProfile();}catch(_){location.reload();}}else{location.reload();}}
   function isAdminUser(){try{var u=global.DHAuth&&global.DHAuth.getUser&&global.DHAuth.getUser();return !!(u&&(u.role==='admin'||u.role==='support'));}catch(_){return false;}}
   function ensureAdminFeedbackPanel(){if(!isAdminUser())return;if(el('dh-admin-feedback'))return;var out=el('dh-p-out');if(!out||!out.parentNode)return;var box=document.createElement('div');box.id='dh-admin-feedback';box.style.cssText='margin:14px 0 8px;padding:14px;border-radius:14px;border:1px solid rgba(212,175,55,.3);background:#12121c;text-align:right;';box.innerHTML='<div style="color:#f0c040;font-weight:800;margin-bottom:6px;">پنل ادمین — بازخوردها</div><div id="dh-admin-dash" style="color:#b7ad98;font-size:.84rem;line-height:1.8;margin-bottom:8px;">در حال بارگذاری…</div><div id="dh-admin-list" style="max-height:300px;overflow:auto;font-size:.8rem;color:#d7caa9;line-height:1.7;"></div><button type="button" class="btn" id="dh-admin-refresh" style="width:100%;margin-top:10px;">بروزرسانی بازخوردها</button>';out.parentNode.insertBefore(box,out);async function load(){var dash=el('dh-admin-dash'),list=el('dh-admin-list');if(!global.DHAuth||!global.DHAuth.adminFeedback){if(dash)dash.textContent='کلاینت ادمین آماده نیست';return;}try{var d=await global.DHAuth.adminDashboard();if(dash)dash.textContent='کاربران: '+(d.users_total||0)+' · بازخورد: '+(d.feedback_total||0)+' · پرداخت: '+(d.payments_total||0)+' · اعتبارها: '+(d.entitlements_total||0);var rows=await global.DHAuth.adminFeedback(40);if(!list)return;if(!rows||!rows.length){list.textContent='هنوز بازخوردی ثبت نشده است.';return;}list.innerHTML=rows.map(function(r){var title=r.suggested_major||r.exam_code||('#'+r.id);var scores='رضایت: '+(r.satisfaction_score!=null?r.satisfaction_score:'—')+' · دقت: '+(r.accuracy_rating!=null?r.accuracy_rating:'—')+' · توصیه: '+(r.would_recommend?'بله':'خیر');var c=text(r.comments||'').replace(/\s*\|?\s*payload=.*$/,'').trim();var when=text(r.created_at||'').slice(0,19).replace('T',' ');return '<div style="border-top:1px solid rgba(255,255,255,.08);padding:9px 0;"><div style="color:#f0c040;font-weight:700;">'+escapeHtml(title)+'</div><div>'+escapeHtml(scores)+'</div><div style="color:#8f845f;font-size:.74rem;">'+escapeHtml(when)+'</div>'+(c?'<div style="margin-top:4px;color:#cbb98a;">'+escapeHtml(c.slice(0,220))+'</div>':'')+'</div>';}).join('');}catch(e){if(dash)dash.textContent=text(e&&e.message?e.message:e)||'خطا در بارگذاری پنل ادمین';if(list)list.textContent='';}}var btn=el('dh-admin-refresh');if(btn)btn.onclick=function(){load();};load();}
-  function installButtonHooks(){function patch(){document.querySelectorAll('#dh-start-journey,#dh-continue-journey,#dh-p-journey').forEach(function(b){if(b.__dhCommercialHooked)return;b.__dhCommercialHooked=true;b.onclick=function(e){if(e)e.preventDefault();continueAfterAuth();};});var p=el('dh-p-prem');if(p&&!p.__dhCommercialHooked){p.__dhCommercialHooked=true;p.textContent='خرید بسته ۳ تست';p.onclick=function(e){if(e)e.preventDefault();openPurchaseModal();};}var out=el('dh-p-out');if(out&&!out.__dhCommercialHooked){out.__dhCommercialHooked=true;out.onclick=function(e){if(e)e.preventDefault();doLogout();};}ensureAdminFeedbackPanel();}patch();new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});}
-  
-  function handlePaymentReturn(){
-    try{
-      var q=new URLSearchParams(window.location.search||'');
-      var pay=q.get('payment');
-      if(!pay)return;
-      try{
-        var clean=window.location.pathname+(window.location.hash||'');
-        window.history.replaceState({},'',clean||'/');
-      }catch(_){}
-      if(pay==='success'){
-        if(global.DHAuth&&global.DHAuth.isLoggedIn()){
-          global.DHAuth.quota().then(function(d){
-            var r=Number(d&&d.credits_remaining);
-            if(!isFinite(r)||r<0)r=0;
-            // همگام‌سازی با پروفایل shell (فرمت used/premium)
-            try{
-              localStorage.setItem('dh_local_quota_v1', JSON.stringify({
-                used: r>0 ? 0 : 1,
-                premium: false,
-                serverRemaining: r
-              }));
-            }catch(_){}
-            setLocalQuota({remaining:r, serverRemaining:r});
-            var msg = (r>100)
-              ? ('پرداخت موفق بود. اعتبار سرور: '+r+' (عدد غیرعادی است؛ در دیتابیس entitlementها را چک کنید).')
-              : ('پرداخت موفق بود. اعتبار باقی‌مانده: '+r);
-            alert(msg);
-            try{
-              if(global.DHShell&&typeof DHShell.renderProfile==='function')DHShell.renderProfile();
-              else if(typeof global.renderProfile==='function')global.renderProfile();
-              // رفرش پروفایل با کلیک مجدد روی تب
-              var tab=document.querySelector('[data-page="profile"],#tab-profile,.tab-profile');
-              if(tab)tab.click();
-            }catch(_){}
-          }).catch(function(){
-            alert('پرداخت موفق بود. یک‌بار از حساب خارج و دوباره وارد شوید تا اعتبار به‌روز شود.');
-          });
-        }else{
-          alert('پرداخت موفق بود. وارد حساب شوید تا اعتبار را ببینید.');
-        }
-      }else if(pay==='failed'){
-        alert('پرداخت تأیید نشد یا لغو شد.');
-      }
-    }catch(e){}
+  function installButtonHooks(){function patch(){
+    document.querySelectorAll('#dh-start-journey,#dh-continue-journey,#dh-p-journey').forEach(function(b){
+      if(b.__dhCommercialHooked)return;b.__dhCommercialHooked=true;
+      b.onclick=function(e){if(e)e.preventDefault();continueAfterAuth();};
+    });
+    var buy=el('dh-p-buy');
+    if(buy&&!buy.__dhCommercialHooked){
+      buy.__dhCommercialHooked=true;
+      buy.onclick=function(e){if(e)e.preventDefault();openPurchaseModal();};
+    }
+    var out=el('dh-p-out');
+    if(out&&!out.__dhCommercialHooked){
+      out.__dhCommercialHooked=true;
+      out.onclick=function(e){if(e)e.preventDefault();doLogout();};
+    }
+    ensureAdminFeedbackPanel();
+  }
+  patch();
+  new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});
   }
   function boot(){if(!global.DHAuth)return;installButtonHooks();try{handlePaymentReturn();}catch(_){}}
   global.DHCommercialUI={showAuth:showAuthModal,showPurchase:openPurchaseModal,startServerAuthorizedJourney:continueAfterAuth,logout:doLogout};

@@ -775,8 +775,9 @@
       '<button class="btn btn-primary" style="width:100%;margin-top:14px;" id="dh-p-journey">' +
         (last && last.tops && last.tops.length ? 'سفر دوباره' : 'شروع اولین سفر') + '</button>' +
       (last && last.tops && last.tops.length ? '<button class="btn" style="width:100%;margin-top:8px;border-color:rgba(212,175,55,0.45);color:#f0c040;" id="dh-p-share">اشتراک‌گذاری نتیجه</button>' : '') +
+      '<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="dh-p-buy">خرید بسته ۳ تست</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-prem">' +
-        (premium ? 'اشتراک فعال است' : 'فعال‌سازی اشتراک (تستی)') + '</button>' +
+        (premium ? 'خاموش کردن اشتراک محلی' : 'اشتراک محلی آفلاین (تست)') + '</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;color:#c08080;border-color:#543;" id="dh-p-exit">خروج از اپ</button>' +
@@ -793,14 +794,30 @@
     };
     var ex = $('dh-p-exit');
     if (ex) ex.onclick = function () { exitApp(); };
+    var buyBtn = $('dh-p-buy');
+    if (buyBtn) {
+      buyBtn.onclick = function () {
+        if (window.DHCommercialUI && typeof window.DHCommercialUI.showPurchase === 'function') {
+          window.DHCommercialUI.showPurchase();
+        } else {
+          alert('بخش خرید آماده نیست. صفحه را تازه کنید.');
+        }
+      };
+    }
     $('dh-p-prem').onclick = function () {
-      if (premium) return;
       var qq = localQuota();
-      qq.premium = true;
-      saveQuota(qq);
       var lu = localUser();
-      if (lu) { lu.is_premium = true; saveLocalUser(lu); }
-      alert('اشتراک تستی فعال شد');
+      if (premium) {
+        qq.premium = false;
+        saveQuota(qq);
+        if (lu) { lu.is_premium = false; saveLocalUser(lu); }
+        alert('اشتراک محلی خاموش شد.');
+      } else {
+        qq.premium = true;
+        saveQuota(qq);
+        if (lu) { lu.is_premium = true; saveLocalUser(lu); }
+        alert('اشتراک محلی فقط تست آفلاین است؛ پرداخت واقعی نیست.');
+      }
       renderProfile();
     };
   }
