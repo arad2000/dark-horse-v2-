@@ -55,36 +55,26 @@
       try{payWin=window.open('about:blank','_blank');}catch(_){payWin=null;}
 
       BUSY=true;
-      if(s)s.hidden=false;
-      setBusy(b,'صبر کنید…','پرداخت',true);
+      // فقط هنگام انتظار شبکه، اسپینر کوتاه
+      if(s){s.hidden=false;s.style.color='';var st=el('dh-buy-status-text');if(st)st.textContent='در حال اتصال…';}
+      setBusy(b,'…','پرداخت',true);
 
       try{
         var p=await global.DHAuth.createPayment();
         var url=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
         if(!url)throw new Error('آدرس درگاه از سرور نیامد.');
-        // اسپینر → سبز و آماده (حداکثر ~۱.۲ ثانیه) بعد هدایت
-        if(s){
-          s.hidden=false;
-          s.style.color='#3dd68c';
-          var spin=el('dh-buy-spin');
-          if(spin){spin.style.borderColor='#3dd68c';spin.style.borderTopColor='transparent';spin.style.animation='none';}
-          var st=el('dh-buy-status-text');
-          if(st)st.textContent='آماده — انتقال به درگاه…';
-          else { var sp=s.querySelector('span:last-child'); if(sp)sp.textContent='آماده — انتقال به درگاه…'; }
-        }
-        function goPay(){
+        if(s)s.hidden=true;
+        // بلافاصله برو درگاه — بدون تاخیر و بدون سبز شدن دکمه
+        if(payWin&&!payWin.closed){
+          try{payWin.location.href=url;}catch(_){try{payWin.location=url;}catch(__){}}
           unlock();
-          if(payWin&&!payWin.closed){
-            try{payWin.location.href=url;}catch(_){try{payWin.location=url;}catch(__){}}
-          }else{
-            window.location.href=url;
-          }
+        }else{
+          window.location.href=url;
         }
-        setTimeout(goPay, 900);
       }catch(x){
         try{if(payWin&&!payWin.closed)payWin.close();}catch(_){}
         if(e)e.textContent=paymentErrorText(x);
-        if(s){s.hidden=true;s.style.color='';}
+        if(s)s.hidden=true;
         unlock();
       }
     };
