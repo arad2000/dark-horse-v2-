@@ -20,7 +20,7 @@
       '<div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>'+
       '<p class="dh-commercial-sub">مبلغ فقط از سمت سرور تعیین می‌شود.</p>'+
       '<div id="dh-buy-err" class="dh-commercial-error"></div>'+
-      '<div id="dh-buy-status" class="dh-commercial-status" hidden><span class="dh-commercial-spinner"></span><span>در حال دریافت لینک پرداخت…</span></div>'+
+      '<div id="dh-buy-status" class="dh-commercial-status" hidden><span class="dh-commercial-spinner" id="dh-buy-spin"></span><span id="dh-buy-status-text">در حال دریافت لینک پرداخت…</span></div>'+
       '<div class="dh-commercial-actions">'+
         '<button type="button" class="btn btn-primary" id="dh-buy-now">پرداخت</button>'+
         '<button type="button" class="btn" id="dh-buy-close">بستن</button>'+
@@ -62,22 +62,29 @@
         var p=await global.DHAuth.createPayment();
         var url=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
         if(!url)throw new Error('آدرس درگاه از سرور نیامد.');
-        if(s)s.hidden=true;
-        unlock();
-        if(s)s.hidden=true;
-        unlock();
-        if(payWin&&!payWin.closed){
-          try{payWin.location.href=url;}catch(_){try{payWin.location=url;}catch(__){}}
-        }else{
-          // همان پنجره — در WebView اپ معمولاً تنها راه است
-          window.location.href=url;
-          return;
+        // اسپینر → سبز و آماده (حداکثر ~۱.۲ ثانیه) بعد هدایت
+        if(s){
+          s.hidden=false;
+          s.style.color='#3dd68c';
+          var spin=el('dh-buy-spin');
+          if(spin){spin.style.borderColor='#3dd68c';spin.style.borderTopColor='transparent';spin.style.animation='none';}
+          var st=el('dh-buy-status-text');
+          if(st)st.textContent='آماده — انتقال به درگاه…';
+          else { var sp=s.querySelector('span:last-child'); if(sp)sp.textContent='آماده — انتقال به درگاه…'; }
         }
-        unlock();
-        if(e)e.textContent='صفحه پرداخت باز شد. اگر ندیدید، داخل مرورگر کروم سایت را باز کنید و دوباره پرداخت کنید.';
+        function goPay(){
+          unlock();
+          if(payWin&&!payWin.closed){
+            try{payWin.location.href=url;}catch(_){try{payWin.location=url;}catch(__){}}
+          }else{
+            window.location.href=url;
+          }
+        }
+        setTimeout(goPay, 900);
       }catch(x){
         try{if(payWin&&!payWin.closed)payWin.close();}catch(_){}
         if(e)e.textContent=paymentErrorText(x);
+        if(s){s.hidden=true;s.style.color='';}
         unlock();
       }
     };
