@@ -252,8 +252,6 @@ def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> 
 @router.post("/billing/create-payment")
 def create_payment(request: Request, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     assert_production_billing_configuration()
-    if is_production_free_only_mode():
-        raise HTTPException(status_code=503, detail="commercial payment is not activated yet; your free test remains available")
     try:
         provider = _server_billing_provider()
         result = create_payment_request(
@@ -281,8 +279,6 @@ def billing_callback(
     status: str | None = Query(default=None, alias="Status"),
     db: Session = Depends(get_db),
 ):
-    if is_production_free_only_mode():
-        raise HTTPException(status_code=503, detail="commercial payment is not activated yet")
     try:
         provider = _server_billing_provider()
         result = handle_payment_callback(
