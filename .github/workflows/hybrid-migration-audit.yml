@@ -89,6 +89,15 @@ jobs:
       - name: Run phone verification service tests
         run: python -m unittest -v test_phone_verification_service.py
 
+      - name: Run password reset HTTP E2E tests
+        run: python -m unittest -v test_password_reset_e2e.py
+
+      - name: Run password reset service tests
+        run: python -m unittest -v test_password_reset_service.py
+
+      - name: Run password reset contract tests
+        run: python -m unittest -v test_password_reset_contract.py
+
       - name: Run commercial API contract tests
         run: python -m unittest -v test_commercial_api.py
 
