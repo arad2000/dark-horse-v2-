@@ -1,8 +1,10 @@
 """Payment provider contracts and parallel Mock/ZarinPal implementations.
 
 The real ZarinPal adapter is intentionally developed in parallel with the Mock
-provider. The Mock provider is used for deterministic CI; production credentials
-are never required for tests. Both implement the same request/verify contract.
+provider. The Mock provider is used for deterministic CI and now exposes an
+explicit frontend sandbox screen so the browser payment flow can be exercised
+without charging real money. Production credentials are never required for
+mock tests. Both providers implement the same request/verify contract.
 
 ZarinPal REST v4 uses /pg/v4/payment/request.json and /pg/v4/payment/verify.json.
 Sandbox is opt-in via ``ZARINPAL_SANDBOX=true`` or explicit base/gateway URLs.
@@ -45,11 +47,17 @@ class MockPaymentProvider:
         self.transaction_id = transaction_id
 
     def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]:
+        frontend = os.getenv("FRONTEND_APP_URL", "https://asbe-siah.ir").strip().rstrip("/")
+        payment_url = (
+            f"{frontend}/?payment_sandbox=1"
+            f"&order_id={order_public_id}"
+            f"&authority={self.authority}"
+        )
         return {
             "code": 100,
             "authority": self.authority,
             "request_id": f"mock-request:{order_public_id}",
-            "payment_url": f"https://sandbox.example.invalid/pay/{self.authority}",
+            "payment_url": payment_url,
             "amount_rial": amount_rial,
             "callback_url": callback_url,
         }
