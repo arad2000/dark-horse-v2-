@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>پنل مدیریت | اسب سیاه</title>
+  <style>
+    :root{--bg:#0a0a0f;--card:#151522;--gold:#f0c040;--muted:#a99b7a;--violet:#9b8cff;--border:rgba(212,175,55,.22)}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 88% 6%,rgba(155,140,255,.08),transparent 28%),var(--bg);color:#eee;font-family:Vazirmatn,system-ui,sans-serif;min-height:100vh;padding:20px}
+    .wrap{max-width:720px;margin:0 auto}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.title{color:var(--gold);font-size:1.35rem;font-weight:800}.sub{color:var(--muted);font-size:.82rem}.card{background:rgba(21,21,34,.94);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 12px 34px rgba(0,0,0,.32)}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.stat{background:#10101a;border:1px solid rgba(155,140,255,.14);border-radius:12px;padding:12px;text-align:center}.n{font-size:1.35rem;color:var(--gold);font-weight:800}.l{color:var(--muted);font-size:.78rem;margin-top:4px}.row{display:flex;gap:8px;align-items:center;margin:8px 0}.row > *{flex:1}.btn{border:0;border-radius:11px;padding:11px 14px;font:inherit;cursor:pointer;background:#292941;color:#eee}.btn-primary{background:var(--gold);color:#0a0a0f;font-weight:800}.btn-violet{background:rgba(155,140,255,.12);border:1px solid rgba(155,140,255,.24);color:#cfc8ff}.muted{color:var(--muted);font-size:.8rem;line-height:1.8}.err{color:#ff8585;min-height:1.4em;font-size:.82rem}.table{overflow:auto}.item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}.item:last-child{border-bottom:0}.pill{display:inline-block;border:1px solid rgba(155,140,255,.24);color:#cfc8ff;background:rgba(155,140,255,.08);border-radius:999px;padding:3px 8px;font-size:.72rem}.danger{color:#ff9b9b}.hidden{display:none!important}
+    @media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div><div class="title">پنل مدیریت اسب سیاه</div><div class="sub" id="actor">در حال بررسی دسترسی…</div></div>
+      <button class="btn" id="logout">خروج</button>
+    </div>
+
+    <div id="error" class="err"></div>
+    <section class="card">
+      <div class="title" style="font-size:1rem;margin-bottom:10px">خلاصه</div>
+      <div id="stats" class="stats"></div>
+    </section>
+
+    <section class="card">
+      <div class="title" style="font-size:1rem;margin-bottom:10px">کاربران اخیر</div>
+      <div id="users" class="table"><div class="muted">در حال بارگذاری…</div></div>
+    </section>
+
+    <section class="card">
+      <div class="title" style="font-size:1rem;margin-bottom:10px">اعطای اعتبار</div>
+      <div class="row"><input id="grant-user" placeholder="شناسه کاربر (ID)" inputmode="numeric" style="width:100%;padding:11px;border-radius:10px;border:1px solid #333;background:#0e0e17;color:#fff;font:inherit"></div>
+      <div class="row"><input id="grant-plan" value="pack_3_tests" style="width:100%;padding:11px;border-radius:10px;border:1px solid #333;background:#0e0e17;color:#fff;font:inherit"><input id="grant-reason" placeholder="دلیل" style="width:100%;padding:11px;border-radius:10px;border:1px solid #333;background:#0e0e17;color:#fff;font:inherit"></div>
+      <button class="btn btn-primary" id="grant">اعطای اعتبار</button>
+    </section>
+
+    <section class="card">
+      <div class="title" style="font-size:1rem;margin-bottom:10px">آخرین بازخوردها</div>
+      <div id="feedback" class="table"><div class="muted">در حال بارگذاری…</div></div>
+    </section>
+
+    <div class="card muted">این صفحه فقط به API مدیریت احراز‌شده وصل می‌شود. نقش کاربر از سرور تعیین می‌شود و UI هیچ اختیاری برای دور زدن مجوزها ندارد.</div>
+  </div>
+
+  <script>
+  (function(){
+    'use strict';
+    var API='https://api.asbe-siah.ir';
+    var KEY='dh_auth_v1';
+    function auth(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+    function token(){var a=auth();return a&&a.token?a.token:null}
+    function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+    async function req(path,opts){
+      var t=token(); if(!t){location.href='./';return null}
+      var headers=Object.assign({'Content-Type':'application/json'},(opts&&opts.headers)||{}, {'Authorization':'Bearer '+t});
+      var res=await fetch(API+path,Object.assign({},opts||{},{headers:headers}));
+      var body=null;try{body=await res.json()}catch(e){}
+      if(!res.ok) throw new Error((body&&(body.detail||body.message))||('خطا '+res.status));
+      return body;
+    }
+    function statCard(label,val){return '<div class="stat"><div class="n">'+esc(val)+'</div><div class="l">'+esc(label)+'</div></div>'}
+    async function load(){
+      var a=auth();
+      if(!a||!a.token){location.href='./';return}
+      var u=a.user||{};
+      if(u.role!=='admin'&&u.role!=='support'){document.getElementById('error').textContent='دسترسی به پنل مدیریت مجاز نیست.';document.getElementById('actor').textContent='دسترسی رد شد';return}
+      document.getElementById('actor').textContent=esc(u.name||u.phone||'کاربر')+' · نقش: '+esc(u.role);
+      try{
+        var d=await req('/api/v1/admin/dashboard',{});
+        document.getElementById('stats').innerHTML=[
+          statCard('کاربران',d.users_total),statCard('سفارش‌ها',d.orders_total),statCard('پرداخت‌ها',d.payments_total),statCard('اعتبارها',d.entitlements_total),
+          statCard('لاگ مدیریت',d.audit_logs_total),statCard('پلن‌های فعال',d.active_plans_total),statCard('بازخوردها',d.feedback_total)
+        ].join('');
+        var us=await req('/api/v1/admin/users?limit=50',{});
+        document.getElementById('users').innerHTML=(us||[]).map(function(x){return '<div class="item"><strong>'+esc(x.name)+'</strong><div class="muted">'+esc(x.phone)+' · '+esc(x.role)+' · '+esc(x.status)+' · '+esc(x.public_id)+'</div></div>'}).join('')||'<div class="muted">کاربری یافت نشد.</div>';
+        var fb=await req('/api/v1/admin/feedback?limit=30',{});
+        document.getElementById('feedback').innerHTML=(fb||[]).map(function(x){return '<div class="item"><div><span class="pill">امتیاز '+esc(x.satisfaction_score==null?'—':x.satisfaction_score)+'</span> '+esc(x.exam_code||'')+'</div><div class="muted">'+esc(x.comments||'بدون توضیح')+'</div></div>'}).join('')||'<div class="muted">بازخوردی وجود ندارد.</div>';
+      }catch(e){document.getElementById('error').textContent=String(e&&e.message?e.message:e)}
+    }
+    document.getElementById('grant').onclick=async function(){
+      var err=document.getElementById('error');err.textContent='';
+      var uid=Number(document.getElementById('grant-user').value);var plan=document.getElementById('grant-plan').value.trim();var reason=document.getElementById('grant-reason').value.trim();
+      if(!uid||!plan||!reason){err.textContent='کاربر، پلن و دلیل را کامل کنید.';return}
+      try{await req('/api/v1/admin/credits/grant',{method:'POST',body:JSON.stringify({user_id:uid,plan_code:plan,reason:reason})});err.textContent='اعتبار با موفقیت ثبت شد.';await load()}catch(e){err.textContent=String(e&&e.message?e.message:e)}
+    };
+    document.getElementById('logout').onclick=function(){try{localStorage.removeItem(KEY)}catch(e){}location.href='./'};
+    load();
+  })();
+  </script>
+</body>
+</html>
