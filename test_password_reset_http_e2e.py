@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import Integer, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -20,11 +20,19 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
     def setUpClass(cls):
         # TestClient executes requests in a worker thread. StaticPool keeps the
         # in-memory SQLite database on the same connection across threads.
+        # AuthSession.id, Entitlement.id and PhoneVerification.id are BigInteger
+        # for PostgreSQL; SQLite only auto-generates a rowid for INTEGER PRIMARY KEY.
+        cls._original_auth_session_id_type = AuthSession.__table__.c.id.type
+        cls._original_entitlement_id_type = Entitlement.__table__.c.id.type
+        cls._original_phone_verification_id_type = PhoneVerification.__table__.c.id.type
         cls.engine = create_engine(
             "sqlite:///:memory:",
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
         )
+        AuthSession.__table__.c.id.type = Integer()
+        Entitlement.__table__.c.id.type = Integer()
+        PhoneVerification.__table__.c.id.type = Integer()
         Base.metadata.create_all(
             cls.engine,
             tables=[
@@ -56,10 +64,25 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
         app.dependency_overrides.clear()
         app.dependency_overrides.update(cls._old_overrides)
         cls.engine.dispose()
+        AuthSession.__table__.c.id.type = cls._original_auth_session_id_type
+        Entitlement.__table__.c.id.type = cls._original_entitlement_id_type
+        PhoneVerification.__table__.c.id.type = cls._original_phone_verification_id_type
 
     def setUp(self):
         db = self.Session()
         try:
+            plan = PremiumPlan(
+                id=1,
+                code="free_1_test",
+                name_fa="تست رایگان",
+                plan_type="credits",
+                duration_days=None,
+                credits_granted=1,
+                price_minor=0,
+                currency="IRR",
+                is_active=True,
+                features={},
+            )
             user = User(
                 id=100,
                 public_id="reset-http-e2e-user",
@@ -69,7 +92,7 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
                 role="user",
                 status="active",
             )
-            db.add(user)
+            db.add_all([plan, user])
             db.commit()
         finally:
             db.close()
@@ -77,9 +100,11 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
     def tearDown(self):
         db = self.Session()
         try:
+            db.query(Entitlement).delete()
             db.query(PhoneVerification).delete()
             db.query(AuthSession).delete()
             db.query(User).delete()
+            db.query(PremiumPlan).delete()
             db.commit()
         finally:
             db.close()
@@ -91,6 +116,7 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
         )
         self.assertEqual(login.status_code, 200, login.text)
         old_token = login.json()["token"]
+        self.assertEqual(login.json()["quota"], 1)
 
         sent: dict[str, str] = {}
         with patch.object(prs, "_send_reset_otp", side_effect=lambda phone, code: sent.update(phone=phone, code=code)):
