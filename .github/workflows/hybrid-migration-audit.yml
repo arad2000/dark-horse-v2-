@@ -1,5 +1,8 @@
 name: Hybrid Migration Audit
 
+# Sandbox billing/admin UI recheck is intentionally part of the existing full audit.
+# No production cutover is enabled by this workflow.
+
 on:
   push:
     branches:
