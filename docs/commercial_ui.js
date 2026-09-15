@@ -8,6 +8,7 @@
 
   function el(id) { return document.getElementById(id); }
   function safeText(v) { return String(v == null ? '' : v); }
+  function apiBase() { return global.API_BASE || 'https://api.asbe-siah.ir'; }
 
   function saveLocalUser(user) {
     try { localStorage.setItem(USER_KEY, JSON.stringify(user || null)); } catch (_) {}
@@ -89,6 +90,8 @@
       .dh-commercial-price{font-size:2rem;color:#f0c040;font-weight:800;text-align:center;margin:8px 0}
       .dh-commercial-pack{background:#10101a;border:1px solid rgba(212,175,55,.22);border-radius:12px;padding:12px;margin:12px 0;color:#cbb98a;line-height:2;text-align:center}
       .dh-commercial-link{background:none;border:0;color:#d4af37;text-decoration:underline;cursor:pointer;font:inherit;padding:4px}
+      .dh-sandbox-badge{display:inline-block;padding:4px 9px;border-radius:999px;background:rgba(155,140,255,.12);border:1px solid rgba(155,140,255,.28);color:#b9afff;font-size:.74rem;margin-bottom:8px}
+      .dh-admin-link{display:block;width:100%;margin:8px 0 0;padding:11px 14px;border-radius:12px;border:1px solid rgba(155,140,255,.28);background:rgba(155,140,255,.07);color:#cfc8ff;text-align:center;text-decoration:none;font:inherit;cursor:pointer}
     `;
     document.head.appendChild(s);
   }
@@ -108,6 +111,42 @@
     ov.addEventListener('click', function (e) { if (e.target === ov) closeModal(); });
     document.body.appendChild(ov);
     return ov;
+  }
+
+  async function handleSandboxPaymentQuery() {
+    try {
+      var params = new URLSearchParams(global.location.search || '');
+      var sandbox = params.get('payment_sandbox');
+      var orderId = params.get('order_id');
+      var authority = params.get('authority');
+      if (sandbox !== '1' || !orderId || !authority) return;
+
+      if (history.replaceState) {
+        history.replaceState({}, document.title, global.location.pathname || '/');
+      }
+
+      var ov = showModal(
+        '<div style="text-align:center"><span class="dh-sandbox-badge">محیط سندباکس</span></div>' +
+        '<h2 class="dh-commercial-title">درگاه پرداخت آزمایشی</h2>' +
+        '<p class="dh-commercial-sub">این تراکنش آزمایشی است و هیچ برداشت واقعی انجام نمی‌شود.</p>' +
+        '<div class="dh-commercial-pack"><div>سفارش</div><div style="font-size:.78rem;word-break:break-all;color:#8f845f">' + safeText(orderId) + '</div><div style="margin-top:8px">Authority: ' + safeText(authority) + '</div></div>' +
+        '<div id="dh-sandbox-err" class="dh-commercial-error"></div>' +
+        '<div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-sandbox-ok">پرداخت موفق</button><button type="button" class="btn" id="dh-sandbox-cancel">لغو پرداخت</button></div>' +
+        '<p class="dh-commercial-note">پس از انتخاب، callback سرور اجرا و اعتبارها ثبت می‌شوند.</p>'
+      );
+
+      function callback(status) {
+        var target = apiBase() + '/api/v1/billing/callback?' +
+          new URLSearchParams({ order_id: orderId, Authority: authority, Status: status }).toString();
+        global.location.assign(target);
+      }
+
+      el('dh-sandbox-ok').onclick = function () { callback('OK'); };
+      el('dh-sandbox-cancel').onclick = function () { callback('NOK'); };
+      return ov;
+    } catch (e) {
+      console.warn('Sandbox payment query handling skipped:', e);
+    }
   }
 
   function showAuthModal(initialMode) {
@@ -190,7 +229,7 @@
         }
         var payment = await global.DHAuth.createPayment();
         if (!payment || !payment.payment_url) throw new Error('آدرس درگاه از سرور دریافت نشد.');
-        window.location.assign(payment.payment_url);
+        global.location.assign(payment.payment_url);
       } catch (e) {
         if (err) err.textContent = safeText(e && e.message ? e.message : e);
       } finally {
@@ -291,17 +330,34 @@
     if (btn) btn.textContent = 'خرید بسته ۳ تست';
   }
 
-  function observeShell() {
-    var observer = new MutationObserver(function () { patchLegacyProfileCopy(); });
-    observer.observe(document.body, { childList: true, subtree: true });
-    patchLegacyProfileCopy();
+  function patchAdminLink() {
+    var u = null;
+    try { u = global.DHAuth && global.DHAuth.getUser ? global.DHAuth.getUser() : null; } catch (_) {}
+    var isAdmin = !!(u && (u.role === 'admin' || u.role === 'support'));
+    var prem = el('dh-p-prem');
+    if (!prem || !isAdmin) return;
+    if (el('dh-admin-link')) return;
+    var a = document.createElement('a');
+    a.id = 'dh-admin-link';
+    a.className = 'dh-admin-link';
+    a.href = 'admin.html';
+    a.textContent = 'پنل مدیریت';
+    prem.parentNode.insertBefore(a, prem.nextSibling);
   }
 
-  function boot() {
+  function observeShell() {
+    var observer = new MutationObserver(function () { patchLegacyProfileCopy(); patchAdminLink(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    patchLegacyProfileCopy();
+    patchAdminLink();
+  }
+
+  async function boot() {
     if (!global.DHAuth) return;
     installDiscoverySessionBridge();
     installCaptureGuards();
     observeShell();
+    await handleSandboxPaymentQuery();
   }
 
   global.DHCommercialUI = {
