@@ -166,3 +166,16 @@ def verify_registration_otp(db: Session, *, challenge_id: str, code: str) -> tup
     challenge.verified_at = utcnow()
     db.flush()
     return user, token
+
+
+# commercial_api imports this module during application startup. Attach the
+# password-reset router at that point without duplicating the /api/v1 router.
+try:
+    import sys
+    _commercial_api = sys.modules.get("commercial_api")
+    if _commercial_api is not None and hasattr(_commercial_api, "router"):
+        from password_reset_service import attach_router as _attach_password_reset_router
+        _attach_password_reset_router(_commercial_api.router)
+except Exception:
+    # Route registration must never break the existing registration flow.
+    pass
