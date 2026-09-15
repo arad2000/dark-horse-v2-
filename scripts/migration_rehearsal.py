@@ -1,8 +1,8 @@
 """Staging-only migration rehearsal for the Hybrid rollout.
 
 The command refuses to run against production-like environments and never
-changes the application cutover gate. It validates Alembic head/current and
-performs an upgrade -> downgrade -> upgrade cycle on an explicit staging DB.
+changes the application cutover gate. It performs an upgrade -> consistency
+check -> downgrade -> upgrade cycle on an explicit staging DB.
 """
 from __future__ import annotations
 
@@ -39,10 +39,11 @@ def main() -> int:
         raise SystemExit("refusing to rehearse while production cutover is approved")
 
     run(sys.executable, "-m", "alembic", "current")
-    run(sys.executable, "-m", "alembic", "check")
     run(sys.executable, "-m", "alembic", "upgrade", "head")
+    run(sys.executable, "-m", "alembic", "check")
     run(sys.executable, "-m", "alembic", "downgrade", "-1")
     run(sys.executable, "-m", "alembic", "upgrade", "head")
+    run(sys.executable, "-m", "alembic", "check")
     run(sys.executable, "-m", "alembic", "current")
     print("MIGRATION_REHEARSAL=PASS")
     return 0
