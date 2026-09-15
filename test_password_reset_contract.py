@@ -8,7 +8,7 @@ DOCS = ROOT / "docs"
 class PasswordResetContractTests(unittest.TestCase):
     def test_server_flow_exists_with_phone_otp_and_session_invalidation(self):
         service = (ROOT / "password_reset_service.py").read_text(encoding="utf-8")
-        self.assertIn('purpose="password_reset"', service)
+        self.assertIn('RESET_PURPOSE = "password_reset"', service)
         self.assertIn("MAX_ATTEMPTS", service)
         self.assertIn("hash_password", service)
         self.assertIn("revoke_all_sessions", service)
@@ -16,17 +16,13 @@ class PasswordResetContractTests(unittest.TestCase):
         self.assertIn('KAVENEGAR_RESET_OTP_TEMPLATE', service)
 
     def test_api_router_is_attached_to_application(self):
-        service = (ROOT / "password_reset_service.py").read_text(encoding="utf-8")
-        phone = (ROOT / "phone_verification_service.py").read_text(encoding="utf-8")
-        self.assertIn('reset_router = APIRouter(prefix="/auth/password-reset"', service)
-        self.assertIn("_attach_password_reset_router(_commercial_api.router)", phone)
         try:
             import main_v2
             paths = {getattr(route, "path", "") for route in main_v2.app.routes}
-            self.assertIn("/api/v1/auth/password-reset/request", paths)
-            self.assertIn("/api/v1/auth/password-reset/confirm", paths)
         except ModuleNotFoundError as exc:
             self.fail(f"main_v2 import failed: {exc}")
+        self.assertIn("/api/v1/auth/password-reset/request", paths)
+        self.assertIn("/api/v1/auth/password-reset/confirm", paths)
 
     def test_client_exposes_reset_methods(self):
         js = (DOCS / "auth_api_client.js").read_text(encoding="utf-8")
