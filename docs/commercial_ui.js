@@ -14,7 +14,8 @@
   function openExternalPay(url){
     if(!url)return false;
     var u=String(url);
-    var isAndroid=/android/i.test(navigator.userAgent||'');
+    try{if(window.AndroidBridge&&typeof AndroidBridge.openExternalUrl==='function'){AndroidBridge.openExternalUrl(u);return true;}}catch(_){}
+    var isAndroid=/android/i.test(navigator.userAgent||'')||/AsbeSiahApp/i.test(navigator.userAgent||'');
     if(isAndroid){
       try{
         window.location.href='intent://'+u.replace(/^https?:\/\//,'')+
