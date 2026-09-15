@@ -1,3 +1,5 @@
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -18,14 +20,23 @@ class PasswordResetContractTests(unittest.TestCase):
     def test_commercial_router_exposes_password_reset_endpoints(self):
         import commercial_api
         paths = {getattr(route, "path", "") for route in commercial_api.router.routes}
-        self.assertIn("/auth/password-reset/request", paths)
-        self.assertIn("/auth/password-reset/confirm", paths)
-
-    def test_main_app_mounts_password_reset_with_full_api_prefix(self):
-        import main_v2
-        paths = {getattr(route, "path", "") for route in main_v2.app.routes}
         self.assertIn("/api/v1/auth/password-reset/request", paths)
         self.assertIn("/api/v1/auth/password-reset/confirm", paths)
+
+    def test_main_app_mounts_password_reset_with_full_api_prefix(self):
+        code = (
+            "import main_v2; "
+            "paths={getattr(route,'path','') for route in main_v2.app.routes}; "
+            "assert '/api/v1/auth/password-reset/request' in paths and "
+            "'/api/v1/auth/password-reset/confirm' in paths"
+        )
+        completed = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
 
     def test_main_app_imports_without_breaking(self):
         import main_v2
@@ -38,6 +49,7 @@ class PasswordResetContractTests(unittest.TestCase):
         self.assertIn("resetPassword(challengeId, code, newPassword)", js)
         self.assertIn("/api/v1/auth/password-reset/request", js)
         self.assertIn("/api/v1/auth/password-reset/confirm", js)
+        self.assertNotIn("devActivatePremium", js)
 
     def test_auth_ui_has_forgot_password_path(self):
         js = (DOCS / "password_reset_ui.js").read_text(encoding="utf-8")
@@ -46,6 +58,7 @@ class PasswordResetContractTests(unittest.TestCase):
         self.assertIn("resetPassword", js)
         self.assertIn("کد تأیید", js)
         self.assertIn("autocomplete=\"one-time-code\"", js)
+        self.assertIn("autocomplete=\"new-password\"", js)
 
     def test_home_loads_reset_ui_after_auth_client(self):
         html = (DOCS / "index.html").read_text(encoding="utf-8")
