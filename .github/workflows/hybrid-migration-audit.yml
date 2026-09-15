@@ -15,6 +15,7 @@ on:
       - ux/gen-z-layer
       - ux/gen-z-results
       - fix/sandbox-billing-admin-ui
+      - hardening/evaluator-closeout
   pull_request:
     branches:
       - main
@@ -61,6 +62,12 @@ jobs:
 
       - name: Compile Python sources
         run: python -m compileall -q .
+
+      - name: Verify startup engine contract
+        run: python -m unittest -v test_startup_engine_contract.py
+
+      - name: Verify evaluator closeout safety contracts
+        run: python -m unittest -v test_evaluator_closeout_contract.py
 
       - name: Verify commercial UI contract
         run: python -m unittest -v test_commercial_ui_contract.py
