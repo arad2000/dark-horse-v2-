@@ -42,9 +42,16 @@
     logout() { clear(); },
 
     async register(name, phone, password) {
-      const data = await req('/api/v1/auth/register', {
+      return req('/api/v1/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, phone, password })
+      });
+    },
+
+    async verifyRegistration(challengeId, code) {
+      const data = await req('/api/v1/auth/register/verify', {
+        method: 'POST',
+        body: JSON.stringify({ challenge_id: challengeId, code })
       });
       save(data);
       return data;
