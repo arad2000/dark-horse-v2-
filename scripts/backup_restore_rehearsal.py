@@ -1,20 +1,20 @@
 """Staging-only PostgreSQL backup/restore rehearsal.
 
 Creates a custom-format pg_dump, restores it into a separate staging database,
-then checks connectivity. Production-like environments are rejected.
+then checks the restored target directly. Production-like environments are
+rejected.
 """
 from __future__ import annotations
 
 import argparse
 import os
 import subprocess
-import sys
 
 PROD_MARKERS = {"prod", "production", "live"}
 
 
-def run(*args: str) -> None:
-    subprocess.run(args, check=True)
+def run(*args: str, env: dict[str, str] | None = None) -> None:
+    subprocess.run(args, check=True, env=env)
 
 
 def main() -> int:
@@ -41,7 +41,10 @@ def main() -> int:
 
     run("pg_dump", "--format=custom", "--no-owner", "--file", args.backup, url)
     run("pg_restore", "--clean", "--if-exists", "--no-owner", "--dbname", restore_url, args.backup)
-    run(sys.executable, "-c", "from database import healthcheck; assert healthcheck() is True")
+
+    health_env = dict(os.environ)
+    health_env["DATABASE_URL"] = restore_url
+    run("python", "-c", "from database import healthcheck; assert healthcheck() is True", env=health_env)
     print(f"BACKUP_RESTORE_REHEARSAL=PASS backup={args.backup}")
     return 0
 
