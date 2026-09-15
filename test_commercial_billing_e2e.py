@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from database import engine, get_db
 from main_v2 import app
@@ -14,7 +14,7 @@ from models import Base
 
 
 class CommercialBillingE2ETests(unittest.TestCase):
-    """Validate verified register -> consume free -> mock payment -> callback -> consume."""
+    """Validate real auth -> free credit -> sandbox payment -> exact 3 non-expiring credits."""
 
     @classmethod
     def setUpClass(cls):
@@ -59,7 +59,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             ])
             db.commit()
 
-    def test_register_consume_buy_callback_replay_consume(self):
+    def test_register_consume_buy_callback_replay_then_exactly_three_paid_tests(self):
         with patch("phone_verification_service._send_kavenegar_otp"), patch("phone_verification_service.secrets.randbelow", return_value=123456):
             register = self.client.post(
                 "/api/v1/auth/register",
@@ -70,15 +70,41 @@ class CommercialBillingE2ETests(unittest.TestCase):
             self.assertTrue(register_body["otp_required"])
             challenge_id = register_body["challenge_id"]
 
+            # Registration itself must not create an authenticated user/session yet.
+            with next(get_db()) as db:
+                self.assertIsNone(db.scalar(select(User).where(User.phone == "09001112233")))
+
             verify = self.client.post(
                 "/api/v1/auth/register/verify",
                 json={"challenge_id": challenge_id, "code": "123456"},
             )
             self.assertEqual(verify.status_code, 200, verify.text)
-            token = verify.json()["token"]
-            self.assertEqual(verify.json()["quota"], 1)
+            verify_body = verify.json()
+            token = verify_body["token"]
+            user_id = verify_body["user"]["id"]
+            self.assertTrue(token)
+            self.assertTrue(verify_body["phone_verified"])
+            self.assertEqual(verify_body["quota"], 1)
 
         headers = {"Authorization": f"Bearer {token}"}
+
+        # The real authenticated account must be usable immediately after OTP verification.
+        me = self.client.get("/api/v1/me", headers=headers)
+        self.assertEqual(me.status_code, 200, me.text)
+        self.assertEqual(me.json()["user"]["id"], user_id)
+
+        free_entitlement = None
+        with next(get_db()) as db:
+            free_entitlement = db.scalar(
+                select(Entitlement).where(
+                    Entitlement.user_id == user_id,
+                    Entitlement.source == "free",
+                )
+            )
+            self.assertIsNotNone(free_entitlement)
+            self.assertEqual(free_entitlement.credits_granted, 1)
+            self.assertEqual(free_entitlement.credits_remaining, 1)
+            self.assertIsNone(free_entitlement.expires_at)
 
         consumed_free = self.client.post("/api/v1/me/consume-test", headers=headers)
         self.assertEqual(consumed_free.status_code, 200, consumed_free.text)
@@ -103,6 +129,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
         self.assertEqual(callback.status_code, 303, callback.text)
         self.assertEqual(callback.headers["location"], "https://asbe-siah.ir/?payment=success")
 
+        # A gateway retry must not turn 3 credits into 6.
         replay = self.client.get(
             "/api/v1/billing/callback",
             params={
@@ -119,9 +146,46 @@ class CommercialBillingE2ETests(unittest.TestCase):
         self.assertEqual(quota.status_code, 200, quota.text)
         self.assertEqual(quota.json()["credits_remaining"], 3)
 
-        paid_consume = self.client.post("/api/v1/me/consume-test", headers=headers)
-        self.assertEqual(paid_consume.status_code, 200, paid_consume.text)
-        self.assertEqual(paid_consume.json()["credits_remaining"], 2)
+        with next(get_db()) as db:
+            paid_entitlement = db.scalar(
+                select(Entitlement).where(
+                    Entitlement.user_id == user_id,
+                    Entitlement.source == "payment",
+                    Entitlement.order_id.is_not(None),
+                )
+            )
+            self.assertIsNotNone(paid_entitlement)
+            self.assertEqual(paid_entitlement.credits_granted, 3)
+            self.assertEqual(paid_entitlement.credits_remaining, 3)
+            self.assertIsNone(paid_entitlement.expires_at)
+
+            order = db.scalar(select(Order).where(Order.public_id == purchase_body["order_id"]))
+            self.assertIsNotNone(order)
+            self.assertEqual(order.status, "paid")
+            self.assertIsNotNone(order.paid_at)
+
+        # Consume all three purchased tests: 3 -> 2 -> 1 -> 0.
+        expected_remaining = [2, 1, 0]
+        for expected in expected_remaining:
+            paid_consume = self.client.post("/api/v1/me/consume-test", headers=headers)
+            self.assertEqual(paid_consume.status_code, 200, paid_consume.text)
+            self.assertEqual(paid_consume.json()["credits_remaining"], expected)
+
+        exhausted = self.client.post("/api/v1/me/consume-test", headers=headers)
+        self.assertEqual(exhausted.status_code, 409, exhausted.text)
+
+        # The paid entitlement is depleted, but never expires by time/date.
+        with next(get_db()) as db:
+            paid_entitlement = db.scalar(
+                select(Entitlement).where(
+                    Entitlement.user_id == user_id,
+                    Entitlement.source == "payment",
+                    Entitlement.order_id.is_not(None),
+                )
+            )
+            self.assertIsNotNone(paid_entitlement)
+            self.assertEqual(paid_entitlement.credits_remaining, 0)
+            self.assertIsNone(paid_entitlement.expires_at)
 
 
 if __name__ == "__main__":
