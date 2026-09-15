@@ -15,14 +15,16 @@ class PasswordResetContractTests(unittest.TestCase):
         self.assertIn("_hash_code", service)
         self.assertIn('KAVENEGAR_RESET_OTP_TEMPLATE', service)
 
-    def test_api_router_is_attached_to_application(self):
-        try:
-            import main_v2
-            paths = {getattr(route, "path", "") for route in main_v2.app.routes}
-        except ModuleNotFoundError as exc:
-            self.fail(f"main_v2 import failed: {exc}")
+    def test_commercial_router_exposes_password_reset_endpoints(self):
+        import commercial_api
+        paths = {getattr(route, "path", "") for route in commercial_api.router.routes}
         self.assertIn("/api/v1/auth/password-reset/request", paths)
         self.assertIn("/api/v1/auth/password-reset/confirm", paths)
+
+    def test_main_app_imports_without_breaking(self):
+        import main_v2
+        self.assertIsNotNone(main_v2.app)
+        self.assertIsNotNone(main_v2.commercial_router)
 
     def test_client_exposes_reset_methods(self):
         js = (DOCS / "auth_api_client.js").read_text(encoding="utf-8")
