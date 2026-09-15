@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>پرداخت سندباکس | اسب سیاه</title>
+  <style>
+    :root{color-scheme:dark}body{margin:0;background:#0a0a0f;color:#eee;font-family:Vazirmatn,system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);background:#161622;border:1px solid rgba(212,175,55,.28);border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:center}.brand{color:#f0c040;font-weight:800}.price{font-size:2rem;color:#f0c040;font-weight:800;margin:10px 0}.meta{color:#b0a080;font-size:.9rem;line-height:1.9}.btn{width:100%;border:0;border-radius:12px;padding:13px 16px;font:inherit;cursor:pointer;margin-top:10px}.ok{background:#f0c040;color:#0a0a0f;font-weight:800}.cancel{background:#242438;color:#ddd}.status{min-height:1.5em;margin-top:12px;color:#ff9a9a;font-size:.86rem}.test-badge{display:inline-block;padding:5px 10px;border-radius:999px;border:1px solid rgba(155,140,255,.28);color:#c7c0ff;background:rgba(155,140,255,.08);font-size:.78rem}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">اسب سیاه</div>
+    <div class="test-badge">محیط پرداخت سندباکس</div>
+    <h1>خرید بسته ۳ تست</h1>
+    <div class="price">۲۴۹٬۰۰۰ تومان</div>
+    <div class="meta">این صفحه فقط برای تست زنجیرهٔ پرداخت است و هیچ تراکنش بانکی واقعی انجام نمی‌دهد.</div>
+    <div id="status" class="status"></div>
+    <button id="pay" class="btn ok">پرداخت موفق سندباکس</button>
+    <button id="cancel" class="btn cancel">انصراف</button>
+  </main>
+  <script>
+    (function(){
+      'use strict';
+      var p=new URLSearchParams(location.search);
+      var orderId=p.get('order_id');
+      var authority=p.get('authority');
+      var api='https://api.asbe-siah.ir';
+      var status=document.getElementById('status');
+      function setStatus(v){status.textContent=v||'';}
+      document.getElementById('cancel').onclick=function(){ location.href='https://asbe-siah.ir/?payment=cancelled'; };
+      document.getElementById('pay').onclick=async function(){
+        if(!orderId||!authority){setStatus('اطلاعات سفارش سندباکس ناقص است.');return;}
+        this.disabled=true;setStatus('در حال ثبت پرداخت سندباکس…');
+        try{
+          var u=api+'/api/v1/billing/callback?order_id='+encodeURIComponent(orderId)+'&Authority='+encodeURIComponent(authority)+'&Status=OK';
+          var r=await fetch(u,{method:'GET',redirect:'manual'});
+          if(r.type==='opaqueredirect'||r.status===0||r.status===303){location.href='https://asbe-siah.ir/?payment=success';return;}
+          if(!r.ok) throw new Error('خطای '+r.status);
+          setStatus('پرداخت ثبت شد.');
+          location.href='https://asbe-siah.ir/?payment=success';
+        }catch(e){this.disabled=false;setStatus('پرداخت سندباکس انجام نشد: '+(e&&e.message?e.message:'خطای ناشناخته'));}
+      };
+    })();
+  </script>
+</body>
+</html>
