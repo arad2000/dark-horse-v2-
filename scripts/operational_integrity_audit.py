@@ -3,8 +3,14 @@ from __future__ import annotations
 
 import argparse
 import os
-from sqlalchemy import text
+import sys
+from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from database import engine
@@ -55,3 +61,7 @@ def main() -> int:
         return 0
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
