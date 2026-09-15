@@ -19,7 +19,8 @@ class EvaluatorCloseoutContractTests(unittest.TestCase):
         self.assertIn('"pg_dump",', source)
         self.assertIn('"--format=custom"', source)
         self.assertIn('"pg_restore",', source)
-        self.assertIn('"--clean", "--if-exists"', source)
+        self.assertIn('"--clean"', source)
+        self.assertIn('"--if-exists"', source)
         self.assertIn("libpq_url", source)
 
     def test_hybrid_gate_remains_hard_false(self):
