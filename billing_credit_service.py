@@ -167,7 +167,10 @@ def verify_and_grant(
     the gateway retries it with a different event key. The verified payment/order
     is the business idempotency boundary; ``event_key`` protects event insertion.
     """
-    payment = db.get(Payment, payment_public_id)
+    if db.bind is not None and db.bind.dialect.name == "postgresql":
+        payment = db.scalar(select(Payment).where(Payment.id == payment_public_id).with_for_update())
+    else:
+        payment = db.get(Payment, payment_public_id)
     if payment is None:
         raise ValueError("unknown payment")
     order = db.get(Order, payment.order_id)
@@ -226,14 +229,7 @@ def verify_and_grant(
         order_id=order.id,
     )
     db.add(entitlement)
-    db.add(
-        PaymentEvent(
-            payment_id=payment.id,
-            event_type="payment_verified_credits_granted",
-            event_key=event_key,
-            payload={"credits_granted": plan.credits_granted, "plan_code": plan.code},
-        )
-    )
+    db.add(PaymentEvent(payment_id=payment.id, event_type="payment_verified_credits_granted", event_key=event_key, payload={"credits_granted": plan.credits_granted, "plan_code": plan.code}))
     db.flush()
     return entitlement
 
