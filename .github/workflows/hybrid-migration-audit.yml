@@ -11,6 +11,7 @@ on:
       - hardening/production-billing-guard
       - ux/gen-z-layer
       - ux/gen-z-results
+      - fix/sandbox-payment-admin-ui
   pull_request:
     branches:
       - main
@@ -66,6 +67,9 @@ jobs:
 
       - name: Verify Gen-Z results layer contract
         run: python -m unittest -v test_genz_results_layer.py
+
+      - name: Verify sandbox payment and admin UI contract
+        run: python -m unittest -v test_sandbox_payment_admin_ui.py
 
       - name: Verify PostgreSQL connectivity
         run: python -c "from database import healthcheck; assert healthcheck() is True"
