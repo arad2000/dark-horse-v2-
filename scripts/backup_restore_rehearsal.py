@@ -17,6 +17,15 @@ def run(*args: str, env: dict[str, str] | None = None) -> None:
     subprocess.run(args, check=True, env=env)
 
 
+def libpq_url(url: str) -> str:
+    """Convert SQLAlchemy PostgreSQL URLs to libpq-compatible URLs."""
+    if url.startswith("postgresql+psycopg://"):
+        return "postgresql://" + url[len("postgresql+psycopg://") :]
+    if url.startswith("postgresql+psycopg2://"):
+        return "postgresql://" + url[len("postgresql+psycopg2://") :]
+    return url
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--confirm-staging", action="store_true")
@@ -39,8 +48,23 @@ def main() -> int:
     if restore_url == url:
         raise SystemExit("restore target must be separate from source database")
 
-    run("pg_dump", "--format=custom", "--no-owner", "--file", args.backup, url)
-    run("pg_restore", "--clean", "--if-exists", "--no-owner", "--dbname", restore_url, args.backup)
+    run(
+        "pg_dump",
+        "--format=custom",
+        "--no-owner",
+        "--file",
+        args.backup,
+        libpq_url(url),
+    )
+    run(
+        "pg_restore",
+        "--clean",
+        "--if-exists",
+        "--no-owner",
+        "--dbname",
+        libpq_url(restore_url),
+        args.backup,
+    )
 
     health_env = dict(os.environ)
     health_env["DATABASE_URL"] = restore_url
