@@ -101,7 +101,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             follow_redirects=False,
         )
         self.assertEqual(callback.status_code, 303, callback.text)
-        self.assertEqual(callback.headers["location"], "https://arad2000.github.io/dark-horse-v2-/?payment=success")
+        self.assertEqual(callback.headers["location"], "https://asbe-siah.ir/?payment=success")
 
         replay = self.client.get(
             "/api/v1/billing/callback",
@@ -113,7 +113,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             follow_redirects=False,
         )
         self.assertEqual(replay.status_code, 303, replay.text)
-        self.assertEqual(replay.headers["location"], "https://arad2000.github.io/dark-horse-v2-/?payment=success")
+        self.assertEqual(replay.headers["location"], "https://asbe-siah.ir/?payment=success")
 
         quota = self.client.get("/api/v1/me/quota", headers=headers)
         self.assertEqual(quota.status_code, 200, quota.text)

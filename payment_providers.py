@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from typing import Any, Protocol
+from urllib.parse import quote
 
 import httpx
 
@@ -45,11 +46,16 @@ class MockPaymentProvider:
         self.transaction_id = transaction_id
 
     def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]:
+        sandbox_url = os.getenv("PAYMENT_SANDBOX_URL", "https://asbe-siah.ir/payment-sandbox.html").rstrip("/")
+        payment_url = (
+            f"{sandbox_url}?order_id={quote(order_public_id, safe='')}"
+            f"&authority={quote(self.authority, safe='')}"
+        )
         return {
             "code": 100,
             "authority": self.authority,
             "request_id": f"mock-request:{order_public_id}",
-            "payment_url": f"https://sandbox.example.invalid/pay/{self.authority}",
+            "payment_url": payment_url,
             "amount_rial": amount_rial,
             "callback_url": callback_url,
         }

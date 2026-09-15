@@ -1,5 +1,8 @@
 name: Hybrid Migration Audit
 
+# Sandbox billing/admin UI recheck is intentionally part of the existing full audit.
+# No production cutover is enabled by this workflow.
+
 on:
   push:
     branches:
@@ -11,6 +14,7 @@ on:
       - hardening/production-billing-guard
       - ux/gen-z-layer
       - ux/gen-z-results
+      - fix/sandbox-billing-admin-ui
   pull_request:
     branches:
       - main
@@ -66,6 +70,9 @@ jobs:
 
       - name: Verify Gen-Z results layer contract
         run: python -m unittest -v test_genz_results_layer.py
+
+      - name: Verify sandbox billing and admin UI contract
+        run: python -m unittest -v test_sandbox_billing_admin_ui.py
 
       - name: Verify PostgreSQL connectivity
         run: python -c "from database import healthcheck; assert healthcheck() is True"

@@ -114,7 +114,7 @@ def _callback_url(request: Request) -> str:
 
 
 def _frontend_redirect(payment: str) -> str:
-    base = os.getenv("FRONTEND_APP_URL", "https://arad2000.github.io/dark-horse-v2-/").strip().rstrip("/")
+    base = os.getenv("FRONTEND_APP_URL", "https://asbe-siah.ir").strip().rstrip("/")
     return base + "/?" + urlencode({"payment": payment})
 
 

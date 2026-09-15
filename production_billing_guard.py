@@ -21,6 +21,19 @@ def assert_production_billing_configuration() -> None:
     if environment not in {"production", "prod"}:
         return
 
+    if _is_true("BILLING_SANDBOX_MODE"):
+        if not _is_true("BILLING_SANDBOX_APPROVED"):
+            raise HTTPException(status_code=503, detail="sandbox billing requires explicit approval")
+        provider = os.getenv("BILLING_PROVIDER", "").strip().lower()
+        if provider not in {"mock", "zarinpal"}:
+            raise HTTPException(status_code=503, detail="sandbox billing requires mock or zarinpal provider")
+        if provider == "zarinpal":
+            if not _is_true("ZARINPAL_SANDBOX"):
+                raise HTTPException(status_code=503, detail="sandbox billing requires ZARINPAL_SANDBOX=true")
+            if not os.getenv("ZARINPAL_MERCHANT_ID", "").strip():
+                raise HTTPException(status_code=503, detail="sandbox billing requires ZARINPAL_MERCHANT_ID")
+        return
+
     if _is_true("BILLING_FREE_MODE"):
         raise HTTPException(
             status_code=503,
