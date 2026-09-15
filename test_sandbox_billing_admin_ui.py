@@ -48,6 +48,11 @@ class SandboxBillingAdminUITests(unittest.TestCase):
         self.assertIn("window.location.assign(payment.payment_url)", js)
         self.assertNotIn("devActivatePremium", js)
 
+    def test_auth_client_has_no_obsolete_direct_credit_activation(self):
+        js = (ROOT / "docs" / "auth_api_client.js").read_text(encoding="utf-8")
+        self.assertNotIn("devActivatePremium", js)
+        self.assertNotIn("/api/v1/billing/dev-activate-premium", js)
+
     def test_mock_provider_redirect_is_not_an_invalid_host(self):
         from payment_providers import MockPaymentProvider
         result = MockPaymentProvider().request_payment(
