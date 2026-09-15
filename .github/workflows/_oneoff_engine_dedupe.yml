@@ -1,0 +1,54 @@
+name: One-off Engine Deduplication
+
+on:
+  pull_request:
+    branches:
+      - deploy/liara-commercial-sandbox
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dedupe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Deduplicate startup engine initialization
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('main_v2.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    try:\n        app.state.engine = DarkHorseEngineV2(\n            motives_path="docs/data/micro_motives.json",\n            majors_path="majors_database_v2.json",\n            trait_map_path="trait_map_v3.json",\n            value_poles_path="value_poles_v2.json",\n            school_branches_path="school_branches_v2.json"\n        )\n        logger.info("✅ DarkHorseEngineV2 آماده است.")\n    except Exception as e:\n        logger.error(f"❌ DarkHorseEngineV2 init failed: {e}")\n        app.state.engine = None\n\n    try:\n        app.state.branch_engine = DarkHorseEngineV2(\n            motives_path="docs/data/micro_motives.json",\n            majors_path="majors_database_v2.json",\n            trait_map_path="trait_map_v3.json",\n            value_poles_path="value_poles_v2.json",\n            school_branches_path="school_branches_v2.json"\n        )\n        logger.info("✅ BranchEngineV2 آماده است.")\n    except Exception as e:\n        logger.error(f"❌ BranchEngineV2 init failed: {e}")\n        app.state.branch_engine = None\n'''
+          new = '''    try:\n        engine = DarkHorseEngineV2(\n            motives_path="docs/data/micro_motives.json",\n            majors_path="majors_database_v2.json",\n            trait_map_path="trait_map_v3.json",\n            value_poles_path="value_poles_v2.json",\n            school_branches_path="school_branches_v2.json"\n        )\n        app.state.engine = engine\n        # Both discovery paths use the same datasets and implementation. Reuse\n        # the single initialized engine to avoid a duplicate load/precompute pass.\n        app.state.branch_engine = engine\n        logger.info("✅ DarkHorseEngineV2 آماده است و برای BranchEngineV2 بازاستفاده شد.")\n    except Exception as e:\n        logger.error(f"❌ DarkHorseEngineV2 init failed: {e}")\n        app.state.engine = None\n        app.state.branch_engine = None\n'''
+          if old not in text:
+              raise SystemExit('expected startup initialization block not found; refusing to modify')
+          if text.count(old) != 1:
+              raise SystemExit('startup initialization block occurrence count is not exactly one; refusing to modify')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Verify exact single initialization
+        run: |
+          test "$(grep -c 'DarkHorseEngineV2(' main_v2.py)" -eq 1
+          python -m compileall -q main_v2.py
+          python -m unittest -v test_main_api_contract.py
+          python -m unittest -v test_password_reset_http_e2e.py
+
+      - name: Commit code change and remove one-off workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/_oneoff_engine_dedupe.yml
+          git add main_v2.py .github/workflows/_oneoff_engine_dedupe.yml
+          git commit -m "perf: dedupe startup engine initialization"
+          git push origin HEAD:${{ github.head_ref }}
