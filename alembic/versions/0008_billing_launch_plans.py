@@ -6,6 +6,7 @@ turned on; this migration does not activate any provider.
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 revision = "0008_billing_launch_plans"
 down_revision = "0007_result_summary"
@@ -22,6 +23,7 @@ FREE_PLAN = {
     "price_minor": 0,
     "currency": "IRR",
     "is_active": True,
+    "features": {},
 }
 
 PACK_PLAN = {
@@ -33,30 +35,38 @@ PACK_PLAN = {
     "price_minor": 2_490_000,
     "currency": "IRR",
     "is_active": False,
+    "features": {},
 }
 
 
 def _upsert_plan(plan: dict) -> None:
     connection = op.get_bind()
-    stmt = sa.text(
-        """
-        INSERT INTO premium_plans
-            (code, name_fa, plan_type, duration_days, credits_granted,
-             price_minor, currency, is_active, features)
-        VALUES
-            (:code, :name_fa, :plan_type, :duration_days, :credits_granted,
-             :price_minor, :currency, :is_active, :features)
-        ON CONFLICT (code) DO UPDATE SET
-            name_fa = EXCLUDED.name_fa,
-            plan_type = EXCLUDED.plan_type,
-            duration_days = EXCLUDED.duration_days,
-            credits_granted = EXCLUDED.credits_granted,
-            price_minor = EXCLUDED.price_minor,
-            currency = EXCLUDED.currency,
-            is_active = EXCLUDED.is_active
-        """
+    table = sa.table(
+        "premium_plans",
+        sa.column("code", sa.String(64)),
+        sa.column("name_fa", sa.String(200)),
+        sa.column("plan_type", sa.String(20)),
+        sa.column("duration_days", sa.Integer()),
+        sa.column("credits_granted", sa.Integer()),
+        sa.column("price_minor", sa.BigInteger()),
+        sa.column("currency", sa.String(8)),
+        sa.column("is_active", sa.Boolean()),
+        sa.column("features", sa.JSON()),
     )
-    connection.execute(stmt, {**plan, "features": "{}"})
+    stmt = pg_insert(table).values(**plan)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[table.c.code],
+        set_={
+            "name_fa": stmt.excluded.name_fa,
+            "plan_type": stmt.excluded.plan_type,
+            "duration_days": stmt.excluded.duration_days,
+            "credits_granted": stmt.excluded.credits_granted,
+            "price_minor": stmt.excluded.price_minor,
+            "currency": stmt.excluded.currency,
+            "is_active": stmt.excluded.is_active,
+        },
+    )
+    connection.execute(stmt)
 
 
 def upgrade() -> None:
