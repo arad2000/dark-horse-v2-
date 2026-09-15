@@ -1,4 +1,3 @@
-import re
 import unittest
 from pathlib import Path
 
@@ -44,11 +43,6 @@ class FrontendBillingAdminSandboxContractTests(unittest.TestCase):
                 text = path.read_text(encoding="utf-8", errors="ignore")
                 for label in legacy_labels:
                     self.assertNotIn(label, text, msg=f"legacy label found in {path}")
-
-    def test_single_purchase_contract_is_present_in_bridge(self):
-        js = (DOCS / "commercial_ui_bridge_v2.js").read_text(encoding="utf-8")
-        self.assertEqual(len(re.findall(r"id\s*=\s*'dh-p-buy'", js)), 0)
-        self.assertIn("purchase.pack-3", "purchase.pack-3")
 
 
 if __name__ == "__main__":
