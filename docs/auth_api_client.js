@@ -109,13 +109,6 @@
 
     async createPayment() {
       return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
-    },
-
-    async devActivatePremium() {
-      const data = await req('/api/v1/billing/dev-activate-premium', { method: 'POST', body: '{}' });
-      const s = load() || {};
-      if (data.user) { s.user = data.user; save(s); }
-      return data;
     }
   };
 
