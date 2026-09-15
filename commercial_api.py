@@ -1,8 +1,8 @@
 """Staged commercial API wiring for Dark Horse V2.
 
 This module exposes authentication, phone verification, test-credit, result
-persistence, and sandbox billing endpoints without touching scoring/ranking or
-enabling PostgreSQL runtime cutover.
+persistence, and controlled billing endpoints without touching scoring/ranking
+or enabling PostgreSQL runtime cutover.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from billing_models import Entitlement, User
 from database import get_db
 from password_reset_service import attach_router
 from phone_verification_service import request_registration_otp, verify_registration_otp
-from production_billing_guard import assert_production_billing_configuration
+from production_billing_guard import assert_production_billing_configuration, is_production_free_only_mode
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
 attach_router(router)
@@ -251,6 +251,9 @@ def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> 
 
 @router.post("/billing/create-payment")
 def create_payment(request: Request, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
+    if is_production_free_only_mode():
+        raise HTTPException(status_code=503, detail="commercial payment is not activated yet; your free test remains available")
     try:
         provider = _server_billing_provider()
         result = create_payment_request(
@@ -278,6 +281,8 @@ def billing_callback(
     status: str | None = Query(default=None, alias="Status"),
     db: Session = Depends(get_db),
 ):
+    if is_production_free_only_mode():
+        raise HTTPException(status_code=503, detail="commercial payment is not activated yet")
     try:
         provider = _server_billing_provider()
         result = handle_payment_callback(
