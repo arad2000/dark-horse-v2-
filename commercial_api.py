@@ -1,9 +1,4 @@
-"""Staged commercial API wiring for Dark Horse V2.
-
-This module exposes authentication, phone verification, test-credit, result
-persistence, and sandbox billing endpoints without touching scoring/ranking or
-enabling PostgreSQL runtime cutover.
-"""
+"""Staged commercial API wiring for Dark Horse V2."""
 from __future__ import annotations
 
 import os
@@ -49,14 +44,7 @@ class SaveResultRequest(BaseModel):
 
 
 def _public_user(user: User) -> dict[str, object]:
-    return {
-        "id": user.id,
-        "public_id": user.public_id,
-        "name": user.name,
-        "phone": user.phone,
-        "role": user.role,
-        "status": user.status,
-    }
+    return {"id": user.id, "public_id": user.public_id, "name": user.name, "phone": user.phone, "role": user.role, "status": user.status}
 
 
 def _valid_expiry(value: datetime | None) -> bool:
@@ -68,20 +56,11 @@ def _valid_expiry(value: datetime | None) -> bool:
 
 
 def _quota(db: Session, user_id: int) -> int:
-    rows = db.scalars(
-        select(Entitlement).where(
-            Entitlement.user_id == user_id,
-            Entitlement.status == "active",
-            Entitlement.credits_remaining > 0,
-        )
-    )
+    rows = db.scalars(select(Entitlement).where(Entitlement.user_id == user_id, Entitlement.status == "active", Entitlement.credits_remaining > 0))
     return sum(int(row.credits_remaining) for row in rows if _valid_expiry(row.expires_at))
 
 
-def _current_user(
-    authorization: str | None = Header(default=None),
-    db: Session = Depends(get_db),
-) -> User:
+def _current_user(authorization: str | None = Header(default=None), db: Session = Depends(get_db)) -> User:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="authentication required")
     token = authorization[7:].strip()
@@ -114,27 +93,23 @@ def _callback_url(request: Request) -> str:
 
 
 def _frontend_redirect(payment: str) -> str:
-    base = os.getenv("FRONTEND_APP_URL", "https://arad2000.github.io/dark-horse-v2-/").strip().rstrip("/")
+    base = os.getenv("FRONTEND_APP_URL", "https://asbe-siah.ir").strip().rstrip("/")
     return base + "/?" + urlencode({"payment": payment})
 
 
 @router.post("/auth/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, object]:
-    """Start a verified registration. No user is created before OTP validation."""
     assert_production_billing_configuration()
     try:
         result = request_registration_otp(db, name=req.name, phone=req.phone, password=req.password)
         db.commit()
         return result
     except TimeoutError as exc:
-        db.rollback()
-        raise HTTPException(status_code=429, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=429, detail=str(exc)) from exc
     except ValueError as exc:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
-        db.rollback()
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/auth/register/verify")
@@ -142,23 +117,14 @@ def verify_register(req: VerifyRegistrationRequest, db: Session = Depends(get_db
     assert_production_billing_configuration()
     try:
         user, token = verify_registration_otp(db, challenge_id=req.challenge_id, code=req.code)
-        ensure_free_entitlement(db, user.id)
-        db.commit()
-        return {
-            "token": token,
-            "user": _public_user(user),
-            "quota": _quota(db, user.id),
-            "phone_verified": True,
-        }
+        ensure_free_entitlement(db, user.id); db.commit()
+        return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id), "phone_verified": True}
     except TimeoutError as exc:
-        db.rollback()
-        raise HTTPException(status_code=410, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=410, detail=str(exc)) from exc
     except PermissionError as exc:
-        db.rollback()
-        raise HTTPException(status_code=429, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=429, detail=str(exc)) from exc
     except ValueError as exc:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/auth/login")
@@ -166,30 +132,22 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
     assert_production_billing_configuration()
     try:
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
-        ensure_free_entitlement(db, user.id)
-        db.commit()
+        ensure_free_entitlement(db, user.id); db.commit()
         return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id)}
     except ValueError as exc:
-        db.rollback()
-        raise HTTPException(status_code=401, detail="invalid credentials") from exc
+        db.rollback(); raise HTTPException(status_code=401, detail="invalid credentials") from exc
 
 
 @router.get("/me")
-def me(user: User = Depends(_current_user)) -> dict[str, object]:
-    return {"user": _public_user(user)}
+def me(user: User = Depends(_current_user)) -> dict[str, object]: return {"user": _public_user(user)}
 
 
 @router.get("/me/quota")
 def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
-    """Return remaining credits; in free mode top-up first so UI does not paywall."""
     assert_production_billing_configuration()
     if is_billing_free_mode():
-        try:
-            ensure_free_entitlement(db, user.id)
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
+        try: ensure_free_entitlement(db, user.id); db.commit()
+        except Exception: db.rollback(); raise
     return {"credits_remaining": _quota(db, user.id), "user_id": user.id}
 
 
@@ -197,104 +155,50 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
 def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     assert_production_billing_configuration()
     try:
-        entitlement = consume_one_test(db, user.id)
-        remaining = _quota(db, user.id)
-        db.commit()
-        return {
-            "consumed": 1,
-            "credits_remaining": remaining,
-            "entitlement_id": entitlement.id,
-            "user": _public_user(user),
-        }
+        entitlement = consume_one_test(db, user.id); remaining = _quota(db, user.id); db.commit()
+        return {"consumed": 1, "credits_remaining": remaining, "entitlement_id": entitlement.id, "user": _public_user(user)}
     except ValueError as exc:
-        db.rollback()
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/me/save-result")
 def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> dict[str, object]:
-    """Persist the authenticated user's final journey summary exactly once per session."""
     from api_persistence_adapter import OperationalPersistenceAdapter, assert_safe_mode
     from operational_store import OperationalStore
-
     try:
-        assert_safe_mode()
-        summary = dict(req.result_summary)
+        assert_safe_mode(); summary = dict(req.result_summary)
         nested_session_id = summary.get("session_id")
         if nested_session_id is not None and str(nested_session_id) != req.session_id:
             raise ValueError("result_summary session_id does not match session_id")
         summary["session_id"] = req.session_id
-        session = OperationalPersistenceAdapter(OperationalStore()).save_result(
-            req.session_id,
-            int(user.id),
-            summary,
-        )
-        return {
-            "saved": True,
-            "completed": bool(session.is_completed),
-            "session_id": session.session_uuid,
-            "operational_session_id": int(session.id),
-        }
-    except HTTPException:
-        raise
-    except PermissionError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
-    except ValueError as exc:
-        if "exceeds" in str(exc):
-            raise HTTPException(status_code=413, detail=str(exc)) from exc
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        session = OperationalPersistenceAdapter(OperationalStore()).save_result(req.session_id, int(user.id), summary)
+        return {"saved": True, "completed": bool(session.is_completed), "session_id": session.session_uuid, "operational_session_id": int(session.id)}
+    except HTTPException: raise
+    except PermissionError as exc: raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc: raise HTTPException(status_code=413 if "exceeds" in str(exc) else 409, detail=str(exc)) from exc
+    except RuntimeError as exc: raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/billing/create-payment")
 def create_payment(request: Request, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     try:
         provider = _server_billing_provider()
-        result = create_payment_request(
-            db,
-            user_id=user.id,
-            callback_url=_callback_url(request),
-            provider_name=provider,
-            zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
-        )
-        db.commit()
-        return result
+        result = create_payment_request(db, user_id=user.id, callback_url=_callback_url(request), provider_name=provider, zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None)
+        db.commit(); return result
     except HTTPException:
-        db.rollback()
-        raise
+        db.rollback(); raise
     except (ValueError, RuntimeError) as exc:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/billing/callback")
-def billing_callback(
-    request: Request,
-    order_id: str = Query(..., alias="order_id"),
-    authority: str = Query(..., alias="Authority"),
-    status: str | None = Query(default=None, alias="Status"),
-    db: Session = Depends(get_db),
-):
+def billing_callback(request: Request, order_id: str = Query(..., alias="order_id"), authority: str = Query(..., alias="Authority"), status: str | None = Query(default=None, alias="Status"), db: Session = Depends(get_db)):
     try:
         provider = _server_billing_provider()
-        result = handle_payment_callback(
-            db,
-            order_public_id=order_id,
-            authority=authority,
-            status=status,
-            provider_name=provider,
-            event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}",
-            raw_callback=dict(request.query_params),
-            zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
-        )
+        result = handle_payment_callback(db, order_public_id=order_id, authority=authority, status=status, provider_name=provider, event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}", raw_callback=dict(request.query_params), zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None)
         db.commit()
-        if result.get("verified"):
-            return RedirectResponse(url=_frontend_redirect("success"), status_code=303)
-        return RedirectResponse(url=_frontend_redirect("failed"), status_code=303)
+        return RedirectResponse(url=_frontend_redirect("success" if result.get("verified") else "failed"), status_code=303)
     except HTTPException:
-        db.rollback()
-        raise
+        db.rollback(); raise
     except (ValueError, RuntimeError) as exc:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        db.rollback(); raise HTTPException(status_code=400, detail=str(exc)) from exc
