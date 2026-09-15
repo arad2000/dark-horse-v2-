@@ -166,30 +166,3 @@ def verify_registration_otp(db: Session, *, challenge_id: str, code: str) -> tup
     challenge.verified_at = utcnow()
     db.flush()
     return user, token
-
-
-# commercial_api imports this module before defining its /api/v1 router. A
-# temporary class hook lets the next /api/v1 APIRouter instance receive the
-# password-reset routes; it is removed immediately after the attachment.
-def _attach_password_reset_router_once() -> None:
-    from fastapi import APIRouter
-
-    original_init = APIRouter.__init__
-    state = {"attached": False}
-
-    def init_with_password_reset(self, *args, **kwargs):
-        original_init(self, *args, **kwargs)
-        prefix = kwargs.get("prefix")
-        if prefix is None and args:
-            prefix = args[0]
-        if prefix != "/api/v1" or state["attached"]:
-            return
-        from password_reset_service import reset_router
-        self.include_router(reset_router)
-        state["attached"] = True
-        APIRouter.__init__ = original_init
-
-    APIRouter.__init__ = init_with_password_reset
-
-
-_attach_password_reset_router_once()
