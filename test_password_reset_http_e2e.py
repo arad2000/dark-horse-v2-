@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import password_reset_service as prs
-from billing_models import AuthSession, Entitlement, Order, Payment, PaymentEvent, PremiumPlan, User
+from billing_models import AuthSession, Entitlement, Order, Payment, PaymentEvent, PhoneVerification, PremiumPlan, User
 from database import get_db
 from main_v2 import app
 from models import Base
