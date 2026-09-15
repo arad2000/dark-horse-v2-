@@ -21,10 +21,12 @@ from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
 from billing_models import Entitlement, User
 from database import get_db
+from password_reset_service import attach_router
 from phone_verification_service import request_registration_otp, verify_registration_otp
 from production_billing_guard import assert_production_billing_configuration
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
+attach_router(router)
 
 
 class RegisterRequest(BaseModel):
