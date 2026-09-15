@@ -5,7 +5,9 @@ import argparse
 import os
 from sqlalchemy import text
 
-from database import SessionLocal, is_configured
+from sqlalchemy.orm import sessionmaker
+
+from database import engine
 
 PROD_MARKERS = {"prod", "production", "live"}
 
@@ -36,9 +38,10 @@ def main() -> int:
         raise SystemExit(f"refusing to run in APP_ENV={env!r}")
     if os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false").lower() == "true":
         raise SystemExit("refusing to audit while production cutover is approved")
-    if not is_configured() or SessionLocal is None:
+    if engine is None:
         raise SystemExit("DATABASE_URL is required")
 
+    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
     db = SessionLocal()
     try:
         failures: dict[str, int] = {}
@@ -52,7 +55,3 @@ def main() -> int:
         return 0
     finally:
         db.close()
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
