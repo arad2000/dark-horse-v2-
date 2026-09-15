@@ -1,6 +1,6 @@
 """Staging-only PostgreSQL backup/restore rehearsal.
 
-Creates a custom-format pg_dump, restores it into a fresh temporary database,
+Creates a custom-format pg_dump, restores it into a separate staging database,
 then checks connectivity. Production-like environments are rejected.
 """
 from __future__ import annotations
@@ -21,24 +21,25 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--confirm-staging", action="store_true")
     parser.add_argument("--backup", default="/tmp/dark-horse-staging.dump")
-    parser.add_argument("--restore-db", required=True)
     args = parser.parse_args()
 
     url = os.getenv("DATABASE_URL", "").strip()
+    restore_url = os.getenv("RESTORE_DATABASE_URL", "").strip()
     app_env = os.getenv("APP_ENV", "").strip().lower()
     if not args.confirm_staging:
         raise SystemExit("refusing to run: pass --confirm-staging")
     if not url:
         raise SystemExit("DATABASE_URL is required")
+    if not restore_url:
+        raise SystemExit("RESTORE_DATABASE_URL is required for restore rehearsal")
     if app_env in PROD_MARKERS:
         raise SystemExit(f"refusing to run in APP_ENV={app_env!r}")
     if os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false").lower() == "true":
         raise SystemExit("refusing to rehearse while production cutover is approved")
+    if restore_url == url:
+        raise SystemExit("restore target must be separate from source database")
 
     run("pg_dump", "--format=custom", "--no-owner", "--file", args.backup, url)
-    restore_url = os.getenv("RESTORE_DATABASE_URL", "").strip()
-    if not restore_url:
-        raise SystemExit("RESTORE_DATABASE_URL is required for restore rehearsal")
     run("pg_restore", "--clean", "--if-exists", "--no-owner", "--dbname", restore_url, args.backup)
     run(sys.executable, "-c", "from database import healthcheck; assert healthcheck() is True")
     print(f"BACKUP_RESTORE_REHEARSAL=PASS backup={args.backup}")
