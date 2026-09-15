@@ -108,17 +108,23 @@
       }
       try {
         await global.DHAuth.resetPassword(challengeId, code, pass);
-        var journey = global.DHCommercialUI && global.DHCommercialUI.startServerAuthorizedJourney;
-        closeOverlay();
-        if (typeof journey === 'function') {
-          await journey();
-        }
+        renderResetSuccess();
       } catch (e) {
         showResetError(e && e.message ? e.message : 'تغییر رمز انجام نشد.');
       } finally {
         BUSY = false;
       }
     };
+  }
+
+  function renderResetSuccess() {
+    var modal = document.querySelector('.dh-commercial-modal');
+    if (!modal) return;
+    modal.innerHTML =
+      '<h2 class="dh-commercial-title">رمز عبور تغییر کرد</h2>' +
+      '<p class="dh-commercial-sub">رمز عبور شما با موفقیت تغییر کرد و نشست‌های قبلی از اعتبار افتادند.</p>' +
+      '<div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-reset-done">ادامه</button></div>';
+    el('dh-reset-done').onclick = closeOverlay;
   }
 
   function injectForgotLink() {
