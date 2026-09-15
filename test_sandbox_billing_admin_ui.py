@@ -28,15 +28,22 @@ class SandboxBillingAdminUITests(unittest.TestCase):
         self.assertIn("Bearer ", html)
         self.assertIn("admin", html)
         self.assertIn("support", html)
+        self.assertIn('id="exit-panel"', html)
+        self.assertIn("window.location.assign('index.html')", html)
 
-    def test_index_exposes_admin_entry_only_for_admin_roles(self):
+    def test_index_removes_fixed_admin_entry_and_loads_bridge(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="admin.html"', html)
-        self.assertIn("commercial_ui_bridge_v2.js", html)
+        self.assertNotIn('id="dh-admin-entry"', html)
+        self.assertNotIn('href="admin.html"', html)
+        self.assertIn("commercial_ui_bridge_v2.js?v=3", html)
 
-    def test_purchase_bridge_binds_real_purchase_button(self):
+    def test_purchase_bridge_converts_legacy_node_to_one_real_purchase_button(self):
         js = (ROOT / "docs" / "commercial_ui_bridge_v2.js").read_text(encoding="utf-8")
-        self.assertIn("#dh-p-prem", js)
+        self.assertIn("var legacy = byId('dh-p-prem')", js)
+        self.assertIn("legacy.id = 'dh-p-buy'", js)
+        self.assertIn("querySelectorAll('#dh-p-buy')", js)
+        self.assertIn("purchases[i].remove()", js)
+        self.assertIn("data-testid', 'purchase-pack-3'", js)
         self.assertIn("DHAuth.createPayment", js)
         self.assertIn("window.location.assign(payment.payment_url)", js)
         self.assertNotIn("devActivatePremium", js)
