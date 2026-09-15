@@ -1,23 +1,59 @@
 import unittest
 from datetime import timedelta
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 import password_reset_service as prs
-from auth_service import hash_password, issue_session, resolve_session
-from billing_models import AuthSession, PhoneVerification, User
-from models import Base
+from auth_service import hash_password, hash_token, resolve_session
+from billing_models import AuthSession, User
 
 
 class PasswordResetServiceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(
-            cls.engine,
-            tables=[User.__table__, AuthSession.__table__, PhoneVerification.__table__],
-        )
+        with cls.engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    public_id VARCHAR(36) NOT NULL UNIQUE,
+                    name VARCHAR(200) NOT NULL,
+                    phone VARCHAR(32) NOT NULL UNIQUE,
+                    password_hash TEXT,
+                    role VARCHAR(20) NOT NULL DEFAULT 'user',
+                    status VARCHAR(20) NOT NULL DEFAULT 'active',
+                    created_at DATETIME,
+                    updated_at DATETIME,
+                    last_login_at DATETIME
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE auth_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    token_hash VARCHAR(128) NOT NULL UNIQUE,
+                    expires_at DATETIME NOT NULL,
+                    revoked_at DATETIME,
+                    created_at DATETIME,
+                    FOREIGN KEY(user_id) REFERENCES users(id)
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE phone_verifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    challenge_id VARCHAR(128) NOT NULL UNIQUE,
+                    phone VARCHAR(32) NOT NULL,
+                    purpose VARCHAR(32) NOT NULL DEFAULT 'register',
+                    name VARCHAR(200) NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    code_hash VARCHAR(128) NOT NULL,
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    expires_at DATETIME NOT NULL,
+                    verified_at DATETIME,
+                    created_at DATETIME
+                )
+            """))
         cls.Session = sessionmaker(bind=cls.engine)
 
     def setUp(self):
@@ -33,13 +69,35 @@ class PasswordResetServiceTests(unittest.TestCase):
         )
         self.db.add(user)
         self.db.flush()
-        old_token, old_session = issue_session(self.db, user)
+
+        old_token = "old-session-token"
+        old_session = AuthSession(
+            user_id=user.id,
+            token_hash=hash_token(old_token),
+            expires_at=prs.utcnow() + timedelta(hours=1),
+        )
+        self.db.add(old_session)
         self.db.commit()
 
         sent = {}
         original_sender = prs._send_reset_otp
+        original_issue = prs.issue_session
         prs._send_reset_otp = lambda phone, code: sent.update(phone=phone, code=code)
+
+        def issue_test_session(db, reset_user):
+            token = "new-session-token"
+            session = AuthSession(
+                user_id=reset_user.id,
+                token_hash=hash_token(token),
+                expires_at=prs.utcnow() + timedelta(hours=1),
+            )
+            db.add(session)
+            db.flush()
+            return token, session
+
+        prs.issue_session = issue_test_session
         self.addCleanup(lambda: setattr(prs, "_send_reset_otp", original_sender))
+        self.addCleanup(lambda: setattr(prs, "issue_session", original_issue))
 
         result = prs.request_password_reset_otp(self.db, phone=user.phone)
         self.db.commit()
