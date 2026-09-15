@@ -29,13 +29,14 @@ class SandboxBillingAdminUITests(unittest.TestCase):
         self.assertIn("admin", html)
         self.assertIn("support", html)
         self.assertIn('id="exit-panel"', html)
-        self.assertIn("window.location.assign('index.html')", html)
+        self.assertIn("window.location.replace('index.html?logout=1')", html)
+        self.assertIn("localStorage.removeItem('dh_auth_v1')", html)
 
     def test_index_removes_fixed_admin_entry_and_loads_bridge(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
         self.assertNotIn('id="dh-admin-entry"', html)
         self.assertNotIn('href="admin.html"', html)
-        self.assertIn("commercial_ui_bridge_v2.js?v=3", html)
+        self.assertIn("commercial_ui_bridge_v2.js?v=4", html)
 
     def test_purchase_bridge_converts_legacy_node_to_one_real_purchase_button(self):
         js = (ROOT / "docs" / "commercial_ui_bridge_v2.js").read_text(encoding="utf-8")
