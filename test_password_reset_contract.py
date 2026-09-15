@@ -10,27 +10,44 @@ class PasswordResetContractTests(unittest.TestCase):
         service = (ROOT / "password_reset_service.py").read_text(encoding="utf-8")
         self.assertIn('purpose="password_reset"', service)
         self.assertIn("MAX_ATTEMPTS", service)
-        self.assertIn("verify_password", service)
+        self.assertIn("hash_password", service)
         self.assertIn("revoke_all_sessions", service)
         self.assertIn("_hash_code", service)
+        self.assertIn('KAVENEGAR_RESET_OTP_TEMPLATE', service)
 
-    def test_api_exposes_request_and_confirm_endpoints(self):
-        api = (ROOT / "commercial_api.py").read_text(encoding="utf-8")
-        self.assertIn('from password_reset_service import request_password_reset_otp, reset_password_with_otp', api)
-        self.assertIn('@router.post("/auth/password-reset/request")', api)
-        self.assertIn('@router.post("/auth/password-reset/confirm")', api)
+    def test_api_router_is_attached_to_application(self):
+        service = (ROOT / "password_reset_service.py").read_text(encoding="utf-8")
+        phone = (ROOT / "phone_verification_service.py").read_text(encoding="utf-8")
+        self.assertIn('reset_router = APIRouter(prefix="/auth/password-reset"', service)
+        self.assertIn("_attach_password_reset_router(_commercial_api.router)", phone)
+        try:
+            import main_v2
+            paths = {getattr(route, "path", "") for route in main_v2.app.routes}
+            self.assertIn("/api/v1/auth/password-reset/request", paths)
+            self.assertIn("/api/v1/auth/password-reset/confirm", paths)
+        except ModuleNotFoundError as exc:
+            self.fail(f"main_v2 import failed: {exc}")
 
     def test_client_exposes_reset_methods(self):
         js = (DOCS / "auth_api_client.js").read_text(encoding="utf-8")
         self.assertIn("requestPasswordReset(phone)", js)
         self.assertIn("resetPassword(challengeId, code, newPassword)", js)
+        self.assertIn("/api/v1/auth/password-reset/request", js)
+        self.assertIn("/api/v1/auth/password-reset/confirm", js)
 
     def test_auth_ui_has_forgot_password_path(self):
-        js = (DOCS / "commercial_ui.js").read_text(encoding="utf-8")
+        js = (DOCS / "password_reset_ui.js").read_text(encoding="utf-8")
         self.assertIn("فراموشی رمز عبور", js)
         self.assertIn("requestPasswordReset", js)
         self.assertIn("resetPassword", js)
         self.assertIn("کد تأیید", js)
+        self.assertIn("autocomplete=\"one-time-code\"", js)
+
+    def test_home_loads_reset_ui_after_auth_client(self):
+        html = (DOCS / "index.html").read_text(encoding="utf-8")
+        auth_pos = html.index('src="auth_api_client.js"')
+        reset_pos = html.index('src="password_reset_ui.js?v=1"')
+        self.assertLess(auth_pos, reset_pos)
 
 
 if __name__ == "__main__":
