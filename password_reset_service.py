@@ -230,4 +230,17 @@ def password_reset_confirm(req: PasswordResetConfirmRequest, db: Session = Depen
 
 
 def attach_router(target_router: APIRouter) -> None:
-    target_router.include_router(reset_router)
+    target_router.add_api_route(
+        "/auth/password-reset/request",
+        password_reset_request,
+        methods=["POST"],
+        response_model=dict[str, object],
+        tags=["auth"],
+    )
+    target_router.add_api_route(
+        "/auth/password-reset/confirm",
+        password_reset_confirm,
+        methods=["POST"],
+        response_model=dict[str, object],
+        tags=["auth"],
+    )
