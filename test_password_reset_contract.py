@@ -18,6 +18,12 @@ class PasswordResetContractTests(unittest.TestCase):
     def test_commercial_router_exposes_password_reset_endpoints(self):
         import commercial_api
         paths = {getattr(route, "path", "") for route in commercial_api.router.routes}
+        self.assertIn("/auth/password-reset/request", paths)
+        self.assertIn("/auth/password-reset/confirm", paths)
+
+    def test_main_app_mounts_password_reset_with_full_api_prefix(self):
+        import main_v2
+        paths = {getattr(route, "path", "") for route in main_v2.app.routes}
         self.assertIn("/api/v1/auth/password-reset/request", paths)
         self.assertIn("/api/v1/auth/password-reset/confirm", paths)
 
