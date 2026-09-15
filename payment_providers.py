@@ -1,12 +1,4 @@
-"""Payment provider contracts and parallel Mock/ZarinPal implementations.
-
-The real ZarinPal adapter is intentionally developed in parallel with the Mock
-provider. The Mock provider is used for deterministic CI; production credentials
-are never required for tests. Both implement the same request/verify contract.
-
-ZarinPal REST v4 uses /pg/v4/payment/request.json and /pg/v4/payment/verify.json.
-Sandbox is opt-in via ``ZARINPAL_SANDBOX=true`` or explicit base/gateway URLs.
-"""
+"""Payment provider contracts and parallel Mock/ZarinPal implementations."""
 from __future__ import annotations
 
 import os
@@ -30,11 +22,8 @@ class ProviderResponse:
 class PaymentProvider(Protocol):
     name: str
 
-    def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]:
-        ...
-
-    def verify_payment(self, *, amount_rial: int, authority: str) -> dict[str, Any]:
-        ...
+    def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]: ...
+    def verify_payment(self, *, amount_rial: int, authority: str) -> dict[str, Any]: ...
 
 
 class MockPaymentProvider:
@@ -45,11 +34,17 @@ class MockPaymentProvider:
         self.transaction_id = transaction_id
 
     def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]:
+        # Controlled sandbox only: redirect to our noindex test page instead of an invalid host.
+        sandbox_url = os.getenv("PAYMENT_SANDBOX_URL", "https://asbe-siah.ir/payment-sandbox.html").rstrip("/")
+        payment_url = (
+            f"{sandbox_url}?order_id={httpx.QueryParams({'v': order_public_id})['v']}"
+            f"&authority={httpx.QueryParams({'v': self.authority})['v']}"
+        )
         return {
             "code": 100,
             "authority": self.authority,
             "request_id": f"mock-request:{order_public_id}",
-            "payment_url": f"https://sandbox.example.invalid/pay/{self.authority}",
+            "payment_url": payment_url,
             "amount_rial": amount_rial,
             "callback_url": callback_url,
         }
@@ -57,22 +52,11 @@ class MockPaymentProvider:
     def verify_payment(self, *, amount_rial: int, authority: str) -> dict[str, Any]:
         if authority != self.authority:
             return {"verified": False, "code": -1, "message": "mock authority mismatch"}
-        return {
-            "verified": True,
-            "code": 100,
-            "transaction_id": self.transaction_id,
-            "amount_rial": amount_rial,
-        }
+        return {"verified": True, "code": 100, "transaction_id": self.transaction_id, "amount_rial": amount_rial}
 
 
 class ZarinPalPaymentProvider:
-    """ZarinPal REST v4 adapter with explicit sandbox support.
-
-    Sandbox is opt-in. If ``ZARINPAL_SANDBOX=true`` the adapter uses the
-    sandbox API and gateway hosts. Explicit ``base_url`` / ``gateway_base_url``
-    override environment-derived values, which makes contract testing easy.
-    Network calls happen only when request_payment/verify_payment are invoked.
-    """
+    """ZarinPal REST v4 adapter with explicit sandbox support."""
 
     name = "zarinpal"
     DEFAULT_BASE_URL = "https://api.zarinpal.com/pg/v4/payment"
@@ -114,7 +98,6 @@ class ZarinPalPaymentProvider:
             response = client.post(f"{self.base_url}/request.json", json=payload)
             response.raise_for_status()
             body = response.json()
-
         data = body.get("data") or {}
         errors = body.get("errors") or {}
         code = data.get("code")
@@ -123,34 +106,17 @@ class ZarinPalPaymentProvider:
         authority = data.get("authority")
         if not authority:
             raise RuntimeError("ZarinPal payment request did not return authority")
-        return {
-            "code": code,
-            "authority": authority,
-            "request_id": data.get("request_id"),
-            "payment_url": f"{self.gateway_base_url}/{authority}",
-            "raw": body,
-        }
+        return {"code": code, "authority": authority, "request_id": data.get("request_id"), "payment_url": f"{self.gateway_base_url}/{authority}", "raw": body}
 
     def verify_payment(self, *, amount_rial: int, authority: str) -> dict[str, Any]:
         self._require_credentials()
-        payload = {
-            "merchant_id": self.merchant_id,
-            "amount": int(amount_rial),
-            "authority": authority,
-        }
+        payload = {"merchant_id": self.merchant_id, "amount": int(amount_rial), "authority": authority}
         with httpx.Client(timeout=self.timeout) as client:
             response = client.post(f"{self.base_url}/verify.json", json=payload)
             response.raise_for_status()
             body = response.json()
-
         data = body.get("data") or {}
         errors = body.get("errors") or {}
         code = data.get("code")
         verified = code in (100, 101)
-        return {
-            "verified": verified,
-            "code": code,
-            "transaction_id": str(data.get("ref_id")) if data.get("ref_id") is not None else None,
-            "message": errors.get("message") if errors else None,
-            "raw": body,
-        }
+        return {"verified": verified, "code": code, "transaction_id": str(data.get("ref_id")) if data.get("ref_id") is not None else None, "message": errors.get("message") if errors else None, "raw": body}
