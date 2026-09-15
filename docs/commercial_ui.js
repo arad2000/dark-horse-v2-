@@ -14,8 +14,7 @@
   function openExternalPay(url){
     if(!url)return false;
     var u=String(url);
-    try{if(window.AndroidBridge&&typeof AndroidBridge.openExternalUrl==='function'){AndroidBridge.openExternalUrl(u);return true;}}catch(_){}
-    var isAndroid=/android/i.test(navigator.userAgent||'')||/AsbeSiahApp/i.test(navigator.userAgent||'');
+    var isAndroid=/android/i.test(navigator.userAgent||'');
     if(isAndroid){
       try{
         window.location.href='intent://'+u.replace(/^https?:\/\//,'')+
@@ -157,22 +156,59 @@
   patch();
   new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});
   }
+  
+  function syncServerQuota(done){
+    if(!global.DHAuth||!global.DHAuth.isLoggedIn||!global.DHAuth.isLoggedIn()){
+      if(done)done(null);return;
+    }
+    global.DHAuth.quota().then(function(d){
+      var r=Number(d&&d.credits_remaining);
+      if(!isFinite(r)||r<0)r=0;
+      var prev=null;
+      try{
+        var oldq=JSON.parse(localStorage.getItem('dh_local_quota_v1')||'{}');
+        prev=oldq.serverRemaining;
+      }catch(_){}
+      try{
+        localStorage.setItem('dh_local_quota_v1', JSON.stringify({
+          used:0,
+          premium:false,
+          serverRemaining:r
+        }));
+      }catch(_){}
+      try{setLocalQuota({remaining:r, serverRemaining:r});}catch(_){}
+      // فقط اگر عدد عوض شده پروفایل را دوباره بکش (جلوگیری از حلقه)
+      if(prev!==r){
+        try{
+          if(global.DHShell&&typeof global.DHShell.renderProfile==='function')global.DHShell.renderProfile();
+        }catch(_){}
+      }
+      if(done)done(r);
+    }).catch(function(){if(done)done(null);});
+  }
+
   function boot(){
-    // حتی بدون DHAuth هم UI خرید را در دسترس بگذار
     global.DHCommercialUI={
       showAuth:showAuthModal,
       showPurchase:openPurchaseModal,
       startServerAuthorizedJourney:continueAfterAuth,
-      logout:doLogout
+      logout:doLogout,
+      syncQuota:syncServerQuota
     };
     try{installButtonHooks();}catch(_){}
     try{handlePaymentReturn();}catch(_){}
+    // هر بار باز شدن اپ: اعتبار واقعی از سرور
+    try{syncServerQuota();}catch(_){}
+    // کمی بعد دوباره (بعد از restore سشن)
+    setTimeout(function(){try{syncServerQuota();}catch(_){}}, 400);
+    setTimeout(function(){try{syncServerQuota();}catch(_){}}, 1500);
   }
-  global.DHCommercialUI={
+  global.DHCommercialUIglobal.DHCommercialUI={
     showAuth:showAuthModal,
     showPurchase:openPurchaseModal,
     startServerAuthorizedJourney:continueAfterAuth,
-    logout:doLogout
+    logout:doLogout,
+    syncQuota:syncServerQuota
   };
   window.addEventListener('dh-open-purchase', function(){
     try{openPurchaseModal();}catch(e){console.error(e);}
