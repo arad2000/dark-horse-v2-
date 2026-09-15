@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from typing import Any, Protocol
+from urllib.parse import urlencode, urlsplit, urlunsplit
 
 import httpx
 
@@ -45,11 +46,15 @@ class MockPaymentProvider:
         self.transaction_id = transaction_id
 
     def request_payment(self, *, amount_rial: int, order_public_id: str, callback_url: str) -> dict[str, Any]:
+        parts = urlsplit(callback_url)
+        sandbox_path = parts.path.rsplit("/callback", 1)[0] + "/sandbox"
+        query = urlencode({"order_id": order_public_id, "Authority": self.authority})
+        payment_url = urlunsplit((parts.scheme, parts.netloc, sandbox_path, query, ""))
         return {
             "code": 100,
             "authority": self.authority,
             "request_id": f"mock-request:{order_public_id}",
-            "payment_url": f"https://sandbox.example.invalid/pay/{self.authority}",
+            "payment_url": payment_url,
             "amount_rial": amount_rial,
             "callback_url": callback_url,
         }
