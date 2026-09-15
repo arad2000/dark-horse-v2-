@@ -1,8 +1,8 @@
 """Staged commercial API wiring for Dark Horse V2.
 
 This module exposes authentication, phone verification, test-credit, result
-persistence, and sandbox billing endpoints without touching scoring/ranking or
-enabling PostgreSQL runtime cutover.
+persistence, password reset, and sandbox billing endpoints without touching
+scoring/ranking or enabling PostgreSQL runtime cutover.
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
 from billing_models import Entitlement, User
 from database import get_db
+from password_reset_service import request_password_reset_otp, reset_password_with_otp
 from phone_verification_service import request_registration_otp, verify_registration_otp
 from production_billing_guard import assert_production_billing_configuration
 
@@ -41,6 +42,16 @@ class VerifyRegistrationRequest(BaseModel):
 class LoginRequest(BaseModel):
     phone: str = Field(min_length=3, max_length=32)
     password: str = Field(min_length=8, max_length=256)
+
+
+class PasswordResetRequest(BaseModel):
+    phone: str = Field(min_length=3, max_length=32)
+
+
+class PasswordResetVerifyRequest(BaseModel):
+    challenge_id: str = Field(min_length=8, max_length=128)
+    code: str = Field(min_length=6, max_length=8)
+    new_password: str = Field(min_length=8, max_length=256)
 
 
 class SaveResultRequest(BaseModel):
@@ -172,6 +183,56 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=401, detail="invalid credentials") from exc
+
+
+@router.post("/auth/password/reset/request")
+def request_password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
+    try:
+        result = request_password_reset_otp(db, phone=req.phone)
+        db.commit()
+        return {
+            "otp_required": bool(result.get("otp_required")),
+            "challenge_id": result.get("challenge_id"),
+            "expires_in": result.get("expires_in"),
+            "resend_after": result.get("resend_after"),
+            "message": "اگر حسابی با این شماره وجود داشته باشد، کد بازیابی ارسال می‌شود.",
+        }
+    except TimeoutError as exc:
+        db.rollback()
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.post("/auth/password/reset/verify")
+def verify_password_reset(req: PasswordResetVerifyRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
+    try:
+        user, token = reset_password_with_otp(
+            db,
+            challenge_id=req.challenge_id,
+            code=req.code,
+            new_password=req.new_password,
+        )
+        db.commit()
+        return {"reset": True, "token": token, "user": _public_user(user)}
+    except TimeoutError as exc:
+        db.rollback()
+        raise HTTPException(status_code=410, detail=str(exc)) from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/me")
