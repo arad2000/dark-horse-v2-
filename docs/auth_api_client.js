@@ -59,6 +59,22 @@
       return data;
     },
 
+    async requestPasswordReset(phone) {
+      return req('/api/v1/auth/password/reset/request', {
+        method: 'POST',
+        body: JSON.stringify({ phone })
+      });
+    },
+
+    async verifyPasswordReset(challengeId, code, newPassword) {
+      const data = await req('/api/v1/auth/password/reset/verify', {
+        method: 'POST',
+        body: JSON.stringify({ challenge_id: challengeId, code, new_password: newPassword })
+      });
+      if (data && data.token) save(data);
+      return data;
+    },
+
     async refreshMe() {
       const data = await req('/api/v1/me');
       const s = load() || {};
