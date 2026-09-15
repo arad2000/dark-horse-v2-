@@ -1,11 +1,16 @@
-/* Dark Horse SW v58 — nuclear cache reset */
-const CACHE = 'darkhorse-v58';
+/* Dark Horse SW v59 — release hotfix cache reset */
+const CACHE = 'darkhorse-v59';
 const PRECACHE = [
   './index.html',
   './shell.js',
   './shell.css',
   './app.js',
   './data.js',
+  './auth_api_client.js?v=2',
+  './commercial_ui.js?v=2',
+  './commercial_ui_bridge_v2.js?v=4',
+  './password_reset_ui.js?v=2',
+  './auth_ui_hotfix.js?v=1',
   './icon-192.png'
 ];
 
@@ -37,7 +42,6 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // همیشه اول شبکه — کش فقط پشتیبان آفلاین
   e.respondWith(
     fetch(req).then((res) => {
       if (res && res.status === 200 && res.type === 'basic') {
