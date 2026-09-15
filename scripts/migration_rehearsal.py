@@ -1,15 +1,15 @@
 """Staging-only migration rehearsal for the Hybrid rollout.
 
 The command refuses to run against production-like environments and never
-changes the application cutover gate. It performs an upgrade -> consistency
-check -> downgrade -> upgrade cycle on an explicit staging DB.
+changes the application cutover gate. It performs a full upgrade -> downgrade
+-> upgrade cycle and verifies the database ends exactly at the Alembic head.
 """
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
-import sys
 
 
 PROD_MARKERS = {"prod", "production", "live"}
@@ -19,8 +19,13 @@ def env_name() -> str:
     return os.getenv("APP_ENV", "").strip().lower()
 
 
-def run(*args: str) -> None:
-    subprocess.run(args, check=True)
+def run_capture(*args: str) -> str:
+    completed = subprocess.run(args, check=True, text=True, capture_output=True)
+    return (completed.stdout or "") + (completed.stderr or "")
+
+
+def revision_ids(output: str) -> set[str]:
+    return set(re.findall(r"\b[0-9a-f]{4,40}\b", output, flags=re.IGNORECASE))
 
 
 def main() -> int:
@@ -38,14 +43,26 @@ def main() -> int:
     if os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false").lower() == "true":
         raise SystemExit("refusing to rehearse while production cutover is approved")
 
-    run(sys.executable, "-m", "alembic", "current")
-    run(sys.executable, "-m", "alembic", "upgrade", "head")
-    run(sys.executable, "-m", "alembic", "check")
-    run(sys.executable, "-m", "alembic", "downgrade", "-1")
-    run(sys.executable, "-m", "alembic", "upgrade", "head")
-    run(sys.executable, "-m", "alembic", "check")
-    run(sys.executable, "-m", "alembic", "current")
-    print("MIGRATION_REHEARSAL=PASS")
+    head_output = run_capture("alembic", "heads")
+    head_ids = revision_ids(head_output)
+    if len(head_ids) != 1:
+        raise SystemExit(f"expected exactly one Alembic head, got {sorted(head_ids)}")
+    head = next(iter(head_ids))
+
+    run_capture("alembic", "current")
+    run_capture("alembic", "upgrade", "head")
+    current = run_capture("alembic", "current")
+    if head not in revision_ids(current) or "(head)" not in current:
+        raise SystemExit(f"after upgrade, current revision is not head={head!r}: {current.strip()}")
+
+    run_capture("alembic", "downgrade", "-1")
+    run_capture("alembic", "current")
+    run_capture("alembic", "upgrade", "head")
+    final = run_capture("alembic", "current")
+    if head not in revision_ids(final) or "(head)" not in final:
+        raise SystemExit(f"after re-upgrade, current revision is not head={head!r}: {final.strip()}")
+
+    print(f"MIGRATION_REHEARSAL=PASS head={head}")
     return 0
 
 
