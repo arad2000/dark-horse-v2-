@@ -69,6 +69,9 @@ jobs:
       - name: Verify evaluator closeout safety contracts
         run: python -m unittest -v test_evaluator_closeout_contract.py
 
+      - name: Verify production free-only launch contract
+        run: python -m unittest -v test_production_free_only_launch.py
+
       - name: Verify commercial UI contract
         run: python -m unittest -v test_commercial_ui_contract.py
 
