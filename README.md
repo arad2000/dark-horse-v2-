@@ -2,154 +2,100 @@
 
 **سیستم هوشمند کشف فردیت برای هدایت تحصیلی و انتخاب رشته**
 
-Dark Horse یک موتور توصیه‌گر مبتنی بر روان‌شناسی فردیت است که با تحلیل سه لایهٔ اصلی شخصیت (خرده‌انگیزه‌ها، راهبردهای شخصی و ارزش‌های بنیادین) به دانش‌آموزان و داوطلبان کنکور کمک می‌کند مسیر تحصیلی و شغلی مناسب خود را پیدا کنند.
+Dark Horse یک موتور توصیه‌گر مبتنی بر روان‌شناسی فردیت است. با سه لایهٔ شخصیت — خرده‌انگیزه‌ها، راهبردهای شخصی و ارزش‌های بنیادین — به دانش‌آموز و داوطلب کنکور کمک می‌کند مسیر تحصیلی مناسب خودش را پیدا کند.
 
----
+## الان کجاست
 
-## ویژگی‌ها
+| لایه | آدرس | وضعیت |
+|---|---|---|
+| اپ | [arad2000.github.io/dark-horse-v2-](https://arad2000.github.io/dark-horse-v2-/) | زنده روی GitHub Pages |
+| API امتیازدهی | [asbe-siah.liara.run](https://asbe-siah.liara.run) | زنده؛ منبع امتیازدهی JSON است |
+| مهاجرت PostgreSQL | شاخه `feature/postgresql-hybrid` | فقط staging — **سوییچ پروداکشن خاموش است** |
 
-- **انتخاب رشته دانشگاهی**  
-  فرمول امتیازدهی:  
-  `Total = 0.55 × M + 0.30 × V + 0.15 × S`
+منبع حقیقت روان‌سنجی و امتیازدهی، فایل‌های JSON داخل گیت است. PostgreSQL برای دادهٔ عملیاتی (نشست، اعتبار، پرداخت) آماده می‌شود و تا تأیید جداگانه وارد موتور زنده نمی‌شود.
 
-- **هدایت تحصیلی پایه نهم (شاخه‌های دبیرستان)**  
-  فرمول امتیازدهی:  
-  `Total = 0.60 × M + 0.20 × S + 0.20 × V`
+## امتیازدهی (تغییر نکرده)
 
-- استخراج کهن‌الگو (Archetype) و منبع رضایت از دیتابیس
-- ارائه مسیرهای جایگزین (Alternative Paths)
-- تولید توضیحات شخصی‌سازی‌شده بر اساس ۸ سناریوی مختلف
-- پشتیبانی کامل از زبان فارسی
+- انتخاب رشته دانشگاهی: `Total = 0.55 × M + 0.30 × V + 0.15 × S`
+- هدایت تحصیلی پایه نهم: `Total = 0.60 × M + 0.20 × S + 0.20 × V`
 
----
+خروجی شامل کهن‌الگو، منبع رضایت، مسیر جایگزین و توضیح شخصی‌سازی‌شده است.
 
-## ساختار پروژه
+## منبع داده
+
+یک کپی از هر دیتاست مرجع کافی است:
+
+| فایل | نقش |
+|---|---|
+| `docs/data/micro_motives.json` | خرده‌انگیزه‌ها (موتور + فرانت) |
+| `docs/data/trait_map_v3.json` | نقشهٔ راهبرد SJT |
+| `docs/data/questions_v2.json` | متن سؤال‌های فرانت |
+| `majors_database_v2.json` | ۱۶۰ رشته |
+| `school_branches_v2.json` | چهار شاخه دبیرستان |
+| `value_poles_v2.json` | قطب‌های ارزشی Q1A..Q15B |
+
+کپی ریشهٔ `micro_motives.json` و snapshotهای `*_v22.json` حذف شدند تا دو نسخه از یک حقیقت باقی نماند.
+
+## ساختار
 
 ```
 dark-horse-v2-/
-├── main_v2.py                  # API اصلی (FastAPI)
-├── dark_horse_engine_v2.py     # موتور اصلی Dark Horse
-├── majors_database_v2.json     # دیتابیس رشته‌های دانشگاهی
-├── school_branches_v2.json     # دیتابیس شاخه‌های دبیرستان
-├── trait_map_v3.json           # نقشه ویژگی‌های رفتاری
-├── value_poles_v2.json         # قطب‌های ارزشی
+├── main_v2.py                 API زنده (FastAPI، JSON-backed)
+├── dark_horse_engine_v2.py    موتور M / V / S
+├── majors_database_v2.json
+├── school_branches_v2.json
+├── value_poles_v2.json
 ├── requirements.txt
-└── docs/                       # فرانت‌اند (GitHub Pages)
+├── liara.json
+└── docs/                      فرانت GitHub Pages
     ├── index.html
     ├── app.js
-    ├── data.js
-    ├── feedback.html
     └── data/
-        └── micro_motives.json  # لیست میکروموتیوها
+        ├── micro_motives.json
+        ├── questions_v2.json
+        └── trait_map_v3.json
 ```
 
----
-
-## نصب و راه‌اندازی
-
-### ۱. کلون کردن پروژه
+## اجرای محلی
 
 ```bash
 git clone https://github.com/arad2000/dark-horse-v2-.git
 cd dark-horse-v2-
-```
-
-### ۲. نصب وابستگی‌ها
-
-```bash
 pip install -r requirements.txt
-```
-
-### ۳. اجرای سرور
-
-```bash
 python main_v2.py
 ```
 
-سرور روی آدرس زیر بالا می‌آید:
+API روی همان پورتی که `PORT` می‌گوید بالا می‌آید (پیش‌فرض ۸۰۰۰).
+
+## API
 
 ```
-http://0.0.0.0:8000
-```
-
----
-
-## API Endpoints
-
-### انتخاب رشته دانشگاهی
-
-```
+GET  /
 POST /api/v2/darkhorse/discover
-```
-
-**بدنه درخواست:**
-```json
-{
-  "micro_motives": ["code1", "code2", ...],
-  "sjt_answers": {
-    "sjt_1": "A",
-    "sjt_2": "C",
-    ...
-  },
-  "conjoint_choices": {
-    "conj_1": "Q1A",
-    "conj_2": "Q2B",
-    ...
-  }
-}
-```
-
-### هدایت تحصیلی (شاخه‌های دبیرستان)
-
-```
 POST /api/v2/darkhorse/branch-discovery
 ```
 
-بدنه درخواست دقیقاً مشابه endpoint بالا است.
+بدنهٔ هر دو POST:
 
----
-
-## اجزای امتیازدهی
-
-| مؤلفه | توضیح | وزن در انتخاب رشته | وزن در هدایت تحصیلی |
-|-------|-------|---------------------|----------------------|
-| **M (Motive)** | میزان همخوانی خرده‌انگیزه‌های کاربر با رشته/شاخه | 55٪ | 60٪ |
-| **V (Value)** | همراستایی ارزش‌های بنیادین | 30٪ | 20٪ |
-| **S (Strategy)** | همخوانی راهبردهای شخصی (SJT) | 15٪ | 20٪ |
-
----
-
-## فرانت‌اند
-
-فرانت‌اند پروژه به صورت Static در پوشه `docs/` قرار دارد و برای استفاده با **GitHub Pages** آماده است.
-
-پس از فعال کردن GitHub Pages روی branch `main` و پوشه `/docs`، سایت از این آدرس در دسترس خواهد بود:
-
-```
-https://arad2000.github.io/dark-horse-v2-/
+```json
+{
+  "micro_motives": ["MED-001"],
+  "sjt_answers": { "sjt_1": "A" },
+  "conjoint_choices": { "conj_1": "Q1A" }
+}
 ```
 
----
+لایهٔ حساب / اعتبار / پرداخت روی شاخهٔ hybrid است و هنوز به `main` نیامده.
 
-## تکنولوژی‌ها
+## تکنولوژی
 
-- **Backend:** FastAPI + Uvicorn + Pydantic
-- **موتور هوشمند:** Python خالص (بدون وابستگی به مدل‌های زبانی)
-- **Frontend:** HTML + Vanilla JavaScript
-- **داده:** JSON-driven architecture
+- Backend: FastAPI + Uvicorn + Pydantic
+- موتور: Python خالص
+- Frontend: HTML + Vanilla JS + PWA
+- داده: JSON در گیت
 
----
+## نسخه
 
-## نسخه فعلی
-
-- موتور: `DarkHorseEngineV2` (نسخه نهایی)
-- Trait Map: v3
-- Value Poles: v2
-- API Version: 2.0
-
----
-
-## توسعه‌دهنده
-
-ساخته‌شده با تمرکز بر کشف فردیت واقعی کاربران  
-**Dark Horse Philosophy** — پیدا کردن مسیرهایی که دیگران کمتر می‌بینند.
+- موتور: `DarkHorseEngineV2`
+- Trait Map: v3 — Value Poles: v2 — API: 2.0
+- PostgreSQL runtime cutover: **OFF**
