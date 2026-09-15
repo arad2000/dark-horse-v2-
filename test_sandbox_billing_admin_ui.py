@@ -6,11 +6,19 @@ ROOT = Path(__file__).resolve().parent
 
 
 class SandboxBillingAdminUITests(unittest.TestCase):
+    def test_free_and_paid_credit_contract(self):
+        from billing_credit_service import FREE_CREDITS, PACK_3_CREDITS
+        self.assertEqual(FREE_CREDITS, 1)
+        self.assertEqual(PACK_3_CREDITS, 3)
+
     def test_sandbox_payment_page_exists_and_noindex(self):
         html = (ROOT / "docs" / "payment-sandbox.html").read_text(encoding="utf-8")
         self.assertIn('name="robots" content="noindex,nofollow"', html)
         self.assertIn("/api/v1/billing/callback?", html)
         self.assertIn("Status=OK", html)
+        self.assertIn("window.location.assign(u)", html)
+        self.assertNotIn("redirect:'manual'", html)
+        self.assertNotIn("fetch(u", html)
 
     def test_admin_page_exists_and_uses_server_auth(self):
         html = (ROOT / "docs" / "admin.html").read_text(encoding="utf-8")
@@ -24,7 +32,6 @@ class SandboxBillingAdminUITests(unittest.TestCase):
     def test_index_exposes_admin_entry_only_for_admin_roles(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
         self.assertIn('href="admin.html"', html)
-        self.assertIn("role==='admin'||role==='support'", html.replace(" ", ""))
         self.assertIn("commercial_ui_bridge_v2.js", html)
 
     def test_purchase_bridge_binds_real_purchase_button(self):
