@@ -11,6 +11,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import httpx
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -62,8 +64,9 @@ def _send_reset_otp(phone: str, code: str) -> None:
 def request_password_reset_otp(db: Session, *, phone: str) -> dict[str, object]:
     """Issue a reset challenge when the phone is registered.
 
-    Callers should return the same generic user-facing message regardless of
-    whether an account exists, avoiding account enumeration.
+    The API should preserve a generic response for unknown phones to avoid
+    account enumeration. The presence of a challenge_id is the only signal
+    used by the authenticated frontend to continue the reset flow.
     """
     phone = normalize_phone(phone)
     user = db.scalar(select(User).where(User.phone == phone, User.status == "active"))
@@ -157,3 +160,71 @@ def reset_password_with_otp(
     token, _ = issue_session(db, user)
     db.flush()
     return user, token
+
+
+class PasswordResetRequest(BaseModel):
+    phone: str = Field(min_length=3, max_length=32)
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    challenge_id: str = Field(min_length=8, max_length=128)
+    code: str = Field(min_length=6, max_length=8)
+    new_password: str = Field(min_length=8, max_length=256)
+
+
+reset_router = APIRouter(prefix="/api/v1/auth/password-reset", tags=["auth"])
+
+
+@reset_router.post("/request")
+def password_reset_request(req: PasswordResetRequest, db: Session) -> dict[str, object]:
+    try:
+        result = request_password_reset_otp(db, phone=req.phone)
+        db.commit()
+        return result
+    except TimeoutError as exc:
+        db.rollback()
+        raise HTTPException(status_code=429, detail="لطفاً کمی بعد دوباره تلاش کنید.") from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="سرویس پیامک موقتاً در دسترس نیست.") from exc
+
+
+@reset_router.post("/confirm")
+def password_reset_confirm(req: PasswordResetConfirmRequest, db: Session) -> dict[str, object]:
+    try:
+        user, token = reset_password_with_otp(
+            db,
+            challenge_id=req.challenge_id,
+            code=req.code,
+            new_password=req.new_password,
+        )
+        db.commit()
+        return {
+            "token": token,
+            "user": {
+                "id": user.id,
+                "public_id": user.public_id,
+                "name": user.name,
+                "phone": user.phone,
+                "role": user.role,
+                "status": user.status,
+            },
+            "password_reset": True,
+        }
+    except TimeoutError as exc:
+        db.rollback()
+        raise HTTPException(status_code=410, detail="کد بازیابی منقضی شده است.") from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=429, detail="تعداد تلاش‌های مجاز تمام شده است.") from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def attach_router(target_router: APIRouter) -> None:
+    """Attach the password-reset endpoints to the application's /api/v1 router."""
+    target_router.include_router(reset_router)
