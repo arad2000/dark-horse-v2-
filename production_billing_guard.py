@@ -1,8 +1,9 @@
 """Production billing configuration guard.
 
-The project keeps sandbox/free billing modes available for development and CI,
-but a production deployment must fail closed rather than silently using a mock
-provider or unlimited free credits.
+The commercial provider remains fail-closed in production until the merchant
+is activated. During the controlled launch window, authentication and the
+single free test are allowed through ``BILLING_FREE_ONLY_MODE=true`` while all
+commercial payment creation is disabled.
 """
 from __future__ import annotations
 
@@ -15,10 +16,23 @@ def _is_true(name: str) -> bool:
     return os.getenv(name, "false").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def is_production_free_only_mode() -> bool:
+    environment = os.getenv("APP_ENV", "").strip().lower()
+    return environment in {"production", "prod"} and _is_true("BILLING_FREE_ONLY_MODE")
+
+
 def assert_production_billing_configuration() -> None:
-    """Reject unsafe billing configuration when APP_ENV is production."""
+    """Reject unsafe billing configuration while allowing the approved free-only launch."""
     environment = os.getenv("APP_ENV", "").strip().lower()
     if environment not in {"production", "prod"}:
+        return
+
+    if is_production_free_only_mode():
+        if _is_true("BILLING_FREE_MODE"):
+            raise HTTPException(
+                status_code=503,
+                detail="BILLING_FREE_MODE cannot be combined with production free-only launch",
+            )
         return
 
     if _is_true("BILLING_SANDBOX_MODE"):
