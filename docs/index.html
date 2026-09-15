@@ -10,6 +10,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#0a0a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="mobile-pwa.css">
   <link rel="stylesheet" href="shell.css?v=58">
@@ -26,6 +28,7 @@
     .progress-bar{width:100%;height:6px;background:#2a2a3e;border-radius:4px;margin:10px 0}.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .5s ease}
     .swipe-card{background:var(--bg-card);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:24px;margin:16px 0;min-height:250px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)}
     .warning{background:rgba(240,192,64,.05);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:12px;margin-top:12px;color:var(--accent);font-size:.85rem}.hidden{display:none!important}
+    .btn-heart.dh-pulse,.btn-skip.dh-pulse{animation:dhBtnPulse .38s ease;pointer-events:none}@keyframes dhBtnPulse{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}.swipe-card.dh-card-swap{animation:dhCardFade .28s ease}@keyframes dhCardFade{0%{opacity:.4;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
     .dh-motive-count{display:inline-block;margin:8px 0 4px;padding:5px 12px;border-radius:999px;font-size:.8rem;background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.35);color:#f0c040}
     .dh-admin-entry{position:fixed;left:14px;top:14px;z-index:50;display:none;border:1px solid rgba(212,175,55,.35);background:rgba(16,16,26,.88);color:#f0c040;padding:8px 12px;border-radius:999px;font:inherit;font-size:.78rem;text-decoration:none;backdrop-filter:blur(8px)}
   </style>
