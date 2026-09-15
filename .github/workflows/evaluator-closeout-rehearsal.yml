@@ -62,6 +62,11 @@ jobs:
           DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
         run: alembic upgrade head
 
+      - name: Run operational integrity audit
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
+        run: python scripts/operational_integrity_audit.py --confirm-staging
+
       - name: Run backup and restore rehearsal
         env:
           DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
