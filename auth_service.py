@@ -13,7 +13,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from billing_models import AuthSession, User
@@ -80,6 +80,16 @@ def issue_session(db: Session, user: User, days: int = DEFAULT_SESSION_DAYS) -> 
     db.add(session)
     db.flush()
     return raw_token, session
+
+
+def revoke_all_sessions(db: Session, user_id: int) -> None:
+    """Invalidate every existing bearer session for a user."""
+    db.execute(
+        update(AuthSession)
+        .where(AuthSession.user_id == int(user_id), AuthSession.revoked_at.is_(None))
+        .values(revoked_at=utcnow())
+    )
+    db.flush()
 
 
 def register_user(db: Session, *, name: str, phone: str, password: str) -> tuple[User, str]:
