@@ -13,23 +13,61 @@
   function paymentErrorText(e){var m=text(e&&e.message?e.message:e);if(/merchant|not configured|credential|authority/i.test(m))return 'درگاه هنوز آماده تراکنش نیست؛ وضعیت Merchant ID و فعال‌سازی زرین‌پال را بررسی کنید.';if(/timeout|network|failed to fetch/i.test(m))return 'ارتباط با درگاه برقرار نشد؛ اتصال شبکه یا وضعیت سرویس زرین‌پال را بررسی کنید.';return m||'ایجاد درخواست پرداخت ناموفق بود.';}
   function openExternalPay(url){
     if(!url)return false;
-    // 1) Android Intent → مرورگر سیستم / کروم (بهترین برای اپ بازار)
-    try{
-      var u=String(url);
-      if(/android/i.test(navigator.userAgent||'')){
-        var intent='intent://'+u.replace(/^https?:\/\//,'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
-        window.location.href=intent;
+    var u=String(url);
+    var isAndroid=/android/i.test(navigator.userAgent||'');
+    if(isAndroid){
+      try{
+        window.location.href='intent://'+u.replace(/^https?:\/\//,'')+
+          '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
         return true;
-      }
-    }catch(_){}
-    // 2) پنجره جدید
-    try{
-      var w=window.open(url,'_blank');
-      if(w){try{w.focus();}catch(__){} return true;}
-    }catch(_){}
-    // 3) همان وب‌ویو
-    try{window.location.href=url;return true;}catch(_){}
+      }catch(_){}
+      try{
+        window.location.href='intent://'+u.replace(/^https?:\/\//,'')+
+          '#Intent;scheme=https;package=com.android.chrome;end';
+        return true;
+      }catch(_){}
+    }
+    try{var w=window.open(u,'_blank');if(w)return true;}catch(_){}
+    try{window.location.assign(u);return true;}catch(_){}
+    try{window.location.href=u;return true;}catch(_){}
     return false;
+  }
+  function showPayFallback(url){
+    var e=el('dh-buy-err');
+    if(!e)return;
+    e.style.color='#f0c040';
+    e.innerHTML=
+      '<div style="text-align:center;line-height:1.7;margin-bottom:6px">درگاه در اپ باز نشد — یکی را بزنید:</div>'+
+      '<button type="button" id="dh-pay-intent" class="btn btn-primary" style="width:100%;margin-top:8px;padding:14px;font-weight:800">باز کردن با مرورگر سیستم</button>'+
+      '<button type="button" id="dh-pay-chrome" class="btn" style="width:100%;margin-top:8px;padding:12px">باز کردن در کروم</button>'+
+      '<button type="button" id="dh-pay-copy" class="btn" style="width:100%;margin-top:8px;padding:12px">کپی لینک پرداخت</button>'+
+      '<textarea id="dh-pay-url" readonly style="width:100%;margin-top:10px;min-height:70px;font-size:11px;direction:ltr;text-align:left;padding:8px;border-radius:10px;background:#0d0d14;color:#d7caa9;border:1px solid rgba(212,175,55,.35)"></textarea>'+
+      '<div style="margin-top:6px;font-size:.78rem;color:#b7ad98;text-align:center">یا لینک را در کروم بچسبانید</div>';
+    var ta=el('dh-pay-url');
+    if(ta)ta.value=url;
+    function goChrome(){
+      try{window.location.href='intent://'+String(url).replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';}catch(_){openExternalPay(url);}
+    }
+    function goIntent(){
+      try{window.location.href='intent://'+String(url).replace(/^https?:\/\//,'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';}catch(_){openExternalPay(url);}
+    }
+    var b1=el('dh-pay-intent');if(b1)b1.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}goIntent();};
+    var b2=el('dh-pay-chrome');if(b2)b2.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}goChrome();};
+    var b3=el('dh-pay-copy');
+    if(b3)b3.onclick=function(ev){
+      if(ev){ev.preventDefault();ev.stopPropagation();}
+      var done=false;
+      try{
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          navigator.clipboard.writeText(url).then(function(){alert('لینک کپی شد. کروم را باز کنید و Paste کنید.');});
+          done=true;
+        }
+      }catch(_){}
+      if(!done){
+        try{var t=el('dh-pay-url');if(t){t.focus();t.select();document.execCommand('copy');alert('لینک کپی شد.');done=true;}}catch(__){}
+      }
+      if(!done)alert('لینک پایین را نگه دارید و Copy کنید.');
+    };
   }
 
   function openPurchaseModal(){
@@ -83,27 +121,10 @@
         payUrl=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
         if(!payUrl)throw new Error('آدرس درگاه از سرور نیامد.');
         if(s)s.hidden=true;
-        var ok=openExternalPay(payUrl);
+        openExternalPay(payUrl);
         unlock();
-        // اگر WebView مسدود کرد: دکمه لینک واقعی برای کلیک دوم (بدون await)
-        if(e){
-          e.innerHTML='اگر درگاه باز نشد، این دکمه را بزنید:<br>'+
-            '<a id="dh-pay-link" href="'+payUrl.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener noreferrer" '+
-            'style="display:block;margin-top:10px;padding:14px;text-align:center;background:#f0c040;color:#1a1200;'+
-            'border-radius:12px;font-weight:800;text-decoration:none;">باز کردن درگاه در مرورگر</a>';
-        }
-        var link=el('dh-pay-link');
-        if(link){
-          link.addEventListener('click',function(ev){
-            // تلاش دوباره با Intent
-            try{
-              if(/android/i.test(navigator.userAgent||'')){
-                ev.preventDefault();
-                openExternalPay(payUrl);
-              }
-            }catch(_){}
-          },true);
-        }
+        // همیشه fallback برای WebView اپ بازار
+        showPayFallback(payUrl);
       }catch(x){
         if(e)e.textContent=paymentErrorText(x);
         if(s)s.hidden=true;
