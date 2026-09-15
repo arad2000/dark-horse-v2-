@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import Integer, create_engine, select
+from sqlalchemy import Integer, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -20,15 +20,17 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
     def setUpClass(cls):
         # TestClient executes requests in a worker thread. StaticPool keeps the
         # in-memory SQLite database on the same connection across threads.
-        # AuthSession.id is BigInteger for PostgreSQL; SQLite only auto-generates
-        # a rowid for INTEGER PRIMARY KEY, so the test temporarily uses INTEGER.
+        # AuthSession.id and Entitlement.id are BigInteger for PostgreSQL;
+        # SQLite only auto-generates a rowid for INTEGER PRIMARY KEY.
         cls._original_auth_session_id_type = AuthSession.__table__.c.id.type
+        cls._original_entitlement_id_type = Entitlement.__table__.c.id.type
         cls.engine = create_engine(
             "sqlite:///:memory:",
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
         )
         AuthSession.__table__.c.id.type = Integer()
+        Entitlement.__table__.c.id.type = Integer()
         Base.metadata.create_all(
             cls.engine,
             tables=[
@@ -61,6 +63,7 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
         app.dependency_overrides.update(cls._old_overrides)
         cls.engine.dispose()
         AuthSession.__table__.c.id.type = cls._original_auth_session_id_type
+        Entitlement.__table__.c.id.type = cls._original_entitlement_id_type
 
     def setUp(self):
         db = self.Session()
