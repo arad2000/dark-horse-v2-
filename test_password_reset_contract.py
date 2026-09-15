@@ -26,7 +26,7 @@ class PasswordResetContractTests(unittest.TestCase):
     def test_main_app_mounts_password_reset_with_full_api_prefix(self):
         code = (
             "import main_v2; "
-            "paths={getattr(route,'path','') for route in main_v2.app.routes}; "
+            "paths=set(main_v2.app.openapi().get('paths',{})); "
             "assert '/api/v1/auth/password-reset/request' in paths and "
             "'/api/v1/auth/password-reset/confirm' in paths"
         )
