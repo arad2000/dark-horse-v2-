@@ -31,6 +31,14 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _as_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def normalize_phone(phone: str) -> str:
     value = "".join((phone or "").split())
     value = value.translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789"))
@@ -79,12 +87,9 @@ def request_password_reset_otp(db: Session, *, phone: str) -> dict[str, object]:
         .where(PhoneVerification.phone == phone, PhoneVerification.purpose == RESET_PURPOSE)
         .order_by(PhoneVerification.created_at.desc())
     )
-    if recent and recent.created_at:
-        created = recent.created_at
-        if created.tzinfo is None:
-            created = created.replace(tzinfo=timezone.utc)
-        if now - created < timedelta(seconds=RESEND_COOLDOWN_SECONDS):
-            raise TimeoutError("please wait before requesting another code")
+    created = _as_utc(recent.created_at) if recent else None
+    if created is not None and now - created < timedelta(seconds=RESEND_COOLDOWN_SECONDS):
+        raise TimeoutError("please wait before requesting another code")
 
     challenge_id = secrets.token_urlsafe(18)
     code = f"{secrets.randbelow(1_000_000):06d}"
@@ -95,8 +100,9 @@ def request_password_reset_otp(db: Session, *, phone: str) -> dict[str, object]:
         name=user.name,
         password_hash="reset-pending",
         code_hash=_hash_code(challenge_id, code),
-        expires_at=now + timedelta(seconds=OTP_TTL_SECONDS),
         attempts=0,
+        expires_at=now + timedelta(seconds=OTP_TTL_SECONDS),
+        created_at=now,
     )
     db.add(challenge)
     db.flush()
@@ -136,10 +142,8 @@ def reset_password_with_otp(
         raise ValueError("verification request not found")
     if challenge.verified_at is not None:
         raise ValueError("verification request already used")
-    expires = challenge.expires_at
-    if expires.tzinfo is None:
-        expires = expires.replace(tzinfo=timezone.utc)
-    if expires <= utcnow():
+    expires = _as_utc(challenge.expires_at)
+    if expires is None or expires <= utcnow():
         raise TimeoutError("verification code expired")
     if int(challenge.attempts or 0) >= MAX_ATTEMPTS:
         raise PermissionError("too many verification attempts")
