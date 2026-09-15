@@ -52,29 +52,19 @@ async def lifespan(app: FastAPI):
         logger.error("❌ Operational DB init failed: %s", e, exc_info=True)
 
     try:
-        app.state.engine = DarkHorseEngineV2(
+        engine = DarkHorseEngineV2(
             motives_path="docs/data/micro_motives.json",
             majors_path="majors_database_v2.json",
             trait_map_path="trait_map_v3.json",
             value_poles_path="value_poles_v2.json",
             school_branches_path="school_branches_v2.json"
         )
-        logger.info("✅ DarkHorseEngineV2 آماده است.")
+        app.state.engine = engine
+        app.state.branch_engine = engine
+        logger.info("✅ DarkHorseEngineV2 آماده است (shared engine for majors + branches).")
     except Exception as e:
         logger.error(f"❌ DarkHorseEngineV2 init failed: {e}")
         app.state.engine = None
-
-    try:
-        app.state.branch_engine = DarkHorseEngineV2(
-            motives_path="docs/data/micro_motives.json",
-            majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",
-            value_poles_path="value_poles_v2.json",
-            school_branches_path="school_branches_v2.json"
-        )
-        logger.info("✅ BranchEngineV2 آماده است.")
-    except Exception as e:
-        logger.error(f"❌ BranchEngineV2 init failed: {e}")
         app.state.branch_engine = None
 
     yield
