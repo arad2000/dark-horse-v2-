@@ -1,8 +1,8 @@
 """Staged commercial API wiring for Dark Horse V2.
 
 This module exposes authentication, phone verification, test-credit, result
-persistence, and sandbox billing endpoints without touching scoring/ranking or
-enabling PostgreSQL runtime cutover.
+persistence, password reset, and sandbox billing endpoints without touching
+scoring/ranking or enabling PostgreSQL runtime cutover.
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
 from billing_models import Entitlement, User
 from database import get_db
+from password_reset_service import request_password_reset_otp, reset_password_with_otp
 from phone_verification_service import request_registration_otp, verify_registration_otp
 from production_billing_guard import assert_production_billing_configuration
 
@@ -41,6 +42,16 @@ class VerifyRegistrationRequest(BaseModel):
 class LoginRequest(BaseModel):
     phone: str = Field(min_length=3, max_length=32)
     password: str = Field(min_length=8, max_length=256)
+
+
+class PasswordResetRequest(BaseModel):
+    phone: str = Field(min_length=3, max_length=32)
+
+
+class PasswordResetVerifyRequest(BaseModel):
+    challenge_id: str = Field(min_length=8, max_length=128)
+    code: str = Field(min_length=6, max_length=8)
+    new_password: str = Field(min_length=8, max_length=256)
 
 
 class SaveResultRequest(BaseModel):
@@ -174,6 +185,48 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
         raise HTTPException(status_code=401, detail="invalid credentials") from exc
 
 
+@router.post("/auth/password/reset/request")
+def request_password_reset(req: PasswordResetRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
+    try:
+        result = request_password_reset_otp(db, phone=req.phone)
+        db.commit()
+        return {
+            "otp_required": bool(result.get("otp_required")),
+            "challenge_id": result.get("challenge_id"),
+            "expires_in": result.get("expires_in"),
+            "resend_after": result.get("resend_after"),
+            "message": "اگر حسابی با این شماره وجود داشته باشد، کد بازیابی ارسال می‌شود.",
+        }
+    except TimeoutError as exc:
+        db.rollback()
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.post("/auth/password/reset/verify")
+def verify_password_reset(req: PasswordResetVerifyRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+    assert_production_billing_configuration()
+    try:
+        user, token = reset_password_with_otp(db, challenge_id=req.challenge_id, code=req.code, new_password=req.new_password)
+        db.commit()
+        return {"reset": True, "token": token, "user": _public_user(user)}
+    except TimeoutError as exc:
+        db.rollback()
+        raise HTTPException(status_code=410, detail=str(exc)) from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.get("/me")
 def me(user: User = Depends(_current_user)) -> dict[str, object]:
     return {"user": _public_user(user)}
@@ -200,12 +253,7 @@ def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_
         entitlement = consume_one_test(db, user.id)
         remaining = _quota(db, user.id)
         db.commit()
-        return {
-            "consumed": 1,
-            "credits_remaining": remaining,
-            "entitlement_id": entitlement.id,
-            "user": _public_user(user),
-        }
+        return {"consumed": 1, "credits_remaining": remaining, "entitlement_id": entitlement.id, "user": _public_user(user)}
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -216,7 +264,6 @@ def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> 
     """Persist the authenticated user's final journey summary exactly once per session."""
     from api_persistence_adapter import OperationalPersistenceAdapter, assert_safe_mode
     from operational_store import OperationalStore
-
     try:
         assert_safe_mode()
         summary = dict(req.result_summary)
@@ -224,17 +271,8 @@ def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> 
         if nested_session_id is not None and str(nested_session_id) != req.session_id:
             raise ValueError("result_summary session_id does not match session_id")
         summary["session_id"] = req.session_id
-        session = OperationalPersistenceAdapter(OperationalStore()).save_result(
-            req.session_id,
-            int(user.id),
-            summary,
-        )
-        return {
-            "saved": True,
-            "completed": bool(session.is_completed),
-            "session_id": session.session_uuid,
-            "operational_session_id": int(session.id),
-        }
+        session = OperationalPersistenceAdapter(OperationalStore()).save_result(req.session_id, int(user.id), summary)
+        return {"saved": True, "completed": bool(session.is_completed), "session_id": session.session_uuid, "operational_session_id": int(session.id)}
     except HTTPException:
         raise
     except PermissionError as exc:
@@ -251,13 +289,7 @@ def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> 
 def create_payment(request: Request, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     try:
         provider = _server_billing_provider()
-        result = create_payment_request(
-            db,
-            user_id=user.id,
-            callback_url=_callback_url(request),
-            provider_name=provider,
-            zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
-        )
+        result = create_payment_request(db, user_id=user.id, callback_url=_callback_url(request), provider_name=provider, zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None)
         db.commit()
         return result
     except HTTPException:
@@ -269,25 +301,10 @@ def create_payment(request: Request, user: User = Depends(_current_user), db: Se
 
 
 @router.get("/billing/callback")
-def billing_callback(
-    request: Request,
-    order_id: str = Query(..., alias="order_id"),
-    authority: str = Query(..., alias="Authority"),
-    status: str | None = Query(default=None, alias="Status"),
-    db: Session = Depends(get_db),
-):
+def billing_callback(request: Request, order_id: str = Query(..., alias="order_id"), authority: str = Query(..., alias="Authority"), status: str | None = Query(default=None, alias="Status"), db: Session = Depends(get_db)):
     try:
         provider = _server_billing_provider()
-        result = handle_payment_callback(
-            db,
-            order_public_id=order_id,
-            authority=authority,
-            status=status,
-            provider_name=provider,
-            event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}",
-            raw_callback=dict(request.query_params),
-            zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
-        )
+        result = handle_payment_callback(db, order_public_id=order_id, authority=authority, status=status, provider_name=provider, event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}", raw_callback=dict(request.query_params), zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None)
         db.commit()
         if result.get("verified"):
             return RedirectResponse(url=_frontend_redirect("success"), status_code=303)
