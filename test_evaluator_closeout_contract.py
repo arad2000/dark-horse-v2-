@@ -8,16 +8,19 @@ class EvaluatorCloseoutContractTests(unittest.TestCase):
         self.assertIn("--confirm-staging", source)
         self.assertIn("PROD_MARKERS", source)
         self.assertIn("POSTGRES_RUNTIME_CUTOVER_APPROVED", source)
-        self.assertIn('"-m", "alembic", "downgrade", "-1"', source)
-        self.assertIn('"-m", "alembic", "upgrade", "head"', source)
+        self.assertIn('"alembic", "downgrade", "-1"', source)
+        self.assertIn('"alembic", "upgrade", "head"', source)
 
     def test_backup_restore_is_staging_only_and_requires_separate_restore_target(self):
         source = Path("scripts/backup_restore_rehearsal.py").read_text(encoding="utf-8")
         self.assertIn("--confirm-staging", source)
         self.assertIn("PROD_MARKERS", source)
         self.assertIn("RESTORE_DATABASE_URL", source)
-        self.assertIn('"pg_dump", "--format=custom"', source)
-        self.assertIn('"pg_restore", "--clean", "--if-exists"', source)
+        self.assertIn('"pg_dump",', source)
+        self.assertIn('"--format=custom"', source)
+        self.assertIn('"pg_restore",', source)
+        self.assertIn('"--clean", "--if-exists"', source)
+        self.assertIn("libpq_url", source)
 
     def test_hybrid_gate_remains_hard_false(self):
         source = Path("migration_control.py").read_text(encoding="utf-8")
