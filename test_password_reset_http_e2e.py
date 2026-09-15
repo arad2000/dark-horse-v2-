@@ -6,6 +6,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 import password_reset_service as prs
 from billing_models import AuthSession, Entitlement, Order, Payment, PaymentEvent, PhoneVerification, PremiumPlan, User
@@ -17,7 +18,13 @@ from models import Base
 class PasswordResetHttpE2ETests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.engine = create_engine("sqlite:///:memory:")
+        # TestClient executes requests in a worker thread. StaticPool keeps the
+        # in-memory SQLite database on the same connection across threads.
+        cls.engine = create_engine(
+            "sqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
         Base.metadata.create_all(
             cls.engine,
             tables=[
@@ -48,6 +55,7 @@ class PasswordResetHttpE2ETests(unittest.TestCase):
     def tearDownClass(cls):
         app.dependency_overrides.clear()
         app.dependency_overrides.update(cls._old_overrides)
+        cls.engine.dispose()
 
     def setUp(self):
         db = self.Session()
