@@ -24,8 +24,15 @@ def run_capture(*args: str) -> str:
     return (completed.stdout or "") + (completed.stderr or "")
 
 
-def revision_ids(output: str) -> set[str]:
-    return set(re.findall(r"\b[0-9a-f]{4,40}\b", output, flags=re.IGNORECASE))
+def head_revision(output: str) -> str:
+    match = re.search(r"^Rev:\s*([0-9A-Za-z_-]+)", output, flags=re.MULTILINE)
+    if not match:
+        raise SystemExit(f"could not parse Alembic head from: {output.strip()!r}")
+    return match.group(1)
+
+
+def current_is_head(output: str, head: str) -> bool:
+    return bool(re.search(rf"(?:^|\s){re.escape(head)}(?:\s|$)", output) and "(head)" in output)
 
 
 def main() -> int:
@@ -43,23 +50,18 @@ def main() -> int:
     if os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false").lower() == "true":
         raise SystemExit("refusing to rehearse while production cutover is approved")
 
-    head_output = run_capture("alembic", "heads")
-    head_ids = revision_ids(head_output)
-    if len(head_ids) != 1:
-        raise SystemExit(f"expected exactly one Alembic head, got {sorted(head_ids)}")
-    head = next(iter(head_ids))
-
+    head = head_revision(run_capture("alembic", "heads", "--verbose"))
     run_capture("alembic", "current")
     run_capture("alembic", "upgrade", "head")
     current = run_capture("alembic", "current")
-    if head not in revision_ids(current) or "(head)" not in current:
+    if not current_is_head(current, head):
         raise SystemExit(f"after upgrade, current revision is not head={head!r}: {current.strip()}")
 
     run_capture("alembic", "downgrade", "-1")
     run_capture("alembic", "current")
     run_capture("alembic", "upgrade", "head")
     final = run_capture("alembic", "current")
-    if head not in revision_ids(final) or "(head)" not in final:
+    if not current_is_head(final, head):
         raise SystemExit(f"after re-upgrade, current revision is not head={head!r}: {final.strip()}")
 
     print(f"MIGRATION_REHEARSAL=PASS head={head}")
