@@ -32,9 +32,11 @@
     .warning{background:rgba(240,192,64,.05);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:12px;margin-top:12px;color:var(--accent);font-size:.85rem}.hidden{display:none!important}
     .btn-heart.dh-pulse,.btn-skip.dh-pulse{animation:dhBtnPulse .38s ease;pointer-events:none}@keyframes dhBtnPulse{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}.swipe-card.dh-card-swap{animation:dhCardFade .28s ease}@keyframes dhCardFade{0%{opacity:.4;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
     .dh-motive-count{display:inline-block;margin:8px 0 4px;padding:5px 12px;border-radius:999px;font-size:.8rem;background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.35);color:#f0c040}
+    .dh-admin-entry{position:fixed;left:14px;top:14px;z-index:50;display:none;border:1px solid rgba(212,175,55,.35);background:rgba(16,16,26,.88);color:#f0c040;padding:8px 12px;border-radius:999px;font:inherit;font-size:.78rem;text-decoration:none;backdrop-filter:blur(8px)}
   </style>
 </head>
 <body>
+  <a id="dh-admin-entry" class="dh-admin-entry" href="admin.html">پنل مدیریت</a>
   <div class="container" id="app"></div>
   <script defer src="data.js"></script>
   <script defer src="app.js?v=67"></script>
@@ -44,6 +46,7 @@
   <script defer src="auth_api_client.js?v=3"></script>
   <script defer src="shell.js?v=68"></script>
   <script defer src="commercial_ui.js?v=20"></script>
+  <script defer src="commercial_ui_bridge_v2.js?v=3"></script>
   <script defer src="free_journey_mode.js?v=3"></script>
   <script defer src="spark_game.js"></script>
   <script defer src="parents.js"></script>
@@ -51,6 +54,5 @@
   <script defer src="poems.js"></script>
   <script defer src="pwa-boot.js?v=59"></script>
   <script defer src="genz_results_enhance.js?v=1"></script>
-
 </body>
 </html>
