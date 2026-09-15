@@ -24,7 +24,15 @@ class SandboxBillingAdminUITests(unittest.TestCase):
     def test_index_exposes_admin_entry_only_for_admin_roles(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
         self.assertIn('href="admin.html"', html)
-        self.assertIn("role === 'admin' || role === 'support'", html)
+        self.assertIn("role==='admin'||role==='support'", html.replace(" ", ""))
+        self.assertIn("commercial_ui_bridge_v2.js", html)
+
+    def test_purchase_bridge_binds_real_purchase_button(self):
+        js = (ROOT / "docs" / "commercial_ui_bridge_v2.js").read_text(encoding="utf-8")
+        self.assertIn("#dh-p-prem", js)
+        self.assertIn("DHAuth.createPayment", js)
+        self.assertIn("window.location.assign(payment.payment_url)", js)
+        self.assertNotIn("devActivatePremium", js)
 
     def test_mock_provider_redirect_is_not_an_invalid_host(self):
         from payment_providers import MockPaymentProvider
