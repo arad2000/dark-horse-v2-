@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import unittest
 from unittest.mock import patch
+from urllib.parse import urlparse, parse_qs
 
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
@@ -14,7 +15,7 @@ from models import Base
 
 
 class CommercialBillingE2ETests(unittest.TestCase):
-    """Validate verified register -> consume free -> mock payment -> callback -> consume."""
+    """Validate verified register -> consume free -> browser sandbox payment -> callback -> consume."""
 
     @classmethod
     def setUpClass(cls):
@@ -59,7 +60,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             ])
             db.commit()
 
-    def test_register_consume_buy_callback_replay_consume(self):
+    def test_register_consume_browser_sandbox_callback_replay_consume(self):
         with patch("phone_verification_service._send_kavenegar_otp"), patch("phone_verification_service.secrets.randbelow", return_value=123456):
             register = self.client.post(
                 "/api/v1/auth/register",
@@ -91,6 +92,17 @@ class CommercialBillingE2ETests(unittest.TestCase):
         self.assertEqual(purchase_body["amount_rial"], 2_490_000)
         self.assertEqual(purchase_body["authority"], "MOCK-AUTH-001")
 
+        payment_url = purchase_body["payment_url"]
+        parsed = urlparse(payment_url)
+        self.assertEqual(parsed.path, "/api/v1/billing/sandbox")
+        self.assertEqual(parse_qs(parsed.query)["order_id"][0], purchase_body["order_id"])
+        self.assertEqual(parse_qs(parsed.query)["Authority"][0], purchase_body["authority"])
+
+        sandbox = self.client.get(payment_url, follow_redirects=False)
+        self.assertEqual(sandbox.status_code, 200, sandbox.text)
+        self.assertIn("درگاه آزمایشی اسب سیاه", sandbox.text)
+        self.assertIn("پرداخت موفق آزمایشی", sandbox.text)
+
         callback = self.client.get(
             "/api/v1/billing/callback",
             params={
@@ -101,7 +113,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             follow_redirects=False,
         )
         self.assertEqual(callback.status_code, 303, callback.text)
-        self.assertEqual(callback.headers["location"], "https://arad2000.github.io/dark-horse-v2-/?payment=success")
+        self.assertEqual(callback.headers["location"], "https://asbe-siah.ir/?payment=success")
 
         replay = self.client.get(
             "/api/v1/billing/callback",
@@ -113,7 +125,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             follow_redirects=False,
         )
         self.assertEqual(replay.status_code, 303, replay.text)
-        self.assertEqual(replay.headers["location"], "https://arad2000.github.io/dark-horse-v2-/?payment=success")
+        self.assertEqual(replay.headers["location"], "https://asbe-siah.ir/?payment=success")
 
         quota = self.client.get("/api/v1/me/quota", headers=headers)
         self.assertEqual(quota.status_code, 200, quota.text)
