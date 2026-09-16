@@ -20,14 +20,10 @@
     if (armed && typeof fn === 'function') {
       var src = sourceOf(fn);
       var ms = Number(delay) || 0;
-      // shell.js: unconditional duplicate setTimeout(boot, 0)
-      if (ms === 0 && /\bboot\s*\(\s*\)/.test(src) === false && /\bboot\b/.test(src)) {
-        return 0;
-      }
+      // shell.js: unconditional duplicate setTimeout(boot, 0).
+      if (ms === 0 && /function\s+boot\s*\(/.test(src)) return 0;
       // shell.js: delayed home rerenders that race Profile/other UI.
-      if ((ms === 200 || ms === 700) && /renderHome\s*\(\s*\)/.test(src)) {
-        return 0;
-      }
+      if ((ms === 200 || ms === 700) && /renderHome\s*\(\s*\)/.test(src)) return 0;
     }
     return nativeSetTimeout.apply(window, arguments);
   };
