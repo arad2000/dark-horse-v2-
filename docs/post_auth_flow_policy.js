@@ -1,4 +1,4 @@
-/* post_auth_flow_policy.js v2
+/* post_auth_flow_policy.js v3
  * Authentication must not trigger a purchase or consume a test automatically.
  * After successful login/OTP the user remains on Profile with the server-granted
  * free credit. Journey consumption starts only after an explicit Journey click.
@@ -6,9 +6,44 @@
 (function (global) {
   'use strict';
 
+  var QUOTA_KEY = 'dh_local_quota_v1';
   var justAuthenticated = false;
   var explicitJourneyRequested = false;
   var flagTimer = null;
+
+  function getUserKey() {
+    try {
+      var u = global.DHAuth && typeof global.DHAuth.getUser === 'function'
+        ? (global.DHAuth.getUser() || {}) : {};
+      return String(u.id || u.user_id || u.phone || u.mobile || u.username || '');
+    } catch (_) { return ''; }
+  }
+
+  function readQuotaCache() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(QUOTA_KEY) || 'null');
+      return raw && typeof raw === 'object' ? raw : null;
+    } catch (_) { return null; }
+  }
+
+  function writeQuotaSnapshot(remaining) {
+    var current = readQuotaCache() || {};
+    var userKey = getUserKey();
+    var sameUser = !!userKey && String(current.userKey || '') === userKey;
+    var used = sameUser ? Number(current.used) : 0;
+    if (!isFinite(used) || used < 0) used = 0;
+    var q = Number(remaining);
+    if (!isFinite(q) || q < 0) q = 0;
+    try {
+      localStorage.setItem(QUOTA_KEY, JSON.stringify({
+        userKey: userKey,
+        used: used,
+        premium: sameUser ? !!current.premium : false,
+        serverRemaining: q,
+        remaining: q
+      }));
+    } catch (_) {}
+  }
 
   function markAuthenticated() {
     justAuthenticated = true;
@@ -47,16 +82,7 @@
         return;
       }
       global.DHAuth.quota().then(function (data) {
-        var remaining = Number(data && data.credits_remaining);
-        if (!isFinite(remaining) || remaining < 0) remaining = 0;
-        try {
-          localStorage.setItem('dh_local_quota_v1', JSON.stringify({
-            used: 0,
-            premium: false,
-            serverRemaining: remaining,
-            remaining: remaining
-          }));
-        } catch (_) {}
+        writeQuotaSnapshot(data && data.credits_remaining);
         renderProfile();
       }).catch(function () { renderProfile(); });
     } catch (_) { renderProfile(); }
@@ -103,19 +129,12 @@
         try {
           var serverQ = await global.DHAuth.quota();
           q = Number(serverQ && serverQ.credits_remaining);
-          if (isFinite(q) && q >= 0) {
-            try {
-              localStorage.setItem('dh_local_quota_v1', JSON.stringify({
-                used: 0,
-                premium: false,
-                serverRemaining: q,
-                remaining: q
-              }));
-            } catch (_) {}
-          }
+          if (isFinite(q) && q >= 0) writeQuotaSnapshot(q);
         } catch (_) {}
         return { consumed: 0, credits_remaining: isFinite(q) && q >= 0 ? q : 0, automatic: true };
       }
+      // DHAuth.consumeTest persists the successful consumption locally.
+      // This guard only blocks an automatic post-auth call.
       return original.apply(this, arguments);
     };
     wrapped.__dhPostAuthWrapped = true;
