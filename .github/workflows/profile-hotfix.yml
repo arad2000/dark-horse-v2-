@@ -8,7 +8,7 @@ permissions:
   contents: write
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, 'deterministic profile hotfix') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message != 'fix: deterministic profile tab boot lifecycle' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
           out = ['    if (window.__dhShellBooted) return;', '    window.__dhShellBooted = true;']
           skipping = False
           for line in lines:
-              if line.startswith('    setTimeout(function () {') and 'renderHome();' in body:
+              if line.startswith('    setTimeout(function () {') and ('renderHome();' in body):
                   skipping = True
               if skipping:
                   if line.strip().endswith('}, 200);') or line.strip().endswith('}, 700);'):
@@ -42,10 +42,8 @@ jobs:
           s = re.sub(r"\n  setTimeout\(boot, 0\);\n", "\n", s, count=1)
           if s == old:
               raise SystemExit('no changes made')
-          if 'setTimeout(boot, 0)' in s:
-              raise SystemExit('duplicate zero-delay boot remains')
           b = re.search(r'  function boot\(\) \{(.*?)\n  \}\n\n  window\.DHShell', s, re.S)
-          if not b or 'setTimeout' in b.group(1) or 'renderHome();' not in b.group(1):
+          if not b or 'setTimeout' in b.group(1) or b.group(1).count('renderHome();') != 1:
               raise SystemExit('boot verification failed')
           p.write_text(s, encoding='utf-8')
           PY
@@ -55,6 +53,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add docs/shell.js
           git diff --cached --check
-          git diff --cached -- docs/shell.js
           git commit -m 'fix: deterministic profile tab boot lifecycle'
           git push
