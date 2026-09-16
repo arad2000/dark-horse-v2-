@@ -1,8 +1,9 @@
-/* profile_auth_cleanup.js — remove legacy profile controls without creating new UI */
+/* profile_auth_cleanup.js — normalize legacy profile controls without creating render loops */
 (function (global) {
   'use strict';
 
   var INSTALLED = false;
+  var NORMALIZING = false;
 
   function el(id) { return document.getElementById(id); }
 
@@ -29,8 +30,12 @@
       buy = legacy;
     }
     if (buy) {
-      buy.textContent = 'خرید بسته ۳ تست';
-      buy.setAttribute('data-testid', 'purchase-pack-3');
+      if (buy.textContent !== 'خرید بسته ۳ تست') {
+        buy.textContent = 'خرید بسته ۳ تست';
+      }
+      if (buy.getAttribute('data-testid') !== 'purchase-pack-3') {
+        buy.setAttribute('data-testid', 'purchase-pack-3');
+      }
     }
     if (legacy && legacy !== buy) legacy.remove();
     for (var i = 0; i < testButtons.length; i += 1) {
@@ -49,24 +54,30 @@
   }
 
   function normalizeProfile() {
-    removeLegacyGuestFields();
-    normalizePurchaseButton();
+    if (NORMALIZING) return;
+    NORMALIZING = true;
+    try {
+      removeLegacyGuestFields();
+      normalizePurchaseButton();
 
-    var ui = global.DHCommercialUI;
-    if (!ui) return;
+      var ui = global.DHCommercialUI;
+      if (!ui) return;
 
-    bindExisting('dh-p-register', function () {
-      if (typeof ui.showAuth === 'function') ui.showAuth('register');
-    });
-    bindExisting('dh-p-login', function () {
-      if (typeof ui.showAuth === 'function') ui.showAuth('login');
-    });
-    bindExisting('dh-p-buy', function () {
-      if (typeof ui.showPurchase === 'function') ui.showPurchase();
-    });
-    bindExisting('dh-p-out', function () {
-      if (typeof ui.logout === 'function') ui.logout(true);
-    });
+      bindExisting('dh-p-register', function () {
+        if (typeof ui.showAuth === 'function') ui.showAuth('register');
+      });
+      bindExisting('dh-p-login', function () {
+        if (typeof ui.showAuth === 'function') ui.showAuth('login');
+      });
+      bindExisting('dh-p-buy', function () {
+        if (typeof ui.showPurchase === 'function') ui.showPurchase();
+      });
+      bindExisting('dh-p-out', function () {
+        if (typeof ui.logout === 'function') ui.logout(true);
+      });
+    } finally {
+      NORMALIZING = false;
+    }
   }
 
   function boot() {
@@ -74,7 +85,9 @@
     INSTALLED = true;
     normalizeProfile();
     if (typeof MutationObserver !== 'undefined' && document.body) {
-      var observer = new MutationObserver(function () { normalizeProfile(); });
+      var observer = new MutationObserver(function () {
+        normalizeProfile();
+      });
       observer.observe(document.body, { childList: true, subtree: true });
     }
   }
