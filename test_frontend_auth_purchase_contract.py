@@ -14,6 +14,8 @@ class FrontendAuthPurchaseContractTests(unittest.TestCase):
             DOCS / "shell.js",
             DOCS / "commercial_ui.js",
             DOCS / "password_reset_ui.js",
+            DOCS / "profile-tab-guard.js",
+            DOCS / "profile_runtime_lock.js",
             DOCS / "auth_runtime_guard.js",
         ]
         for path in scripts:
@@ -22,9 +24,11 @@ class FrontendAuthPurchaseContractTests(unittest.TestCase):
 
         index = (DOCS / "index.html").read_text(encoding="utf-8")
         self.assertIn('auth_api_client.js?v=6', index)
-        self.assertIn('shell.js?v=61', index)
+        self.assertIn('shell.js?v=62', index)
+        self.assertIn('shell_boot_stabilizer.js?v=1', index)
         self.assertIn('commercial_ui.js?v=24', index)
         self.assertIn('password_reset_ui.js?v=4', index)
+        self.assertIn('profile-tab-guard.js?v=2', index)
         self.assertIn('auth_runtime_guard.js?v=1', index)
         self.assertIn('pwa-boot.js?v=62', index)
         self.assertNotIn('profile_auth_cleanup.js', index)
@@ -57,11 +61,15 @@ class FrontendAuthPurchaseContractTests(unittest.TestCase):
     def test_no_legacy_local_profile_path_in_runtime_contract(self):
         shell = (DOCS / "shell.js").read_text(encoding="utf-8")
         guard = (DOCS / "auth_runtime_guard.js").read_text(encoding="utf-8")
+        profile = (DOCS / "profile-tab-guard.js").read_text(encoding="utf-8")
         self.assertIn("dh-p-save", shell)
         self.assertIn("dh_local_user_v1", shell)
         self.assertIn("#dh-p-prem", guard)
         self.assertIn("stopImmediatePropagation", guard)
         self.assertIn("display:none!important", guard)
+        self.assertIn("__dhProfileIsolatedV2", profile)
+        self.assertIn("renderProfile();", profile)
+        self.assertNotIn("DHShell.renderProfile();", profile)
 
 
 if __name__ == "__main__":
