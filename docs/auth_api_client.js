@@ -13,7 +13,7 @@
   function quotaIdentity(session) {
     const s = session || load() || {};
     const u = s.user || {};
-    return String(u.id || u.user_id || u.phone || u.mobile || u.username || '');
+    return String(u.id || u.user_id || u.phone || u.mobile || u.username || u.public_id || '');
   }
 
   function loadQuotaCache() {
@@ -32,36 +32,37 @@
     } catch (_) { return null; }
   }
 
-  function persistSuccessfulConsume(data) {
+  function persistQuotaSnapshot(data) {
     const session = load();
     const identity = quotaIdentity(session);
     const current = loadQuotaCache();
     const sameUser = !!identity && !!current && String(current.userKey || '') === identity;
-    let used = sameUser ? Number(current.used) : 0;
-    if (!Number.isFinite(used) || used < 0) used = 0;
 
-    // A successful consume-test request is the authoritative server-side event.
-    // The endpoint returns successfully only when one entitlement was consumed.
-    let consumedNow = 1;
-    if (data && Object.prototype.hasOwnProperty.call(data, 'consumed')) {
-      const serverConsumed = Number(data.consumed);
-      if (Number.isFinite(serverConsumed)) consumedNow = serverConsumed > 0 ? 1 : 0;
-    }
-    used += consumedNow;
+    const remaining = Number(data && data.credits_remaining);
+    const consumed = Number(data && data.credits_consumed);
+    const granted = Number(data && data.credits_granted);
 
-    const remainingRaw = data && data.credits_remaining;
-    const remaining = Number(remainingRaw);
     const patch = {
       userKey: identity,
-      used,
       premium: false,
-      consumedAt: new Date().toISOString()
+      syncedAt: new Date().toISOString()
     };
     if (Number.isFinite(remaining) && remaining >= 0) {
       patch.serverRemaining = remaining;
       patch.remaining = remaining;
+    } else if (sameUser && Number.isFinite(Number(current.serverRemaining))) {
+      patch.serverRemaining = Number(current.serverRemaining);
+      patch.remaining = Number(current.remaining);
     }
+    if (Number.isFinite(consumed) && consumed >= 0) patch.used = consumed;
+    else if (sameUser && Number.isFinite(Number(current.used)) && Number(current.used) >= 0) patch.used = Number(current.used);
+    else patch.used = 0;
+    if (Number.isFinite(granted) && granted >= 0) patch.serverGranted = granted;
     saveQuotaCache(patch);
+  }
+
+  function persistSuccessfulConsume(data) {
+    persistQuotaSnapshot(data || {});
   }
 
   async function req(path, opts = {}) {
@@ -101,6 +102,7 @@
         body: JSON.stringify({ challenge_id: challengeId, code })
       });
       save(data);
+      persistQuotaSnapshot(data);
       return data;
     },
 
@@ -110,6 +112,7 @@
         body: JSON.stringify({ phone, password })
       });
       save(data);
+      persistQuotaSnapshot(data);
       return data;
     },
 
@@ -141,7 +144,11 @@
       return data.user;
     },
 
-    async quota() { return req('/api/v1/me/quota'); },
+    async quota() {
+      const data = await req('/api/v1/me/quota');
+      persistQuotaSnapshot(data);
+      return data;
+    },
 
     async consumeTest() {
       const data = await req('/api/v1/me/consume-test', { method: 'POST', body: '{}' });
