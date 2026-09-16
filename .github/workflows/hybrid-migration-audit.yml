@@ -1,6 +1,6 @@
 name: Hybrid Migration Audit
 
-# Sandbox billing/admin UI recheck is intentionally part of the existing full audit.
+# Frontend auth/purchase recheck is intentionally part of the existing full audit.
 # No production cutover is enabled by this workflow.
 
 on:
@@ -16,6 +16,7 @@ on:
       - ux/gen-z-results
       - fix/sandbox-billing-admin-ui
       - hardening/evaluator-closeout
+      - release/auth-free-launch
   pull_request:
     branches:
       - main
@@ -71,6 +72,9 @@ jobs:
 
       - name: Verify production free-only launch contract
         run: python -m unittest -v test_production_free_only_launch.py
+
+      - name: Verify canonical frontend auth/purchase contract
+        run: python -m unittest -v test_frontend_auth_purchase_contract.py
 
       - name: Verify commercial UI contract
         run: python -m unittest -v test_commercial_ui_contract.py

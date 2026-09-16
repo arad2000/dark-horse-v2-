@@ -19,7 +19,7 @@ class GenZVisualLayerTests(unittest.TestCase):
 
     def test_visual_layer_loaded_after_shell(self):
         html = INDEX.read_text(encoding="utf-8")
-        shell_pos = html.index('href="shell.css?v=59"')
+        shell_pos = html.index('href="shell.css?v=60"')
         layer_pos = html.index('href="genz_visual_layer.css?v=1"')
         self.assertLess(shell_pos, layer_pos)
 

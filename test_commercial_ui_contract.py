@@ -28,8 +28,8 @@ class CommercialUIContractTests(unittest.TestCase):
             self.assertIn(marker, self.auth)
 
     def test_commercial_ui_is_loaded_after_auth_client(self):
-        auth_pos = self.index.index('src="auth_api_client.js?v=2"')
-        ui_pos = self.index.index('src="commercial_ui.js?v=2"')
+        auth_pos = self.index.index('src="auth_api_client.js?v=5"')
+        ui_pos = self.index.index('src="commercial_ui.js?v=23"')
         self.assertLess(auth_pos, ui_pos)
         self.assertIn("DHAuth.createPayment", self.ui)
         self.assertIn("DHAuth.consumeTest", self.ui)
@@ -37,8 +37,10 @@ class CommercialUIContractTests(unittest.TestCase):
 
     def test_commercial_ui_removes_legacy_local_only_premium_action(self):
         self.assertIn("خرید بسته ۳ تست", self.ui)
-        self.assertIn("#dh-p-prem", self.ui)
+        self.assertNotIn("dh-p-prem", self.ui)
+        self.assertNotIn("فعال‌سازی اشتراک", self.ui)
         self.assertNotIn("devActivatePremium", self.ui)
+        self.assertIn("logout: doLogout", self.ui)
 
     def test_save_result_contract_uses_summary_only(self):
         self.assertIn("async saveResult(summary)", self.auth)
@@ -52,7 +54,7 @@ class CommercialUIContractTests(unittest.TestCase):
         self.assertIn("payload.session_id = sessionId", self.ui)
         self.assertIn("journey.sessionId = String(body.session_id)", self.ui)
         self.assertIn("persistFinalResultSummary(body", self.ui)
-        self.assertIn("typeof global.DHCommercialUI?.persistFinalResultSummary === 'function'", self.ui)
+        self.assertIn("global.DHCommercialUI && typeof global.DHCommercialUI.persistFinalResultSummary === 'function'", self.ui)
 
 
 if __name__ == "__main__":
