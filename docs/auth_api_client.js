@@ -1,7 +1,10 @@
 /* auth_api_client.js — Dark Horse Phase B */
 (function (global) {
+  'use strict';
+
   const API = (global.API_BASE || 'https://api.asbe-siah.ir');
   const KEY = 'dh_auth_v1';
+  const REQUEST_TIMEOUT_MS = 15000;
 
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
@@ -25,7 +28,26 @@
     const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
     const auth = load();
     if (auth && auth.token) headers['Authorization'] = 'Bearer ' + auth.token;
-    const res = await fetch(API + path, Object.assign({}, opts, { headers }));
+
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = setTimeout(function () {
+      if (controller) controller.abort();
+    }, REQUEST_TIMEOUT_MS);
+    const requestOpts = Object.assign({}, opts, { headers });
+    if (controller) requestOpts.signal = controller.signal;
+
+    let res;
+    try {
+      res = await fetch(API + path, requestOpts);
+    } catch (e) {
+      if (e && (e.name === 'AbortError' || e.code === 20)) {
+        throw new Error('زمان پاسخ سرور تمام شد. اتصال اینترنت یا وضعیت سرویس را بررسی کنید.');
+      }
+      throw new Error('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.');
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
     let body = null;
     try { body = await res.json(); } catch (_) {}
     if (!res.ok) {
