@@ -1,4 +1,4 @@
-/* pwa-boot.js v58 — force SW update + one reload */
+/* pwa-boot.js v61 — force SW v61 cache drop + one reload */
 (function () {
   'use strict';
 
@@ -17,7 +17,7 @@
 
   if ('serviceWorker' in navigator) {
     // URL جدید = نصب SW جدید اجباری
-    var SW_URL = './sw.js?v=58';
+    var SW_URL = './sw.js?v=61';
 
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
@@ -27,6 +27,7 @@
         if (reg.waiting) {
           try { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
         }
+        try { reg.update(); } catch (e2) {}
         reg.addEventListener('updatefound', function () {
           var nw = reg.installing;
           if (!nw) return;
@@ -43,8 +44,8 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v58') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v58', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v61') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v61', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();
