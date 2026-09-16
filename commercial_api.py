@@ -78,15 +78,40 @@ def _valid_expiry(value: datetime | None) -> bool:
     return value > datetime.now(timezone.utc)
 
 
-def _quota(db: Session, user_id: int) -> int:
-    rows = db.scalars(
-        select(Entitlement).where(
-            Entitlement.user_id == user_id,
-            Entitlement.status == "active",
-            Entitlement.credits_remaining > 0,
+def _quota_details(db: Session, user_id: int) -> dict[str, int]:
+    """Return a server-authoritative quota snapshot for the user.
+
+    ``credits_remaining`` is spendable, valid credit only. ``credits_consumed``
+    is derived from persisted entitlement deltas and therefore survives app
+    restarts, tab switches and client-cache rewrites.
+    """
+    rows = list(
+        db.scalars(
+            select(Entitlement).where(
+                Entitlement.user_id == user_id,
+                Entitlement.status == "active",
+            )
         )
     )
-    return sum(int(row.credits_remaining) for row in rows if _valid_expiry(row.expires_at))
+    remaining = sum(
+        int(row.credits_remaining)
+        for row in rows
+        if int(row.credits_remaining) > 0 and _valid_expiry(row.expires_at)
+    )
+    consumed = sum(
+        max(0, int(row.credits_granted) - int(row.credits_remaining))
+        for row in rows
+    )
+    granted = sum(int(row.credits_granted) for row in rows)
+    return {
+        "credits_granted": granted,
+        "credits_consumed": consumed,
+        "credits_remaining": remaining,
+    }
+
+
+def _quota(db: Session, user_id: int) -> int:
+    return _quota_details(db, user_id)["credits_remaining"]
 
 
 def _current_user(
@@ -136,7 +161,6 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, o
         send_code(row.phone, code)
         db.commit()
         response = {"challenge_id": row.challenge_id, "expires_in": max(0, int((row.expires_at - datetime.now(timezone.utc)).total_seconds()))}
-        # Test/staging can opt into returning the mock code. Production should not.
         if os.getenv("OTP_EXPOSE_DEBUG_CODE", "false").strip().lower() in {"1", "true", "yes", "on"}:
             response["debug_code"] = code
         return response
@@ -160,7 +184,8 @@ def verify_registration(req: VerifyRegistrationRequest, db: Session = Depends(ge
         )
         ensure_free_entitlement(db, user.id)
         db.commit()
-        return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id)}
+        details = _quota_details(db, user.id)
+        return {"token": token, "user": _public_user(user), "quota": details["credits_remaining"], **details}
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -172,7 +197,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
         ensure_free_entitlement(db, user.id)
         db.commit()
-        return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id)}
+        details = _quota_details(db, user.id)
+        return {"token": token, "user": _public_user(user), "quota": details["credits_remaining"], **details}
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=401, detail="invalid credentials") from exc
@@ -185,18 +211,20 @@ def me(user: User = Depends(_current_user)) -> dict[str, object]:
 
 @router.get("/me/quota")
 def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
-    return {"credits_remaining": _quota(db, user.id)}
+    return _quota_details(db, user.id)
 
 
 @router.post("/me/consume-test")
 def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     try:
         entitlement = consume_one_test(db, user.id)
-        remaining = _quota(db, user.id)
+        details = _quota_details(db, user.id)
         db.commit()
         return {
             "consumed": 1,
-            "credits_remaining": remaining,
+            "credits_remaining": details["credits_remaining"],
+            "credits_granted": details["credits_granted"],
+            "credits_consumed": details["credits_consumed"],
             "entitlement_id": entitlement.id,
             "user": _public_user(user),
         }
