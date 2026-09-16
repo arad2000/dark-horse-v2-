@@ -69,15 +69,35 @@ def _valid_expiry(value: datetime | None) -> bool:
     return value > datetime.now(timezone.utc)
 
 
-def _quota(db: Session, user_id: int) -> int:
-    rows = db.scalars(
-        select(Entitlement).where(
-            Entitlement.user_id == user_id,
-            Entitlement.status == "active",
-            Entitlement.credits_remaining > 0,
+def _quota_details(db: Session, user_id: int) -> dict[str, int]:
+    """Return a server-authoritative quota snapshot."""
+    rows = list(
+        db.scalars(
+            select(Entitlement).where(
+                Entitlement.user_id == user_id,
+                Entitlement.status == "active",
+            )
         )
     )
-    return sum(int(row.credits_remaining) for row in rows if _valid_expiry(row.expires_at))
+    remaining = sum(
+        int(row.credits_remaining)
+        for row in rows
+        if int(row.credits_remaining) > 0 and _valid_expiry(row.expires_at)
+    )
+    consumed = sum(
+        max(0, int(row.credits_granted) - int(row.credits_remaining))
+        for row in rows
+    )
+    granted = sum(int(row.credits_granted) for row in rows)
+    return {
+        "credits_granted": granted,
+        "credits_consumed": consumed,
+        "credits_remaining": remaining,
+    }
+
+
+def _quota(db: Session, user_id: int) -> int:
+    return _quota_details(db, user_id)["credits_remaining"]
 
 
 def _current_user(
@@ -151,10 +171,14 @@ def verify_register(req: VerifyRegistrationRequest, db: Session = Depends(get_db
         user, token = verify_registration_otp(db, challenge_id=req.challenge_id, code=req.code)
         ensure_free_entitlement(db, user.id)
         db.commit()
+        details = _quota_details(db, user.id)
         return {
             "token": token,
             "user": _public_user(user),
-            "quota": _quota(db, user.id),
+            "quota": details["credits_remaining"],
+            "credits_remaining": details["credits_remaining"],
+            "credits_consumed": details["credits_consumed"],
+            "credits_granted": details["credits_granted"],
             "phone_verified": True,
         }
     except TimeoutError as exc:
@@ -175,7 +199,15 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
         ensure_free_entitlement(db, user.id)
         db.commit()
-        return {"token": token, "user": _public_user(user), "quota": _quota(db, user.id)}
+        details = _quota_details(db, user.id)
+        return {
+            "token": token,
+            "user": _public_user(user),
+            "quota": details["credits_remaining"],
+            "credits_remaining": details["credits_remaining"],
+            "credits_consumed": details["credits_consumed"],
+            "credits_granted": details["credits_granted"],
+        }
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=401, detail="invalid credentials") from exc
@@ -188,7 +220,7 @@ def me(user: User = Depends(_current_user)) -> dict[str, object]:
 
 @router.get("/me/quota")
 def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
-    """Return remaining credits; in free mode top-up first so UI does not paywall."""
+    """Return a server-authoritative quota snapshot."""
     assert_production_billing_configuration()
     if is_billing_free_mode():
         try:
@@ -197,7 +229,7 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
         except Exception:
             db.rollback()
             raise
-    return {"credits_remaining": _quota(db, user.id), "user_id": user.id}
+    return _quota_details(db, user.id)
 
 
 @router.post("/me/consume-test")
@@ -205,11 +237,13 @@ def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_
     assert_production_billing_configuration()
     try:
         entitlement = consume_one_test(db, user.id)
-        remaining = _quota(db, user.id)
+        details = _quota_details(db, user.id)
         db.commit()
         return {
             "consumed": 1,
-            "credits_remaining": remaining,
+            "credits_remaining": details["credits_remaining"],
+            "credits_consumed": details["credits_consumed"],
+            "credits_granted": details["credits_granted"],
             "entitlement_id": entitlement.id,
             "user": _public_user(user),
         }
