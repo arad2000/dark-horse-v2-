@@ -1,4 +1,4 @@
-/* post_auth_flow_policy.js v1
+/* post_auth_flow_policy.js v2
  * Authentication must not trigger a purchase or consume a test automatically.
  * After successful login/OTP the user remains on Profile with the server-granted
  * free credit. Journey consumption starts only after an explicit Journey click.
@@ -38,6 +38,28 @@
       var btn = document.querySelector('#dh-tabbar button[data-tab="profile"]');
       if (btn) btn.click();
     } catch (_) {}
+  }
+
+  function syncGrantedQuotaThenProfile() {
+    try {
+      if (!global.DHAuth || typeof global.DHAuth.quota !== 'function') {
+        renderProfile();
+        return;
+      }
+      global.DHAuth.quota().then(function (data) {
+        var remaining = Number(data && data.credits_remaining);
+        if (!isFinite(remaining) || remaining < 0) remaining = 0;
+        try {
+          localStorage.setItem('dh_local_quota_v1', JSON.stringify({
+            used: 0,
+            premium: false,
+            serverRemaining: remaining,
+            remaining: remaining
+          }));
+        } catch (_) {}
+        renderProfile();
+      }).catch(function () { renderProfile(); });
+    } catch (_) { renderProfile(); }
   }
 
   function wrapAuthMethod(name) {
@@ -81,6 +103,16 @@
         try {
           var serverQ = await global.DHAuth.quota();
           q = Number(serverQ && serverQ.credits_remaining);
+          if (isFinite(q) && q >= 0) {
+            try {
+              localStorage.setItem('dh_local_quota_v1', JSON.stringify({
+                used: 0,
+                premium: false,
+                serverRemaining: q,
+                remaining: q
+              }));
+            } catch (_) {}
+          }
         } catch (_) {}
         return { consumed: 0, credits_remaining: isFinite(q) && q >= 0 ? q : 0, automatic: true };
       }
@@ -97,7 +129,7 @@
     var wrapped = function () {
       if (justAuthenticated && !explicitJourneyRequested) {
         consumeAuthFlag();
-        renderProfile();
+        syncGrantedQuotaThenProfile();
         return;
       }
       return original.apply(this, arguments);
@@ -116,7 +148,7 @@
       if (modalText.indexOf('خرید بسته ۳ تست') < 0) return;
       try { overlay.remove(); } catch (_) {}
       consumeAuthFlag();
-      renderProfile();
+      syncGrantedQuotaThenProfile();
     }).observe(document.body, { childList: true, subtree: true });
   }
 
