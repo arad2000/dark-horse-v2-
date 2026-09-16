@@ -18,7 +18,7 @@
     if (d !== 0 && d !== 200 && d !== 700) return false;
     try {
       var src = Function.prototype.toString.call(fn);
-      if (d === 0 && /\bboot\s*\(/.test(src)) return true;
+      if (d === 0 && /^\s*function\s+boot\s*\(/.test(src)) return true;
       if ((d === 200 || d === 700) && /renderHome\s*\(/.test(src)) return true;
     } catch (e) {}
     return false;
@@ -50,11 +50,18 @@
 
   document.addEventListener('click', function (event) {
     try {
-      var btn = event.target && event.target.closest && event.target.closest('#dh-tabbar button[data-tab]');
-      if (!btn) return;
-      var tab = btn.getAttribute('data-tab');
-      if (tab === 'profile') profileActive = true;
-      else if (tab === 'home' || tab === 'journey') profileActive = false;
+      var target = event.target;
+      var tabBtn = target && target.closest && target.closest('#dh-tabbar button[data-tab]');
+      if (tabBtn) {
+        var tab = tabBtn.getAttribute('data-tab');
+        if (tab === 'profile') profileActive = true;
+        else if (tab === 'home' || tab === 'journey') profileActive = false;
+        return;
+      }
+
+      var profileJourney = target && target.closest && target.closest('#dh-p-journey');
+      var profileHome = target && target.closest && target.closest('#dh-p-home');
+      if (profileJourney || profileHome) profileActive = false;
     } catch (e) {}
   }, true);
 
@@ -68,5 +75,5 @@
   nativeSetTimeout(function () {
     timerGuardActive = false;
     installProfileRenderProtection();
-  }, 250);
+  }, 500);
 })();
