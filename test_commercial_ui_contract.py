@@ -28,8 +28,8 @@ class CommercialUIContractTests(unittest.TestCase):
             self.assertIn(marker, self.auth)
 
     def test_commercial_ui_is_loaded_after_auth_client(self):
-        auth_pos = self.index.index('src="auth_api_client.js?v=5"')
-        ui_pos = self.index.index('src="commercial_ui.js?v=23"')
+        auth_pos = self.index.index('src="auth_api_client.js?v=6"')
+        ui_pos = self.index.index('src="commercial_ui.js?v=24"')
         self.assertLess(auth_pos, ui_pos)
         self.assertIn("DHAuth.createPayment", self.ui)
         self.assertIn("DHAuth.consumeTest", self.ui)
