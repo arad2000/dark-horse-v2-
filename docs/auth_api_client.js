@@ -16,6 +16,13 @@
     return String(u.id || u.user_id || u.phone || u.mobile || u.username || u.public_id || '');
   }
 
+  function currentJourneySessionId() {
+    try {
+      const journey = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
+      return journey && journey.sessionId ? String(journey.sessionId) : null;
+    } catch (_) { return null; }
+  }
+
   function loadQuotaCache() {
     try {
       const raw = JSON.parse(localStorage.getItem(QUOTA_KEY) || 'null');
@@ -159,9 +166,11 @@
     },
 
     async saveResult(summary) {
+      const sessionId = currentJourneySessionId();
+      if (!sessionId) throw new Error('شناسه سفر کاربر پیدا نشد؛ ابتدا تحلیل را کامل کنید.');
       return req('/api/v1/me/save-result', {
         method: 'POST',
-        body: JSON.stringify({ result_summary: summary })
+        body: JSON.stringify({ session_id: sessionId, result_summary: summary || {} })
       });
     },
 
