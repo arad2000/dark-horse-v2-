@@ -27,12 +27,21 @@ def test_auth_client_consumes_server_snapshot_instead_of_incrementing_guess() ->
     assert "serverGranted" in source
 
 
-def test_quota_reconciler_is_loaded_after_auth_and_commercial_ui() -> None:
+def test_quota_reconciler_loads_after_auth_and_before_commercial_ui() -> None:
     source = _text("docs/index.html")
     auth_pos = source.index("auth_api_client.js")
-    commercial_pos = source.index("commercial_ui.js")
     reconciler_pos = source.index("quota_state_reconciler.js")
-    assert auth_pos < commercial_pos < reconciler_pos
+    commercial_pos = source.index("commercial_ui.js")
+    assert auth_pos < reconciler_pos < commercial_pos
+
+
+def test_pwa_versions_are_aligned() -> None:
+    html = _text("docs/index.html")
+    boot = _text("docs/pwa-boot.js")
+    sw = _text("docs/sw.js")
+    assert "pwa-boot.js?v=62" in html
+    assert "SW_URL = './sw.js?v=62'" in boot
+    assert "darkhorse-v62" in sw
 
 
 def test_only_one_0008_revision_remains() -> None:
