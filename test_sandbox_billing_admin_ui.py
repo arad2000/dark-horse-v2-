@@ -38,7 +38,7 @@ class SandboxBillingAdminUITests(unittest.TestCase):
         self.assertNotIn('href="admin.html"', html)
         self.assertNotIn("commercial_ui_bridge_v2.js", html)
         self.assertNotIn("commercial_ui_bridge_v3.js", html)
-        self.assertIn('commercial_ui.js?v=23', html)
+        self.assertIn('commercial_ui.js?v=24', html)
 
     def test_purchase_ui_uses_one_server_authoritative_path(self):
         js = (ROOT / "docs" / "commercial_ui.js").read_text(encoding="utf-8")
