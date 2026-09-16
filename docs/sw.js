@@ -1,8 +1,8 @@
-/* Dark Horse SW v61 — nuclear drop of stale PWA caches
+/* Dark Horse SW v62 — nuclear drop of stale PWA caches
  * Never precache versioned JS (old v59 list served deleted files).
  * HTML/JS/CSS always network-first with no-store.
  */
-const CACHE = 'darkhorse-v61';
+const CACHE = 'darkhorse-v62';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
