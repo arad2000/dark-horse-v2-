@@ -32,22 +32,24 @@ class SandboxBillingAdminUITests(unittest.TestCase):
         self.assertIn("window.location.replace('index.html?logout=1')", html)
         self.assertIn("localStorage.removeItem('dh_auth_v1')", html)
 
-    def test_index_removes_fixed_admin_entry_and_loads_bridge(self):
+    def test_index_removes_fixed_admin_entry_and_uses_canonical_payment_ui(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
         self.assertNotIn('id="dh-admin-entry"', html)
         self.assertNotIn('href="admin.html"', html)
-        self.assertIn("commercial_ui_bridge_v2.js?v=4", html)
+        self.assertNotIn("commercial_ui_bridge_v2.js", html)
+        self.assertNotIn("commercial_ui_bridge_v3.js", html)
+        self.assertIn('commercial_ui.js?v=23', html)
 
-    def test_purchase_bridge_converts_legacy_node_to_one_real_purchase_button(self):
-        js = (ROOT / "docs" / "commercial_ui_bridge_v2.js").read_text(encoding="utf-8")
-        self.assertIn("var legacy = byId('dh-p-prem')", js)
-        self.assertIn("legacy.id = 'dh-p-buy'", js)
-        self.assertIn("querySelectorAll('#dh-p-buy')", js)
-        self.assertIn("purchases[i].remove()", js)
-        self.assertIn("data-testid', 'purchase-pack-3'", js)
-        self.assertIn("DHAuth.createPayment", js)
-        self.assertIn("window.location.assign(payment.payment_url)", js)
+    def test_purchase_ui_uses_one_server_authoritative_path(self):
+        js = (ROOT / "docs" / "commercial_ui.js").read_text(encoding="utf-8")
+        self.assertIn("global.DHAuth.createPayment", js)
+        self.assertIn("global.DHAuth.quota", js)
+        self.assertIn("global.DHAuth.consumeTest", js)
+        self.assertIn("openExternalPay", js)
+        self.assertIn("AndroidBridge.openExternalUrl", js)
+        self.assertIn("window.location.assign(target)", js)
         self.assertNotIn("devActivatePremium", js)
+        self.assertNotIn("#dh-p-prem", js)
 
     def test_auth_client_has_no_obsolete_direct_credit_activation(self):
         js = (ROOT / "docs" / "auth_api_client.js").read_text(encoding="utf-8")
