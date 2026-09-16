@@ -1,4 +1,4 @@
-/* pwa-boot.js v61 — force SW v61 cache drop + one reload */
+/* pwa-boot.js v62 — force SW v62 cache drop + one reload */
 (function () {
   'use strict';
 
@@ -11,41 +11,25 @@
   }
 
   window.__dhIsInstalled = isStandalone();
-  if (window.__dhIsInstalled) {
-    document.documentElement.classList.add('dh-installed');
-  }
+  if (window.__dhIsInstalled) document.documentElement.classList.add('dh-installed');
 
   if ('serviceWorker' in navigator) {
-    // URL جدید = نصب SW جدید اجباری
-    var SW_URL = './sw.js?v=61';
-
+    var SW_URL = './sw.js?v=62';
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
         try { reg.update(); } catch (e) {}
-
-        // اگر SW منتظر است، فعالش کن
         if (reg.waiting) {
           try { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
         }
         try { reg.update(); } catch (e2) {}
-        reg.addEventListener('updatefound', function () {
-          var nw = reg.installing;
-          if (!nw) return;
-          nw.addEventListener('statechange', function () {
-            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-              // نسخه جدید آماده
-            }
-          });
-        });
       }).catch(function () {});
 
-      // یک‌بار رفرش وقتی کنترلر عوض شد
       var refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v61') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v61', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v62') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v62', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();
@@ -64,11 +48,8 @@
     if (el) el.remove();
   }
   function showBanner() {
-    if (isStandalone()) return;
-    if (document.getElementById('dh-install-banner')) return;
-    try {
-      if (sessionStorage.getItem('dh_install_dismissed') === '1') return;
-    } catch (e) {}
+    if (isStandalone() || document.getElementById('dh-install-banner')) return;
+    try { if (sessionStorage.getItem('dh_install_dismissed') === '1') return; } catch (e) {}
     var banner = document.createElement('div');
     banner.id = 'dh-install-banner';
     banner.setAttribute('dir', 'rtl');
@@ -100,9 +81,5 @@
     setTimeout(showBanner, 2500);
   });
 
-  window.DHInstall = {
-    show: showBanner,
-    hide: hideBanner,
-    isStandalone: isStandalone
-  };
+  window.DHInstall = { show: showBanner, hide: hideBanner, isStandalone: isStandalone };
 })();
