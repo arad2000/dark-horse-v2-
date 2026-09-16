@@ -1,7 +1,7 @@
 /* Dark Horse profile runtime lock.
  * Prevents late app.js renders from replacing the Profile view while the
  * asynchronous bootstrap finishes. The lock is released only by explicit
- * navigation away from Profile.
+ * navigation away from Profile or starting a journey from Profile.
  */
 (function () {
   'use strict';
@@ -54,13 +54,26 @@
   }
 
   document.addEventListener('click', function (e) {
-    var btn = e.target && e.target.closest ? e.target.closest('#dh-tabbar button[data-tab]') : null;
-    if (!btn) return;
-    var tab = btn.getAttribute('data-tab');
-    if (tab === 'profile') {
-      window.__dhProfileVisible = true;
+    var target = e.target;
+    var btn = target && target.closest ? target.closest('#dh-tabbar button[data-tab]') : null;
+    if (btn) {
+      var tab = btn.getAttribute('data-tab');
+      if (tab === 'profile') {
+        window.__dhProfileVisible = true;
+        window.__dhInJourney = true;
+      } else if (tab === 'home' || tab === 'journey') {
+        window.__dhProfileVisible = false;
+      }
+      return;
+    }
+
+    // renderProfile's action buttons call shell functions through the local
+    // closure, so clear the lock before those handlers can invoke render().
+    var action = target && target.closest ? target.closest('#dh-p-journey, #dh-p-home, #dh-p-out, #dh-p-exit') : null;
+    if (action && action.id === 'dh-p-journey') {
+      window.__dhProfileVisible = false;
       window.__dhInJourney = true;
-    } else if (tab === 'home' || tab === 'journey') {
+    } else if (action && action.id === 'dh-p-home') {
       window.__dhProfileVisible = false;
     }
   }, true);
