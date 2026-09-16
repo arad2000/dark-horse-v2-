@@ -14,6 +14,7 @@ class FrontendAuthPurchaseContractTests(unittest.TestCase):
             DOCS / "shell.js",
             DOCS / "commercial_ui.js",
             DOCS / "password_reset_ui.js",
+            DOCS / "auth_runtime_guard.js",
         ]
         for path in scripts:
             result = subprocess.run(["node", "--check", str(path)], capture_output=True, text=True)
@@ -24,6 +25,7 @@ class FrontendAuthPurchaseContractTests(unittest.TestCase):
         self.assertIn('shell.js?v=61', index)
         self.assertIn('commercial_ui.js?v=24', index)
         self.assertIn('password_reset_ui.js?v=4', index)
+        self.assertIn('auth_runtime_guard.js?v=1', index)
         self.assertIn('pwa-boot.js?v=62', index)
         self.assertNotIn('profile_auth_cleanup.js', index)
         self.assertNotIn('commercial_ui_bridge_v2.js', index)
@@ -54,9 +56,12 @@ class FrontendAuthPurchaseContractTests(unittest.TestCase):
 
     def test_no_legacy_local_profile_path_in_runtime_contract(self):
         shell = (DOCS / "shell.js").read_text(encoding="utf-8")
+        guard = (DOCS / "auth_runtime_guard.js").read_text(encoding="utf-8")
         self.assertIn("dh-p-save", shell)
         self.assertIn("dh_local_user_v1", shell)
-        self.assertNotIn("فعال‌سازی اشتراک (تستی)", shell)
+        self.assertIn("#dh-p-prem", guard)
+        self.assertIn("stopImmediatePropagation", guard)
+        self.assertIn("display:none!important", guard)
 
 
 if __name__ == "__main__":
