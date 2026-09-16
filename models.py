@@ -6,6 +6,7 @@ No scoring or recommendation logic lives in this module.
 """
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Column,
     DateTime,
@@ -42,7 +43,6 @@ branch_micro_motives = Table(
 class MicroMotive(Base):
     __tablename__ = "micro_motives"
     __table_args__ = (UniqueConstraint("code", name="uq_motive_code"), Index("idx_motive_category", "category"))
-
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String(32), nullable=False, unique=True)
     description_fa = Column(String(500), nullable=False)
@@ -50,7 +50,6 @@ class MicroMotive(Base):
     intensity_level = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
     majors = relationship("Major", secondary=major_micro_motives, back_populates="micro_motives")
     branches = relationship("SchoolBranch", secondary=branch_micro_motives, back_populates="micro_motives")
 
@@ -58,7 +57,6 @@ class MicroMotive(Base):
 class ValuePole(Base):
     __tablename__ = "value_poles"
     __table_args__ = (UniqueConstraint("pole_code", name="uq_pole_code"), Index("idx_value_question", "question_num"))
-
     id = Column(Integer, primary_key=True, index=True)
     pole_code = Column(String(16), nullable=False, unique=True)
     question_num = Column(Integer, nullable=False)
@@ -70,11 +68,7 @@ class ValuePole(Base):
 
 class TraitOption(Base):
     __tablename__ = "trait_options"
-    __table_args__ = (
-        UniqueConstraint("question_code", "option_index", name="uq_question_option"),
-        Index("idx_question_code", "question_code"),
-    )
-
+    __table_args__ = (UniqueConstraint("question_code", "option_index", name="uq_question_option"), Index("idx_question_code", "question_code"))
     id = Column(Integer, primary_key=True, index=True)
     question_code = Column(String(10), nullable=False)
     option_index = Column(Integer, nullable=False)
@@ -85,12 +79,7 @@ class TraitOption(Base):
 
 class Major(Base):
     __tablename__ = "majors"
-    __table_args__ = (
-        UniqueConstraint("name", name="uq_major_name"),
-        Index("idx_major_group", "group"),
-        Index("idx_major_cluster", "cluster"),
-    )
-
+    __table_args__ = (UniqueConstraint("name", name="uq_major_name"), Index("idx_major_group", "group"), Index("idx_major_cluster", "cluster"))
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False, unique=True)
     group = Column(String(100), nullable=False)
@@ -108,7 +97,6 @@ class Major(Base):
     weights_version = Column(String(100), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
     micro_motives = relationship("MicroMotive", secondary=major_micro_motives, back_populates="majors")
     discovery_results = relationship("DiscoveryResult", back_populates="major", cascade="all, delete-orphan")
 
@@ -116,7 +104,6 @@ class Major(Base):
 class SchoolBranch(Base):
     __tablename__ = "school_branches"
     __table_args__ = (UniqueConstraint("name", name="uq_branch_name"),)
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, unique=True)
     group = Column(String(50), nullable=False)
@@ -127,16 +114,15 @@ class SchoolBranch(Base):
     source_majors_count = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
     micro_motives = relationship("MicroMotive", secondary=branch_micro_motives, back_populates="branches")
     branch_recommendations = relationship("BranchRecommendation", back_populates="branch", cascade="all, delete-orphan")
 
 
 class UserSession(Base):
     __tablename__ = "user_sessions"
-    __table_args__ = (Index("idx_session_created", "created_at"),)
-
-    id = Column(Integer, primary_key=True, index=True)
+    __table_args__ = (Index("idx_session_created", "created_at"), Index("idx_session_user", "user_id"))
+    id = Column(BigInteger, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     session_uuid = Column(String(36), nullable=False, unique=True)
     micro_motives = Column(JSON, nullable=False)
     sjt_answers = Column(JSON, nullable=False)
@@ -148,7 +134,7 @@ class UserSession(Base):
     is_archived = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
+    user = relationship("User", back_populates="user_sessions")
     discovery_results = relationship("DiscoveryResult", back_populates="session", cascade="all, delete-orphan")
     branch_recommendations = relationship("BranchRecommendation", back_populates="session", cascade="all, delete-orphan")
     feedback = relationship("UserFeedback", back_populates="session", uselist=False, cascade="all, delete-orphan")
@@ -156,14 +142,9 @@ class UserSession(Base):
 
 class DiscoveryResult(Base):
     __tablename__ = "discovery_results"
-    __table_args__ = (
-        UniqueConstraint("session_id", "major_id", name="uq_session_major"),
-        Index("idx_result_score", "total_score"),
-        Index("idx_result_session", "session_id"),
-    )
-
-    id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("user_sessions.id", ondelete="CASCADE"), nullable=False)
+    __table_args__ = (UniqueConstraint("session_id", "major_id", name="uq_session_major"), Index("idx_result_score", "total_score"), Index("idx_result_session", "session_id"))
+    id = Column(BigInteger, primary_key=True, index=True)
+    session_id = Column(BigInteger, ForeignKey("user_sessions.id", ondelete="CASCADE"), nullable=False)
     major_id = Column(Integer, ForeignKey("majors.id", ondelete="CASCADE"), nullable=False)
     m_score = Column(Float, nullable=False)
     s_score = Column(Float, nullable=False)
@@ -179,20 +160,15 @@ class DiscoveryResult(Base):
     alternative_paths = Column(JSON, nullable=True)
     rank = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
     session = relationship("UserSession", back_populates="discovery_results")
     major = relationship("Major", back_populates="discovery_results")
 
 
 class BranchRecommendation(Base):
     __tablename__ = "branch_recommendations"
-    __table_args__ = (
-        UniqueConstraint("session_id", "branch_id", name="uq_session_branch"),
-        Index("idx_branch_score", "average_score"),
-    )
-
-    id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("user_sessions.id", ondelete="CASCADE"), nullable=False)
+    __table_args__ = (UniqueConstraint("session_id", "branch_id", name="uq_session_branch"), Index("idx_branch_score", "average_score"))
+    id = Column(BigInteger, primary_key=True, index=True)
+    session_id = Column(BigInteger, ForeignKey("user_sessions.id", ondelete="CASCADE"), nullable=False)
     branch_id = Column(Integer, ForeignKey("school_branches.id", ondelete="CASCADE"), nullable=False)
     m_score = Column(Float, nullable=False)
     s_score = Column(Float, nullable=False)
@@ -204,7 +180,6 @@ class BranchRecommendation(Base):
     alternative_paths = Column(JSON, nullable=True)
     rank = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
     session = relationship("UserSession", back_populates="branch_recommendations")
     branch = relationship("SchoolBranch", back_populates="branch_recommendations")
 
@@ -212,9 +187,8 @@ class BranchRecommendation(Base):
 class UserFeedback(Base):
     __tablename__ = "user_feedback"
     __table_args__ = (Index("idx_feedback_created", "created_at"),)
-
-    id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("user_sessions.id", ondelete="CASCADE"), nullable=False, unique=True)
+    id = Column(BigInteger, primary_key=True, index=True)
+    session_id = Column(BigInteger, ForeignKey("user_sessions.id", ondelete="CASCADE"), nullable=False, unique=True)
     satisfaction_score = Column(Integer, nullable=True)
     accuracy_rating = Column(Integer, nullable=True)
     comments = Column(Text, nullable=True)
@@ -223,7 +197,6 @@ class UserFeedback(Base):
     contact_for_research = Column(Boolean, default=False, nullable=False)
     email = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
     session = relationship("UserSession", back_populates="feedback")
     recommended_major = relationship("Major", foreign_keys=[recommended_major_id])
 
@@ -231,10 +204,9 @@ class UserFeedback(Base):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     __table_args__ = (Index("idx_audit_timestamp", "created_at"), Index("idx_audit_table", "table_name"))
-
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True, index=True)
     table_name = Column(String(100), nullable=False)
-    record_id = Column(Integer, nullable=False)
+    record_id = Column(BigInteger, nullable=False)
     action = Column(String(20), nullable=False)
     old_values = Column(JSON, nullable=True)
     new_values = Column(JSON, nullable=True)
