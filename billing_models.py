@@ -27,11 +27,11 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
+    user_sessions = relationship("UserSession", back_populates="user")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     entitlements = relationship("Entitlement", back_populates="user", cascade="all, delete-orphan")
     admin_audit_logs = relationship("AdminAuditLog", back_populates="admin_user")
     saved_results = relationship("SavedResult", back_populates="user", cascade="all, delete-orphan")
-    user_sessions = relationship("UserSession", back_populates="user")
 
 
 class AuthSession(Base):
@@ -109,13 +109,7 @@ class Payment(Base):
     __table_args__ = (
         Index("idx_payments_provider_authority", "provider", "provider_authority"),
         Index("idx_payments_status", "status"),
-        Index(
-            "uq_payment_provider_transaction",
-            "provider",
-            "provider_transaction_id",
-            unique=True,
-            postgresql_where=text("provider_transaction_id IS NOT NULL"),
-        ),
+        Index("uq_payment_provider_transaction", "provider", "provider_transaction_id", unique=True, postgresql_where=text("provider_transaction_id IS NOT NULL")),
     )
     id = Column(BigInteger, primary_key=True)
     order_id = Column(BigInteger, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
@@ -137,10 +131,7 @@ class Payment(Base):
 
 class Entitlement(Base):
     __tablename__ = "entitlements"
-    __table_args__ = (
-        Index("idx_entitlement_user_status", "user_id", "status"),
-        Index("idx_entitlement_user_credits", "user_id", "credits_remaining"),
-    )
+    __table_args__ = (Index("idx_entitlement_user_status", "user_id", "status"), Index("idx_entitlement_user_credits", "user_id", "credits_remaining"))
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     plan_id = Column(BigInteger, ForeignKey("premium_plans.id", ondelete="RESTRICT"), nullable=False)
@@ -186,10 +177,7 @@ class AdminAuditLog(Base):
 
 class SavedResult(Base):
     __tablename__ = "saved_results"
-    __table_args__ = (
-        Index("idx_saved_results_user_created", "user_id", "created_at"),
-        Index("idx_saved_results_session", "session_uuid"),
-    )
+    __table_args__ = (Index("idx_saved_results_user_created", "user_id", "created_at"), Index("idx_saved_results_session", "session_uuid"))
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     session_uuid = Column(String(36), nullable=True)
