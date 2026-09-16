@@ -133,7 +133,16 @@
     };
   }
   async function continueAfterAuth(){if(!global.DHAuth||!global.DHAuth.isLoggedIn()){showAuthModal('login');return;}try{var q=await global.DHAuth.quota(),r=Number(q&&q.credits_remaining||0);if(r<=0){await openPurchaseModal();return;}await global.DHAuth.consumeTest();setLocalQuota({remaining:r-1});closeModal();if(global.DHShell&&typeof global.DHShell.startJourney==='function')global.DHShell.startJourney();}catch(e){var m=text(e&&e.message?e.message:e);if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">'+escapeHtml(m)+'</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');el('dh-error-close').onclick=closeModal;}}
-  function doLogout(){try{if(global.DHAuth)global.DHAuth.logout();}catch(_){}clearLocalUser();try{localStorage.removeItem(QUOTA_KEY);}catch(_){}try{localStorage.removeItem('dh_local_user_v1');}catch(_){}try{localStorage.removeItem('dh_local_quota_v1');}catch(_){}closeModal();if(global.DHShell&&typeof global.DHShell.renderProfile==='function'){try{global.DHShell.renderProfile();}catch(_){location.reload();}}else{location.reload();}}
+  function doLogout(){
+    try{if(global.DHAuth)global.DHAuth.logout();}catch(_){}
+    try{localStorage.removeItem('dh_auth_v1');}catch(_){}
+    clearLocalUser();
+    try{localStorage.removeItem(QUOTA_KEY);}catch(_){}
+    try{localStorage.removeItem('dh_local_user_v1');}catch(_){}
+    try{localStorage.removeItem('dh_local_quota_v1');}catch(_){}
+    closeModal();
+    try{location.reload();}catch(_){}
+  }catch(_){}clearLocalUser();try{localStorage.removeItem(QUOTA_KEY);}catch(_){}try{localStorage.removeItem('dh_local_user_v1');}catch(_){}try{localStorage.removeItem('dh_local_quota_v1');}catch(_){}closeModal();if(global.DHShell&&typeof global.DHShell.renderProfile==='function'){try{global.DHShell.renderProfile();}catch(_){location.reload();}}else{location.reload();}}
   function isAdminUser(){try{if(global.DHAuth&&typeof global.DHAuth.isAdmin==='function'&&global.DHAuth.isAdmin())return true;var u=global.DHAuth&&global.DHAuth.getUser&&global.DHAuth.getUser();return !!(u&&(u.role==='admin'||u.role==='support'||u.is_admin===true));}catch(_){return false;}}
   function ensureAdminFeedbackPanel(){if(!isAdminUser())return;if(el('dh-admin-feedback'))return;var out=el('dh-p-out');if(!out||!out.parentNode)return;var box=document.createElement('div');box.id='dh-admin-feedback';box.style.cssText='margin:14px 0 8px;padding:14px;border-radius:14px;border:1px solid rgba(212,175,55,.3);background:#12121c;text-align:right;';box.innerHTML='<div style="color:#f0c040;font-weight:800;margin-bottom:6px;">پنل ادمین — بازخوردها</div><div id="dh-admin-dash" style="color:#b7ad98;font-size:.84rem;line-height:1.8;margin-bottom:8px;">در حال بارگذاری…</div><div id="dh-admin-list" style="max-height:300px;overflow:auto;font-size:.8rem;color:#d7caa9;line-height:1.7;"></div><button type="button" class="btn" id="dh-admin-refresh" style="width:100%;margin-top:10px;">بروزرسانی بازخوردها</button>';out.parentNode.insertBefore(box,out);async function load(){var dash=el('dh-admin-dash'),list=el('dh-admin-list');if(!global.DHAuth||!global.DHAuth.adminFeedback){if(dash)dash.textContent='کلاینت ادمین آماده نیست';return;}try{var d=await global.DHAuth.adminDashboard();if(dash)dash.textContent='کاربران: '+(d.users_total||0)+' · بازخورد: '+(d.feedback_total||0)+' · پرداخت: '+(d.payments_total||0)+' · اعتبارها: '+(d.entitlements_total||0);var rows=await global.DHAuth.adminFeedback(40);if(!list)return;if(!rows||!rows.length){list.textContent='هنوز بازخوردی ثبت نشده است.';return;}list.innerHTML=rows.map(function(r){var title=r.suggested_major||r.exam_code||('#'+r.id);var scores='رضایت: '+(r.satisfaction_score!=null?r.satisfaction_score:'—')+' · دقت: '+(r.accuracy_rating!=null?r.accuracy_rating:'—')+' · توصیه: '+(r.would_recommend?'بله':'خیر');var c=text(r.comments||'').replace(/\s*\|?\s*payload=.*$/,'').trim();var when=text(r.created_at||'').slice(0,19).replace('T',' ');return '<div style="border-top:1px solid rgba(255,255,255,.08);padding:9px 0;"><div style="color:#f0c040;font-weight:700;">'+escapeHtml(title)+'</div><div>'+escapeHtml(scores)+'</div><div style="color:#8f845f;font-size:.74rem;">'+escapeHtml(when)+'</div>'+(c?'<div style="margin-top:4px;color:#cbb98a;">'+escapeHtml(c.slice(0,220))+'</div>':'')+'</div>';}).join('');}catch(e){if(dash)dash.textContent=text(e&&e.message?e.message:e)||'خطا در بارگذاری پنل ادمین';if(list)list.textContent='';}}var btn=el('dh-admin-refresh');if(btn)btn.onclick=function(){load();};load();}
   function installButtonHooks(){function patch(){
@@ -146,10 +155,7 @@
       buy.__dhCommercialHooked=true;
       buy.onclick=function(e){if(e)e.preventDefault();openPurchaseModal();};
     }
-    var out=el('dh-p-out');
-    if(out&&!out.__dhCommercialHooked){
-      out.__dhCommercialHooked=true;
-      out.onclick=function(e){if(e)e.preventDefault();doLogout();};
+    var out=el('dh-p-out');if(out){out.onclick=function(e){if(e)e.preventDefault();doLogout();};
     }
     ensureAdminFeedbackPanel();
   }

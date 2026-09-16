@@ -800,8 +800,23 @@
     var sh = $('dh-p-share');
     if (sh) sh.onclick = function () { shareLastResult(); };
     $('dh-p-out').onclick = function () {
-      localStorage.removeItem(LOCAL_USER_KEY);
-      renderProfile();
+      try {
+        if (window.DHAuth && typeof window.DHAuth.logout === 'function') {
+          window.DHAuth.logout();
+        }
+      } catch (_) {}
+      try { localStorage.removeItem(LOCAL_USER_KEY); } catch (_) {}
+      try { localStorage.removeItem('dh_local_user_v1'); } catch (_) {}
+      try { localStorage.removeItem('dh_local_quota_v1'); } catch (_) {}
+      try { localStorage.removeItem('dh_auth_v1'); } catch (_) {}
+      try {
+        if (window.DHCommercialUI && typeof window.DHCommercialUI.logout === 'function') {
+          window.DHCommercialUI.logout();
+          return;
+        }
+      } catch (_) {}
+      try { renderProfile(); } catch (_) {}
+      try { location.reload(); } catch (_) {}
     };
     var ex = $('dh-p-exit');
     if (ex) ex.onclick = function () { exitApp(); };
