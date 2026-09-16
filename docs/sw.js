@@ -1,54 +1,67 @@
-/* Dark Horse SW v59 — release hotfix cache reset */
-const CACHE = 'darkhorse-v59';
-const PRECACHE = [
-  './index.html',
-  './shell.js',
-  './shell.css',
-  './app.js',
-  './data.js',
-  './auth_api_client.js?v=2',
-  './commercial_ui.js?v=2',
-  './commercial_ui_bridge_v2.js?v=4',
-  './password_reset_ui.js?v=2',
-  './auth_ui_hotfix.js?v=1',
-  './icon-192.png'
-];
+/* Dark Horse SW v61 — nuclear drop of stale PWA caches
+ * Never precache versioned JS (old v59 list served deleted files).
+ * HTML/JS/CSS always network-first with no-store.
+ */
+const CACHE = 'darkhorse-v61';
 
-self.addEventListener('install', (e) => {
+self.addEventListener('install', function (e) {
   self.skipWaiting();
   e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(PRECACHE).catch(function () {}))
+    caches.keys().then(function (keys) {
+      return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+    })
   );
 });
 
-self.addEventListener('activate', (e) => {
+self.addEventListener('activate', function (e) {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => {
+    caches.keys().then(function (keys) {
+      return Promise.all(keys.map(function (k) {
         if (k !== CACHE) return caches.delete(k);
-      }))
-    ).then(() => self.clients.claim())
+      }));
+    }).then(function () { return self.clients.claim(); })
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
+self.addEventListener('message', function (e) {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+self.addEventListener('fetch', function (e) {
+  var req = e.request;
   if (req.method !== 'GET') return;
-  let url;
+  var url;
   try { url = new URL(req.url); } catch (err) { return; }
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.includes('/api/')) {
+  if (url.pathname.indexOf('/api/') !== -1) {
     e.respondWith(fetch(req));
     return;
   }
 
+  var path = url.pathname + url.search;
+  var isFresh = /\.(js|css)(\?|$)/i.test(path) ||
+    /index\.html$/i.test(url.pathname) ||
+    url.pathname === '/' ||
+    /\/docs\/?$/.test(url.pathname);
+
+  if (isFresh) {
+    e.respondWith(
+      fetch(req, { cache: 'no-store' }).catch(function () {
+        return caches.match(req);
+      })
+    );
+    return;
+  }
+
   e.respondWith(
-    fetch(req).then((res) => {
+    fetch(req).then(function (res) {
       if (res && res.status === 200 && res.type === 'basic') {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(function () {});
+        var copy = res.clone();
+        caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
       }
       return res;
-    }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
+    }).catch(function () {
+      return caches.match(req).then(function (r) { return r || caches.match('./index.html'); });
+    })
   );
 });
