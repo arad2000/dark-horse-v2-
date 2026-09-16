@@ -12,10 +12,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from admin_router import router as admin_router
+from admin_http_router import router as admin_router
 from commercial_api import router as commercial_router
 from dark_horse_engine_v2 import DarkHorseEngineV2
-from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
+from feedback_api import router as feedback_router
 from ai_counsel_service import generate_counseling
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -32,13 +32,9 @@ class DarkHorseDiscoverRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Starting Dark Horse API V2.0 ...")
-
-    logger.info("✅ COMMERCIAL_ROUTER_IMPORTED=%s", commercial_router is not None)
-    logger.info("✅ ADMIN_ROUTER_IMPORTED=%s", admin_router is not None)
-    logger.info("✅ FEEDBACK_ROUTER_IMPORTED=%s", feedback_router is not None)
-
     try:
         import billing_models  # noqa: F401
+        import feedback_models  # noqa: F401
         import models  # noqa: F401
         from database import init_db, is_configured
 
@@ -50,31 +46,19 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("❌ Operational DB init failed: %s", e, exc_info=True)
 
-    try:
-        app.state.engine = DarkHorseEngineV2(
-            motives_path="docs/data/micro_motives.json",
-            majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",
-            value_poles_path="value_poles_v2.json",
-            school_branches_path="school_branches_v2.json"
-        )
-        logger.info("✅ DarkHorseEngineV2 آماده است.")
-    except Exception as e:
-        logger.error(f"❌ DarkHorseEngineV2 init failed: {e}")
-        app.state.engine = None
-
-    try:
-        app.state.branch_engine = DarkHorseEngineV2(
-            motives_path="docs/data/micro_motives.json",
-            majors_path="majors_database_v2.json",
-            trait_map_path="trait_map_v3.json",
-            value_poles_path="value_poles_v2.json",
-            school_branches_path="school_branches_v2.json"
-        )
-        logger.info("✅ BranchEngineV2 آماده است.")
-    except Exception as e:
-        logger.error(f"❌ BranchEngineV2 init failed: {e}")
-        app.state.branch_engine = None
+    for attr in ("engine", "branch_engine"):
+        try:
+            setattr(app.state, attr, DarkHorseEngineV2(
+                motives_path="docs/data/micro_motives.json",
+                majors_path="majors_database_v2.json",
+                trait_map_path="trait_map_v3.json",
+                value_poles_path="value_poles_v2.json",
+                school_branches_path="school_branches_v2.json",
+            ))
+            logger.info("✅ %s آماده است.", attr)
+        except Exception as e:
+            logger.error("❌ %s init failed: %s", attr, e, exc_info=True)
+            setattr(app.state, attr, None)
 
     yield
     logger.info("🛑 Shutting down V2.0 ...")
@@ -91,8 +75,7 @@ app.add_middleware(
 app.include_router(commercial_router)
 app.include_router(admin_router)
 app.include_router(feedback_router)
-app.include_router(feedback_legacy_router)
-logger.info("✅ ROUTERS_MOUNTED commercial=/api/v1 admin=/api/v1/admin feedback=/api/v1/feedback legacy=/api/feedback/submit")
+logger.info("✅ ROUTERS_MOUNTED commercial=/api/v1 admin=/api/v1/admin feedback=/api/v1/feedback")
 
 
 @app.get("/__runtime_fingerprint")
@@ -105,8 +88,6 @@ async def runtime_fingerprint():
         "commercial_prefix": "/api/v1",
         "admin_prefix": "/api/v1/admin",
         "feedback_prefix": "/api/v1/feedback",
-        "legacy_feedback_submit": "/api/feedback/submit",
-        "commit_hint": "deploy/liara-commercial-sandbox",
         "ai_counsel_endpoint": "/api/v2/darkhorse/counsel",
     }
 
@@ -137,13 +118,7 @@ def _authenticated_user_id(req: Request) -> int | None:
         return None
 
 
-def _persist_discovery_session(
-    req: Request,
-    request: DarkHorseDiscoverRequest,
-    *,
-    user_id: int | None = None,
-) -> tuple[str, int | None]:
-    """Create or reuse one operational session without changing scoring semantics."""
+def _persist_discovery_session(req: Request, request: DarkHorseDiscoverRequest, *, user_id: int | None = None) -> tuple[str, int | None]:
     try:
         from api_persistence_adapter import OperationalPersistenceAdapter, assert_safe_mode
         from database import SessionLocal
@@ -153,8 +128,6 @@ def _persist_discovery_session(
 
         assert_safe_mode()
         requested_uuid = request.session_id.strip() if request.session_id else None
-
-        # Reusing a session is intentionally allowed only for an authenticated owner.
         if requested_uuid and user_id is not None:
             db = SessionLocal()
             try:
@@ -169,7 +142,6 @@ def _persist_discovery_session(
             finally:
                 db.close()
 
-        # An anonymous request never reuses a caller-supplied UUID; create a new one.
         session_uuid = requested_uuid if (requested_uuid and user_id is not None) else str(uuid.uuid4())
         payload = {
             "micro_motives": request.micro_motives,
@@ -197,8 +169,7 @@ def _persist_discovery_session(
             finally:
                 db.close()
 
-        adapter = OperationalPersistenceAdapter(OperationalStore())
-        row = adapter.create_session(payload, request_meta={
+        row = OperationalPersistenceAdapter(OperationalStore()).create_session(payload, request_meta={
             "user_ip": req.client.host if req.client else None,
             "user_agent": req.headers.get("user-agent"),
         })
@@ -216,12 +187,8 @@ def _persist_major_results(session_id: int | None, recommendations: list[dict]) 
     try:
         from api_persistence_adapter import OperationalPersistenceAdapter, assert_safe_mode
         from operational_store import OperationalStore
-
         assert_safe_mode()
-        OperationalPersistenceAdapter(OperationalStore()).persist_discovery(
-            session_id,
-            {"discovered_majors": recommendations},
-        )
+        OperationalPersistenceAdapter(OperationalStore()).persist_discovery(session_id, {"discovered_majors": recommendations})
         return True
     except Exception as exc:
         logger.warning("Operational major-result persistence skipped: %s", exc)
@@ -234,12 +201,8 @@ def _persist_branch_results(session_id: int | None, branches: list[dict]) -> boo
     try:
         from api_persistence_adapter import OperationalPersistenceAdapter, assert_safe_mode
         from operational_store import OperationalStore
-
         assert_safe_mode()
-        OperationalPersistenceAdapter(OperationalStore()).persist_branch_discovery(
-            session_id,
-            {"recommended_branches": branches},
-        )
+        OperationalPersistenceAdapter(OperationalStore()).persist_branch_discovery(session_id, {"recommended_branches": branches})
         return True
     except Exception as exc:
         logger.warning("Operational branch-result persistence skipped: %s", exc)
@@ -254,14 +217,12 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
     try:
         user_id = _authenticated_user_id(req)
         session_uuid, persisted_session_id = _persist_discovery_session(req, request, user_id=user_id)
-
         discovery = await asyncio.to_thread(
             engine.discover_individuality,
             request.micro_motives,
             request.sjt_answers or {},
             request.conjoint_choices or {},
         )
-
         recommendations = []
         for item in discovery.get("discovered_majors", []):
             fit = item.get("individuality_fit", {}) or {}
@@ -282,13 +243,11 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
             if fit.get("alternative_paths"):
                 rec["alternative_paths"] = fit["alternative_paths"]
             recommendations.append(rec)
-
         recommendations.sort(key=lambda x: x["fit_score"], reverse=True)
         high = sum(1 for r in recommendations if r["fit_score"] >= 80)
         med = sum(1 for r in recommendations if 60 <= r["fit_score"] < 80)
         low = sum(1 for r in recommendations if r["fit_score"] < 60)
         persisted = _persist_major_results(persisted_session_id, recommendations)
-
         return {
             "session_id": session_uuid,
             "operational_session_id": persisted_session_id,
@@ -307,7 +266,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/discover: {e}", exc_info=True)
+        logger.error("Error in /api/v2/darkhorse/discover: %s", e, exc_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
@@ -325,7 +284,6 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             request.sjt_answers or {},
             request.conjoint_choices or {},
         )
-
         branches = []
         for branch in result.get("recommended_branches", []):
             branch_item = {
@@ -340,10 +298,8 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             if branch.get("alternative_paths"):
                 branch_item["alternative_paths"] = branch["alternative_paths"]
             branches.append(branch_item)
-
         branches.sort(key=lambda x: x["fit_score"], reverse=True)
         persisted = _persist_branch_results(persisted_session_id, branches)
-
         return {
             "session_id": session_uuid,
             "operational_session_id": persisted_session_id,
@@ -360,13 +316,12 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in /api/v2/darkhorse/branch-discovery: {e}", exc_info=True)
+        logger.error("Error in /api/v2/darkhorse/branch-discovery: %s", e, exc_info=True)
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
 @app.post("/api/v2/darkhorse/counsel")
 async def darkhorse_counsel(request: dict):
-    """Personalized counseling text for discovery results (Dark Horse philosophy)."""
     profile = request.get("profile") or {}
     top_results = request.get("top_results") or request.get("results") or []
     journey_type = request.get("journey_type") or profile.get("kind") or "majors"
@@ -386,12 +341,7 @@ async def darkhorse_counsel(request: dict):
             norm.append({"name": str(item)})
     if journey_type and "kind" not in profile:
         profile = {**profile, "kind": journey_type}
-    text = await generate_counseling(
-        profile=profile,
-        top_results=norm,
-        journey_type=str(journey_type),
-        mode=str(mode),
-    )
+    text = await generate_counseling(profile=profile, top_results=norm, journey_type=str(journey_type), mode=str(mode))
     return {"success": True, "counseling": text, "ok": True, "mode": mode}
 
 
