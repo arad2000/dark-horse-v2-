@@ -29,7 +29,8 @@ class SandboxBillingAdminUITests(unittest.TestCase):
         self.assertIn("admin", html)
         self.assertIn("support", html)
         self.assertIn('id="exit-panel"', html)
-        self.assertIn("window.location.assign('index.html')", html)
+        self.assertIn("window.location.replace('index.html?logout=1')", html)
+        self.assertIn("localStorage.removeItem('dh_auth_v1')", html)
 
     def test_index_removes_fixed_admin_entry_and_uses_canonical_payment_ui(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
