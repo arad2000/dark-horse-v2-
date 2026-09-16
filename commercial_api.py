@@ -19,11 +19,11 @@ from sqlalchemy.orm import Session
 from auth_service import authenticate_user, resolve_session
 from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
-from billing_models import Entitlement, User
+from billing_models import Entitlement, Payment, User
 from database import get_db
 from password_reset_service import attach_router
 from phone_verification_service import request_registration_otp, verify_registration_otp
-from production_billing_guard import assert_production_billing_configuration, is_production_free_only_mode
+from production_billing_guard import assert_production_billing_configuration
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
 attach_router(router)
@@ -115,9 +115,14 @@ def _callback_url(request: Request) -> str:
     return str(request.base_url).rstrip("/") + "/api/v1/billing/callback"
 
 
-def _frontend_redirect(payment: str) -> str:
+def _frontend_redirect(payment: str, *, order_id: str | None = None, credits_added: int | None = None) -> str:
     base = os.getenv("FRONTEND_APP_URL", "https://asbe-siah.ir").strip().rstrip("/")
-    return base + "/?" + urlencode({"payment": payment})
+    query: dict[str, str] = {"payment": payment}
+    if order_id:
+        query["order_id"] = str(order_id)
+    if credits_added is not None:
+        query["credits_added"] = str(int(credits_added))
+    return base + "/?" + urlencode(query)
 
 
 @router.post("/auth/register")
@@ -274,27 +279,54 @@ def create_payment(request: Request, user: User = Depends(_current_user), db: Se
 @router.get("/billing/callback")
 def billing_callback(
     request: Request,
-    order_id: str = Query(..., alias="order_id"),
+    order_id: str | None = Query(default=None, alias="order_id"),
     authority: str = Query(..., alias="Authority"),
     status: str | None = Query(default=None, alias="Status"),
     db: Session = Depends(get_db),
 ):
     try:
         provider = _server_billing_provider()
+        resolved_order_id = order_id
+        if not resolved_order_id:
+            payment = db.scalar(
+                select(Payment)
+                .where(
+                    Payment.provider == provider,
+                    Payment.provider_authority == authority,
+                )
+                .order_by(Payment.id.desc())
+            )
+            if payment is None:
+                raise ValueError("unknown payment authority")
+            from billing_models import Order
+            resolved_order = db.get(Order, payment.order_id)
+            if resolved_order is None:
+                raise ValueError("payment order not found")
+            resolved_order_id = resolved_order.public_id
         result = handle_payment_callback(
             db,
-            order_public_id=order_id,
+            order_public_id=resolved_order_id,
             authority=authority,
             status=status,
             provider_name=provider,
-            event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}",
+            event_key=f"callback:{provider}:{resolved_order_id}:{authority}:{status or ''}",
             raw_callback=dict(request.query_params),
             zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
         )
         db.commit()
         if result.get("verified"):
-            return RedirectResponse(url=_frontend_redirect("success"), status_code=303)
-        return RedirectResponse(url=_frontend_redirect("failed"), status_code=303)
+            return RedirectResponse(
+                url=_frontend_redirect(
+                    "success",
+                    order_id=resolved_order_id,
+                    credits_added=int(result.get("credits_added") or 0),
+                ),
+                status_code=303,
+            )
+        return RedirectResponse(
+            url=_frontend_redirect("failed", order_id=resolved_order_id, credits_added=0),
+            status_code=303,
+        )
     except HTTPException:
         db.rollback()
         raise
