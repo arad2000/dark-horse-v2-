@@ -31,6 +31,7 @@ class User(Base):
     entitlements = relationship("Entitlement", back_populates="user", cascade="all, delete-orphan")
     admin_audit_logs = relationship("AdminAuditLog", back_populates="admin_user")
     saved_results = relationship("SavedResult", back_populates="user", cascade="all, delete-orphan")
+    user_sessions = relationship("UserSession", back_populates="user")
 
 
 class AuthSession(Base):
