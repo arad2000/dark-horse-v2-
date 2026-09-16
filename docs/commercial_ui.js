@@ -209,7 +209,7 @@
     setTimeout(function(){try{syncServerQuota();}catch(_){}}, 400);
     setTimeout(function(){try{syncServerQuota();}catch(_){}}, 1500);
   }
-  global.DHCommercialUIglobal.DHCommercialUI={
+  if (!global.DHCommercialUI) global.DHCommercialUI={
     showAuth:showAuthModal,
     showPurchase:openPurchaseModal,
     startServerAuthorizedJourney:continueAfterAuth,
