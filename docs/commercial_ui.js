@@ -5,6 +5,9 @@
   var USER_KEY = 'dh_local_user_v1';
   var QUOTA_KEY = 'dh_local_quota_v1';
   var BUSY = false;
+  var QUOTA_SYNC_IN_FLIGHT = null;
+  var QUOTA_LAST_SYNC_AT = 0;
+  var QUOTA_MIN_INTERVAL_MS = 10000;
 
   function el(id) { return document.getElementById(id); }
   function text(v) { return String(v == null ? '' : v); }
@@ -336,11 +339,28 @@
       if (done) done(null);
       return;
     }
-    global.DHAuth.quota().then(function (data) {
+    var now = Date.now();
+    if (QUOTA_SYNC_IN_FLIGHT) {
+      QUOTA_SYNC_IN_FLIGHT.then(function (value) { if (done) done(value); });
+      return;
+    }
+    if (now - QUOTA_LAST_SYNC_AT < QUOTA_MIN_INTERVAL_MS) {
+      var local = null;
+      try { local = Number(JSON.parse(localStorage.getItem(QUOTA_KEY) || '{}').serverRemaining); } catch (_) {}
+      if (done) done(Number.isFinite(local) ? local : null);
+      return;
+    }
+    QUOTA_LAST_SYNC_AT = now;
+    QUOTA_SYNC_IN_FLIGHT = global.DHAuth.quota().then(function (data) {
       var remaining = Math.max(0, Number(data && data.credits_remaining) || 0);
       setLocalQuota(remaining);
-      if (done) done(remaining);
-    }).catch(function () { if (done) done(null); });
+      return remaining;
+    }).catch(function () {
+      return null;
+    }).finally(function () {
+      QUOTA_SYNC_IN_FLIGHT = null;
+    });
+    QUOTA_SYNC_IN_FLIGHT.then(function (value) { if (done) done(value); });
   }
 
   function boot() {
@@ -359,7 +379,7 @@
       var observer = new MutationObserver(function () { installButtonHooks(); });
       observer.observe(document.body, { childList: true, subtree: true });
     }
-    syncQuota(function () {});
+    // No background quota request on page boot. Quota is fetched after explicit auth/journey actions.
   }
 
   function installDiscoverySessionBridge() {
