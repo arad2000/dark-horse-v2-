@@ -662,7 +662,7 @@
     try {
       if (window.DHCommercialUI && typeof window.DHCommercialUI.syncQuota === 'function') {
         var now = Date.now();
-        if (!window.__dh_quota_sync_at || (now - window.__dh_quota_sync_at) > 8000) {
+        if (!window.__dh_quota_sync_at || (now - window.__dh_quota_sync_at) > 30000) {
           window.__dh_quota_sync_at = now;
           window.DHCommercialUI.syncQuota(function () {});
         }

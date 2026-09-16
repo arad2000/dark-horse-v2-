@@ -144,7 +144,7 @@
     try{location.reload();}catch(_){}
   }
   function isAdminUser(){try{if(global.DHAuth&&typeof global.DHAuth.isAdmin==='function'&&global.DHAuth.isAdmin())return true;var u=global.DHAuth&&global.DHAuth.getUser&&global.DHAuth.getUser();return !!(u&&(u.role==='admin'||u.role==='support'||u.is_admin===true));}catch(_){return false;}}
-  function ensureAdminFeedbackPanel(){if(!isAdminUser())return;if(el('dh-admin-feedback'))return;var out=el('dh-p-out');if(!out||!out.parentNode)return;var box=document.createElement('div');box.id='dh-admin-feedback';box.style.cssText='margin:14px 0 8px;padding:14px;border-radius:14px;border:1px solid rgba(212,175,55,.3);background:#12121c;text-align:right;';box.innerHTML='<div style="color:#f0c040;font-weight:800;margin-bottom:6px;">پنل ادمین — بازخوردها</div><div id="dh-admin-dash" style="color:#b7ad98;font-size:.84rem;line-height:1.8;margin-bottom:8px;">در حال بارگذاری…</div><div id="dh-admin-list" style="max-height:300px;overflow:auto;font-size:.8rem;color:#d7caa9;line-height:1.7;"></div><button type="button" class="btn" id="dh-admin-refresh" style="width:100%;margin-top:10px;">بروزرسانی بازخوردها</button>';out.parentNode.insertBefore(box,out);async function load(){var dash=el('dh-admin-dash'),list=el('dh-admin-list');if(!global.DHAuth||!global.DHAuth.adminFeedback){if(dash)dash.textContent='کلاینت ادمین آماده نیست';return;}try{var d=await global.DHAuth.adminDashboard();if(dash)dash.textContent='کاربران: '+(d.users_total||0)+' · بازخورد: '+(d.feedback_total||0)+' · پرداخت: '+(d.payments_total||0)+' · اعتبارها: '+(d.entitlements_total||0);var rows=await global.DHAuth.adminFeedback(40);if(!list)return;if(!rows||!rows.length){list.textContent='هنوز بازخوردی ثبت نشده است.';return;}list.innerHTML=rows.map(function(r){var title=r.suggested_major||r.exam_code||('#'+r.id);var scores='رضایت: '+(r.satisfaction_score!=null?r.satisfaction_score:'—')+' · دقت: '+(r.accuracy_rating!=null?r.accuracy_rating:'—')+' · توصیه: '+(r.would_recommend?'بله':'خیر');var c=text(r.comments||'').replace(/\s*\|?\s*payload=.*$/,'').trim();var when=text(r.created_at||'').slice(0,19).replace('T',' ');return '<div style="border-top:1px solid rgba(255,255,255,.08);padding:9px 0;"><div style="color:#f0c040;font-weight:700;">'+escapeHtml(title)+'</div><div>'+escapeHtml(scores)+'</div><div style="color:#8f845f;font-size:.74rem;">'+escapeHtml(when)+'</div>'+(c?'<div style="margin-top:4px;color:#cbb98a;">'+escapeHtml(c.slice(0,220))+'</div>':'')+'</div>';}).join('');}catch(e){if(dash)dash.textContent=text(e&&e.message?e.message:e)||'خطا در بارگذاری پنل ادمین';if(list)list.textContent='';}}var btn=el('dh-admin-refresh');if(btn)btn.onclick=function(){load();};load();}
+  function ensureAdminFeedbackPanel(){if(!isAdminUser())return;if(el('dh-admin-feedback'))return;var out=el('dh-p-out');if(!out||!out.parentNode)return;var box=document.createElement('div');box.id='dh-admin-feedback';box.style.cssText='margin:14px 0 8px;padding:14px;border-radius:14px;border:1px solid rgba(212,175,55,.3);background:#12121c;text-align:right;';box.innerHTML='<div style="color:#f0c040;font-weight:800;margin-bottom:6px;">پنل ادمین — بازخوردها</div><div id="dh-admin-dash" style="color:#b7ad98;font-size:.84rem;line-height:1.8;margin-bottom:8px;">در حال بارگذاری…</div><div id="dh-admin-list" style="max-height:300px;overflow:auto;font-size:.8rem;color:#d7caa9;line-height:1.7;"></div><button type="button" class="btn" id="dh-admin-refresh" style="width:100%;margin-top:10px;">بروزرسانی بازخوردها</button>';out.parentNode.insertBefore(box,out);async function load(){if(global.__dh_admin_loading)return;global.__dh_admin_loading=true;setTimeout(function(){global.__dh_admin_loading=false;},3000);var dash=el('dh-admin-dash'),list=el('dh-admin-list');if(!global.DHAuth||!global.DHAuth.adminFeedback){if(dash)dash.textContent='کلاینت ادمین آماده نیست';return;}try{var d=await global.DHAuth.adminDashboard();if(dash)dash.textContent='کاربران: '+(d.users_total||0)+' · بازخورد: '+(d.feedback_total||0)+' · پرداخت: '+(d.payments_total||0)+' · اعتبارها: '+(d.entitlements_total||0);var rows=await global.DHAuth.adminFeedback(40);if(!list)return;if(!rows||!rows.length){list.textContent='هنوز بازخوردی ثبت نشده است.';return;}list.innerHTML=rows.map(function(r){var title=r.suggested_major||r.exam_code||('#'+r.id);var scores='رضایت: '+(r.satisfaction_score!=null?r.satisfaction_score:'—')+' · دقت: '+(r.accuracy_rating!=null?r.accuracy_rating:'—')+' · توصیه: '+(r.would_recommend?'بله':'خیر');var c=text(r.comments||'').replace(/\s*\|?\s*payload=.*$/,'').trim();var when=text(r.created_at||'').slice(0,19).replace('T',' ');return '<div style="border-top:1px solid rgba(255,255,255,.08);padding:9px 0;"><div style="color:#f0c040;font-weight:700;">'+escapeHtml(title)+'</div><div>'+escapeHtml(scores)+'</div><div style="color:#8f845f;font-size:.74rem;">'+escapeHtml(when)+'</div>'+(c?'<div style="margin-top:4px;color:#cbb98a;">'+escapeHtml(c.slice(0,220))+'</div>':'')+'</div>';}).join('');}catch(e){if(dash)dash.textContent=text(e&&e.message?e.message:e)||'خطا در بارگذاری پنل ادمین';if(list)list.textContent='';}}var btn=el('dh-admin-refresh');if(btn)btn.onclick=function(){load();};load();}
   function installButtonHooks(){function patch(){
     document.querySelectorAll('#dh-start-journey,#dh-continue-journey,#dh-p-journey').forEach(function(b){
       if(b.__dhCommercialHooked)return;b.__dhCommercialHooked=true;
@@ -160,38 +160,41 @@
     ensureAdminFeedbackPanel();
   }
   patch();
-  new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});
+  var _obsT=null;
+  new MutationObserver(function(){
+    if(_obsT)return;
+    _obsT=setTimeout(function(){_obsT=null;try{patch();}catch(_){}}, 500);
+  }).observe(document.body,{childList:true,subtree:true});
   }
   
   function syncServerQuota(done){
+    var now=Date.now();
+    if(global.__dh_quota_last && (now-global.__dh_quota_last)<15000){
+      if(done)done(null);return;
+    }
+    if(global.__dh_quota_busy){if(done)done(null);return;}
     if(!global.DHAuth||!global.DHAuth.isLoggedIn||!global.DHAuth.isLoggedIn()){
       if(done)done(null);return;
     }
+    global.__dh_quota_busy=true;
+    global.__dh_quota_last=now;
     global.DHAuth.quota().then(function(d){
+      global.__dh_quota_busy=false;
       var r=Number(d&&d.credits_remaining);
       if(!isFinite(r)||r<0)r=0;
       var prev=null;
+      try{prev=JSON.parse(localStorage.getItem('dh_local_quota_v1')||'{}').serverRemaining;}catch(_){}
       try{
-        var oldq=JSON.parse(localStorage.getItem('dh_local_quota_v1')||'{}');
-        prev=oldq.serverRemaining;
+        localStorage.setItem('dh_local_quota_v1', JSON.stringify({used:0,premium:false,serverRemaining:r}));
       }catch(_){}
-      try{
-        localStorage.setItem('dh_local_quota_v1', JSON.stringify({
-          used:0,
-          premium:false,
-          serverRemaining:r
-        }));
-      }catch(_){}
-      try{setLocalQuota({remaining:r, serverRemaining:r});}catch(_){}
-      // فقط اگر عدد عوض شده پروفایل را دوباره بکش (جلوگیری از حلقه)
+      try{setLocalQuota({remaining:r,serverRemaining:r});}catch(_){}
       if(prev!==r){
-        try{
-          if(global.DHShell&&typeof global.DHShell.renderProfile==='function')global.DHShell.renderProfile();
-        }catch(_){}
+        try{if(global.DHShell&&typeof global.DHShell.renderProfile==='function')global.DHShell.renderProfile();}catch(_){}
       }
       if(done)done(r);
-    }).catch(function(){if(done)done(null);});
+    }).catch(function(){global.__dh_quota_busy=false;if(done)done(null);});
   }
+
 
   function boot(){
     global.DHCommercialUI={
@@ -203,11 +206,8 @@
     };
     try{installButtonHooks();}catch(_){}
     try{handlePaymentReturn();}catch(_){}
-    // هر بار باز شدن اپ: اعتبار واقعی از سرور
     try{syncServerQuota();}catch(_){}
-    // کمی بعد دوباره (بعد از restore سشن)
-    setTimeout(function(){try{syncServerQuota();}catch(_){}}, 400);
-    setTimeout(function(){try{syncServerQuota();}catch(_){}}, 1500);
+    setTimeout(function(){try{syncServerQuota();}catch(_){}}, 2000);
   }
   if (!global.DHCommercialUI) global.DHCommercialUI={
     showAuth:showAuthModal,
