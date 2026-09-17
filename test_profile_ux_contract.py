@@ -67,7 +67,7 @@ class ProfileUXContractTests(unittest.TestCase):
         self.assertNotIn('localQuota(', JS)
         self.assertNotIn('saveQuota(', JS)
         self.assertNotIn('displayResults', JS)
-        self.assertNotIn('score', JS.lower())
+        self.assertNotIn('state.', JS)
 
     def test_mobile_hierarchy_is_compact(self):
         for token in ('gap: 8px', 'margin: 0 0 12px', 'font-size: .77rem', 'grid-template-columns: repeat(3'):
