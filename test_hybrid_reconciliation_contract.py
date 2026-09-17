@@ -25,11 +25,15 @@ def test_migration_chain_has_single_0009_and_contiguous_revisions() -> None:
         "0009_journey_credit_consumptions.py",
     ]
 
-    source = read("alembic/versions/0009_journey_credit_consumptions.py")
-    assert 'revision = "0009_journey_credit_consumptions"' in source
-    assert 'down_revision = "0008_reconciled_operational_schema"' in source
-    assert "journey_credit_consumptions" in source
-    assert "uq_journey_credit_consumption_session" in source
+    source_0008 = read("alembic/versions/0008_reconciled_operational_schema.py")
+    assert 'revision = "0008_reconciled_schema"' in source_0008
+    assert 'down_revision = "0007_auth_saved_results"' in source_0008
+
+    source_0009 = read("alembic/versions/0009_journey_credit_consumptions.py")
+    assert 'revision = "0009_journey_credit_consumptions"' in source_0009
+    assert 'down_revision = "0008_reconciled_schema"' in source_0009
+    assert "journey_credit_consumptions" in source_0009
+    assert "uq_journey_credit_consumption_session" in source_0009
 
 
 def test_main_runtime_import_graph_exists() -> None:
@@ -59,11 +63,15 @@ def test_frontend_quota_contract_has_one_canonical_charge_path() -> None:
     auth = read("docs/auth_api_client.js")
     bridge = read("docs/quota_enforcement_bridge.js")
     reconciler = read("docs/quota_state_reconciler.js")
+    session_boot = read("docs/journey_session_boot.js")
+    failure_ui = read("docs/quota_charge_failure_ui.js")
 
     assert 'auth_api_client.js?v=9' in index
     assert 'quota_state_reconciler.js?v=4' in index
     assert 'quota_enforcement_bridge.js?v=3' in index
-    assert 'commercial_ui.js?v=27' in index
+    assert 'journey_session_boot.js?v=1' in index
+    assert 'quota_charge_failure_ui.js?v=1' in index
+    assert 'commercial_ui.js?v=28' in index
 
     assert 'DHAuth.consumeTest' not in ui
     assert 'setLocalQuota({remaining:r-1})' not in ui
@@ -74,3 +82,11 @@ def test_frontend_quota_contract_has_one_canonical_charge_path() -> None:
     assert 'consumeForJourney(String(sid2))' in bridge
     assert 'SESSION_MEMORY = uuid();' in bridge
     assert 'serverConsumed' in reconciler
+    assert 'ensureAfterStart' in session_boot
+    assert 'quota/consume-test' not in failure_ui or '/api/v1/me/consume-test' in failure_ui
+    assert 'تلاش دوباره' in failure_ui
+
+
+def test_audit_runs_p0_quota_regression() -> None:
+    workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
+    assert "test_p0_quota_consumption.py" in workflow
