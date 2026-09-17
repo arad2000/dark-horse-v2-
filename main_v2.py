@@ -7,6 +7,7 @@ import logging
 import os
 import uuid
 from contextlib import asynccontextmanager
+from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -58,6 +59,11 @@ async def lifespan(app: FastAPI):
             value_poles_path="value_poles_v2.json",
             school_branches_path="school_branches_v2.json",
         )
+        # Alternative-path calculations depend only on immutable reference
+        # data. Cache them per process so every request does not recompute the
+        # same all-majors/all-branches distance scans.
+        shared_engine._find_alternative_paths = lru_cache(maxsize=256)(shared_engine._find_alternative_paths)
+        shared_engine._find_branch_alternative_paths = lru_cache(maxsize=32)(shared_engine._find_branch_alternative_paths)
         app.state.engine = shared_engine
         app.state.branch_engine = shared_engine
         logger.info("✅ shared scoring engine آماده است.")
