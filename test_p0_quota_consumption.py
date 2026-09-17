@@ -16,7 +16,7 @@ from models import Base, UserSession
 
 
 class P0QuotaConsumptionTests(unittest.TestCase):
-    """Production-shaped regression: one journey UUID can consume at most one credit."""
+    """Production-shaped regression: missing sessions charge and retries do not."""
 
     @classmethod
     def setUpClass(cls):
@@ -88,20 +88,17 @@ class P0QuotaConsumptionTests(unittest.TestCase):
             )
             db.commit()
 
-    def test_same_journey_is_charged_once_and_next_journey_charges_once(self):
+    def test_missing_session_is_provisioned_and_each_journey_charges_once(self):
         headers = {"Authorization": f"Bearer {self.token}"}
-        session_one = str(uuid4())
-        session_two = str(uuid4())
+        first_uuid = str(uuid4())
+        second_uuid = str(uuid4())
 
-        # Deliberately mark session one complete before charging. Result completion
-        # must not be reused as the billing idempotency marker.
-        self._new_session(session_one, completed=True)
-        self._new_session(session_two, completed=False)
+        self._new_session(first_uuid, completed=True)
 
         first = self.client.post(
             "/api/v1/me/consume-test",
             headers=headers,
-            json={"session_uuid": session_one},
+            json={"session_uuid": first_uuid},
         )
         self.assertEqual(first.status_code, 200, first.text)
         self.assertEqual(first.json()["consumed"], 1)
@@ -112,7 +109,7 @@ class P0QuotaConsumptionTests(unittest.TestCase):
         retry = self.client.post(
             "/api/v1/me/consume-test",
             headers=headers,
-            json={"session_uuid": session_one},
+            json={"session_uuid": first_uuid},
         )
         self.assertEqual(retry.status_code, 200, retry.text)
         self.assertEqual(retry.json()["consumed"], 0)
@@ -120,10 +117,13 @@ class P0QuotaConsumptionTests(unittest.TestCase):
         self.assertEqual(retry.json()["credits_remaining"], 2)
         self.assertEqual(retry.json()["credits_consumed"], 1)
 
+        with next(get_db()) as db:
+            self.assertIsNone(db.scalar(select(UserSession).where(UserSession.session_uuid == second_uuid)))
+
         second = self.client.post(
             "/api/v1/me/consume-test",
             headers=headers,
-            json={"session_uuid": session_two},
+            json={"session_uuid": second_uuid},
         )
         self.assertEqual(second.status_code, 200, second.text)
         self.assertEqual(second.json()["consumed"], 1)
@@ -131,30 +131,35 @@ class P0QuotaConsumptionTests(unittest.TestCase):
         self.assertEqual(second.json()["credits_remaining"], 1)
         self.assertEqual(second.json()["credits_consumed"], 2)
 
-        quota = self.client.get("/api/v1/me/quota", headers=headers)
-        self.assertEqual(quota.status_code, 200, quota.text)
-        self.assertEqual(
-            quota.json(),
-            {"credits_granted": 3, "credits_consumed": 2, "credits_remaining": 1},
+        second_retry = self.client.post(
+            "/api/v1/me/consume-test",
+            headers=headers,
+            json={"session_uuid": second_uuid},
         )
+        self.assertEqual(second_retry.status_code, 200, second_retry.text)
+        self.assertEqual(second_retry.json()["consumed"], 0)
+        self.assertTrue(second_retry.json()["already_consumed"])
+        self.assertEqual(second_retry.json()["credits_remaining"], 1)
+        self.assertEqual(second_retry.json()["credits_consumed"], 2)
+
+        with TestClient(app) as fresh_client:
+            cold = fresh_client.get("/api/v1/me/quota", headers=headers)
+        self.assertEqual(cold.status_code, 200, cold.text)
+        self.assertEqual(cold.json(), {"credits_granted": 3, "credits_consumed": 2, "credits_remaining": 1})
 
         with next(get_db()) as db:
-            rows = list(db.scalars(select(Entitlement).where(Entitlement.user_id == self.user_id)))
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0].credits_remaining, 1)
             ledger = list(
                 db.scalars(
                     select(JourneyCreditConsumption)
                     .where(JourneyCreditConsumption.user_id == self.user_id)
-                    .order_by(JourneyCreditConsumption.session_uuid)
                 )
             )
             self.assertEqual(len(ledger), 2)
-            self.assertEqual({row.session_uuid for row in ledger}, {session_one, session_two})
-            one = db.scalar(select(UserSession).where(UserSession.session_uuid == session_one))
-            two = db.scalar(select(UserSession).where(UserSession.session_uuid == session_two))
-            self.assertTrue(one.is_completed)
-            self.assertFalse(two.is_completed)
+            self.assertEqual({row.session_uuid for row in ledger}, {first_uuid, second_uuid})
+            first = db.scalar(select(UserSession).where(UserSession.session_uuid == first_uuid))
+            second = db.scalar(select(UserSession).where(UserSession.session_uuid == second_uuid))
+            self.assertTrue(first.is_completed)
+            self.assertFalse(second.is_completed)
 
 
 if __name__ == "__main__":
