@@ -50,6 +50,8 @@ jobs:
         run: alembic current
       - name: Quota and migration contracts
         run: python -m pytest -q test_quota_persistence_contract.py test_hybrid_reconciliation_contract.py
+      - name: PostgreSQL auth/quota E2E
+        run: python -m pytest -q test_hybrid_runtime_e2e.py
       - name: Verify cutover remains disabled
         run: |
           python - <<'PY'
