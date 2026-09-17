@@ -63,11 +63,12 @@ def test_only_one_0008_revision_remains() -> None:
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source)
         revision = next(
-            node.value
+            node.value.value
             for node in tree.body
             if isinstance(node, ast.Assign)
             and any(isinstance(target, ast.Name) and target.id == "revision" for target in node.targets)
             and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
         )
         revisions.append(revision)
     assert revisions == ["0008_reconciled_schema"]
