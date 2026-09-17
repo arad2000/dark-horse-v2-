@@ -14,7 +14,7 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
+      .replace(/\"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
 
@@ -61,6 +61,15 @@
     return '';
   }
 
+  function findLegacySupportCard(card) {
+    var children = Array.prototype.slice.call(card.children || []);
+    for (var i = 0; i < children.length; i += 1) {
+      var child = children[i];
+      if (child && child !== card && child.classList && child.classList.contains('card')) return child;
+    }
+    return null;
+  }
+
   function makeBuyButton() {
     var buy = document.createElement('button');
     buy.type = 'button';
@@ -79,40 +88,84 @@
     return buy;
   }
 
-  function makeSupportCard() {
-    var box = document.createElement('section');
-    box.className = 'dh-support-card';
-    box.setAttribute('aria-label', 'پشتیبانی و حریم خصوصی');
-    box.innerHTML =
-      '<div class="dh-support-line">' +
-        '<span class="dh-support-copy">سؤال یا مشکلی داری؟ تیم اسب سیاه در ایتا پاسخ‌گوست.</span>' +
-        '<a class="dh-support-link" href="https://eitaa.com/" target="_blank" rel="noopener noreferrer">پشتیبانی در ایتا</a>' +
-      '</div>' +
-      '<div class="dh-support-foot">' +
-        '<a class="dh-enamad-chip" href="https://enamad.ir/" target="_blank" rel="noopener noreferrer" aria-label="اینماد">اینماد</a>' +
-        '<span class="dh-support-dot">·</span>' +
-        '<a class="dh-privacy-link" href="#dh-privacy-note">حریم خصوصی</a>' +
-      '</div>' +
-      '<div id="dh-privacy-note" class="dh-privacy-note">نام و شماره موبایل برای مدیریت حساب استفاده می‌شود؛ خلاصه نتیجه سفر برای قابلیت‌های حساب نگهداری می‌شود. برای اطلاعات بیشتر یا پرسش درباره حریم خصوصی، از پشتیبانی ایتا استفاده کنید.</div>';
-    return box;
-  }
-
   function makeAdminPanel() {
     var panel = document.createElement('section');
     panel.className = 'dh-admin-panel';
-    panel.setAttribute('aria-label', 'خلاصه پنل مدیریت');
+    panel.setAttribute('aria-label', 'پنل مدیریت');
     panel.innerHTML =
       '<h3 class="dh-admin-title">پنل مدیریت</h3>' +
-      '<div class="dh-admin-grid">' +
-        '<div class="dh-admin-metric"><div class="n" data-admin-metric="users">—</div><div class="l">کاربران</div></div>' +
-        '<div class="dh-admin-metric"><div class="n" data-admin-metric="feedback">—</div><div class="l">بازخورد</div></div>' +
-        '<div class="dh-admin-metric"><div class="n" data-admin-metric="payments">—</div><div class="l">پرداخت‌ها</div></div>' +
-      '</div>' +
-      '<p class="dh-admin-status" data-admin-status>در حال دریافت آمار…</p>';
+      '<div class="dh-admin-users" data-admin-users>' +
+        '<p class="dh-admin-status" data-admin-status>در حال دریافت کاربران…</p>' +
+      '</div>';
     return panel;
   }
 
-  async function loadAdminStats(panel) {
+  function renderAdminUsers(panel, users) {
+    var target = panel.querySelector('[data-admin-users]');
+    if (!target) return;
+    target.innerHTML = '';
+
+    if (!Array.isArray(users) || users.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'dh-admin-status';
+      empty.textContent = 'کاربری برای نمایش وجود ندارد.';
+      target.appendChild(empty);
+      return;
+    }
+
+    var tableWrap = document.createElement('div');
+    tableWrap.className = 'dh-admin-users-table-wrap';
+    tableWrap.setAttribute('role', 'region');
+    tableWrap.setAttribute('aria-label', 'فهرست کاربران');
+    tableWrap.tabIndex = 0;
+
+    var table = document.createElement('table');
+    table.className = 'dh-admin-users-table';
+    table.dir = 'rtl';
+
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    ['نام', 'شماره تماس', 'وضعیت'].forEach(function (label) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    users.forEach(function (user) {
+      var row = document.createElement('tr');
+
+      var name = document.createElement('td');
+      name.textContent = text(user && user.name ? user.name : '—');
+      row.appendChild(name);
+
+      var phone = document.createElement('td');
+      phone.dir = 'ltr';
+      phone.textContent = text(user && user.phone ? user.phone : '—');
+      row.appendChild(phone);
+
+      var status = document.createElement('td');
+      var statusMap = { active: 'فعال', suspended: 'تعلیق‌شده', disabled: 'غیرفعال' };
+      status.textContent = statusMap[user && user.status] || text(user && user.status ? user.status : '—');
+      row.appendChild(status);
+
+      tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    target.appendChild(tableWrap);
+
+    var meta = document.createElement('p');
+    meta.className = 'dh-admin-status';
+    meta.textContent = users.length + ' کاربر اخیر';
+    target.appendChild(meta);
+  }
+
+  async function loadAdminUsers(panel) {
     var status = panel.querySelector('[data-admin-status]');
     try {
       var session = global.DHAuth && typeof global.DHAuth.getSession === 'function'
@@ -121,22 +174,16 @@
       var token = session && session.token ? String(session.token) : '';
       if (!token) throw new Error('auth');
       var base = text(global.API_BASE || 'https://api.asbe-siah.ir').replace(/\/$/, '');
-      var response = await fetch(base + '/api/v1/admin/dashboard', {
+      var response = await fetch(base + '/api/v1/admin/users?limit=100', {
         headers: { Authorization: 'Bearer ' + token }
       });
       var data = null;
       try { data = await response.json(); } catch (_) {}
       if (!response.ok) throw new Error('status');
-
-      var users = panel.querySelector('[data-admin-metric="users"]');
-      var feedback = panel.querySelector('[data-admin-metric="feedback"]');
-      var payments = panel.querySelector('[data-admin-metric="payments"]');
-      if (users) users.textContent = text(data && data.users_total != null ? data.users_total : '—');
-      if (feedback) feedback.textContent = text(data && data.feedback_total != null ? data.feedback_total : '—');
-      if (payments) payments.textContent = text(data && data.payments_total != null ? data.payments_total : '—');
-      if (status) status.textContent = 'آمار سرور';
+      renderAdminUsers(panel, data);
+      if (status) status.remove();
     } catch (_) {
-      if (status) status.textContent = 'آمار موقتاً در دسترس نیست.';
+      if (status) status.textContent = 'فهرست کاربران موقتاً در دسترس نیست.';
     }
   }
 
@@ -170,6 +217,7 @@
     var share = card.querySelector('#dh-p-share');
     var legacyPrem = card.querySelector('#dh-p-prem');
     var logout = card.querySelector('#dh-p-out');
+    var legacySupport = findLegacySupportCard(card);
 
     if (!avatar || !name || !stats || !journey || !logout) return;
 
@@ -234,8 +282,6 @@
       legacyPrem.remove();
     }
 
-    var support = makeSupportCard();
-
     var account = document.createElement('section');
     account.className = 'dh-profile-account';
     account.appendChild(logout);
@@ -249,13 +295,13 @@
     if (lastBox) shell.appendChild(lastBox);
     shell.appendChild(actions);
     if (debugBox) shell.appendChild(debugBox);
-    shell.appendChild(support);
     shell.appendChild(account);
+    if (legacySupport) shell.appendChild(legacySupport);
     if (admin) shell.appendChild(admin);
     wrap.appendChild(shell);
 
     scrollProfileToTop();
-    if (admin) loadAdminStats(admin);
+    if (admin) loadAdminUsers(admin);
   }
 
   function install() {
