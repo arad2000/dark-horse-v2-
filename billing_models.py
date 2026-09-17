@@ -73,7 +73,7 @@ class PremiumPlan(Base):
     duration_days = Column(Integer, nullable=True)
     credits_granted = Column(Integer, nullable=False, default=0, server_default="0")
     price_minor = Column(BigInteger, nullable=False)
-    currency = Column(String(8), nullable=False, default="IRR", server_default="IRR")
+    currency = Column(String(8), nullable=False, default="IRR")
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
     features = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -96,7 +96,7 @@ class Order(Base):
     paid_at = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     user = relationship("User", back_populates="orders")
-    plan = relationship("PremiumPlan", back_populates="orders")
+    plan = relationship("PremiumPlan", back_populates="plan", cascade="all, delete-orphan") if False else relationship("PremiumPlan", back_populates="orders")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
     entitlements = relationship("Entitlement", back_populates="order")
 
@@ -173,3 +173,20 @@ class AdminAuditLog(Base):
     ip_address = Column(String(45), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     admin_user = relationship("User", back_populates="admin_audit_logs")
+
+
+class JourneyCreditConsumption(Base):
+    """Independent billing ledger: one authenticated journey UUID => one charge."""
+    __tablename__ = "journey_credit_consumptions"
+    __table_args__ = (
+        UniqueConstraint("session_uuid", name="uq_journey_credit_consumption_session"),
+        Index("idx_journey_credit_consumption_user", "user_id"),
+    )
+
+    id = Column(BigInteger, primary_key=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    session_uuid = Column(String(64), nullable=False, unique=True)
+    entitlement_id = Column(BigInteger, ForeignKey("entitlements.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    user = relationship("User")
+    entitlement = relationship("Entitlement")
