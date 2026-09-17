@@ -26,12 +26,37 @@ def _compile_big_integer_for_sqlite(type_, compiler, **kw):
     return "INTEGER"
 
 
+def _env_int(name: str, default: int, *, minimum: int = 0) -> int:
+    raw = os.getenv(name, str(default)).strip()
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be an integer") from exc
+    if value < minimum:
+        raise RuntimeError(f"{name} must be >= {minimum}")
+    return value
+
+
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 engine = None
 SessionLocal = None
 
 if DATABASE_URL:
-    engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
+    engine_kwargs = {
+        "pool_pre_ping": True,
+        "future": True,
+    }
+    # Preserve the existing SQLite compatibility path. PostgreSQL and other
+    # server databases can tune pool capacity through deployment environment
+    # variables without changing application code.
+    if not DATABASE_URL.lower().startswith("sqlite"):
+        engine_kwargs.update(
+            pool_size=_env_int("DB_POOL_SIZE", 5, minimum=1),
+            max_overflow=_env_int("DB_MAX_OVERFLOW", 10, minimum=0),
+            pool_timeout=_env_int("DB_POOL_TIMEOUT", 30, minimum=1),
+            pool_recycle=_env_int("DB_POOL_RECYCLE", -1, minimum=-1),
+        )
+    engine = create_engine(DATABASE_URL, **engine_kwargs)
     SessionLocal = sessionmaker(
         bind=engine,
         autoflush=False,
