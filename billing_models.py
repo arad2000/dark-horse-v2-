@@ -26,8 +26,8 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
-    auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
     user_sessions = relationship("UserSession", back_populates="user")
+    auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     entitlements = relationship("Entitlement", back_populates="user", cascade="all, delete-orphan")
     admin_audit_logs = relationship("AdminAuditLog", back_populates="admin_user")
@@ -101,7 +101,7 @@ class Order(Base):
     user = relationship("User", back_populates="orders")
     plan = relationship("PremiumPlan", back_populates="orders")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
-    entitlements = relationship("Entitlement", back_populates="order")
+    entitlements = relationship("Entitlement", back_populates="entitlements") if False else relationship("Entitlement", back_populates="order")
 
 
 class Payment(Base):
@@ -184,3 +184,19 @@ class SavedResult(Base):
     result_summary = Column(JSON, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     user = relationship("User", back_populates="saved_results")
+
+
+class JourneyCreditConsumption(Base):
+    """Independent billing ledger: one authenticated journey UUID => one charge."""
+    __tablename__ = "journey_credit_consumptions"
+    __table_args__ = (
+        UniqueConstraint("session_uuid", name="uq_journey_credit_consumption_session"),
+        Index("idx_journey_credit_consumption_user", "user_id"),
+    )
+    id = Column(BigInteger, primary_key=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    session_uuid = Column(String(64), nullable=False)
+    entitlement_id = Column(BigInteger, ForeignKey("entitlements.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    user = relationship("User")
+    entitlement = relationship("Entitlement")
