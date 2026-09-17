@@ -1,6 +1,9 @@
-name: Scale Baseline (manual)
+name: Scale Baseline
 
 on:
+  push:
+    branches:
+      - integration/hybrid-reconciled
   workflow_dispatch:
     inputs:
       endpoint_url:
@@ -48,8 +51,56 @@ env:
   PYTHONUNBUFFERED: "1"
 
 jobs:
-  probe:
-    if: inputs.confirm_staging == 'YES'
+  local-regression:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime and probe dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Start isolated local API
+        run: |
+          python -m uvicorn main_v2:app --host 127.0.0.1 --port 8000 > /tmp/darkhorse-api.log 2>&1 &
+          echo $! > /tmp/darkhorse-api.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/darkhorse-api.log
+          exit 1
+
+      - name: Run local scoring scale regression
+        env:
+          SCALE_BASE_URL: http://127.0.0.1:8000/api/v2/darkhorse/discover
+          SCALE_METHOD: POST
+          SCALE_REQUESTS: "100"
+          SCALE_CONCURRENCY: "10"
+          SCALE_WARMUP: "5"
+          SCALE_TIMEOUT: "60"
+          SCALE_PAYLOAD_JSON: '{"micro_motives":["MED-001","MED-002","MED-003"],"sjt_answers":{"sjt_1":"A","sjt_2":"B","sjt_3":"C","sjt_4":"D","sjt_5":"E","sjt_6":"A","sjt_7":"B","sjt_8":"C","sjt_9":"D","sjt_10":"E","sjt_11":"A","sjt_12":"B","sjt_13":"C","sjt_14":"D","sjt_15":"E","sjt_16":"A","sjt_17":"B","sjt_18":"C","sjt_19":"D","sjt_20":"E","sjt_21":"A","sjt_22":"B","sjt_23":"C","sjt_24":"D","sjt_25":"E"},"conjoint_choices":{"conj_1":"Q1A","conj_2":"Q2A","conj_3":"Q3A","conj_4":"Q4A","conj_5":"Q5A","conj_6":"Q6A","conj_7":"Q7A","conj_8":"Q8A","conj_9":"Q9A","conj_10":"Q10A","conj_11":"Q11A","conj_12":"Q12A","conj_13":"Q13A","conj_14":"Q14A","conj_15":"Q15A"}}'
+        run: |
+          mkdir -p artifacts
+          python tools/scale_probe.py | tee artifacts/scale-baseline.json
+
+      - name: Upload local scale result
+        uses: actions/upload-artifact@v4
+        with:
+          name: scale-baseline-local
+          path: artifacts/scale-baseline.json
+
+      - name: Stop isolated local API
+        if: always()
+        run: |
+          if test -f /tmp/darkhorse-api.pid; then kill $(cat /tmp/darkhorse-api.pid) || true; fi
+
+  staging-probe:
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_staging == 'YES'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,8 +124,8 @@ jobs:
           mkdir -p artifacts
           python tools/scale_probe.py | tee artifacts/scale-baseline.json
 
-      - name: Upload scale result
+      - name: Upload staging scale result
         uses: actions/upload-artifact@v4
         with:
-          name: scale-baseline
+          name: scale-baseline-staging
           path: artifacts/scale-baseline.json
