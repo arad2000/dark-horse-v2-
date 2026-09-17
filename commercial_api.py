@@ -246,21 +246,36 @@ def consume_test(
 ) -> dict[str, object]:
     """Charge at most once for the supplied authenticated journey UUID.
 
-    The user-session row serializes concurrent requests for the same journey;
-    the dedicated billing ledger is the actual idempotency marker and is kept
-    separate from the session's result-completion flag.
+    The authenticated user row is locked for the duration of the charge. This
+    serializes concurrent retries for an account while the dedicated ledger is
+    the per-journey idempotency marker. A missing journey row is provisioned
+    for this authenticated user, avoiding a silent 404 when discovery
+    persistence did not happen before the result was rendered.
     """
     assert_production_billing_configuration()
     try:
+        locked_user = db.scalar(select(User).where(User.id == user.id).with_for_update())
+        if locked_user is None:
+            raise HTTPException(status_code=401, detail="authenticated user not found")
+        user = locked_user
+
         session_stmt = select(UserSession).where(UserSession.session_uuid == req.session_uuid)
         if db.bind is not None and db.bind.dialect.name == "postgresql":
             session_stmt = session_stmt.with_for_update()
         session = db.scalar(session_stmt)
         if session is None:
-            raise HTTPException(status_code=404, detail="journey session not found")
-        if session.user_id not in (None, user.id):
+            session = UserSession(
+                user_id=user.id,
+                session_uuid=req.session_uuid,
+                micro_motives=[],
+                sjt_answers={},
+                conjoint_choices={},
+            )
+            db.add(session)
+            db.flush()
+        elif session.user_id not in (None, user.id):
             raise HTTPException(status_code=403, detail="journey session does not belong to this user")
-        if session.user_id is None:
+        elif session.user_id is None:
             session.user_id = user.id
 
         existing = db.scalar(
