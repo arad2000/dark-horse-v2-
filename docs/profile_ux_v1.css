@@ -98,74 +98,7 @@
   opacity: .78;
 }
 
-.dh-support-card {
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(20,19,27,.72);
-  border: 1px solid rgba(255,255,255,.07);
-}
-.dh-support-line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.dh-support-copy {
-  min-width: 0;
-  color: #c8bda7;
-  font-size: .82rem;
-  line-height: 1.65;
-}
-.dh-support-link,
-.dh-privacy-link { color: #d4af37; text-decoration: none; white-space: nowrap; }
-.dh-support-link {
-  flex: 0 0 auto;
-  min-height: 36px;
-  padding: 7px 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  border: 1px solid rgba(212,175,55,.24);
-  background: rgba(212,175,55,.06);
-  font-size: .78rem;
-}
-.dh-support-foot {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  color: #887e6a;
-  font-size: .7rem;
-  line-height: 1.5;
-}
-.dh-enamad-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 48px;
-  height: 24px;
-  padding: 0 7px;
-  border-radius: 7px;
-  background: rgba(255,255,255,.045);
-  border: 1px solid rgba(255,255,255,.11);
-  color: #b6aa92;
-  font-size: .66rem;
-  font-weight: 700;
-}
-.dh-support-dot { opacity: .45; }
-
-.dh-privacy-note {
-  margin-top: 8px;
-  padding: 10px 11px;
-  border-radius: 10px;
-  background: rgba(255,255,255,.025);
-  color: #8d8575;
-  font-size: .72rem;
-  line-height: 1.7;
-}
-
+/* Intentionally no styles are applied to the legacy support card. */
 .dh-profile-account { padding-top: 0; }
 .dh-profile-account .btn {
   background: rgba(255,255,255,.025) !important;
@@ -189,22 +122,50 @@
   font-size: .88rem !important;
   font-weight: 700 !important;
 }
-.dh-admin-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-.dh-admin-metric {
-  min-width: 0;
-  padding: 10px 6px;
-  border-radius: 11px;
-  background: rgba(255,255,255,.025);
+.dh-admin-users-table-wrap {
+  max-height: 360px;
+  overflow: auto;
   border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px;
+  background: rgba(255,255,255,.02);
+}
+.dh-admin-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 300px;
+  font-size: .78rem;
+}
+.dh-admin-users-table th,
+.dh-admin-users-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+  text-align: right;
+  white-space: nowrap;
+}
+.dh-admin-users-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(24,22,30,.98);
+  color: #b9ac91;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.dh-admin-users-table td {
+  color: #d4c9b6;
+}
+.dh-admin-users-table td:nth-child(2) {
+  color: #c9b56f;
+  font-variant-numeric: tabular-nums;
+}
+.dh-admin-users-table tr:last-child td { border-bottom: 0; }
+.dh-admin-status {
+  margin: 8px 0 0;
+  color: #70695c;
+  font-size: .66rem;
+  line-height: 1.5;
   text-align: center;
 }
-.dh-admin-metric .n { color: #decf98; font-size: 1.08rem; font-weight: 800; line-height: 1.3; }
-.dh-admin-metric .l { margin-top: 3px; color: #837b6c; font-size: .68rem; line-height: 1.4; }
-.dh-admin-status { margin: 8px 0 0; color: #70695c; font-size: .66rem; line-height: 1.5; text-align: center; }
 
 @media (max-width: 380px) {
   .dh-profile-v2 { padding-bottom: 16px; }
@@ -212,7 +173,7 @@
   .dh-profile-name-v2 { font-size: 1.18rem !important; }
   .dh-profile-meta-v2 { font-size: .77rem !important; }
   .dh-profile-last .dh-last-row { padding: 5px 0; }
-  .dh-support-line { align-items: flex-start; }
-  .dh-support-copy { font-size: .77rem; }
-  .dh-support-link { padding: 6px 9px; font-size: .72rem; }
+  .dh-admin-users-table { min-width: 280px; font-size: .74rem; }
+  .dh-admin-users-table th,
+  .dh-admin-users-table td { padding: 8px 6px; }
 }
