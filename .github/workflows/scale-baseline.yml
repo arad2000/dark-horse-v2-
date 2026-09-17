@@ -1,0 +1,65 @@
+name: Scale Baseline (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      endpoint_url:
+        description: Full staging API endpoint to probe (for example /api/v2/darkhorse/discover)
+        required: true
+        type: string
+      method:
+        description: HTTP method
+        required: true
+        default: POST
+        type: choice
+        options:
+          - GET
+          - POST
+      requests:
+        description: Total requests in the probe
+        required: true
+        default: "200"
+        type: string
+      concurrency:
+        description: Concurrent requests
+        required: true
+        default: "20"
+        type: string
+      warmup:
+        description: Warm-up requests
+        required: true
+        default: "10"
+        type: string
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install probe dependency
+        run: python -m pip install "httpx>=0.27,<1.0"
+
+      - name: Run staging scale probe
+        env:
+          SCALE_BASE_URL: ${{ inputs.endpoint_url }}
+          SCALE_METHOD: ${{ inputs.method }}
+          SCALE_REQUESTS: ${{ inputs.requests }}
+          SCALE_CONCURRENCY: ${{ inputs.concurrency }}
+          SCALE_WARMUP: ${{ inputs.warmup }}
+        run: |
+          mkdir -p artifacts
+          python tools/scale_probe.py | tee artifacts/scale-baseline.json
+
+      - name: Upload scale result
+        uses: actions/upload-artifact@v4
+        with:
+          name: scale-baseline
+          path: artifacts/scale-baseline.json
