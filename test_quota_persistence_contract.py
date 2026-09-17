@@ -28,9 +28,12 @@ def test_consume_test_is_session_idempotent() -> None:
     assert "with_for_update()" in source
     assert "JourneyCreditConsumption" in source
     assert "already_consumed" in source
-    # Session completion is an independent journey lifecycle state, not the
-    # billing idempotency marker. The dedicated ledger owns idempotency.
-    assert "session.is_completed" not in source
+    # A real persisted journey is marked complete by a successful charge;
+    # an auto-provisioned billing placeholder is not. The ledger remains the
+    # sole idempotency marker for the charge itself.
+    assert "session_provisioned = False" in source
+    assert "if not session_provisioned:" in source
+    assert "session.is_completed = True" in source
 
 
 def test_auth_client_consumes_server_snapshot_instead_of_incrementing_guess() -> None:

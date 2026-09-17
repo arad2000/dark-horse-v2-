@@ -225,6 +225,7 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
 
         session_stmt = select(UserSession).where(UserSession.session_uuid == req.session_uuid).with_for_update()
         session = db.scalar(session_stmt)
+        session_provisioned = False
         if session is None:
             session = UserSession(
                 user_id=user.id,
@@ -235,6 +236,7 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
             )
             db.add(session)
             db.flush()
+            session_provisioned = True
         elif session.user_id not in (None, user.id):
             raise HTTPException(status_code=403, detail="journey session does not belong to this user")
         elif session.user_id is None:
@@ -259,6 +261,11 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
 
         entitlement = consume_one_test(db, user.id)
         db.add(JourneyCreditConsumption(user_id=user.id, session_uuid=req.session_uuid, entitlement_id=entitlement.id))
+        # Billing confirms completion only for a real pre-existing journey.
+        # Auto-provisioned sessions are placeholders and must retain their
+        # independent lifecycle state until the journey itself completes.
+        if not session_provisioned:
+            session.is_completed = True
         details = _quota_details(db, user.id)
         db.commit()
         logger.info("quota consume success user_id=%s session_uuid=%s entitlement_id=%s remaining=%s consumed=%s", user.id, req.session_uuid, entitlement.id, details["credits_remaining"], details["credits_consumed"])
