@@ -26,8 +26,11 @@ def test_consume_test_is_session_idempotent() -> None:
     assert "class ConsumeTestRequest" in source
     assert "session_uuid" in source
     assert "with_for_update()" in source
-    assert "session.is_completed" in source
+    assert "JourneyCreditConsumption" in source
     assert "already_consumed" in source
+    # Session completion is an independent journey lifecycle state, not the
+    # billing idempotency marker. The dedicated ledger owns idempotency.
+    assert "session.is_completed" not in source
 
 
 def test_auth_client_consumes_server_snapshot_instead_of_incrementing_guess() -> None:

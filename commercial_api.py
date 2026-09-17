@@ -244,7 +244,6 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
         if existing is not None:
             if existing.user_id != user.id:
                 raise HTTPException(status_code=403, detail="journey session does not belong to this user")
-            session.is_completed = True
             details = _quota_details(db, user.id)
             db.commit()
             logger.info("quota consume idempotent user_id=%s session_uuid=%s remaining=%s consumed=%s", user.id, req.session_uuid, details["credits_remaining"], details["credits_consumed"])
@@ -260,7 +259,6 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
 
         entitlement = consume_one_test(db, user.id)
         db.add(JourneyCreditConsumption(user_id=user.id, session_uuid=req.session_uuid, entitlement_id=entitlement.id))
-        session.is_completed = True
         details = _quota_details(db, user.id)
         db.commit()
         logger.info("quota consume success user_id=%s session_uuid=%s entitlement_id=%s remaining=%s consumed=%s", user.id, req.session_uuid, entitlement.id, details["credits_remaining"], details["credits_consumed"])
