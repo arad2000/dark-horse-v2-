@@ -96,7 +96,7 @@ class Order(Base):
     paid_at = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     user = relationship("User", back_populates="orders")
-    plan = relationship("PremiumPlan", back_populates="plan", cascade="all, delete-orphan") if False else relationship("PremiumPlan", back_populates="orders")
+    plan = relationship("PremiumPlan", back_populates="orders")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
     entitlements = relationship("Entitlement", back_populates="order")
 
