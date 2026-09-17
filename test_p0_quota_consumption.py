@@ -16,7 +16,7 @@ from models import Base, UserSession
 
 
 class P0HybridQuotaConsumptionTests(unittest.TestCase):
-    """Three-credit journey test: retries are idempotent, new journeys charge."""
+    """Production-shaped quota test: missing sessions charge, retries do not."""
 
     @classmethod
     def setUpClass(cls):
@@ -81,14 +81,14 @@ class P0HybridQuotaConsumptionTests(unittest.TestCase):
             )
             db.commit()
 
-    def test_same_session_is_idempotent_and_second_session_charges(self):
+    def test_missing_session_is_provisioned_and_each_journey_charges_once(self):
         headers = {"Authorization": f"Bearer {self.token}"}
         first_uuid = str(uuid4())
         second_uuid = str(uuid4())
 
-        # Result completion is deliberately true before first billing request.
+        # Result completion is deliberately true before first billing request;
+        # completion state must not be the idempotency marker.
         self._new_session(first_uuid, completed=True)
-        self._new_session(second_uuid, completed=False)
 
         first = self.client.post(
             "/api/v1/me/consume-test",
@@ -112,6 +112,10 @@ class P0HybridQuotaConsumptionTests(unittest.TestCase):
         self.assertEqual(retry.json()["credits_remaining"], 2)
         self.assertEqual(retry.json()["credits_consumed"], 1)
 
+        # No UserSession exists yet: production charge must provision it.
+        with next(get_db()) as db:
+            self.assertIsNone(db.scalar(select(UserSession).where(UserSession.session_uuid == second_uuid)))
+
         second = self.client.post(
             "/api/v1/me/consume-test",
             headers=headers,
@@ -123,11 +127,24 @@ class P0HybridQuotaConsumptionTests(unittest.TestCase):
         self.assertEqual(second.json()["credits_remaining"], 1)
         self.assertEqual(second.json()["credits_consumed"], 2)
 
-        quota = self.client.get("/api/v1/me/quota", headers=headers)
-        self.assertEqual(quota.status_code, 200, quota.text)
-        self.assertEqual(quota.json()["credits_granted"], 3)
-        self.assertEqual(quota.json()["credits_consumed"], 2)
-        self.assertEqual(quota.json()["credits_remaining"], 1)
+        second_retry = self.client.post(
+            "/api/v1/me/consume-test",
+            headers=headers,
+            json={"session_uuid": second_uuid},
+        )
+        self.assertEqual(second_retry.status_code, 200, second_retry.text)
+        self.assertEqual(second_retry.json()["consumed"], 0)
+        self.assertTrue(second_retry.json()["already_consumed"])
+        self.assertEqual(second_retry.json()["credits_remaining"], 1)
+        self.assertEqual(second_retry.json()["credits_consumed"], 2)
+
+        # Fresh client: quota must remain server-authoritative across cold start.
+        with TestClient(app) as fresh_client:
+            cold = fresh_client.get("/api/v1/me/quota", headers=headers)
+        self.assertEqual(cold.status_code, 200, cold.text)
+        self.assertEqual(cold.json()["credits_granted"], 3)
+        self.assertEqual(cold.json()["credits_consumed"], 2)
+        self.assertEqual(cold.json()["credits_remaining"], 1)
 
         with next(get_db()) as db:
             ledger = list(
@@ -138,8 +155,10 @@ class P0HybridQuotaConsumptionTests(unittest.TestCase):
             )
             self.assertEqual(len(ledger), 2)
             self.assertEqual({row.session_uuid for row in ledger}, {first_uuid, second_uuid})
-            self.assertTrue(db.scalar(select(UserSession).where(UserSession.session_uuid == first_uuid)).is_completed)
-            self.assertFalse(db.scalar(select(UserSession).where(UserSession.session_uuid == second_uuid)).is_completed)
+            first = db.scalar(select(UserSession).where(UserSession.session_uuid == first_uuid))
+            second = db.scalar(select(UserSession).where(UserSession.session_uuid == second_uuid))
+            self.assertTrue(first.is_completed)
+            self.assertFalse(second.is_completed)
 
 
 if __name__ == "__main__":
