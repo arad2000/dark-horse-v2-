@@ -23,6 +23,7 @@ from billing_credit_service import consume_one_test, ensure_free_entitlement
 from billing_models import Entitlement, RegistrationChallenge, SavedResult, User
 from database import get_db
 from otp_service import create_registration_challenge, send_code, verify_registration_challenge
+from models import UserSession
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "billing"])
 
@@ -45,6 +46,11 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=8, max_length=256)
 
 
+class ConsumeTestRequest(BaseModel):
+    """Optional journey UUID makes test consumption idempotent per journey."""
+    session_uuid: str | None = Field(default=None, min_length=8, max_length=64)
+
+
 class SaveResultRequest(BaseModel):
     result_summary: dict = Field(default_factory=dict)
     session_uuid: str | None = Field(default=None, min_length=1, max_length=36)
@@ -62,12 +68,7 @@ class SaveResultRequest(BaseModel):
 
 
 def _public_user(user: User) -> dict[str, object]:
-    return {
-        "public_id": user.public_id,
-        "name": user.name,
-        "role": user.role,
-        "status": user.status,
-    }
+    return {"public_id": user.public_id, "name": user.name, "role": user.role, "status": user.status}
 
 
 def _valid_expiry(value: datetime | None) -> bool:
@@ -79,45 +80,18 @@ def _valid_expiry(value: datetime | None) -> bool:
 
 
 def _quota_details(db: Session, user_id: int) -> dict[str, int]:
-    """Return a server-authoritative quota snapshot for the user.
-
-    ``credits_remaining`` is spendable, valid credit only. ``credits_consumed``
-    is derived from persisted entitlement deltas and therefore survives app
-    restarts, tab switches and client-cache rewrites.
-    """
-    rows = list(
-        db.scalars(
-            select(Entitlement).where(
-                Entitlement.user_id == user_id,
-                Entitlement.status == "active",
-            )
-        )
-    )
-    remaining = sum(
-        int(row.credits_remaining)
-        for row in rows
-        if int(row.credits_remaining) > 0 and _valid_expiry(row.expires_at)
-    )
-    consumed = sum(
-        max(0, int(row.credits_granted) - int(row.credits_remaining))
-        for row in rows
-    )
+    rows = list(db.scalars(select(Entitlement).where(Entitlement.user_id == user_id, Entitlement.status == "active")))
+    remaining = sum(int(row.credits_remaining) for row in rows if int(row.credits_remaining) > 0 and _valid_expiry(row.expires_at))
+    consumed = sum(max(0, int(row.credits_granted) - int(row.credits_remaining)) for row in rows)
     granted = sum(int(row.credits_granted) for row in rows)
-    return {
-        "credits_granted": granted,
-        "credits_consumed": consumed,
-        "credits_remaining": remaining,
-    }
+    return {"credits_granted": granted, "credits_consumed": consumed, "credits_remaining": remaining}
 
 
 def _quota(db: Session, user_id: int) -> int:
     return _quota_details(db, user_id)["credits_remaining"]
 
 
-def _current_user(
-    authorization: str | None = Header(default=None),
-    db: Session = Depends(get_db),
-) -> User:
+def _current_user(authorization: str | None = Header(default=None), db: Session = Depends(get_db)) -> User:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="authentication required")
     token = authorization[7:].strip()
@@ -155,7 +129,6 @@ def _frontend_redirect(payment: str) -> str:
 
 @router.post("/auth/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, object]:
-    """Start registration and persist only a verification challenge until OTP succeeds."""
     try:
         row, code = create_registration_challenge(db, name=req.name, phone=req.phone, password=req.password)
         send_code(row.phone, code)
@@ -176,12 +149,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, o
 def verify_registration(req: VerifyRegistrationRequest, db: Session = Depends(get_db)) -> dict[str, object]:
     try:
         challenge = verify_registration_challenge(db, challenge_id=req.challenge_id, code=req.code)
-        user, token = create_verified_user(
-            db,
-            name=challenge.name,
-            phone=challenge.phone,
-            password_hash=challenge.password_hash,
-        )
+        user, token = create_verified_user(db, name=challenge.name, phone=challenge.phone, password_hash=challenge.password_hash)
         ensure_free_entitlement(db, user.id)
         db.commit()
         details = _quota_details(db, user.id)
@@ -215,19 +183,38 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
 
 
 @router.post("/me/consume-test")
-def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+def consume_test(req: ConsumeTestRequest | None = None, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+    """Consume one credit, idempotently, for an authenticated journey.
+
+    With a session UUID, the journey row is locked and marked complete in the
+    same transaction. A second request for that journey returns the snapshot
+    without burning another credit.
+    """
+    req = req or ConsumeTestRequest()
     try:
+        session = None
+        if req.session_uuid:
+            session = db.scalar(select(UserSession).where(UserSession.session_uuid == req.session_uuid).with_for_update())
+            if session is None:
+                raise HTTPException(status_code=404, detail="journey session not found")
+            if session.user_id not in (None, user.id):
+                raise HTTPException(status_code=403, detail="journey session does not belong to this user")
+            if session.user_id is None:
+                session.user_id = user.id
+            if session.is_completed:
+                details = _quota_details(db, user.id)
+                db.commit()
+                return {"consumed": 0, "already_consumed": True, "credits_remaining": details["credits_remaining"], "credits_granted": details["credits_granted"], "credits_consumed": details["credits_consumed"], "session_uuid": session.session_uuid, "user": _public_user(user)}
+
         entitlement = consume_one_test(db, user.id)
+        if session is not None:
+            session.is_completed = True
         details = _quota_details(db, user.id)
         db.commit()
-        return {
-            "consumed": 1,
-            "credits_remaining": details["credits_remaining"],
-            "credits_granted": details["credits_granted"],
-            "credits_consumed": details["credits_consumed"],
-            "entitlement_id": entitlement.id,
-            "user": _public_user(user),
-        }
+        return {"consumed": 1, "already_consumed": False, "credits_remaining": details["credits_remaining"], "credits_granted": details["credits_granted"], "credits_consumed": details["credits_consumed"], "entitlement_id": entitlement.id, "session_uuid": session.session_uuid if session is not None else None, "user": _public_user(user)}
+    except HTTPException:
+        db.rollback()
+        raise
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -250,13 +237,7 @@ def save_result(req: SaveResultRequest, user: User = Depends(_current_user), db:
 def create_payment(request: Request, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     try:
         provider = _server_billing_provider()
-        result = create_payment_request(
-            db,
-            user_id=user.id,
-            callback_url=_callback_url(request),
-            provider_name=provider,
-            zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
-        )
+        result = create_payment_request(db, user_id=user.id, callback_url=_callback_url(request), provider_name=provider, zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None)
         db.commit()
         return result
     except HTTPException:
@@ -268,25 +249,10 @@ def create_payment(request: Request, user: User = Depends(_current_user), db: Se
 
 
 @router.get("/billing/callback")
-def billing_callback(
-    request: Request,
-    order_id: str = Query(..., alias="order_id"),
-    authority: str = Query(..., alias="Authority"),
-    status: str | None = Query(default=None, alias="Status"),
-    db: Session = Depends(get_db),
-):
+def billing_callback(request: Request, order_id: str = Query(..., alias="order_id"), authority: str = Query(..., alias="Authority"), status: str | None = Query(default=None, alias="Status"), db: Session = Depends(get_db)):
     try:
         provider = _server_billing_provider()
-        result = handle_payment_callback(
-            db,
-            order_public_id=order_id,
-            authority=authority,
-            status=status,
-            provider_name=provider,
-            event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}",
-            raw_callback=dict(request.query_params),
-            zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None,
-        )
+        result = handle_payment_callback(db, order_public_id=order_id, authority=authority, status=status, provider_name=provider, event_key=f"callback:{provider}:{order_id}:{authority}:{status or ''}", raw_callback=dict(request.query_params), zarinpal_merchant_id=os.getenv("ZARINPAL_MERCHANT_ID") or None)
         db.commit()
         if result.get("verified"):
             return RedirectResponse(url=_frontend_redirect("success"), status_code=303)

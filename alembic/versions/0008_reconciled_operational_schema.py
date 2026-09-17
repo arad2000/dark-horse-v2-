@@ -1,6 +1,6 @@
 """Reconcile operational schema with authenticated runtime models.
 
-Revision ID: 0008_reconciled_operational_schema
+Revision ID: 0008_reconciled_schema
 Revises: 0007_auth_saved_results
 
 This single migration replaces two conflicting 0008 revisions. It widens
@@ -10,7 +10,7 @@ keys, and adds the nullable authenticated owner on user_sessions.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0008_reconciled_operational_schema"
+revision = "0008_reconciled_schema"
 down_revision = "0007_auth_saved_results"
 branch_labels = None
 depends_on = None
