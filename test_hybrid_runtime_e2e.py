@@ -18,7 +18,7 @@ from models import UserSession  # noqa: E402
 
 def test_authenticated_journey_consumption_is_persisted_and_idempotent() -> None:
     assert SessionLocal is not None
-    phone = "09" + "9" + uuid4().hex[:8]
+    phone = "09" + str(uuid4().int % 1_000_000_000).zfill(9)
     password = "Hybrid-E2E-2026!"
     session_uuid = str(uuid4())
 
