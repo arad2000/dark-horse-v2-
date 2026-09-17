@@ -61,16 +61,20 @@
       patch.serverRemaining = Number(current.serverRemaining);
       patch.remaining = Number(current.remaining);
     }
-    if (Number.isFinite(consumed) && consumed >= 0) patch.used = consumed;
-    else if (sameUser && Number.isFinite(Number(current.used)) && Number(current.used) >= 0) patch.used = Number(current.used);
-    else patch.used = 0;
+    if (Number.isFinite(consumed) && consumed >= 0) {
+      patch.used = consumed;
+      patch.serverConsumed = consumed;
+    } else if (sameUser && Number.isFinite(Number(current.serverConsumed)) && Number(current.serverConsumed) >= 0) {
+      patch.used = Number(current.serverConsumed);
+      patch.serverConsumed = Number(current.serverConsumed);
+    } else if (sameUser && Number.isFinite(Number(current.used)) && Number(current.used) >= 0) {
+      patch.used = Number(current.used);
+    }
     if (Number.isFinite(granted) && granted >= 0) patch.serverGranted = granted;
     saveQuotaCache(patch);
   }
 
-  function persistSuccessfulConsume(data) {
-    persistQuotaSnapshot(data || {});
-  }
+  function persistSuccessfulConsume(data) { persistQuotaSnapshot(data || {}); }
 
   async function req(path, opts = {}) {
     const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
@@ -97,47 +101,31 @@
     logout() { clear(); },
 
     async register(name, phone, password) {
-      return req('/api/v1/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ name, phone, password })
-      });
+      return req('/api/v1/auth/register', { method: 'POST', body: JSON.stringify({ name, phone, password }) });
     },
 
     async verifyRegistration(challengeId, code) {
-      const data = await req('/api/v1/auth/register/verify', {
-        method: 'POST',
-        body: JSON.stringify({ challenge_id: challengeId, code })
-      });
+      const data = await req('/api/v1/auth/register/verify', { method: 'POST', body: JSON.stringify({ challenge_id: challengeId, code }) });
       save(data);
       persistQuotaSnapshot(data);
       return data;
     },
 
     async login(phone, password) {
-      const data = await req('/api/v1/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ phone, password })
-      });
+      const data = await req('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ phone, password }) });
       save(data);
       persistQuotaSnapshot(data);
       return data;
     },
 
     async requestPasswordReset(phone) {
-      return req('/api/v1/auth/password-reset/request', {
-        method: 'POST',
-        body: JSON.stringify({ phone })
-      });
+      return req('/api/v1/auth/password-reset/request', { method: 'POST', body: JSON.stringify({ phone }) });
     },
 
     async resetPassword(challengeId, code, newPassword) {
       const data = await req('/api/v1/auth/password-reset/confirm', {
         method: 'POST',
-        body: JSON.stringify({
-          challenge_id: challengeId,
-          code,
-          new_password: newPassword
-        })
+        body: JSON.stringify({ challenge_id: challengeId, code, new_password: newPassword })
       });
       save(data);
       return data;
@@ -157,8 +145,13 @@
       return data;
     },
 
-    async consumeTest() {
-      const data = await req('/api/v1/me/consume-test', { method: 'POST', body: '{}' });
+    async consumeTest(sessionUuid) {
+      const sid = sessionUuid || currentJourneySessionId();
+      if (!sid) throw new Error('شناسه سفر کاربر پیدا نشد؛ ابتدا تحلیل را آغاز کنید.');
+      const data = await req('/api/v1/me/consume-test', {
+        method: 'POST',
+        body: JSON.stringify({ session_uuid: String(sid) })
+      });
       const s = load() || {};
       if (data.user) { s.user = data.user; save(s); }
       persistSuccessfulConsume(data);
@@ -174,19 +167,12 @@
       });
     },
 
-    async createPayment() {
-      return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
-    },
-
-    async adminDashboard() {
-      return req('/api/v1/admin/dashboard');
-    },
-
+    async createPayment() { return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' }); },
+    async adminDashboard() { return req('/api/v1/admin/dashboard'); },
     async adminFeedback(limit) {
       const n = Math.max(1, Math.min(200, Number(limit) || 50));
       return req('/api/v1/admin/feedback?limit=' + n);
     },
-
     async adminUsers(limit) {
       const n = Math.max(1, Math.min(500, Number(limit) || 50));
       return req('/api/v1/admin/users?limit=' + n);
