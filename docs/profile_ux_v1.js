@@ -42,6 +42,14 @@
     if (exit) exit.remove();
   }
 
+  function stripGuestLegacyProfileControls() {
+    if (authUser()) return;
+    var home = el('dh-p-home');
+    if (home) home.remove();
+    var exit = el('dh-p-exit');
+    if (exit) exit.remove();
+  }
+
   function readPhone(card, user) {
     var phone = user && user.phone ? text(user.phone) : '';
     if (phone) return phone;
@@ -259,7 +267,10 @@
     var original = global.DHShell.renderProfile;
     global.DHShell.renderProfile = function () {
       var result = original.apply(this, arguments);
-      try { reflowProfile(); } catch (e) { console.warn('Profile UX v1:', e); }
+      try {
+        if (authUser()) reflowProfile();
+        else stripGuestLegacyProfileControls();
+      } catch (_) {}
       return result;
     };
     WRAPPED = true;
@@ -273,6 +284,8 @@
       if (global.DHShell && typeof global.DHShell.renderProfile === 'function') install();
       if (authUser()) {
         try { reflowProfile(); } catch (_) {}
+      } else {
+        stripGuestLegacyProfileControls();
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
