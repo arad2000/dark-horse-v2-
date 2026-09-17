@@ -8,6 +8,7 @@
   if (global.__dhQuotaConsumeSessionAdapterInstalled) return;
   global.__dhQuotaConsumeSessionAdapterInstalled = true;
 
+  var CONSUME_PATH = '/api/v1/me/consume-test';
   var originalFetch = global.fetch;
   if (!originalFetch || originalFetch.__dhQuotaConsumeSessionAdapterWrapped) return;
 
@@ -37,7 +38,7 @@
   var wrappedFetch = function (input, init) {
     var url = '';
     try { url = typeof input === 'string' ? input : (input && input.url) || ''; } catch (_) {}
-    if (/\/api\/v1\/me\/consume-test(?:\?|$)/.test(url)) {
+    if (new RegExp(CONSUME_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:\\?|$)').test(url)) {
       var nextInit = Object.assign({}, init || {});
       var sid = sessionId();
       if (sid && typeof nextInit.body === 'string') {
