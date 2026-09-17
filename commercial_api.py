@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, resolve_session
@@ -236,6 +236,22 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
             db.rollback()
             raise
     return _quota_details(db, user.id)
+
+
+@router.get("/runtime/quota-health")
+def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
+    """Non-sensitive runtime check for deployment and migration verification."""
+    try:
+        ledger_table_exists = bool(db.bind and inspect(db.bind).has_table("journey_credit_consumptions"))
+    except Exception:
+        ledger_table_exists = False
+    return {
+        "quota_idempotency": "journey_credit_consumptions_v1",
+        "journey_session_autoprovision": True,
+        "ledger_table_exists": ledger_table_exists,
+        "postgres_runtime_cutover_approved": os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false").strip().lower() in {"1", "true", "yes", "on"},
+        "shadow_persistence": os.getenv("DARK_HORSE_SHADOW_PERSISTENCE", "false").strip().lower() in {"1", "true", "yes", "on"},
+    }
 
 
 @router.post("/me/consume-test")
