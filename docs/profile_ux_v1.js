@@ -1,6 +1,6 @@
-/* Profile admin layer — legacy user profile stays untouched.
- * Production cleanup removes the obsolete local subscription control/state.
- * Admins additionally receive the management panel with user name and phone.
+/* Profile UX — user profile hierarchy + one admin panel.
+ * The legacy support card is preserved as-is (markup/style); only its channel href is verified.
+ * No scoring, quota calculation, or purchase semantics are changed.
  */
 (function (global) {
   'use strict';
@@ -10,6 +10,15 @@
   var EITAA_URL = 'https://eitaa.com/asbe_siah';
 
   function text(value) { return String(value == null ? '' : value); }
+
+  function escapeHtml(value) {
+    return text(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   function authUser() {
     try {
@@ -23,13 +32,14 @@
   }
 
   function removeLocalSubscriptionState() {
+    /* Remove only obsolete LOCAL test entitlement state. Never touch server premium state. */
     try {
       var quotaKey = 'dh_local_quota_v1';
       var rawQuota = localStorage.getItem(quotaKey);
       if (rawQuota) {
         var quota = JSON.parse(rawQuota);
-        if (quota && quota.premium) {
-          quota.premium = false;
+        if (quota && Object.prototype.hasOwnProperty.call(quota, 'premium')) {
+          delete quota.premium;
           localStorage.setItem(quotaKey, JSON.stringify(quota));
         }
       }
@@ -40,35 +50,68 @@
       var rawUser = localStorage.getItem(userKey);
       if (rawUser) {
         var user = JSON.parse(rawUser);
-        if (user && user.is_premium) {
-          user.is_premium = false;
+        if (user && Object.prototype.hasOwnProperty.call(user, 'is_premium')) {
+          delete user.is_premium;
           localStorage.setItem(userKey, JSON.stringify(user));
         }
       }
     } catch (_) {}
   }
 
-  function removeLegacyLocalSubscription(root) {
-    if (!root) return;
-    var premiumButton = root.querySelector('#dh-p-prem');
-    if (premiumButton) premiumButton.remove();
+  function removeLegacyProfileControls(card) {
+    if (!card) return;
+    ['dh-p-home', 'dh-p-prem', 'dh-p-exit'].forEach(function (id) {
+      var node = card.querySelector('#' + id);
+      if (node) node.remove();
+    });
   }
 
-  function repairEitaaChannelLink(root) {
-    if (!root) return;
-    var links = root.querySelectorAll('a[href*="eitaa.com"]');
+  function findLegacySupportCard(card) {
+    if (!card) return null;
+    var children = card.children || [];
+    for (var i = 0; i < children.length; i += 1) {
+      var child = children[i];
+      if (child && child.classList && child.classList.contains('card')) return child;
+    }
+    return null;
+  }
+
+  function findProfileCard(wrap) {
+    if (!wrap) return null;
+    var card = wrap.querySelector('.card');
+    if (!card) return null;
+    return card.querySelector('#dh-p-journey') ? card : null;
+  }
+
+  function readPhone(card, user) {
+    var phone = user && user.phone ? text(user.phone).trim() : '';
+    if (phone) return phone;
+    var nodes = card ? card.querySelectorAll('p') : [];
+    for (var i = 0; i < nodes.length; i += 1) {
+      var value = text(nodes[i].textContent).trim();
+      if (/^09\d{9}$/.test(value)) return value;
+    }
+    return '';
+  }
+
+  function repairEitaaChannelLink(supportCard) {
+    if (!supportCard) return;
+    var links = supportCard.querySelectorAll('a[href*="eitaa.com"]');
     for (var i = 0; i < links.length; i += 1) {
       var link = links[i];
       if (text(link.textContent).indexOf('عضویت در کانال ایتا') < 0 &&
           text(link.getAttribute('href')).indexOf('/asbe_siah') < 0) continue;
       link.setAttribute('href', EITAA_URL);
-      link.setAttribute('target', '_self');
+      link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
       link.onclick = function (event) {
         try {
-          if (event) event.preventDefault();
-          window.location.assign(EITAA_URL);
-        } catch (_) {}
+          if (event) event.stopPropagation();
+          window.open(EITAA_URL, '_blank', 'noopener,noreferrer');
+        } catch (_) {
+          try { global.location.assign(EITAA_URL); } catch (_) {}
+        }
+        return false;
       };
       break;
     }
@@ -176,32 +219,132 @@
     }
   }
 
-  function getProfileWrap() {
-    var app = document.getElementById('app');
-    if (!app) return null;
-    return app.querySelector('.dh-home-wrap');
+  function reflowProfile(wrap, card) {
+    var user = authUser();
+    if (!user || !wrap || !card || wrap.querySelector('.dh-profile-v2')) return;
+
+    var avatar = card.querySelector('.dh-profile-avatar');
+    var name = card.querySelector('.dh-prof-display-name');
+    var date = card.querySelector('.dh-prof-date');
+    var stats = card.querySelector('.dh-stat-grid');
+    var last = card.querySelector('.dh-last-card');
+    var journey = card.querySelector('#dh-p-journey');
+    var share = card.querySelector('#dh-p-share');
+    var buy = card.querySelector('#dh-p-buy');
+    var logout = card.querySelector('#dh-p-out');
+    var support = findLegacySupportCard(card);
+
+    if (!avatar || !name || !stats || !journey || !buy || !logout) return;
+
+    removeLegacyProfileControls(card);
+
+    var phone = readPhone(card, user);
+    var hasResult = !!(last && !last.classList.contains('dh-last-empty'));
+
+    var shell = document.createElement('div');
+    shell.className = 'dh-profile-v2';
+
+    var head = document.createElement('section');
+    head.className = 'dh-profile-header';
+    head.innerHTML =
+      '<div class="dh-profile-avatar-v2">' + escapeHtml((user.name || '؟').trim().charAt(0) || '؟') + '</div>' +
+      '<h2 class="dh-profile-name-v2">' + escapeHtml(user.name || 'مسافر') + '</h2>' +
+      '<p class="dh-profile-meta-v2">' +
+        (phone ? '<span dir="ltr">' + escapeHtml(phone) + '</span>' : '') +
+        ((phone && date) ? ' · ' : '') +
+        (date ? escapeHtml(date.textContent.trim()) : '') +
+      '</p>';
+
+    var statsBox = document.createElement('section');
+    statsBox.className = 'dh-profile-stats';
+    statsBox.appendChild(stats);
+
+    var lastBox = null;
+    if (hasResult) {
+      lastBox = document.createElement('section');
+      lastBox.className = 'dh-profile-last';
+      lastBox.appendChild(last);
+    } else if (last) {
+      last.remove();
+    }
+
+    var actions = document.createElement('section');
+    actions.className = 'dh-profile-actions';
+    actions.setAttribute('aria-label', 'اقدامات پروفایل');
+    journey.classList.add('dh-profile-journey');
+    actions.appendChild(journey);
+
+    buy.classList.remove('btn-primary');
+    buy.classList.add('dh-profile-buy');
+    actions.appendChild(buy);
+
+    if (hasResult && share) {
+      share.classList.remove('btn-primary');
+      share.classList.add('dh-profile-share');
+      actions.appendChild(share);
+    } else if (share) {
+      share.remove();
+    }
+
+    var account = document.createElement('section');
+    account.className = 'dh-profile-account';
+    account.appendChild(logout);
+
+    var admin = isAdmin(user) ? makeAdminPanel() : null;
+
+    wrap.innerHTML = '';
+    shell.appendChild(head);
+    shell.appendChild(statsBox);
+    if (lastBox) shell.appendChild(lastBox);
+    shell.appendChild(actions);
+    shell.appendChild(account);
+    if (support) {
+      shell.appendChild(support);
+      repairEitaaChannelLink(support);
+    }
+    if (admin) shell.appendChild(admin);
+    wrap.appendChild(shell);
+
+    if (admin) loadAdminUsers(admin);
   }
 
   function ensureAdminPanel() {
-    var wrap = getProfileWrap();
+    var user = authUser();
+    var app = document.getElementById('app');
+    var wrap = app && app.querySelector('.dh-home-wrap');
     if (!wrap) return;
 
-    removeLocalSubscriptionState();
-    removeLegacyLocalSubscription(wrap);
-    repairEitaaChannelLink(wrap);
+    var profile = wrap.querySelector('.dh-profile-v2');
+    if (!profile) {
+      var card = findProfileCard(wrap);
+      if (card && user) {
+        try { reflowProfile(wrap, card); } catch (_) {}
+        profile = wrap.querySelector('.dh-profile-v2');
+      }
+    }
 
-    var user = authUser();
     var existing = document.getElementById('dh-admin-panel');
-    if (!isAdmin(user)) {
+    if (!user || !isAdmin(user) || !profile) {
       if (existing) existing.remove();
       return;
     }
-    if (existing && existing.parentNode === wrap) return;
+
+    if (existing && existing.parentNode === profile) return;
     if (existing) existing.remove();
 
     var panel = makeAdminPanel();
-    wrap.appendChild(panel);
+    profile.appendChild(panel);
     loadAdminUsers(panel);
+  }
+
+  function cleanupLegacyControlsEverywhere() {
+    removeLocalSubscriptionState();
+    var app = document.getElementById('app');
+    if (!app) return;
+    var home = app.querySelector('#dh-p-home');
+    if (home && !findProfileCard(app.querySelector('.dh-home-wrap'))) home.remove();
+    var prem = app.querySelector('#dh-p-prem');
+    if (prem) prem.remove();
   }
 
   function install() {
@@ -218,11 +361,15 @@
   }
 
   function boot() {
+    cleanupLegacyControlsEverywhere();
     install();
     if (OBSERVER_INSTALLED || !document.body || typeof MutationObserver === 'undefined') return;
     OBSERVER_INSTALLED = true;
     var observer = new MutationObserver(function () {
-      try { ensureAdminPanel(); } catch (_) {}
+      try {
+        cleanupLegacyControlsEverywhere();
+        ensureAdminPanel();
+      } catch (_) {}
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
