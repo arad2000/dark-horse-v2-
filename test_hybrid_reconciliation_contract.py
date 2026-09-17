@@ -25,8 +25,8 @@ def test_migration_chain_has_single_0008_and_contiguous_revisions() -> None:
     ]
 
     source = read("alembic/versions/0008_reconciled_operational_schema.py")
-    assert 'revision = "0008_reconciled_operational_schema"' in source
-    assert 'down_revision = "0007_auth_challenges_saved_results"' in source
+    assert 'revision = "0008_reconciled_schema"' in source
+    assert 'down_revision = "0007_auth_saved_results"' in source
     assert "user_id" in source
     assert "BigInteger" in source
 
