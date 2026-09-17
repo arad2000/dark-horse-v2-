@@ -51,6 +51,14 @@ def test_main_runtime_import_graph_exists() -> None:
     assert (ROOT / "feedback_models.py").is_file()
 
 
+def test_shared_engine_is_initialized_once_per_process() -> None:
+    source = read("main_v2.py")
+    assert source.count("DarkHorseEngineV2(") == 1
+    assert "shared_engine = DarkHorseEngineV2(" in source
+    assert "app.state.engine = shared_engine" in source
+    assert "app.state.branch_engine = shared_engine" in source
+
+
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert 'POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"' in workflow

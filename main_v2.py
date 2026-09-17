@@ -46,19 +46,25 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("❌ Operational DB init failed: %s", e, exc_info=True)
 
-    for attr in ("engine", "branch_engine"):
-        try:
-            setattr(app.state, attr, DarkHorseEngineV2(
-                motives_path="docs/data/micro_motives.json",
-                majors_path="majors_database_v2.json",
-                trait_map_path="trait_map_v3.json",
-                value_poles_path="value_poles_v2.json",
-                school_branches_path="school_branches_v2.json",
-            ))
-            logger.info("✅ %s آماده است.", attr)
-        except Exception as e:
-            logger.error("❌ %s init failed: %s", attr, e, exc_info=True)
-            setattr(app.state, attr, None)
+    # The scoring reference data is immutable after construction, so both
+    # university-major and school-branch endpoints can safely share one engine
+    # instance. This removes a duplicate in-process copy of all reference data
+    # without changing scoring/ranking behavior.
+    try:
+        shared_engine = DarkHorseEngineV2(
+            motives_path="docs/data/micro_motives.json",
+            majors_path="majors_database_v2.json",
+            trait_map_path="trait_map_v3.json",
+            value_poles_path="value_poles_v2.json",
+            school_branches_path="school_branches_v2.json",
+        )
+        app.state.engine = shared_engine
+        app.state.branch_engine = shared_engine
+        logger.info("✅ shared scoring engine آماده است.")
+    except Exception as e:
+        logger.error("❌ shared scoring engine init failed: %s", e, exc_info=True)
+        app.state.engine = None
+        app.state.branch_engine = None
 
     yield
     logger.info("🛑 Shutting down V2.0 ...")
