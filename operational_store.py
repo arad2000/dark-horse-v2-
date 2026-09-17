@@ -91,11 +91,17 @@ class OperationalStore:
             if session is None:
                 raise ValueError(f"Unknown session_id: {session_id}")
 
+            major_ids = {int(item["major_id"]) for item in recommendations}
+            known_major_ids = set(
+                db.scalars(select(Major.id).where(Major.id.in_(major_ids))).all()
+            ) if major_ids else set()
+            unknown_major_ids = major_ids - known_major_ids
+            if unknown_major_ids:
+                raise ValueError(f"Unknown major_id: {sorted(unknown_major_ids)[0]}")
+
             rows: list[DiscoveryResult] = []
             for rank, item in enumerate(recommendations, start=1):
                 major_id = int(item["major_id"])
-                if db.get(Major, major_id) is None:
-                    raise ValueError(f"Unknown major_id: {major_id}")
                 fit = item.get("individuality_fit", item)
                 raw = fit.get("raw_components", {})
                 row = DiscoveryResult(
@@ -134,7 +140,15 @@ class OperationalStore:
             if session is None:
                 raise ValueError(f"Unknown session_id: {session_id}")
 
-            branch_by_name = {b.name: b for b in db.query(SchoolBranch).all()}
+            branch_names = {
+                str(item.get("branch_name") or item.get("branch_name_fa") or "").strip()
+                for item in branches
+            }
+            branch_rows = db.scalars(
+                select(SchoolBranch).where(SchoolBranch.name.in_(branch_names))
+            ).all() if branch_names else []
+            branch_by_name = {b.name: b for b in branch_rows}
+
             rows: list[BranchRecommendation] = []
             for rank, item in enumerate(branches, start=1):
                 name = str(item.get("branch_name") or item.get("branch_name_fa") or "").strip()
