@@ -6,6 +6,7 @@ billing endpoints without touching scoring/ranking or enabling PostgreSQL runtim
 from __future__ import annotations
 
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from urllib.parse import urlencode
@@ -13,7 +14,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, text
 from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, create_verified_user, resolve_session
@@ -25,6 +26,7 @@ from otp_service import create_registration_challenge, send_code, verify_registr
 from models import UserSession
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "billing"])
+logger = logging.getLogger("darkhorse.quota")
 
 MAX_SAVED_RESULT_BYTES = 64 * 1024
 
@@ -184,14 +186,22 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
 @router.get("/runtime/quota-health")
 def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
     """Non-sensitive runtime check for deployment and migration verification."""
+    expected_revision = "0009_journey_credit_consumptions"
     try:
         ledger_table_exists = bool(db.bind and inspect(db.bind).has_table("journey_credit_consumptions"))
     except Exception:
         ledger_table_exists = False
+    try:
+        revisions = [str(v) for v in db.execute(text("SELECT version_num FROM alembic_version ORDER BY version_num")).scalars().all()]
+    except Exception:
+        revisions = []
     return {
         "quota_idempotency": "journey_credit_consumptions_v1",
         "journey_session_autoprovision": True,
         "ledger_table_exists": ledger_table_exists,
+        "expected_migration_revision": expected_revision,
+        "alembic_revisions": revisions,
+        "migration_ok": expected_revision in revisions,
         "postgres_runtime_cutover_approved": os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false").strip().lower() in {"1", "true", "yes", "on"},
         "shadow_persistence": os.getenv("DARK_HORSE_SHADOW_PERSISTENCE", "false").strip().lower() in {"1", "true", "yes", "on"},
     }
@@ -201,11 +211,12 @@ def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
 def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     """Charge at most once for an authenticated journey UUID.
 
-    The authenticated user row serializes concurrent retries for an account; the
+    The authenticated user row is locked for the duration of the charge; the
     dedicated billing ledger is the per-journey idempotency marker. A missing
     journey row is provisioned for this authenticated user, so charging cannot
     silently fail solely because discovery persistence was unavailable.
     """
+    logger.info("quota consume request user_id=%s session_uuid=%s", user.id, req.session_uuid)
     try:
         locked_user = db.scalar(select(User).where(User.id == user.id).with_for_update())
         if locked_user is None:
@@ -235,6 +246,7 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
                 raise HTTPException(status_code=403, detail="journey session does not belong to this user")
             details = _quota_details(db, user.id)
             db.commit()
+            logger.info("quota consume idempotent user_id=%s session_uuid=%s remaining=%s consumed=%s", user.id, req.session_uuid, details["credits_remaining"], details["credits_consumed"])
             return {
                 "consumed": 0,
                 "already_consumed": True,
@@ -249,6 +261,7 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
         db.add(JourneyCreditConsumption(user_id=user.id, session_uuid=req.session_uuid, entitlement_id=entitlement.id))
         details = _quota_details(db, user.id)
         db.commit()
+        logger.info("quota consume success user_id=%s session_uuid=%s entitlement_id=%s remaining=%s consumed=%s", user.id, req.session_uuid, entitlement.id, details["credits_remaining"], details["credits_consumed"])
         return {
             "consumed": 1,
             "already_consumed": False,
@@ -259,11 +272,13 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
             "session_uuid": req.session_uuid,
             "user": _public_user(user),
         }
-    except HTTPException:
+    except HTTPException as exc:
         db.rollback()
+        logger.warning("quota consume rejected user_id=%s session_uuid=%s status=%s detail=%s", user.id, req.session_uuid, exc.status_code, exc.detail)
         raise
     except ValueError as exc:
         db.rollback()
+        logger.exception("quota consume conflict user_id=%s session_uuid=%s detail=%s", user.id, req.session_uuid, exc)
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
