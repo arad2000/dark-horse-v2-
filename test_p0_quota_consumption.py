@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import os
 import unittest
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
 
 from auth_service import hash_password, issue_session
-from billing_models import AuthSession, Entitlement, PremiumPlan, User
+from billing_models import AuthSession, Entitlement, JourneyCreditConsumption, PremiumPlan, User
 from database import engine, get_db
 from main_v2 import app
 from models import Base, UserSession
@@ -27,6 +28,7 @@ class P0QuotaConsumptionTests(unittest.TestCase):
 
     def setUp(self):
         with next(get_db()) as db:
+            db.execute(delete(JourneyCreditConsumption))
             db.execute(delete(AuthSession))
             db.execute(delete(Entitlement))
             db.execute(delete(UserSession))
@@ -62,43 +64,39 @@ class P0QuotaConsumptionTests(unittest.TestCase):
                     source="payment",
                     credits_granted=3,
                     credits_remaining=3,
-                    starts_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+                    starts_at=datetime.now(timezone.utc),
                     expires_at=None,
                     status="active",
                 )
             )
             token, _ = issue_session(db, user)
             db.commit()
-            cls.token = token
-            cls.user_id = user.id
+            self.token = token
+            self.user_id = user.id
+
+    def _new_session(self, session_uuid: str, *, completed: bool = False) -> None:
+        with next(get_db()) as db:
+            db.add(
+                UserSession(
+                    user_id=self.user_id,
+                    session_uuid=session_uuid,
+                    micro_motives=[],
+                    sjt_answers={},
+                    conjoint_choices={},
+                    is_completed=completed,
+                )
+            )
+            db.commit()
 
     def test_same_journey_is_charged_once_and_next_journey_charges_once(self):
         headers = {"Authorization": f"Bearer {self.token}"}
         session_one = str(uuid4())
         session_two = str(uuid4())
 
-        with next(get_db()) as db:
-            db.add(
-                UserSession(
-                    user_id=self.user_id,
-                    session_uuid=session_one,
-                    micro_motives=[],
-                    sjt_answers={},
-                    conjoint_choices={},
-                    is_completed=False,
-                )
-            )
-            db.add(
-                UserSession(
-                    user_id=self.user_id,
-                    session_uuid=session_two,
-                    micro_motives=[],
-                    sjt_answers={},
-                    conjoint_choices={},
-                    is_completed=False,
-                )
-            )
-            db.commit()
+        # Deliberately mark session one complete before charging. Result completion
+        # must not be reused as the billing idempotency marker.
+        self._new_session(session_one, completed=True)
+        self._new_session(session_two, completed=False)
 
         first = self.client.post(
             "/api/v1/me/consume-test",
@@ -144,10 +142,19 @@ class P0QuotaConsumptionTests(unittest.TestCase):
             rows = list(db.scalars(select(Entitlement).where(Entitlement.user_id == self.user_id)))
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0].credits_remaining, 1)
+            ledger = list(
+                db.scalars(
+                    select(JourneyCreditConsumption)
+                    .where(JourneyCreditConsumption.user_id == self.user_id)
+                    .order_by(JourneyCreditConsumption.session_uuid)
+                )
+            )
+            self.assertEqual(len(ledger), 2)
+            self.assertEqual({row.session_uuid for row in ledger}, {session_one, session_two})
             one = db.scalar(select(UserSession).where(UserSession.session_uuid == session_one))
             two = db.scalar(select(UserSession).where(UserSession.session_uuid == session_two))
             self.assertTrue(one.is_completed)
-            self.assertTrue(two.is_completed)
+            self.assertFalse(two.is_completed)
 
 
 if __name__ == "__main__":
