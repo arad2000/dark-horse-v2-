@@ -183,21 +183,40 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
 
 
 @router.post("/me/consume-test")
-def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
-    """Charge at most once for the supplied authenticated journey UUID.
+def consume_test(
+    req: ConsumeTestRequest,
+    user: User = Depends(_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    """Charge at most once for an authenticated journey UUID.
 
-    The UserSession row serializes concurrent requests for the same journey;
-    the dedicated billing ledger is the actual idempotency marker and is kept
-    separate from the session's result-completion flag.
+    The authenticated user row serializes concurrent retries for an account;
+    the dedicated billing ledger is the per-journey idempotency marker. If the
+    UUID was not persisted by discovery, a minimal server-side UserSession is
+    provisioned here for this authenticated user so charging cannot silently
+    fail solely because operational session persistence was unavailable.
     """
     try:
+        locked_user = db.scalar(select(User).where(User.id == user.id).with_for_update())
+        if locked_user is None:
+            raise HTTPException(status_code=401, detail="authenticated user not found")
+        user = locked_user
+
         session_stmt = select(UserSession).where(UserSession.session_uuid == req.session_uuid).with_for_update()
         session = db.scalar(session_stmt)
         if session is None:
-            raise HTTPException(status_code=404, detail="journey session not found")
-        if session.user_id not in (None, user.id):
+            session = UserSession(
+                user_id=user.id,
+                session_uuid=req.session_uuid,
+                micro_motives=[],
+                sjt_answers={},
+                conjoint_choices={},
+            )
+            db.add(session)
+            db.flush()
+        elif session.user_id not in (None, user.id):
             raise HTTPException(status_code=403, detail="journey session does not belong to this user")
-        if session.user_id is None:
+        elif session.user_id is None:
             session.user_id = user.id
 
         existing = db.scalar(
