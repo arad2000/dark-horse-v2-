@@ -3,7 +3,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "0009_journey_credit_consumptions"
-down_revision = "0008_reconciled_operational_schema"
+down_revision = "0008_reconciled_schema"
 branch_labels = None
 depends_on = None
 
