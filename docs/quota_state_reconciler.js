@@ -1,4 +1,4 @@
-/* quota_state_reconciler.js v1
+/* quota_state_reconciler.js v2
  * Keep the client quota cache additive/merge-based. Server state remains
  * authoritative; this only prevents legacy UI helpers from erasing the
  * persisted consumed count, identity, and server snapshot.
@@ -38,13 +38,19 @@
     var currentUser = String(current.userKey || '');
     var sameUser = !!incomingUser && !!currentUser && incomingUser === currentUser;
 
-    if (sameUser) {
-      if (!Object.prototype.hasOwnProperty.call(incoming, 'used') && Object.prototype.hasOwnProperty.call(current, 'used')) {
+    if (sameUser || (!incomingUser && currentUser)) {
+      var incomingConsumed = finiteNonNegative(incoming.serverConsumed);
+      var currentConsumed = finiteNonNegative(current.serverConsumed);
+      if (incomingConsumed !== null) {
+        merged.serverConsumed = incomingConsumed;
+        merged.used = incomingConsumed;
+      } else if (currentConsumed !== null) {
+        merged.serverConsumed = currentConsumed;
+        merged.used = currentConsumed;
+      } else if (!Object.prototype.hasOwnProperty.call(incoming, 'used') && Object.prototype.hasOwnProperty.call(current, 'used')) {
         merged.used = current.used;
       }
-      if (Number(incoming.used) === 0 && Number(current.used) > 0 && !Object.prototype.hasOwnProperty.call(incoming, 'serverConsumed')) {
-        merged.used = current.used;
-      }
+
       if (!Object.prototype.hasOwnProperty.call(incoming, 'serverRemaining') && Object.prototype.hasOwnProperty.call(current, 'serverRemaining')) {
         merged.serverRemaining = current.serverRemaining;
       }
@@ -71,6 +77,9 @@
         global.DHAuth.quota().then(function (data) {
           try {
             var current = parse(localStorage.getItem(KEY));
+            var consumed = finiteNonNegative(data && data.credits_consumed);
+            var granted = finiteNonNegative(data && data.credits_granted);
+            var remaining = finiteNonNegative(data && data.credits_remaining);
             var next = Object.assign({}, current, {
               userKey: (function () {
                 try {
@@ -78,16 +87,15 @@
                   return String(u.id || u.user_id || u.public_id || u.phone || u.mobile || '');
                 } catch (_) { return current.userKey || ''; }
               })(),
-              serverRemaining: Number(data && data.credits_remaining),
-              remaining: Number(data && data.credits_remaining),
-              used: Number.isFinite(Number(data && data.credits_consumed))
-                ? Number(data.credits_consumed)
-                : Number(current.used || 0),
-              serverGranted: Number.isFinite(Number(data && data.credits_granted))
-                ? Number(data.credits_granted)
-                : Number(current.serverGranted || 0),
+              serverRemaining: remaining !== null ? remaining : current.serverRemaining,
+              remaining: remaining !== null ? remaining : current.remaining,
               syncedAt: new Date().toISOString()
             });
+            if (consumed !== null) {
+              next.serverConsumed = consumed;
+              next.used = consumed;
+            }
+            if (granted !== null) next.serverGranted = granted;
             localStorage.setItem(KEY, JSON.stringify(next));
           } catch (_) {}
         }).catch(function () {});
