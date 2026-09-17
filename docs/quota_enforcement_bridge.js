@@ -159,7 +159,7 @@
     var nativeSetItem = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
       if (key === QUOTA_KEY) {
-        var current = parse(this.getItem(KEY));
+        var current = parse(this.getItem(QUOTA_KEY));
         var incoming = parse(value) || {};
         var same = current && incoming && current.userKey && incoming.userKey && String(current.userKey) === String(incoming.userKey);
         if (same && Number.isFinite(Number(current.serverConsumed)) && !Object.prototype.hasOwnProperty.call(incoming, 'serverConsumed')) {
