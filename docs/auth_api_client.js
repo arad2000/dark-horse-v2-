@@ -170,7 +170,7 @@
       if (!sessionId) throw new Error('شناسه سفر کاربر پیدا نشد؛ ابتدا تحلیل را کامل کنید.');
       return req('/api/v1/me/save-result', {
         method: 'POST',
-        body: JSON.stringify({ session_id: sessionId, result_summary: summary || {} })
+        body: JSON.stringify({ session_uuid: sessionId, result_summary: summary || {} })
       });
     },
 
