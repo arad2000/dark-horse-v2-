@@ -59,6 +59,14 @@ def test_shared_engine_is_initialized_once_per_process() -> None:
     assert "app.state.branch_engine = shared_engine" in source
 
 
+def test_persistence_prefetches_reference_rows_without_n_plus_one() -> None:
+    source = read("operational_store.py")
+    assert "select(Major.id).where(Major.id.in_(major_ids))" in source
+    assert "db.get(Major, major_id)" not in source
+    assert "select(SchoolBranch).where(SchoolBranch.name.in_(branch_names))" in source
+    assert "db.query(SchoolBranch).all()" not in source
+
+
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert 'POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"' in workflow
