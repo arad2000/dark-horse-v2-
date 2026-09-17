@@ -47,6 +47,29 @@ def test_quota_reconciler_loads_after_auth_and_before_commercial_ui() -> None:
     assert "free_journey_mode.js" not in source
 
 
+def test_quota_consume_session_adapter_is_loaded_after_bridge() -> None:
+    source = _text("docs/index.html")
+    bridge_pos = source.index("quota_enforcement_bridge.js")
+    adapter_pos = source.index("quota_consume_session_adapter.js")
+    commercial_pos = source.index("commercial_ui.js")
+    assert bridge_pos < adapter_pos < commercial_pos
+
+
+def test_quota_bridge_uses_declared_quota_key() -> None:
+    source = _text("docs/quota_enforcement_bridge.js")
+    assert "var QUOTA_KEY = 'dh_local_quota_v1';" in source
+    assert "this.getItem(QUOTA_KEY)" in source
+    assert "this.getItem(KEY)" not in source
+
+
+def test_quota_consume_session_adapter_binds_session_uuid() -> None:
+    source = _text("docs/quota_consume_session_adapter.js")
+    assert "DHQuotaEnforcement" in source
+    assert "ensureJourneySession" in source
+    assert "/api/v1/me/consume-test" in source
+    assert "session_uuid" in source
+
+
 def test_pwa_versions_are_aligned() -> None:
     html = _text("docs/index.html")
     boot = _text("docs/pwa-boot.js")
