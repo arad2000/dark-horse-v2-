@@ -21,6 +21,7 @@ from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
 from billing_models import Entitlement, Payment, User
 from database import get_db
+from models import UserSession
 from password_reset_service import attach_router
 from phone_verification_service import request_registration_otp, verify_registration_otp
 from production_billing_guard import assert_production_billing_configuration
@@ -43,6 +44,11 @@ class VerifyRegistrationRequest(BaseModel):
 class LoginRequest(BaseModel):
     phone: str = Field(min_length=3, max_length=32)
     password: str = Field(min_length=8, max_length=256)
+
+
+class ConsumeTestRequest(BaseModel):
+    """A credit charge is idempotent for exactly one authenticated journey."""
+    session_uuid: str = Field(min_length=8, max_length=64)
 
 
 class SaveResultRequest(BaseModel):
@@ -233,20 +239,61 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
 
 
 @router.post("/me/consume-test")
-def consume_test(user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
+def consume_test(
+    req: ConsumeTestRequest,
+    user: User = Depends(_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    """Charge at most once for the supplied authenticated journey UUID.
+
+    The user-session row is the database idempotency boundary. PostgreSQL row
+    locking serializes concurrent requests for the same session, while a
+    previously completed session returns a 200/no-op snapshot without burning
+    another credit.
+    """
     assert_production_billing_configuration()
     try:
+        session_stmt = select(UserSession).where(UserSession.session_uuid == req.session_uuid)
+        if db.bind is not None and db.bind.dialect.name == "postgresql":
+            session_stmt = session_stmt.with_for_update()
+        session = db.scalar(session_stmt)
+        if session is None:
+            raise HTTPException(status_code=404, detail="journey session not found")
+        if session.user_id not in (None, user.id):
+            raise HTTPException(status_code=403, detail="journey session does not belong to this user")
+        if session.user_id is None:
+            session.user_id = user.id
+
+        if session.is_completed:
+            details = _quota_details(db, user.id)
+            db.commit()
+            return {
+                "consumed": 0,
+                "already_consumed": True,
+                "credits_remaining": details["credits_remaining"],
+                "credits_consumed": details["credits_consumed"],
+                "credits_granted": details["credits_granted"],
+                "session_uuid": session.session_uuid,
+                "user": _public_user(user),
+            }
+
         entitlement = consume_one_test(db, user.id)
+        session.is_completed = True
         details = _quota_details(db, user.id)
         db.commit()
         return {
             "consumed": 1,
+            "already_consumed": False,
             "credits_remaining": details["credits_remaining"],
             "credits_consumed": details["credits_consumed"],
             "credits_granted": details["credits_granted"],
             "entitlement_id": entitlement.id,
+            "session_uuid": session.session_uuid,
             "user": _public_user(user),
         }
+    except HTTPException:
+        db.rollback()
+        raise
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail=str(exc)) from exc
