@@ -18,6 +18,16 @@ def test_commercial_api_exposes_persistent_quota_totals() -> None:
     assert "_quota_details" in functions
     assert '"credits_consumed"' in source
     assert '"credits_granted"' in source
+    assert '"credits_remaining"' in source
+
+
+def test_consume_test_is_session_idempotent() -> None:
+    source = _text("commercial_api.py")
+    assert "class ConsumeTestRequest" in source
+    assert "session_uuid" in source
+    assert "with_for_update()" in source
+    assert "session.is_completed" in source
+    assert "already_consumed" in source
 
 
 def test_auth_client_consumes_server_snapshot_instead_of_incrementing_guess() -> None:
@@ -33,6 +43,8 @@ def test_quota_reconciler_loads_after_auth_and_before_commercial_ui() -> None:
     reconciler_pos = source.index("quota_state_reconciler.js")
     commercial_pos = source.index("commercial_ui.js")
     assert auth_pos < reconciler_pos < commercial_pos
+    assert "quota_enforcement_bridge.js" in source
+    assert "free_journey_mode.js" not in source
 
 
 def test_pwa_versions_are_aligned() -> None:
@@ -58,4 +70,4 @@ def test_only_one_0008_revision_remains() -> None:
             and isinstance(node.value, ast.Constant)
         )
         revisions.append(revision)
-    assert revisions == ["0008_reconciled_operational_schema"]
+    assert revisions == ["0008_reconciled_schema"]
