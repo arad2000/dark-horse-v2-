@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from auth_service import authenticate_user, resolve_session
 from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
-from billing_models import Entitlement, Payment, User
+from billing_models import Entitlement, JourneyCreditConsumption, Payment, User
 from database import get_db
 from models import UserSession
 from password_reset_service import attach_router
@@ -246,10 +246,9 @@ def consume_test(
 ) -> dict[str, object]:
     """Charge at most once for the supplied authenticated journey UUID.
 
-    The user-session row is the database idempotency boundary. PostgreSQL row
-    locking serializes concurrent requests for the same session, while a
-    previously completed session returns a 200/no-op snapshot without burning
-    another credit.
+    The user-session row serializes concurrent requests for the same journey;
+    the dedicated billing ledger is the actual idempotency marker and is kept
+    separate from the session's result-completion flag.
     """
     assert_production_billing_configuration()
     try:
@@ -264,7 +263,14 @@ def consume_test(
         if session.user_id is None:
             session.user_id = user.id
 
-        if session.is_completed:
+        existing = db.scalar(
+            select(JourneyCreditConsumption).where(
+                JourneyCreditConsumption.session_uuid == req.session_uuid,
+            )
+        )
+        if existing is not None:
+            if existing.user_id != user.id:
+                raise HTTPException(status_code=403, detail="journey session does not belong to this user")
             details = _quota_details(db, user.id)
             db.commit()
             return {
@@ -273,12 +279,18 @@ def consume_test(
                 "credits_remaining": details["credits_remaining"],
                 "credits_consumed": details["credits_consumed"],
                 "credits_granted": details["credits_granted"],
-                "session_uuid": session.session_uuid,
+                "session_uuid": req.session_uuid,
                 "user": _public_user(user),
             }
 
         entitlement = consume_one_test(db, user.id)
-        session.is_completed = True
+        db.add(
+            JourneyCreditConsumption(
+                user_id=user.id,
+                session_uuid=req.session_uuid,
+                entitlement_id=entitlement.id,
+            )
+        )
         details = _quota_details(db, user.id)
         db.commit()
         return {
@@ -288,7 +300,7 @@ def consume_test(
             "credits_consumed": details["credits_consumed"],
             "credits_granted": details["credits_granted"],
             "entitlement_id": entitlement.id,
-            "session_uuid": session.session_uuid,
+            "session_uuid": req.session_uuid,
             "user": _public_user(user),
         }
     except HTTPException:
