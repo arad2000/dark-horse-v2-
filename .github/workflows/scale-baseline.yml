@@ -4,9 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       endpoint_url:
-        description: Full staging API endpoint to probe (for example /api/v2/darkhorse/discover)
+        description: Full staging API endpoint to probe (for example https://staging.example/api/v2/darkhorse/discover)
         required: true
         type: string
+      confirm_staging:
+        description: Safety confirmation. Load testing production is forbidden.
+        required: true
+        default: NO
+        type: choice
+        options:
+          - NO
+          - YES
       method:
         description: HTTP method
         required: true
@@ -30,12 +38,18 @@ on:
         required: true
         default: "10"
         type: string
+      payload_json:
+        description: Representative POST body as compact JSON; leave empty to use the probe default
+        required: false
+        default: ""
+        type: string
 
 env:
   PYTHONUNBUFFERED: "1"
 
 jobs:
   probe:
+    if: inputs.confirm_staging == 'YES'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +68,7 @@ jobs:
           SCALE_REQUESTS: ${{ inputs.requests }}
           SCALE_CONCURRENCY: ${{ inputs.concurrency }}
           SCALE_WARMUP: ${{ inputs.warmup }}
+          SCALE_PAYLOAD_JSON: ${{ inputs.payload_json }}
         run: |
           mkdir -p artifacts
           python tools/scale_probe.py | tee artifacts/scale-baseline.json
