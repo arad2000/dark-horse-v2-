@@ -1,5 +1,5 @@
 /* Profile UX — user profile hierarchy + one admin panel.
- * The legacy support card is preserved as-is (markup/style); only its channel href is verified.
+ * The legacy support card is preserved as-is; only its channel navigation is repaired.
  * No scoring, quota calculation, or purchase semantics are changed.
  */
 (function (global) {
@@ -102,14 +102,14 @@
       if (text(link.textContent).indexOf('عضویت در کانال ایتا') < 0 &&
           text(link.getAttribute('href')).indexOf('/asbe_siah') < 0) continue;
       link.setAttribute('href', EITAA_URL);
-      link.setAttribute('target', '_blank');
+      link.setAttribute('target', '_self');
       link.setAttribute('rel', 'noopener noreferrer');
       link.onclick = function (event) {
         try {
-          if (event) event.stopPropagation();
-          window.open(EITAA_URL, '_blank', 'noopener,noreferrer');
+          if (event) event.preventDefault();
+          global.location.assign(EITAA_URL);
         } catch (_) {
-          try { global.location.assign(EITAA_URL); } catch (_) {}
+          try { global.location.href = EITAA_URL; } catch (_) {}
         }
         return false;
       };
@@ -345,6 +345,8 @@
     if (home && !findProfileCard(app.querySelector('.dh-home-wrap'))) home.remove();
     var prem = app.querySelector('#dh-p-prem');
     if (prem) prem.remove();
+    var exit = app.querySelector('#dh-p-exit');
+    if (exit) exit.remove();
   }
 
   function install() {
