@@ -1,0 +1,121 @@
+name: Multi-Replica PostgreSQL Scale
+
+on:
+  push:
+    branches:
+      - integration/hybrid-reconciled
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: Total requests
+        required: true
+        default: "300"
+        type: string
+      concurrency:
+        description: Concurrent requests
+        required: true
+        default: "30"
+        type: string
+      replicas:
+        description: Local API replica count for the isolated benchmark
+        required: true
+        default: "3"
+        type: string
+
+env:
+  PYTHONUNBUFFERED: "1"
+  DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/darkhorse
+  POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+  DARK_HORSE_SHADOW_PERSISTENCE: "false"
+  DB_POOL_SIZE: "5"
+  DB_MAX_OVERFLOW: "5"
+  DB_POOL_TIMEOUT: "30"
+  DB_POOL_RECYCLE: "1800"
+  SCALE_PAYLOAD_JSON: '{"micro_motives":["MED-001","MED-002","MED-003"],"sjt_answers":{"sjt_1":"A","sjt_2":"B","sjt_3":"C","sjt_4":"D","sjt_5":"E","sjt_6":"A","sjt_7":"B","sjt_8":"C","sjt_9":"D","sjt_10":"E","sjt_11":"A","sjt_12":"B","sjt_13":"C","sjt_14":"D","sjt_15":"E","sjt_16":"A","sjt_17":"B","sjt_18":"C","sjt_19":"D","sjt_20":"E","sjt_21":"A","sjt_22":"B","sjt_23":"C","sjt_24":"D","sjt_25":"E"},"conjoint_choices":{"conj_1":"Q1A","conj_2":"Q2A","conj_3":"Q3A","conj_4":"Q4A","conj_5":"Q5A","conj_6":"Q6A","conj_7":"Q7A","conj_8":"Q8A","conj_9":"Q9A","conj_10":"Q10A","conj_11":"Q11A","conj_12":"Q12A","conj_13":"Q13A","conj_14":"Q14A","conj_15":"Q15A"}}'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: darkhorse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d darkhorse"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime and probe dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Seed disposable PostgreSQL
+        run: python tools/seed_scale_db.py
+
+      - name: Start isolated API replicas
+        env:
+          REPLICAS: ${{ inputs.replicas || '3' }}
+        run: |
+          set -euo pipefail
+          rm -f /tmp/darkhorse-api-*.pid /tmp/darkhorse-api-*.log
+          for port in $(seq 8001 $((8000 + REPLICAS))); do
+            INSTANCE_ID="replica-${port}" \
+            python -m uvicorn main_v2:app --host 127.0.0.1 --port "${port}" > "/tmp/darkhorse-api-${port}.log" 2>&1 &
+            echo $! > "/tmp/darkhorse-api-${port}.pid"
+          done
+
+          for port in $(seq 8001 $((8000 + REPLICAS))); do
+            ready=0
+            for i in $(seq 1 45); do
+              if curl -fsS "http://127.0.0.1:${port}/" >/dev/null; then ready=1; break; fi
+              sleep 1
+            done
+            if [ "${ready}" -ne 1 ]; then
+              echo "Replica ${port} failed to start"
+              cat "/tmp/darkhorse-api-${port}.log" || true
+              exit 1
+            fi
+          done
+
+      - name: Run multi-replica PostgreSQL benchmark
+        env:
+          REPLICAS: ${{ inputs.replicas || '3' }}
+          SCALE_REQUESTS: ${{ inputs.requests || '300' }}
+          SCALE_CONCURRENCY: ${{ inputs.concurrency || '30' }}
+          SCALE_WARMUP: "15"
+          SCALE_TIMEOUT: "60"
+        run: |
+          set -euo pipefail
+          urls=""
+          for port in $(seq 8001 $((8000 + REPLICAS))); do
+            if [ -n "${urls}" ]; then urls=",${urls}"; fi
+            urls="${urls}http://127.0.0.1:${port}/api/v2/darkhorse/discover"
+          done
+          mkdir -p artifacts
+          SCALE_REPLICA_URLS="${urls}" python tools/multireplica_scale_probe.py | tee artifacts/multireplica-db-scale.json
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: multireplica-postgresql-scale
+          path: artifacts/multireplica-db-scale.json
+
+      - name: Stop isolated API replicas
+        if: always()
+        run: |
+          for pid in /tmp/darkhorse-api-*.pid; do
+            if test -f "${pid}"; then kill "$(cat "${pid}")" || true; fi
+          done
