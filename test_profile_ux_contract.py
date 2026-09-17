@@ -18,6 +18,7 @@ class ProfileUXContractTests(unittest.TestCase):
         self.assertLess(commercial_pos, ux_pos)
 
     def test_profile_order_and_primary_cta(self):
+        render = JS[JS.index("wrap.innerHTML = ''"):]
         order = [
             'dh-profile-header',
             'dh-profile-stats',
@@ -27,7 +28,7 @@ class ProfileUXContractTests(unittest.TestCase):
             'dh-profile-account',
             'dh-admin-panel',
         ]
-        positions = [JS.index("className = '" + name + "'") for name in order]
+        positions = [render.index("className = '" + name + "'") for name in order]
         self.assertEqual(positions, sorted(positions))
         self.assertIn("journey.classList.add('dh-profile-journey')", JS)
         self.assertIn("buy.className = 'btn dh-profile-buy'", JS)
@@ -36,6 +37,7 @@ class ProfileUXContractTests(unittest.TestCase):
     def test_legacy_home_and_exit_removed_and_test_subscription_debug_only(self):
         self.assertIn("card.querySelector('#dh-p-home')", JS)
         self.assertIn("card.querySelector('#dh-p-exit')", JS)
+        self.assertIn("function stripGuestLegacyProfileControls()", JS)
         self.assertIn("global.__DH_DEBUG__ === true", JS)
         self.assertIn("'اشتراک محلی آفلاین (تست)'", JS)
         self.assertIn("else if (legacyPrem) {\n      legacyPrem.remove();", JS)
