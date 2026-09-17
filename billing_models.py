@@ -185,7 +185,7 @@ class JourneyCreditConsumption(Base):
 
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    session_uuid = Column(String(64), nullable=False, unique=True)
+    session_uuid = Column(String(64), nullable=False)
     entitlement_id = Column(BigInteger, ForeignKey("entitlements.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     user = relationship("User")
