@@ -1,25 +1,77 @@
 /* Profile admin layer — legacy user profile stays untouched.
- * This file only adds the management panel for authorized admins.
+ * Production cleanup removes the obsolete local subscription control/state.
+ * Admins additionally receive the management panel with user name and phone.
  */
 (function (global) {
   'use strict';
 
   var INSTALLED = false;
   var OBSERVER_INSTALLED = false;
+  var EITAA_URL = 'https://eitaa.com/asbe_siah';
 
   function text(value) { return String(value == null ? '' : value); }
 
   function authUser() {
     try {
-      if (global.DHAuth && typeof global.DHAuth.getUser === 'function') {
-        return global.DHAuth.getUser();
-      }
+      if (global.DHAuth && typeof global.DHAuth.getUser === 'function') return global.DHAuth.getUser();
     } catch (_) {}
     return null;
   }
 
   function isAdmin(user) {
     return !!(user && (user.is_admin === true || user.role === 'admin'));
+  }
+
+  function removeLocalSubscriptionState() {
+    try {
+      var quotaKey = 'dh_local_quota_v1';
+      var rawQuota = localStorage.getItem(quotaKey);
+      if (rawQuota) {
+        var quota = JSON.parse(rawQuota);
+        if (quota && quota.premium) {
+          quota.premium = false;
+          localStorage.setItem(quotaKey, JSON.stringify(quota));
+        }
+      }
+    } catch (_) {}
+
+    try {
+      var userKey = 'dh_local_user_v1';
+      var rawUser = localStorage.getItem(userKey);
+      if (rawUser) {
+        var user = JSON.parse(rawUser);
+        if (user && user.is_premium) {
+          user.is_premium = false;
+          localStorage.setItem(userKey, JSON.stringify(user));
+        }
+      }
+    } catch (_) {}
+  }
+
+  function removeLegacyLocalSubscription(root) {
+    if (!root) return;
+    var premiumButton = root.querySelector('#dh-p-prem');
+    if (premiumButton) premiumButton.remove();
+  }
+
+  function repairEitaaChannelLink(root) {
+    if (!root) return;
+    var links = root.querySelectorAll('a[href*="eitaa.com"]');
+    for (var i = 0; i < links.length; i += 1) {
+      var link = links[i];
+      if (text(link.textContent).indexOf('عضویت در کانال ایتا') < 0 &&
+          text(link.getAttribute('href')).indexOf('/asbe_siah') < 0) continue;
+      link.setAttribute('href', EITAA_URL);
+      link.setAttribute('target', '_self');
+      link.setAttribute('rel', 'noopener noreferrer');
+      link.onclick = function (event) {
+        try {
+          if (event) event.preventDefault();
+          window.location.assign(EITAA_URL);
+        } catch (_) {}
+      };
+      break;
+    }
   }
 
   function makeAdminPanel() {
@@ -131,10 +183,14 @@
   }
 
   function ensureAdminPanel() {
-    var user = authUser();
     var wrap = getProfileWrap();
     if (!wrap) return;
 
+    removeLocalSubscriptionState();
+    removeLegacyLocalSubscription(wrap);
+    repairEitaaChannelLink(wrap);
+
+    var user = authUser();
     var existing = document.getElementById('dh-admin-panel');
     if (!isAdmin(user)) {
       if (existing) existing.remove();
