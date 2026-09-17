@@ -74,7 +74,9 @@
     saveQuotaCache(patch);
   }
 
-  function persistSuccessfulConsume(data) { persistQuotaSnapshot(data || {}); }
+  function persistSuccessfulConsume(data) {
+    persistQuotaSnapshot(data || {});
+  }
 
   async function req(path, opts = {}) {
     const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
@@ -101,31 +103,47 @@
     logout() { clear(); },
 
     async register(name, phone, password) {
-      return req('/api/v1/auth/register', { method: 'POST', body: JSON.stringify({ name, phone, password }) });
+      return req('/api/v1/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, phone, password })
+      });
     },
 
     async verifyRegistration(challengeId, code) {
-      const data = await req('/api/v1/auth/register/verify', { method: 'POST', body: JSON.stringify({ challenge_id: challengeId, code }) });
+      const data = await req('/api/v1/auth/register/verify', {
+        method: 'POST',
+        body: JSON.stringify({ challenge_id: challengeId, code })
+      });
       save(data);
       persistQuotaSnapshot(data);
       return data;
     },
 
     async login(phone, password) {
-      const data = await req('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ phone, password }) });
+      const data = await req('/api/v1/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ phone, password })
+      });
       save(data);
       persistQuotaSnapshot(data);
       return data;
     },
 
     async requestPasswordReset(phone) {
-      return req('/api/v1/auth/password-reset/request', { method: 'POST', body: JSON.stringify({ phone }) });
+      return req('/api/v1/auth/password-reset/request', {
+        method: 'POST',
+        body: JSON.stringify({ phone })
+      });
     },
 
     async resetPassword(challengeId, code, newPassword) {
       const data = await req('/api/v1/auth/password-reset/confirm', {
         method: 'POST',
-        body: JSON.stringify({ challenge_id: challengeId, code, new_password: newPassword })
+        body: JSON.stringify({
+          challenge_id: challengeId,
+          code,
+          new_password: newPassword
+        })
       });
       save(data);
       return data;
@@ -167,12 +185,19 @@
       });
     },
 
-    async createPayment() { return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' }); },
-    async adminDashboard() { return req('/api/v1/admin/dashboard'); },
+    async createPayment() {
+      return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
+    },
+
+    async adminDashboard() {
+      return req('/api/v1/admin/dashboard');
+    },
+
     async adminFeedback(limit) {
       const n = Math.max(1, Math.min(200, Number(limit) || 50));
       return req('/api/v1/admin/feedback?limit=' + n);
     },
+
     async adminUsers(limit) {
       const n = Math.max(1, Math.min(500, Number(limit) || 50));
       return req('/api/v1/admin/users?limit=' + n);

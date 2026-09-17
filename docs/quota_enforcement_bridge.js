@@ -40,11 +40,16 @@
 
   function ensureJourneySession() {
     var j = readJourney();
-    if (j.sessionId) { SESSION_MEMORY = String(j.sessionId); return SESSION_MEMORY; }
+    if (j.sessionId) {
+      SESSION_MEMORY = String(j.sessionId);
+      return SESSION_MEMORY;
+    }
     if (!loggedIn()) {
       SESSION_MEMORY = null;
       return null;
     }
+    // No persisted session means a deliberate/new journey. Never reuse the
+    // in-memory UUID from a previous journey in the same page lifetime.
     SESSION_MEMORY = uuid();
     j.sessionId = SESSION_MEMORY;
     try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}

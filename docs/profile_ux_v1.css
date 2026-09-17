@@ -1,0 +1,42 @@
+/* Profile UX — hierarchy only. Legacy support card keeps its own markup/style. */
+.dh-profile-v2 { padding: 8px 0 20px; text-align: right; }
+.dh-profile-v2 > * { margin: 0 0 12px; }
+.dh-profile-v2 > *:last-child { margin-bottom: 0; }
+.dh-profile-header { padding: 8px 0 4px; text-align: center; }
+.dh-profile-avatar-v2 { width:72px; height:72px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 35% 30%,#f6d97a,#c9a227 68%,#8a7020); color:#15110a; font-size:1.65rem; font-weight:800; box-shadow:0 8px 26px rgba(212,175,55,.22); }
+.dh-profile-name-v2 { margin:0; color:#f2eadc !important; font-size:1.3rem !important; line-height:1.45; font-weight:700 !important; }
+.dh-profile-meta-v2 { margin:4px 0 0; color:#988d76 !important; font-size:.82rem !important; line-height:1.7; }
+.dh-profile-stats { padding:0; }
+.dh-profile-stats .dh-stat-grid { margin:0; gap:8px; }
+.dh-profile-stats .dh-stat { padding:12px 8px; border-radius:14px; background:rgba(22,21,29,.9); border:1px solid rgba(212,175,55,.13); }
+.dh-profile-last .dh-last-card { margin:0; padding:12px; border-radius:14px; border:1px solid rgba(212,175,55,.14); background:rgba(18,18,28,.72); }
+.dh-profile-last .dh-last-title { margin-bottom:2px; font-size:.92rem; }
+.dh-profile-last .dh-last-meta { margin-bottom:6px; font-size:.72rem; }
+.dh-profile-last .dh-last-row { padding:6px 0; }
+.dh-profile-last .dh-last-name { font-size:.87rem !important; }
+.dh-profile-last .dh-last-score { font-size:.8rem !important; }
+.dh-profile-actions { display:flex; flex-direction:column; gap:8px; }
+.dh-profile-actions .btn, .dh-profile-account .btn { width:100%; margin:0 !important; }
+.dh-profile-actions .dh-profile-journey { background:var(--accent); color:var(--bg-primary); font-weight:bold; }
+.dh-profile-actions .dh-profile-buy { background:rgba(240,192,64,.075) !important; border:1px solid rgba(240,192,64,.34) !important; color:#e8c95b !important; box-shadow:none !important; }
+.dh-profile-actions .dh-profile-share { min-height:40px !important; background:transparent !important; border:1px solid rgba(255,255,255,.10) !important; color:#a99f8c !important; box-shadow:none !important; }
+.dh-profile-account .btn { background:rgba(255,255,255,.025) !important; border-color:rgba(255,255,255,.07) !important; color:#989180 !important; min-height:44px !important; font-size:.84rem !important; }
+.dh-admin-panel { margin-top:16px; padding:14px; border-radius:16px; background:linear-gradient(160deg,rgba(24,22,30,.96),rgba(15,14,21,.96)); border:1px solid rgba(126,200,163,.28); box-shadow:0 10px 28px rgba(0,0,0,.18); }
+.dh-admin-title { margin:0 0 10px; color:#d8ccb5 !important; font-size:.94rem !important; font-weight:700 !important; text-align:right; }
+.dh-admin-users-table-wrap { max-height:360px; overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:12px; background:rgba(255,255,255,.02); }
+.dh-admin-users-table { width:100%; border-collapse:collapse; min-width:300px; font-size:.78rem; }
+.dh-admin-users-table th,.dh-admin-users-table td { padding:9px 8px; border-bottom:1px solid rgba(255,255,255,.055); text-align:right; white-space:nowrap; }
+.dh-admin-users-table th { position:sticky; top:0; z-index:1; background:rgba(24,22,30,.98); color:#b9ac91; font-size:.72rem; font-weight:700; }
+.dh-admin-users-table td { color:#d4c9b6; }
+.dh-admin-users-table td:nth-child(2) { color:#c9b56f; font-variant-numeric:tabular-nums; }
+.dh-admin-users-table tr:last-child td { border-bottom:0; }
+.dh-admin-status { margin:8px 0 0; color:#70695c; font-size:.66rem; line-height:1.5; text-align:center; }
+@media (max-width:380px) {
+  .dh-profile-v2 { padding-bottom:16px; }
+  .dh-profile-avatar-v2 { width:64px; height:64px; font-size:1.45rem; }
+  .dh-profile-name-v2 { font-size:1.18rem !important; }
+  .dh-profile-meta-v2 { font-size:.77rem !important; }
+  .dh-profile-last .dh-last-row { padding:5px 0; }
+  .dh-admin-users-table { min-width:280px; font-size:.74rem; }
+  .dh-admin-users-table th,.dh-admin-users-table td { padding:8px 6px; }
+}
