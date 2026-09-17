@@ -25,7 +25,6 @@ class User(Base):
     status = Column(String(20), nullable=False, default="active", server_default="active")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    last_login_at = Column(DateTime(timezone=True), nullable=True)
     user_sessions = relationship("UserSession", back_populates="user")
     auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
@@ -101,7 +100,7 @@ class Order(Base):
     user = relationship("User", back_populates="orders")
     plan = relationship("PremiumPlan", back_populates="orders")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
-    entitlements = relationship("Entitlement", back_populates="entitlements") if False else relationship("Entitlement", back_populates="order")
+    entitlements = relationship("Entitlement", back_populates="order")
 
 
 class Payment(Base):
