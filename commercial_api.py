@@ -1,8 +1,7 @@
 """Staged commercial API wiring for Dark Horse V2.
 
-This module exposes authentication, test-credit, saved-result and sandbox
-billing endpoints without touching scoring/ranking or enabling PostgreSQL
-runtime cutover.
+This module exposes authentication, phone verification, test-credit, saved-result and sandbox
+billing endpoints without touching scoring/ranking or enabling PostgreSQL runtime cutover.
 """
 from __future__ import annotations
 
@@ -14,7 +13,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, create_verified_user, resolve_session
@@ -182,19 +181,30 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
     return _quota_details(db, user.id)
 
 
+@router.get("/runtime/quota-health")
+def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
+    """Non-sensitive runtime check for deployment and migration verification."""
+    try:
+        ledger_table_exists = bool(db.bind and inspect(db.bind).has_table("journey_credit_consumptions"))
+    except Exception:
+        ledger_table_exists = False
+    return {
+        "quota_idempotency": "journey_credit_consumptions_v1",
+        "journey_session_autoprovision": True,
+        "ledger_table_exists": ledger_table_exists,
+        "postgres_runtime_cutover_approved": os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false").strip().lower() in {"1", "true", "yes", "on"},
+        "shadow_persistence": os.getenv("DARK_HORSE_SHADOW_PERSISTENCE", "false").strip().lower() in {"1", "true", "yes", "on"},
+    }
+
+
 @router.post("/me/consume-test")
-def consume_test(
-    req: ConsumeTestRequest,
-    user: User = Depends(_current_user),
-    db: Session = Depends(get_db),
-) -> dict[str, object]:
+def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     """Charge at most once for an authenticated journey UUID.
 
-    The authenticated user row serializes concurrent retries for an account;
-    the dedicated billing ledger is the per-journey idempotency marker. If the
-    UUID was not persisted by discovery, a minimal server-side UserSession is
-    provisioned here for this authenticated user so charging cannot silently
-    fail solely because operational session persistence was unavailable.
+    The authenticated user row serializes concurrent retries for an account; the
+    dedicated billing ledger is the per-journey idempotency marker. A missing
+    journey row is provisioned for this authenticated user, so charging cannot
+    silently fail solely because discovery persistence was unavailable.
     """
     try:
         locked_user = db.scalar(select(User).where(User.id == user.id).with_for_update())
@@ -219,11 +229,7 @@ def consume_test(
         elif session.user_id is None:
             session.user_id = user.id
 
-        existing = db.scalar(
-            select(JourneyCreditConsumption).where(
-                JourneyCreditConsumption.session_uuid == req.session_uuid,
-            )
-        )
+        existing = db.scalar(select(JourneyCreditConsumption).where(JourneyCreditConsumption.session_uuid == req.session_uuid))
         if existing is not None:
             if existing.user_id != user.id:
                 raise HTTPException(status_code=403, detail="journey session does not belong to this user")
@@ -240,13 +246,7 @@ def consume_test(
             }
 
         entitlement = consume_one_test(db, user.id)
-        db.add(
-            JourneyCreditConsumption(
-                user_id=user.id,
-                session_uuid=req.session_uuid,
-                entitlement_id=entitlement.id,
-            )
-        )
+        db.add(JourneyCreditConsumption(user_id=user.id, session_uuid=req.session_uuid, entitlement_id=entitlement.id))
         details = _quota_details(db, user.id)
         db.commit()
         return {
