@@ -1,8 +1,9 @@
-/* quota_enforcement_bridge.js v1
+/* quota_enforcement_bridge.js v3
  * Server-authoritative journey charging bridge.
  * A completed authenticated journey consumes exactly one server credit.
- * It also injects/reuses a stable session UUID so retries and viewing both
- * result types do not create or consume separate journeys.
+ * Each new journey receives a fresh UUID; retries within the same journey
+ * reuse the persisted UUID so the backend can idempotently reject duplicate
+ * charges.
  */
 (function (global) {
   'use strict';
@@ -40,8 +41,11 @@
   function ensureJourneySession() {
     var j = readJourney();
     if (j.sessionId) { SESSION_MEMORY = String(j.sessionId); return SESSION_MEMORY; }
-    if (!loggedIn()) return null;
-    SESSION_MEMORY = SESSION_MEMORY || uuid();
+    if (!loggedIn()) {
+      SESSION_MEMORY = null;
+      return null;
+    }
+    SESSION_MEMORY = uuid();
     j.sessionId = SESSION_MEMORY;
     try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}
     return SESSION_MEMORY;
@@ -76,7 +80,6 @@
 
   function nativeFetch() { return global.fetch.apply(global, arguments); }
 
-  // Attach the stable journey UUID to both analysis endpoints.
   var originalFetch = global.fetch;
   if (!originalFetch.__dhQuotaBridgeWrapped) {
     var wrappedFetch = function (input, init) {
