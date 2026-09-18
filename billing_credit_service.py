@@ -14,6 +14,7 @@ from typing import Protocol
 from uuid import uuid4
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from billing_models import Entitlement, Order, Payment, PaymentEvent, PremiumPlan, User
@@ -207,7 +208,21 @@ def verify_and_grant(
         status="active",
         order_id=order.id,
     )
-    db.add(entitlement)
+    try:
+        # The DB unique constraint on order_id is the final exactly-once
+        # invariant. Keep the insert inside a savepoint so a concurrent race
+        # can be recovered without aborting the outer transaction.
+        with db.begin_nested():
+            db.add(entitlement)
+            db.flush()
+    except IntegrityError:
+        existing_entitlement = db.scalar(
+            select(Entitlement).where(Entitlement.order_id == order.id)
+        )
+        if existing_entitlement is None:
+            raise
+        return existing_entitlement
+
     db.add(
         PaymentEvent(
             payment_id=payment.id,
