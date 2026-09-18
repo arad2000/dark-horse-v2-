@@ -28,10 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: [quota, consume]
-        pool_size: [2, 5, 10]
     runs-on: ubuntu-latest
-    env:
-      DB_POOL_SIZE: ${{ matrix.pool_size }}
     services:
       postgres:
         image: postgres:16
@@ -58,31 +55,7 @@ jobs:
       - name: Install runtime and probe dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Seed disposable auth/quota DB
-        run: python tools/seed_quota_scale_db.py
-
-      - name: Start isolated API replicas
-        run: |
-          set -euo pipefail
-          rm -f /tmp/darkhorse-api-*.pid /tmp/darkhorse-api-*.log
-          for port in 8001 8002 8003; do
-            python -m uvicorn main_v2:app --host 127.0.0.1 --port "${port}" > "/tmp/darkhorse-api-${port}.log" 2>&1 &
-            echo $! > "/tmp/darkhorse-api-${port}.pid"
-          done
-          for port in 8001 8002 8003; do
-            ready=0
-            for i in $(seq 1 45); do
-              if curl -fsS "http://127.0.0.1:${port}/" >/dev/null; then ready=1; break; fi
-              sleep 1
-            done
-            if [ "${ready}" -ne 1 ]; then
-              echo "Replica ${port} failed to start"
-              cat "/tmp/darkhorse-api-${port}.log" || true
-              exit 1
-            fi
-          done
-
-      - name: Run auth/quota scale probe
+      - name: Run controlled pool sweep
         env:
           SCALE_MODE: ${{ matrix.mode }}
           SCALE_AUTH_FILE: /tmp/darkhorse-scale-users.json
@@ -90,17 +63,88 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          python tools/quota_db_scale_probe.py | tee "artifacts/auth-quota-${{ matrix.mode }}.json"
+
+          start_replicas() {
+            rm -f /tmp/darkhorse-api-*.pid /tmp/darkhorse-api-*.log
+            for port in 8001 8002 8003; do
+              python -m uvicorn main_v2:app --host 127.0.0.1 --port "${{port}" > "/tmp/darkhorse-api-${{port}.log" 2>&1 &
+              echo $! > "/tmp/darkhorse-api-${{port}.pid"
+            done
+            for port in 8001 8002 8003; do
+              ready=0
+              for i in $(seq 1 45); do
+                if curl -fsS "http://127.0.0.1:${{port}/" >/dev/null; then
+                  ready=1
+                  break
+                fi
+                sleep 1
+              done
+              if [ "${{ready}" -ne 1 ]; then
+                echo "Replica ${{port} failed to start"
+                cat "/tmp/darkhorse-api-${{port}.log" || true
+                exit 1
+              fi
+            done
+          }
+
+          stop_replicas() {
+            for pid in /tmp/darkhorse-api-*.pid; do
+              if test -f "${{pid}"; then
+                kill "$(cat "${{pid}")" || true
+              fi
+            done
+            sleep 1
+          }
+
+          for pool in 2 5 10; do
+            export DB_POOL_SIZE="${{pool}"
+            for trial in 1 2 3; do
+              export SCALE_RESET_DB=true
+              python tools/seed_quota_scale_db.py
+              start_replicas
+
+              output="artifacts/auth-quota-${{ matrix.mode }}-pool-${{pool}-trial-${{trial}.json"
+              python tools/quota_db_scale_probe.py | tee "${{output}"
+
+              stop_replicas
+            done
+          done
+
+      - name: Summarize repeated trials
+        run: |
+          python - <<'PY'
+          import json
+          import statistics
+          from pathlib import Path
+
+          mode = "${{ matrix.mode }}"
+          summary = {"mode": mode, "pools": {}}
+
+          for pool in (2, 5, 10):
+              rows = []
+              for trial in (1, 2, 3):
+                  path = Path(f"artifacts/auth-quota-{${{mode}-pool-{pool}-trial-{trial}.json")
+                  rows.append(json.loads(path.read_text(encoding="utf-8")))
+
+              summary["pools"][str(pool)] = {
+                  "trials": [row["rps"] for row in rows],
+                  "rps_mean": round(statistics.fmean(row["rps"] for row in rows), 2),
+                  "rps_median": round(statistics.median(row["rps"] for row in rows), 2),
+                  "p50_median_ms": round(statistics.median(row["latency_ms"]["p50"] for row in rows), 2),
+                  "p95_median_ms": round(statistics.median(row["latency_ms"]["p95"] for row in rows), 2),
+                  "p99_median_ms": round(statistics.median(row["latency_ms"]["p99"] for row in rows), 2),
+                  "min_success_rate": min(row["success_rate"] for row in rows),
+              }
+
+          Path(f"artifacts/auth-quota-{${{mode}-summary.json").write_text(
+              json.dumps(summary, ensure_ascii=False, indent=2),
+              encoding="utf-8",
+          )
+          print(json.dumps(summary, ensure_ascii=False, indent=2))
+          PY
 
       - name: Upload benchmark result
         uses: actions/upload-artifact@v4
         with:
-          name: auth-quota-postgresql-scale-${{ matrix.mode }}-pool-${{ matrix.pool_size }}
-          path: artifacts/auth-quota-${{ matrix.mode }}.json
-
-      - name: Stop isolated API replicas
-        if: always()
-        run: |
-          for pid in /tmp/darkhorse-api-*.pid; do
-            if test -f "${pid}"; then kill "$(cat "${pid}")" || true; fi
-          done
+          name: auth-quota-postgresql-scale-${{ matrix.mode }}-repeated
+          path: artifacts/auth-quota-${{ matrix.mode }}-*.json
