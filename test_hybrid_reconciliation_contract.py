@@ -92,6 +92,17 @@ def test_auth_quota_scale_path_uses_single_lookup_and_sql_aggregate() -> None:
     assert "Entitlement.credits_remaining > 0" in credit
 
 
+def test_multireplica_scale_workflow_is_paired_on_one_runner() -> None:
+    workflow = read(".github/workflows/multireplica-db-scale.yml")
+    assert "runs-on: ubuntu-latest" in workflow
+    assert 'SCALE_TRIALS: "3"' in workflow
+    assert "for replicas in 1 2 3;" in workflow
+    assert '"postgres_instance": "single per workflow"' in workflow
+    assert 'trials_per_replica_count' in workflow
+    assert "matrix:" not in workflow
+    assert "multireplica-summary.json" in workflow
+
+
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert 'POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"' in workflow
