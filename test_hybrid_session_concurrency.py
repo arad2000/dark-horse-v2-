@@ -10,6 +10,7 @@ from sqlalchemy import select
 from billing_models import User
 from database import SessionLocal, engine
 from main_v2 import _persist_discovery_session
+from models import UserSession
 
 
 def request_stub() -> Request:
@@ -73,9 +74,7 @@ class JourneySessionConcurrencyTests(unittest.TestCase):
         with SessionLocal() as db:
             sessions = list(
                 db.scalars(
-                    select(__import__("models").UserSession).where(
-                        __import__("models").UserSession.session_uuid == session_uuid
-                    )
+                    select(UserSession).where(UserSession.session_uuid == session_uuid)
                 )
             )
             self.assertEqual(len(sessions), 1)
