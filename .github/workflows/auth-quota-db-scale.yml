@@ -67,21 +67,21 @@ jobs:
           start_replicas() {
             rm -f /tmp/darkhorse-api-*.pid /tmp/darkhorse-api-*.log
             for port in 8001 8002 8003; do
-              python -m uvicorn main_v2:app --host 127.0.0.1 --port "${{port}" > "/tmp/darkhorse-api-${{port}.log" 2>&1 &
-              echo $! > "/tmp/darkhorse-api-${{port}.pid"
+              python -m uvicorn main_v2:app --host 127.0.0.1 --port "${port}" > "/tmp/darkhorse-api-${port}.log" 2>&1 &
+              echo $! > "/tmp/darkhorse-api-${port}.pid"
             done
             for port in 8001 8002 8003; do
               ready=0
               for i in $(seq 1 45); do
-                if curl -fsS "http://127.0.0.1:${{port}/" >/dev/null; then
+                if curl -fsS "http://127.0.0.1:${port}/" >/dev/null; then
                   ready=1
                   break
                 fi
                 sleep 1
               done
-              if [ "${{ready}" -ne 1 ]; then
-                echo "Replica ${{port} failed to start"
-                cat "/tmp/darkhorse-api-${{port}.log" || true
+              if [ "${ready}" -ne 1 ]; then
+                echo "Replica ${port} failed to start"
+                cat "/tmp/darkhorse-api-${port}.log" || true
                 exit 1
               fi
             done
@@ -89,22 +89,22 @@ jobs:
 
           stop_replicas() {
             for pid in /tmp/darkhorse-api-*.pid; do
-              if test -f "${{pid}"; then
-                kill "$(cat "${{pid}")" || true
+              if test -f "${pid}"; then
+                kill "$(cat "${pid}")" || true
               fi
             done
             sleep 1
           }
 
           for pool in 2 5 10; do
-            export DB_POOL_SIZE="${{pool}"
+            export DB_POOL_SIZE="${pool}"
             for trial in 1 2 3; do
               export SCALE_RESET_DB=true
               python tools/seed_quota_scale_db.py
               start_replicas
 
-              output="artifacts/auth-quota-${{ matrix.mode }}-pool-${{pool}-trial-${{trial}.json"
-              python tools/quota_db_scale_probe.py | tee "${{output}"
+              output="artifacts/auth-quota-${{ matrix.mode }}-pool-${pool}-trial-${trial}.json"
+              python tools/quota_db_scale_probe.py | tee "${output}"
 
               stop_replicas
             done
