@@ -121,11 +121,12 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           import statistics
           from pathlib import Path
 
           mode = "${{ matrix.mode }}"
-          trials = int("${SCALE_TRIALS}")
+          trials = int(os.environ["SCALE_TRIALS"])
           orders = ["2 5 10", "10 2 5", "5 10 2", "2 10 5", "5 2 10"]
           summary = {"mode": mode, "trials_per_pool": trials, "trial_orders": orders[:trials], "pools": {}}
 
