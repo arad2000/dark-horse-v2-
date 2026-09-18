@@ -8,7 +8,13 @@ from sqlalchemy import select
 
 from billing_api import handle_payment_callback
 from billing_models import Entitlement, Order, Payment, PremiumPlan, User
-from billing_credit_service import PACK_3_CREDITS, PACK_3_TESTS_CODE
+from billing_credit_service import (
+    FREE_CREDITS,
+    FREE_PLAN_CODE,
+    PACK_3_CREDITS,
+    PACK_3_TESTS_CODE,
+    ensure_free_entitlement,
+)
 from database import SessionLocal, engine
 
 
@@ -72,6 +78,65 @@ class ConcurrentPaymentCallbackTests(unittest.TestCase):
             db.commit()
             cls.user_id = user.id
             cls.order_public_id = order_public_id
+
+    def test_concurrent_free_entitlement_provisioning_is_single(self) -> None:
+        with SessionLocal() as db:
+            plan = db.scalar(select(PremiumPlan).where(PremiumPlan.code == FREE_PLAN_CODE))
+            if plan is None:
+                plan = PremiumPlan(
+                    code=FREE_PLAN_CODE,
+                    name_fa="CI free test",
+                    plan_type="credits",
+                    duration_days=None,
+                    credits_granted=FREE_CREDITS,
+                    price_minor=0,
+                    currency="IRR",
+                    is_active=True,
+                    features={"ci_only": True},
+                )
+                db.add(plan)
+                db.flush()
+
+            user = User(
+                public_id=str(uuid4()),
+                name="Concurrent Free Entitlement Test",
+                phone="09" + str(uuid4().int % 1_000_000_000).zfill(9),
+                password_hash=None,
+                role="user",
+                status="active",
+            )
+            db.add(user)
+            db.commit()
+            user_id = user.id
+
+        def provision() -> int:
+            with SessionLocal() as db:
+                try:
+                    row = ensure_free_entitlement(db, user_id)
+                    db.commit()
+                    return int(row.id)
+                except Exception:
+                    db.rollback()
+                    raise
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            entitlement_ids = list(pool.map(lambda _: provision(), range(2)))
+
+        self.assertEqual(entitlement_ids[0], entitlement_ids[1])
+
+        with SessionLocal() as db:
+            entitlements = list(
+                db.scalars(
+                    select(Entitlement).where(
+                        Entitlement.user_id == user_id,
+                        Entitlement.source == "free",
+                    )
+                )
+            )
+            self.assertEqual(len(entitlements), 1)
+            self.assertEqual(entitlements[0].credits_granted, FREE_CREDITS)
+            self.assertEqual(entitlements[0].credits_remaining, FREE_CREDITS)
+
 
     def test_different_concurrent_callback_events_grant_once(self) -> None:
         def callback(event_key: str) -> dict:
