@@ -85,6 +85,12 @@ def test_auth_quota_scale_path_uses_single_lookup_and_sql_aggregate() -> None:
     assert ("details = _quota_details(db, user.id)" + newline + "            db.rollback()" + newline + "            logger.info(\"quota consume idempotent user_id=%s") in commercial
     assert ("details = _quota_details(db, user.id)" + newline + "            db.rollback()" + newline + "            logger.info(\"quota consume idempotent-after-lock user_id=%s") in commercial
 
+    credit = read("billing_credit_service.py")
+    assert "update(Entitlement)" in credit
+    assert ".returning(Entitlement)" in credit
+    assert "scalar_one_or_none()" in credit
+    assert "Entitlement.credits_remaining > 0" in credit
+
 
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
