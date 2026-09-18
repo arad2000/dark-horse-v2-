@@ -123,7 +123,7 @@ jobs:
           for pool in (2, 5, 10):
               rows = []
               for trial in (1, 2, 3):
-                  path = Path(f"artifacts/auth-quota-{${{mode}-pool-{pool}-trial-{trial}.json")
+                  path = Path("artifacts") / f"auth-quota-{mode}-pool-{pool}-trial-{trial}.json"
                   rows.append(json.loads(path.read_text(encoding="utf-8")))
 
               summary["pools"][str(pool)] = {
@@ -136,7 +136,7 @@ jobs:
                   "min_success_rate": min(row["success_rate"] for row in rows),
               }
 
-          Path(f"artifacts/auth-quota-{${{mode}-summary.json").write_text(
+          Path(f"artifacts/auth-quota-{mode}-summary.json").write_text(
               json.dumps(summary, ensure_ascii=False, indent=2),
               encoding="utf-8",
           )
