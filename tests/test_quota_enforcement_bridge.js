@@ -53,6 +53,8 @@ async function run() {
     },
     Date,
     Promise,
+    setInterval,
+    clearInterval,
     Object,
     Number,
     String,
