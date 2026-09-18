@@ -137,7 +137,12 @@ def verify_and_grant(
     the gateway retries it with a different event key. The verified payment/order
     is the business idempotency boundary; ``event_key`` protects event insertion.
     """
-    payment = db.get(Payment, payment_public_id)
+    # Serialize concurrent gateway callbacks for the same payment before
+    # checking status or creating an entitlement. Different callback event keys
+    # must not be able to grant the same payment twice.
+    payment = db.scalar(
+        select(Payment).where(Payment.id == payment_public_id).with_for_update()
+    )
     if payment is None:
         raise ValueError("unknown payment")
     order = db.get(Order, payment.order_id)
