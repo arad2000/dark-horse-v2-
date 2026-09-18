@@ -109,8 +109,39 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install probe dependency
-        run: python -m pip install "httpx>=0.27,<1.0"
+      - name: Validate staging target and probe limits
+        env:
+          TARGET_URL: ${{ inputs.endpoint_url }}
+          REQUESTS: ${{ inputs.requests }}
+          CONCURRENCY: ${{ inputs.concurrency }}
+          WARMUP: ${{ inputs.warmup }}
+        run: |
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+
+          parsed = urlparse(os.environ["TARGET_URL"])
+          if parsed.scheme != "https" or not parsed.hostname:
+              raise SystemExit("staging probe requires an explicit HTTPS endpoint")
+          production_hosts = {
+              "api.asbe-siah.ir",
+              "www.asbe-siah.ir",
+              "asbe-siah.ir",
+          }
+          if parsed.hostname.lower() in production_hosts:
+              raise SystemExit("production load testing is blocked by CI safety guard")
+
+          limits = {
+              "REQUESTS": (1, 5000),
+              "CONCURRENCY": (1, 100),
+              "WARMUP": (0, 100),
+          }
+          for name, (minimum, maximum) in limits.items():
+              value = int(os.environ[name])
+              if not minimum <= value <= maximum:
+                  raise SystemExit(f"{name} must be between {minimum} and {maximum}")
+          print(f"staging target accepted: {parsed.hostname}")
+          PY
 
       - name: Run staging scale probe
         env:
