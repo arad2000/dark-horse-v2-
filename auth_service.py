@@ -142,14 +142,22 @@ def authenticate_user(db: Session, *, phone: str, password: str) -> tuple[User, 
 def resolve_session(db: Session, raw_token: str) -> User:
     if not raw_token:
         raise ValueError("token is required")
-    session = db.scalar(select(AuthSession).where(AuthSession.token_hash == hash_token(raw_token)))
+    session_hash = hash_token(raw_token)
+    session_user = db.execute(
+        select(AuthSession, User)
+        .join(User, User.id == AuthSession.user_id)
+        .where(AuthSession.token_hash == session_hash)
+    ).one_or_none()
     now = utcnow()
-    expires_at = _as_aware_utc(session.expires_at) if session is not None else None
-    revoked_at = _as_aware_utc(session.revoked_at) if session is not None else None
-    if session is None or revoked_at is not None or expires_at is None or expires_at <= now:
+    if session_user is None:
         raise ValueError("invalid or expired session")
-    user = db.get(User, session.user_id)
-    if user is None or user.status != "active":
+
+    session, user = session_user
+    expires_at = _as_aware_utc(session.expires_at)
+    revoked_at = _as_aware_utc(session.revoked_at)
+    if revoked_at is not None or expires_at is None or expires_at <= now:
+        raise ValueError("invalid or expired session")
+    if user.status != "active":
         raise ValueError("user is not active")
     return user
 
