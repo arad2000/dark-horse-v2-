@@ -12,6 +12,8 @@ from functools import lru_cache
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from admin_http_router import router as admin_router
 from commercial_api import router as commercial_router
@@ -183,7 +185,7 @@ def _persist_discovery_session(req: Request, request: DarkHorseDiscoverRequest, 
                 try:
                     db.commit()
                     return session_uuid, int(row.id)
-                except Exception:
+                except IntegrityError:
                     # Another concurrent request may have inserted the same
                     # authenticated journey UUID. Never invent a new UUID on
                     # this conflict: recover the canonical row and preserve
