@@ -35,7 +35,6 @@ def main() -> None:
     if engine is None:
         raise RuntimeError("DATABASE_URL must be configured")
 
-    Base.metadata.create_all(bind=engine)
     majors = load_majors()
     with engine.begin() as conn:
         conn.execute(delete(Major))
