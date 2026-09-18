@@ -21,6 +21,8 @@ on:
 
 env:
   PYTHONUNBUFFERED: "1"
+  POSTGRES_RUNTIME_CUTOVER: "false"
+  POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
   STAGING_REPLICA_URLS: ${{ secrets.STAGING_REPLICA_URLS }}
   STAGING_SCALE_URL: ${{ secrets.STAGING_SCALE_URL }}
 
@@ -43,7 +45,13 @@ jobs:
       - name: Run shared-DB commercial smoke
         run: |
           set -euo pipefail
-          python tools/staging_hybrid_smoke.py
+          mkdir -p artifacts
+          python tools/staging_hybrid_smoke.py | tee artifacts/staging-smoke.txt
+
+      - name: Verify cutover remains disabled in gate
+        run: |
+          test "${POSTGRES_RUNTIME_CUTOVER}" = "false"
+          test "${POSTGRES_RUNTIME_CUTOVER_APPROVED}" = "false"
 
       - name: Validate staging scale target
         env:
@@ -115,4 +123,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: staging-hybrid-gate
-          path: artifacts/staging-scale.json
+          path: |
+            artifacts/staging-scale.json
+            artifacts/staging-smoke.txt
