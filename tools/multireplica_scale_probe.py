@@ -92,8 +92,8 @@ def summarize(results: list[Result], elapsed_s: float) -> dict[str, Any]:
 
 async def run(args: argparse.Namespace) -> dict[str, Any]:
     replicas = [value.strip().rstrip("/") for value in args.urls.split(",") if value.strip()]
-    if len(replicas) < 2:
-        raise ValueError("at least two replica URLs are required")
+    if not replicas:
+        raise ValueError("at least one replica URL is required")
     body = payload()
     semaphore = asyncio.Semaphore(max(args.concurrency, 1))
     limits = httpx.Limits(max_connections=max(args.concurrency, 1), max_keepalive_connections=max(args.concurrency, 1))
