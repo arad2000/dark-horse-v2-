@@ -270,6 +270,28 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
             raise HTTPException(status_code=401, detail="authenticated user not found")
         user = locked_user
 
+        # Re-check the billing ledger after acquiring the user lock. The initial
+        # probe is only a retry fast-path; concurrent first-time requests can
+        # both observe an empty ledger before either transaction acquires the lock.
+        existing = db.scalar(
+            select(JourneyCreditConsumption).where(JourneyCreditConsumption.session_uuid == req.session_uuid)
+        )
+        if existing is not None:
+            if existing.user_id != user.id:
+                raise HTTPException(status_code=403, detail="journey session does not belong to this user")
+            details = _quota_details(db, user.id)
+            db.commit()
+            logger.info("quota consume idempotent-after-lock user_id=%s session_uuid=%s remaining=%s consumed=%s", user.id, req.session_uuid, details["credits_remaining"], details["credits_consumed"])
+            return {
+                "consumed": 0,
+                "already_consumed": True,
+                "credits_remaining": details["credits_remaining"],
+                "credits_granted": details["credits_granted"],
+                "credits_consumed": details["credits_consumed"],
+                "session_uuid": req.session_uuid,
+                "user": _public_user(user),
+            }
+
         session_stmt = select(UserSession).where(UserSession.session_uuid == req.session_uuid).with_for_update()
         session = db.scalar(session_stmt)
         session_provisioned = False
