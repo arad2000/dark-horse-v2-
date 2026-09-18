@@ -56,6 +56,8 @@ jobs:
         run: python -m pytest -q test_p0_quota_consumption.py
       - name: Concurrent payment callback idempotency
         run: python -m pytest -q test_billing_idempotency.py
+      - name: Concurrent journey session idempotency
+        run: python -m pytest -q test_hybrid_session_concurrency.py
       - name: Verify cutover remains disabled
         run: |
           python - <<'PY'
