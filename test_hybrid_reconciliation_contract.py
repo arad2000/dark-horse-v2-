@@ -153,6 +153,30 @@ def test_schema_is_alembic_authoritative_in_runtime_and_scale_ci() -> None:
     assert "balanced pool order trial" in auth_workflow
 
 
+def test_real_staging_hybrid_gate_exists_and_is_safe() -> None:
+    workflow = read(".github/workflows/staging-hybrid-gate.yml")
+    smoke = read("tools/staging_hybrid_smoke.py")
+
+    assert "environment: staging" in workflow
+    assert "secrets.STAGING_REPLICA_URLS" in workflow
+    assert "secrets.STAGING_SCALE_URL" in workflow
+    assert "tools/staging_hybrid_smoke.py" in workflow
+    assert 'SCALE_METHOD: GET' in workflow
+    assert 'Enforce staging scale health' in workflow
+    assert 'error_rate > 0' in workflow
+    assert "p95" in workflow
+    assert "STAGING_REPLICA_URLS" in smoke
+    assert "OTP_EXPOSE_DEBUG_CODE=true" in smoke
+    assert '"/api/v1/auth/register"' in smoke
+    assert '"/api/v1/auth/register/verify"' in smoke
+    assert '"/api/v1/me/quota"' in smoke
+    assert '"/api/v1/me/consume-test"' in smoke
+    assert '"/api/v1/billing/create-payment"' in smoke
+    assert "production hosts are forbidden" in smoke
+    assert "postgres_runtime_cutover_approved" in smoke
+    assert '"already_consumed" is not True' in smoke
+
+
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert 'POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"' in workflow
