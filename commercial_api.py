@@ -253,7 +253,7 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
             if existing.user_id != user.id:
                 raise HTTPException(status_code=403, detail="journey session does not belong to this user")
             details = _quota_details(db, user.id)
-            db.commit()
+            db.rollback()
             logger.info("quota consume idempotent user_id=%s session_uuid=%s remaining=%s consumed=%s", user.id, req.session_uuid, details["credits_remaining"], details["credits_consumed"])
             return {
                 "consumed": 0,
@@ -280,7 +280,7 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
             if existing.user_id != user.id:
                 raise HTTPException(status_code=403, detail="journey session does not belong to this user")
             details = _quota_details(db, user.id)
-            db.commit()
+            db.rollback()
             logger.info("quota consume idempotent-after-lock user_id=%s session_uuid=%s remaining=%s consumed=%s", user.id, req.session_uuid, details["credits_remaining"], details["credits_consumed"])
             return {
                 "consumed": 0,
