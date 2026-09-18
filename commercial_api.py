@@ -213,7 +213,7 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
 @router.get("/runtime/quota-health")
 def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
     """Non-sensitive runtime check for deployment and migration verification."""
-    expected_revision = "0009_journey_credit_consumptions"
+    expected_revision = "0010_entitlement_order_uniqueness"
     try:
         ledger_table_exists = bool(db.bind and inspect(db.bind).has_table("journey_credit_consumptions"))
     except Exception:
