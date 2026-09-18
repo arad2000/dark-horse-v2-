@@ -163,3 +163,4 @@ def test_frontend_quota_contract_has_one_canonical_charge_path() -> None:
 def test_audit_runs_p0_quota_regression() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert "test_p0_quota_consumption.py" in workflow
+    assert "test_billing_idempotency.py" in workflow
