@@ -149,7 +149,11 @@ def _persist_discovery_session(req: Request, request: DarkHorseDiscoverRequest, 
         if requested_uuid and user_id is not None:
             db = SessionLocal()
             try:
-                row = db.scalar(select(UserSession).where(UserSession.session_uuid == requested_uuid))
+                row = db.scalar(
+                    select(UserSession)
+                    .where(UserSession.session_uuid == requested_uuid)
+                    .with_for_update()
+                )
                 if row is not None:
                     if row.user_id not in (None, user_id):
                         raise HTTPException(status_code=403, detail="session does not belong to this user")
