@@ -37,7 +37,7 @@ def test_migration_chain_is_single_and_contiguous() -> None:
     assert "uq_journey_credit_consumption_session" in source_0009
 
     source_0010 = read("alembic/versions/0010_entitlement_order_uniqueness.py")
-    assert 'revision = "0010_entitlement_order_uniqueness"' in source_0010
+    assert 'revision = "0010_entitlement_order_unique"' in source_0010
     assert 'down_revision = "0009_journey_credit_consumptions"' in source_0010
     assert 'op.create_unique_constraint("uq_entitlement_order"' in source_0010
 
