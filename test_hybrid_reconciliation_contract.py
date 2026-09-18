@@ -75,8 +75,12 @@ def test_auth_quota_scale_path_uses_single_lookup_and_sql_aggregate() -> None:
     assert "func.coalesce(func.sum(Entitlement.credits_granted), 0)" in commercial
     assert "list(db.scalars(select(Entitlement)" not in commercial
     ledger_probe = 'select(JourneyCreditConsumption).where(JourneyCreditConsumption.session_uuid == req.session_uuid)'
-    assert ledger_probe in commercial
+    assert commercial.count(ledger_probe) >= 2
     assert commercial.index(ledger_probe) < commercial.index('select(User).where(User.id == user.id).with_for_update()')
+    lock_pos = commercial.index('select(User).where(User.id == user.id).with_for_update()')
+    recheck_pos = commercial.index(ledger_probe, lock_pos)
+    session_lock_pos = commercial.index('select(UserSession).where(UserSession.session_uuid == req.session_uuid).with_for_update()')
+    assert recheck_pos < session_lock_pos
 
 
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
