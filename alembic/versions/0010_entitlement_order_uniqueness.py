@@ -2,7 +2,7 @@
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0010_entitlement_order_uniqueness"
+revision = "0010_entitlement_order_unique"
 down_revision = "0009_journey_credit_consumptions"
 branch_labels = None
 depends_on = None
