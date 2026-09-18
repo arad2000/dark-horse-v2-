@@ -174,7 +174,7 @@ def test_real_staging_hybrid_gate_exists_and_is_safe() -> None:
     assert '"/api/v1/billing/create-payment"' in smoke
     assert "production hosts are forbidden" in smoke
     assert "postgres_runtime_cutover_approved" in smoke
-    assert '"already_consumed" is not True' in smoke
+    assert 'get("already_consumed") is not True' in smoke
 
 
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
