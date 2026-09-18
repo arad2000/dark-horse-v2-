@@ -67,6 +67,15 @@ def test_persistence_prefetches_reference_rows_without_n_plus_one() -> None:
     assert "db.query(SchoolBranch).all()" not in source
 
 
+def test_auth_quota_scale_path_uses_single_lookup_and_sql_aggregate() -> None:
+    auth = read("auth_service.py")
+    commercial = read("commercial_api.py")
+    assert "select(AuthSession, User)" in auth
+    assert "db.get(User, session.user_id)" not in auth
+    assert "func.coalesce(func.sum(Entitlement.credits_granted), 0)" in commercial
+    assert "list(db.scalars(select(Entitlement)" not in commercial
+
+
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert 'POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"' in workflow
