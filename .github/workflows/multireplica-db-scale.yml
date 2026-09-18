@@ -5,22 +5,6 @@ on:
     branches:
       - integration/hybrid-reconciled
   workflow_dispatch:
-    inputs:
-      requests:
-        description: Total requests
-        required: true
-        default: "300"
-        type: string
-      concurrency:
-        description: Concurrent requests
-        required: true
-        default: "30"
-        type: string
-      replicas:
-        description: Local API replica count for the isolated benchmark
-        required: true
-        default: "3"
-        type: string
 
 env:
   PYTHONUNBUFFERED: "1"
@@ -35,6 +19,10 @@ env:
 
 jobs:
   benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        replicas: [1, 2, 3]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -67,7 +55,7 @@ jobs:
 
       - name: Start isolated API replicas
         env:
-          REPLICAS: ${{ inputs.replicas || '3' }}
+          REPLICAS: ${{ matrix.replicas }}
         run: |
           set -euo pipefail
           rm -f /tmp/darkhorse-api-*.pid /tmp/darkhorse-api-*.log
@@ -92,9 +80,9 @@ jobs:
 
       - name: Run multi-replica PostgreSQL benchmark
         env:
-          REPLICAS: ${{ inputs.replicas || '3' }}
-          SCALE_REQUESTS: ${{ inputs.requests || '300' }}
-          SCALE_CONCURRENCY: ${{ inputs.concurrency || '30' }}
+          REPLICAS: ${{ matrix.replicas }}
+          SCALE_REQUESTS: "300"
+          SCALE_CONCURRENCY: "30"
           SCALE_WARMUP: "15"
           SCALE_TIMEOUT: "60"
         run: |
@@ -114,7 +102,7 @@ jobs:
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v4
         with:
-          name: multireplica-postgresql-scale
+          name: multireplica-postgresql-scale-${{ matrix.replicas }}
           path: artifacts/multireplica-db-scale.json
 
       - name: Stop isolated API replicas
