@@ -245,6 +245,25 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
     """
     logger.info("quota consume request user_id=%s session_uuid=%s", user.id, req.session_uuid)
     try:
+        existing = db.scalar(
+            select(JourneyCreditConsumption).where(JourneyCreditConsumption.session_uuid == req.session_uuid)
+        )
+        if existing is not None:
+            if existing.user_id != user.id:
+                raise HTTPException(status_code=403, detail="journey session does not belong to this user")
+            details = _quota_details(db, user.id)
+            db.commit()
+            logger.info("quota consume idempotent user_id=%s session_uuid=%s remaining=%s consumed=%s", user.id, req.session_uuid, details["credits_remaining"], details["credits_consumed"])
+            return {
+                "consumed": 0,
+                "already_consumed": True,
+                "credits_remaining": details["credits_remaining"],
+                "credits_granted": details["credits_granted"],
+                "credits_consumed": details["credits_consumed"],
+                "session_uuid": req.session_uuid,
+                "user": _public_user(user),
+            }
+
         locked_user = db.scalar(select(User).where(User.id == user.id).with_for_update())
         if locked_user is None:
             raise HTTPException(status_code=401, detail="authenticated user not found")
@@ -268,23 +287,6 @@ def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), d
             raise HTTPException(status_code=403, detail="journey session does not belong to this user")
         elif session.user_id is None:
             session.user_id = user.id
-
-        existing = db.scalar(select(JourneyCreditConsumption).where(JourneyCreditConsumption.session_uuid == req.session_uuid))
-        if existing is not None:
-            if existing.user_id != user.id:
-                raise HTTPException(status_code=403, detail="journey session does not belong to this user")
-            details = _quota_details(db, user.id)
-            db.commit()
-            logger.info("quota consume idempotent user_id=%s session_uuid=%s remaining=%s consumed=%s", user.id, req.session_uuid, details["credits_remaining"], details["credits_consumed"])
-            return {
-                "consumed": 0,
-                "already_consumed": True,
-                "credits_remaining": details["credits_remaining"],
-                "credits_granted": details["credits_granted"],
-                "credits_consumed": details["credits_consumed"],
-                "session_uuid": req.session_uuid,
-                "user": _public_user(user),
-            }
 
         entitlement = consume_one_test(db, user.id)
         db.add(JourneyCreditConsumption(user_id=user.id, session_uuid=req.session_uuid, entitlement_id=entitlement.id))
