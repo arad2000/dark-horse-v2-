@@ -19,7 +19,7 @@ env:
   SCALE_CONCURRENCY: "30"
   SCALE_WARMUP: "15"
   SCALE_TIMEOUT: "60"
-  SCALE_TRIALS: "3"
+  SCALE_TRIALS: "5"
   SCALE_PAYLOAD_JSON: '{"micro_motives":["MED-001","MED-002","MED-003"],"sjt_answers":{"sjt_1":"A","sjt_2":"B","sjt_3":"C","sjt_4":"D","sjt_5":"E","sjt_6":"A","sjt_7":"B","sjt_8":"C","sjt_9":"D","sjt_10":"E","sjt_11":"A","sjt_12":"B","sjt_13":"C","sjt_14":"D","sjt_15":"E","sjt_16":"A","sjt_17":"B","sjt_18":"C","sjt_19":"D","sjt_20":"E","sjt_21":"A","sjt_22":"B","sjt_23":"C","sjt_24":"D","sjt_25":"E"},"conjoint_choices":{"conj_1":"Q1A","conj_2":"Q2A","conj_3":"Q3A","conj_4":"Q4A","conj_5":"Q5A","conj_6":"Q6A","conj_7":"Q7A","conj_8":"Q8A","conj_9":"Q9A","conj_10":"Q10A","conj_11":"Q11A","conj_12":"Q12A","conj_13":"Q13A","conj_14":"Q14A","conj_15":"Q15A"}}'
 
 jobs:
@@ -71,8 +71,11 @@ jobs:
           }
           trap cleanup EXIT
 
+          orders=( "1 2 3" "3 1 2" "2 3 1" "1 3 2" "2 1 3" )
           for trial in $(seq 1 "${SCALE_TRIALS}"); do
-            for replicas in 1 2 3; do
+            read -r -a replica_order <<< "${orders[$((trial - 1))]}"
+            echo "=== balanced order trial=${trial}: ${replica_order[*]} ==="
+            for replicas in "${replica_order[@]}"; do
               echo "=== trial=${trial} replicas=${replicas} ==="
               cleanup
               python tools/seed_scale_db.py
@@ -129,6 +132,7 @@ jobs:
                   "postgres_instance": "single per workflow",
                   "trials_per_replica_count": trials,
                   "replica_counts": [1, 2, 3],
+                  "trial_orders": ["1 2 3", "3 1 2", "2 3 1", "1 3 2", "2 1 3"],
                   "requests_per_trial": int(os.environ["SCALE_REQUESTS"]),
                   "concurrency": int(os.environ["SCALE_CONCURRENCY"]),
                   "warmup": int(os.environ["SCALE_WARMUP"]),
