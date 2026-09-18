@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import sys
 
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
@@ -37,6 +37,14 @@ def main() -> None:
 
     majors = load_majors()
     with engine.begin() as conn:
+        # Reset operational benchmark state between trials while preserving the
+        # Alembic-managed schema and the JSON-backed reference tables.
+        conn.execute(
+            text(
+                "TRUNCATE TABLE users, premium_plans, feedback_submissions "
+                "RESTART IDENTITY CASCADE"
+            )
+        )
         conn.execute(delete(Major))
 
     rows = []
