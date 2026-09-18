@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Protocol
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from billing_models import Entitlement, Order, Payment, PaymentEvent, PremiumPlan, User
@@ -211,27 +211,49 @@ def verify_and_grant(
 def consume_one_test(db: Session, user_id: int) -> Entitlement:
     """Consume exactly one unexpired active test credit.
 
-    PostgreSQL row locking serializes concurrent consumption. Expired entitlements
-    are excluded from the locked SELECT so they can never be spent accidentally.
-    The operation fails instead of allowing negative credits.
+    PostgreSQL uses one atomic UPDATE ... RETURNING statement so the selected
+    entitlement is decremented and returned in one database round-trip. The
+    eligibility predicates remain on the UPDATE itself, preventing negative
+    credits if another transaction changes the row while this statement waits.
+    Other databases retain the existing ORM row-lock path.
     """
     now = utcnow()
-    stmt = (
-        select(Entitlement)
-        .where(
-            Entitlement.user_id == user_id,
-            Entitlement.status == "active",
-            Entitlement.credits_remaining > 0,
-            (Entitlement.expires_at.is_(None) | (Entitlement.expires_at > now)),
-        )
-        .order_by(Entitlement.created_at.asc(), Entitlement.id.asc())
+    eligible = (
+        Entitlement.user_id == user_id,
+        Entitlement.status == "active",
+        Entitlement.credits_remaining > 0,
+        (Entitlement.expires_at.is_(None) | (Entitlement.expires_at > now)),
     )
-    if db.bind is not None and db.bind.dialect.name == "postgresql":
-        stmt = stmt.with_for_update()
 
-    entitlement = db.scalar(stmt)
+    if db.bind is not None and db.bind.dialect.name == "postgresql":
+        candidate_id = (
+            select(Entitlement.id)
+            .where(*eligible)
+            .order_by(Entitlement.created_at.asc(), Entitlement.id.asc())
+            .limit(1)
+            .scalar_subquery()
+        )
+        stmt = (
+            update(Entitlement)
+            .where(
+                Entitlement.id == candidate_id,
+                *eligible,
+            )
+            .values(credits_remaining=Entitlement.credits_remaining - 1)
+            .returning(Entitlement)
+        )
+        entitlement = db.execute(stmt).scalar_one_or_none()
+    else:
+        stmt = (
+            select(Entitlement)
+            .where(*eligible)
+            .order_by(Entitlement.created_at.asc(), Entitlement.id.asc())
+        )
+        entitlement = db.scalar(stmt)
+        if entitlement is not None:
+            entitlement.credits_remaining -= 1
+            db.flush()
+
     if entitlement is None:
         raise ValueError("no valid test credits remaining")
-    entitlement.credits_remaining -= 1
-    db.flush()
     return entitlement
