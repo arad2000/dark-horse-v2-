@@ -26,9 +26,12 @@ def main() -> None:
         raise RuntimeError("DATABASE_URL must be configured")
     user_count = int(os.getenv("SCALE_USER_COUNT", "100"))
     credits = int(os.getenv("SCALE_USER_CREDITS", "10"))
+    reset_db = os.getenv("SCALE_RESET_DB", "false").lower() == "true"
     if user_count < 1 or credits < 1:
         raise RuntimeError("SCALE_USER_COUNT and SCALE_USER_CREDITS must be >= 1")
 
+    if reset_db:
+        Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     now = datetime.now(timezone.utc)
     tokens: list[dict[str, object]] = []
