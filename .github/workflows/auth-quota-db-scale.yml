@@ -21,6 +21,7 @@ env:
   SCALE_CONCURRENCY: "30"
   SCALE_WARMUP: "15"
   SCALE_TIMEOUT: "60"
+  SCALE_TRIALS: "5"
 
 jobs:
   benchmark:
@@ -99,9 +100,12 @@ jobs:
             sleep 1
           }
 
-          for pool in 2 5 10; do
-            export DB_POOL_SIZE="${pool}"
-            for trial in 1 2 3; do
+          orders=( "2 5 10" "10 2 5" "5 10 2" "2 10 5" "5 2 10" )
+          for trial in $(seq 1 "${SCALE_TRIALS}"); do
+            read -r -a pool_order <<< "${orders[$((trial - 1))]}"
+            echo "=== balanced pool order trial=${trial}: ${pool_order[*]} ==="
+            for pool in "${pool_order[@]}"; do
+              export DB_POOL_SIZE="${pool}"
               export SCALE_RESET_DB=true
               python tools/seed_quota_scale_db.py
               start_replicas
@@ -121,11 +125,13 @@ jobs:
           from pathlib import Path
 
           mode = "${{ matrix.mode }}"
-          summary = {"mode": mode, "pools": {}}
+          trials = int("${SCALE_TRIALS}")
+          orders = ["2 5 10", "10 2 5", "5 10 2", "2 10 5", "5 2 10"]
+          summary = {"mode": mode, "trials_per_pool": trials, "trial_orders": orders[:trials], "pools": {}}
 
           for pool in (2, 5, 10):
               rows = []
-              for trial in (1, 2, 3):
+              for trial in range(1, trials + 1):
                   path = Path("artifacts") / f"auth-quota-{mode}-pool-{pool}-trial-{trial}.json"
                   rows.append(json.loads(path.read_text(encoding="utf-8")))
 
