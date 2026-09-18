@@ -8,8 +8,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 
 from sqlalchemy import delete
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from database import engine
 # Register every ORM table in the shared Base metadata before create_all(),
@@ -17,9 +22,6 @@ from database import engine
 import billing_models  # noqa: F401,E402
 import feedback_models  # noqa: F401,E402
 from models import Base, Major
-
-ROOT = Path(__file__).resolve().parent.parent
-
 
 def load_majors() -> list[dict]:
     with (ROOT / "majors_database_v2.json").open("r", encoding="utf-8") as fh:
