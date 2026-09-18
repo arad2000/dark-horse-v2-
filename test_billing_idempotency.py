@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
 from uuid import uuid4
 
 from sqlalchemy import select
 
 from billing_api import handle_payment_callback
 from billing_models import Entitlement, Order, Payment, PremiumPlan, User
+from payment_providers import MockPaymentProvider
 from billing_credit_service import (
     FREE_CREDITS,
     FREE_PLAN_CODE,
@@ -65,11 +67,13 @@ class ConcurrentPaymentCallbackTests(unittest.TestCase):
             db.add(order)
             db.flush()
 
+            authority = f"MOCK-AUTH-{uuid4().hex[:16]}"
+            transaction_id = f"MOCK-REF-{uuid4().hex[:16]}"
             db.add(
                 Payment(
                     order_id=order.id,
                     provider="mock",
-                    provider_authority="MOCK-AUTH-001",
+                    provider_authority=authority,
                     amount_minor=plan.price_minor,
                     currency=plan.currency,
                     status="initiated",
@@ -78,6 +82,8 @@ class ConcurrentPaymentCallbackTests(unittest.TestCase):
             db.commit()
             cls.user_id = user.id
             cls.order_public_id = order_public_id
+            cls.authority = authority
+            cls.transaction_id = transaction_id
 
     def test_concurrent_free_entitlement_provisioning_is_single(self) -> None:
         with SessionLocal() as db:
@@ -142,15 +148,22 @@ class ConcurrentPaymentCallbackTests(unittest.TestCase):
         def callback(event_key: str) -> dict:
             with SessionLocal() as db:
                 try:
-                    result = handle_payment_callback(
-                        db,
-                        order_public_id=self.order_public_id,
-                        authority="MOCK-AUTH-001",
-                        status="OK",
-                        provider_name="mock",
-                        event_key=event_key,
-                        raw_callback={"event_key": event_key},
-                    )
+                    with patch(
+                        "billing_api.build_provider",
+                        return_value=MockPaymentProvider(
+                            authority=self.authority,
+                            transaction_id=self.transaction_id,
+                        ),
+                    ):
+                        result = handle_payment_callback(
+                            db,
+                            order_public_id=self.order_public_id,
+                            authority=self.authority,
+                            status="OK",
+                            provider_name="mock",
+                            event_key=event_key,
+                            raw_callback={"event_key": event_key},
+                        )
                     db.commit()
                     return result
                 except Exception:
@@ -171,6 +184,7 @@ class ConcurrentPaymentCallbackTests(unittest.TestCase):
             payment = db.scalar(select(Payment).where(Payment.order_id == order.id))
             self.assertIsNotNone(payment)
             self.assertEqual(payment.status, "verified")
+            self.assertEqual(payment.provider_transaction_id, self.transaction_id)
 
             entitlements = list(
                 db.scalars(select(Entitlement).where(Entitlement.order_id == order.id))
