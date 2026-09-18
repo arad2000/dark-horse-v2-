@@ -15,14 +15,15 @@ env:
   DB_MAX_OVERFLOW: "5"
   DB_POOL_TIMEOUT: "30"
   DB_POOL_RECYCLE: "1800"
+  SCALE_REQUESTS: "300"
+  SCALE_CONCURRENCY: "30"
+  SCALE_WARMUP: "15"
+  SCALE_TIMEOUT: "60"
+  SCALE_TRIALS: "3"
   SCALE_PAYLOAD_JSON: '{"micro_motives":["MED-001","MED-002","MED-003"],"sjt_answers":{"sjt_1":"A","sjt_2":"B","sjt_3":"C","sjt_4":"D","sjt_5":"E","sjt_6":"A","sjt_7":"B","sjt_8":"C","sjt_9":"D","sjt_10":"E","sjt_11":"A","sjt_12":"B","sjt_13":"C","sjt_14":"D","sjt_15":"E","sjt_16":"A","sjt_17":"B","sjt_18":"C","sjt_19":"D","sjt_20":"E","sjt_21":"A","sjt_22":"B","sjt_23":"C","sjt_24":"D","sjt_25":"E"},"conjoint_choices":{"conj_1":"Q1A","conj_2":"Q2A","conj_3":"Q3A","conj_4":"Q4A","conj_5":"Q5A","conj_6":"Q6A","conj_7":"Q7A","conj_8":"Q8A","conj_9":"Q9A","conj_10":"Q10A","conj_11":"Q11A","conj_12":"Q12A","conj_13":"Q13A","conj_14":"Q14A","conj_15":"Q15A"}}'
 
 jobs:
   benchmark:
-    strategy:
-      fail-fast: false
-      matrix:
-        replicas: [1, 2, 3]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -50,64 +51,112 @@ jobs:
       - name: Install runtime and probe dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Seed disposable PostgreSQL
-        run: python tools/seed_scale_db.py
-
-      - name: Start isolated API replicas
-        env:
-          REPLICAS: ${{ matrix.replicas }}
+      - name: Run paired multi-replica trials on one runner
         run: |
           set -euo pipefail
-          rm -f /tmp/darkhorse-api-*.pid /tmp/darkhorse-api-*.log
-          for port in $(seq 8001 $((8000 + REPLICAS))); do
-            INSTANCE_ID="replica-${port}" \
-            python -m uvicorn main_v2:app --host 127.0.0.1 --port "${port}" > "/tmp/darkhorse-api-${port}.log" 2>&1 &
-            echo $! > "/tmp/darkhorse-api-${port}.pid"
-          done
 
-          for port in $(seq 8001 $((8000 + REPLICAS))); do
-            ready=0
-            for i in $(seq 1 45); do
-              if curl -fsS "http://127.0.0.1:${port}/" >/dev/null; then ready=1; break; fi
-              sleep 1
-            done
-            if [ "${ready}" -ne 1 ]; then
-              echo "Replica ${port} failed to start"
-              cat "/tmp/darkhorse-api-${port}.log" || true
-              exit 1
-            fi
-          done
-
-      - name: Run multi-replica PostgreSQL benchmark
-        env:
-          REPLICAS: ${{ matrix.replicas }}
-          SCALE_REQUESTS: "300"
-          SCALE_CONCURRENCY: "30"
-          SCALE_WARMUP: "15"
-          SCALE_TIMEOUT: "60"
-        run: |
-          set -euo pipefail
-          urls=""
-          for port in $(seq 8001 $((8000 + REPLICAS))); do
-            new_url="http://127.0.0.1:${port}/api/v2/darkhorse/discover"
-            if [ -n "${urls}" ]; then
-              urls="${urls},${new_url}"
-            else
-              urls="${new_url}"
-            fi
-          done
           mkdir -p artifacts
-          SCALE_REPLICA_URLS="${urls}" python tools/multireplica_scale_probe.py | tee artifacts/multireplica-db-scale.json
 
-      - name: Upload benchmark artifact
+          cleanup() {
+            for pid_file in /tmp/darkhorse-api-*.pid; do
+              if test -f "${pid_file}"; then
+                kill "$(cat "${pid_file}")" || true
+              fi
+            done
+            rm -f /tmp/darkhorse-api-*.pid
+            sleep 1
+          }
+          trap cleanup EXIT
+
+          for trial in $(seq 1 "${SCALE_TRIALS}"); do
+            for replicas in 1 2 3; do
+              echo "=== trial=${trial} replicas=${replicas} ==="
+              cleanup
+              python tools/seed_scale_db.py
+
+              rm -f /tmp/darkhorse-api-*.log
+              for port in $(seq 8001 $((8000 + replicas))); do
+                INSTANCE_ID="replica-${port}" \
+                python -m uvicorn main_v2:app --host 127.0.0.1 --port "${port}" > "/tmp/darkhorse-api-${port}.log" 2>&1 &
+                echo $! > "/tmp/darkhorse-api-${port}.pid"
+              done
+
+              urls=""
+              for port in $(seq 8001 $((8000 + replicas))); do
+                ready=0
+                for i in $(seq 1 45); do
+                  if curl -fsS "http://127.0.0.1:${port}/" >/dev/null; then
+                    ready=1
+                    break
+                  fi
+                  sleep 1
+                done
+                if [ "${ready}" -ne 1 ]; then
+                  echo "Replica ${port} failed to start"
+                  cat "/tmp/darkhorse-api-${port}.log" || true
+                  exit 1
+                fi
+
+                new_url="http://127.0.0.1:${port}/api/v2/darkhorse/discover"
+                if [ -n "${urls}" ]; then
+                  urls="${urls},${new_url}"
+                else
+                  urls="${new_url}"
+                fi
+              done
+
+              SCALE_REPLICA_URLS="${urls}" \
+                python tools/multireplica_scale_probe.py | \
+                tee "artifacts/multireplica-trial-${trial}-replicas-${replicas}.json"
+            done
+          done
+
+      - name: Summarize paired trials
+        run: |
+          python - <<'PY'
+          import json
+          import statistics
+          from pathlib import Path
+
+          trials = int("${SCALE_TRIALS}")
+          summary = {
+              "methodology": {
+                  "runner": "single",
+                  "postgres_instance": "single per workflow",
+                  "trials_per_replica_count": trials,
+                  "replica_counts": [1, 2, 3],
+                  "requests_per_trial": int("${SCALE_REQUESTS}"),
+                  "concurrency": int("${SCALE_CONCURRENCY}"),
+                  "warmup": int("${SCALE_WARMUP}"),
+              },
+              "replicas": {},
+          }
+
+          for replica_count in (1, 2, 3):
+              rows = []
+              for trial in range(1, trials + 1):
+                  path = Path("artifacts") / f"multireplica-trial-{trial}-replicas-{replica_count}.json"
+                  rows.append(json.loads(path.read_text(encoding="utf-8")))
+
+              summary["replicas"][str(replica_count)] = {
+                  "rps_trials": [row["rps"] for row in rows],
+                  "rps_mean": round(statistics.fmean(row["rps"] for row in rows), 2),
+                  "rps_median": round(statistics.median(row["rps"] for row in rows), 2),
+                  "p50_median_ms": round(statistics.median(row["latency_ms"]["p50"] for row in rows), 2),
+                  "p95_median_ms": round(statistics.median(row["latency_ms"]["p95"] for row in rows), 2),
+                  "p99_median_ms": round(statistics.median(row["latency_ms"]["p99"] for row in rows), 2),
+                  "min_success_rate": min(row["success_rate"] for row in rows),
+              }
+
+          Path("artifacts/multireplica-summary.json").write_text(
+              json.dumps(summary, ensure_ascii=False, indent=2),
+              encoding="utf-8",
+          )
+          print(json.dumps(summary, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: multireplica-postgresql-scale-${{ matrix.replicas }}
-          path: artifacts/multireplica-db-scale.json
-
-      - name: Stop isolated API replicas
-        if: always()
-        run: |
-          for pid in /tmp/darkhorse-api-*.pid; do
-            if test -f "${pid}"; then kill "$(cat "${pid}")" || true; fi
-          done
+          name: multireplica-postgresql-scale-paired
+          path: artifacts/multireplica-*.json
