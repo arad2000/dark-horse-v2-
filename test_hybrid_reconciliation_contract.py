@@ -103,6 +103,27 @@ def test_multireplica_scale_workflow_is_paired_on_one_runner() -> None:
     assert "multireplica-summary.json" in workflow
 
 
+def test_payment_verification_serializes_concurrent_callbacks() -> None:
+    source = read("billing_credit_service.py")
+    lock_expr = 'select(Payment).where(Payment.id == payment_public_id).with_for_update()'
+    assert lock_expr in source
+    assert source.index(lock_expr) < source.index('if payment.status == "verified":')
+
+
+def test_schema_is_alembic_authoritative_in_runtime_and_scale_ci() -> None:
+    main = read("main_v2.py")
+    auth_workflow = read(".github/workflows/auth-quota-db-scale.yml")
+    replica_workflow = read(".github/workflows/multireplica-db-scale.yml")
+    seed_auth = read("tools/seed_quota_scale_db.py")
+    seed_scale = read("tools/seed_scale_db.py")
+
+    assert 'ALLOW_RUNTIME_SCHEMA_BOOTSTRAP", "false"' in main
+    assert "alembic upgrade head" in auth_workflow
+    assert "alembic upgrade head" in replica_workflow
+    assert "Base.metadata.create_all" not in seed_auth
+    assert "Base.metadata.create_all" not in seed_scale
+
+
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert 'POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"' in workflow
