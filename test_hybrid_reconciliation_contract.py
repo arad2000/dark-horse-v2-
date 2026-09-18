@@ -116,12 +116,13 @@ def test_staging_load_workflow_blocks_production_targets_and_limits_probe() -> N
 def test_multireplica_scale_workflow_is_paired_on_one_runner() -> None:
     workflow = read(".github/workflows/multireplica-db-scale.yml")
     assert "runs-on: ubuntu-latest" in workflow
-    assert 'SCALE_TRIALS: "3"' in workflow
-    assert "for replicas in 1 2 3;" in workflow
+    assert 'SCALE_TRIALS: "5"' in workflow
+    assert 'orders=( "1 2 3" "3 1 2" "2 3 1" "1 3 2" "2 1 3" )' in workflow
     assert '"postgres_instance": "single per workflow"' in workflow
     assert 'trials_per_replica_count' in workflow
     assert "matrix:" not in workflow
     assert "multireplica-summary.json" in workflow
+    assert "balanced order trial" in workflow
 
 
 def test_payment_verification_serializes_concurrent_callbacks() -> None:
