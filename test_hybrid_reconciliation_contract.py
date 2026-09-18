@@ -23,6 +23,7 @@ def test_migration_chain_has_single_0009_and_contiguous_revisions() -> None:
         "0007_auth_challenges_saved_results.py",
         "0008_reconciled_operational_schema.py",
         "0009_journey_credit_consumptions.py",
+        "0010_entitlement_order_uniqueness.py",
     ]
 
     source_0008 = read("alembic/versions/0008_reconciled_operational_schema.py")
@@ -34,6 +35,11 @@ def test_migration_chain_has_single_0009_and_contiguous_revisions() -> None:
     assert 'down_revision = "0008_reconciled_schema"' in source_0009
     assert "journey_credit_consumptions" in source_0009
     assert "uq_journey_credit_consumption_session" in source_0009
+
+    source_0010 = read("alembic/versions/0010_entitlement_order_uniqueness.py")
+    assert 'revision = "0010_entitlement_order_uniqueness"' in source_0010
+    assert 'down_revision = "0009_journey_credit_consumptions"' in source_0010
+    assert 'op.create_unique_constraint("uq_entitlement_order"' in source_0010
 
 
 def test_main_runtime_import_graph_exists() -> None:
