@@ -238,10 +238,11 @@ def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
 def consume_test(req: ConsumeTestRequest, user: User = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, object]:
     """Charge at most once for an authenticated journey UUID.
 
-    The authenticated user row is locked for the duration of the charge; the
-    dedicated billing ledger is the per-journey idempotency marker. A missing
-    journey row is provisioned for this authenticated user, so charging cannot
-    silently fail solely because discovery persistence was unavailable.
+    An already-consumed journey takes a read-only idempotent fast-path. A new
+    charge locks the authenticated user for the transaction; the dedicated
+    billing ledger remains the per-journey idempotency marker. A missing journey
+    row is provisioned for this authenticated user, so charging cannot silently
+    fail solely because discovery persistence was unavailable.
     """
     logger.info("quota consume request user_id=%s session_uuid=%s", user.id, req.session_uuid)
     try:
