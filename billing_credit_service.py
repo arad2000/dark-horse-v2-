@@ -37,7 +37,14 @@ def utcnow() -> datetime:
 
 
 def ensure_free_entitlement(db: Session, user_id: int) -> Entitlement:
-    """Provision exactly one free credit once, idempotently."""
+    """Provision exactly one free credit once, idempotently.
+    
+    A user-row lock serializes concurrent login/registration provisioning so
+    two requests cannot both observe a missing free entitlement and insert one.
+    """
+    user = db.scalar(select(User).where(User.id == user_id).with_for_update())
+    if user is None:
+        raise ValueError("unknown user")
     free_plan = db.scalar(select(PremiumPlan).where(PremiumPlan.code == FREE_PLAN_CODE))
     if free_plan is None:
         raise ValueError("free plan is not configured")
