@@ -11,7 +11,7 @@ env:
   DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/darkhorse
   POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
   DARK_HORSE_SHADOW_PERSISTENCE: "false"
-  DB_POOL_SIZE: "5"
+  DB_POOL_SIZE: ${{ matrix.pool_size }}
   DB_MAX_OVERFLOW: "5"
   DB_POOL_TIMEOUT: "30"
   DB_POOL_RECYCLE: "1800"
@@ -28,6 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: [quota, consume]
+        pool_size: [2, 5, 10]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -92,7 +93,7 @@ jobs:
       - name: Upload benchmark result
         uses: actions/upload-artifact@v4
         with:
-          name: auth-quota-postgresql-scale-${{ matrix.mode }}
+          name: auth-quota-postgresql-scale-${{ matrix.mode }}-pool-${{ matrix.pool_size }}
           path: artifacts/auth-quota-${{ matrix.mode }}.json
 
       - name: Stop isolated API replicas
