@@ -174,6 +174,8 @@ def test_session_creation_preserves_uuid_on_integrity_conflict() -> None:
     assert "except IntegrityError:" in source
     assert "Another concurrent request may have inserted the same" in source
     assert "return session_uuid, int(existing.id)" in source
+    assert '.where(UserSession.session_uuid == requested_uuid)' in source
+    assert '.with_for_update()' in source
 
 
 def test_audit_runs_p0_quota_regression() -> None:
