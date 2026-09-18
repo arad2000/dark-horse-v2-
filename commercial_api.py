@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import inspect, select, text
+from sqlalchemy import and_, case, func, inspect, or_, select, text
 from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, create_verified_user, resolve_session
@@ -81,11 +81,38 @@ def _valid_expiry(value: datetime | None) -> bool:
 
 
 def _quota_details(db: Session, user_id: int) -> dict[str, int]:
-    rows = list(db.scalars(select(Entitlement).where(Entitlement.user_id == user_id, Entitlement.status == "active")))
-    remaining = sum(int(row.credits_remaining) for row in rows if int(row.credits_remaining) > 0 and _valid_expiry(row.expires_at))
-    consumed = sum(max(0, int(row.credits_granted) - int(row.credits_remaining)) for row in rows)
-    granted = sum(int(row.credits_granted) for row in rows)
-    return {"credits_granted": granted, "credits_consumed": consumed, "credits_remaining": remaining}
+    now = datetime.now(timezone.utc)
+    consumed_expr = case(
+        (Entitlement.credits_granted > Entitlement.credits_remaining,
+         Entitlement.credits_granted - Entitlement.credits_remaining),
+        else_=0,
+    )
+    remaining_expr = case(
+        (
+            and_(
+                Entitlement.credits_remaining > 0,
+                or_(Entitlement.expires_at.is_(None), Entitlement.expires_at > now),
+            ),
+            Entitlement.credits_remaining,
+        ),
+        else_=0,
+    )
+    row = db.execute(
+        select(
+            func.coalesce(func.sum(Entitlement.credits_granted), 0),
+            func.coalesce(func.sum(consumed_expr), 0),
+            func.coalesce(func.sum(remaining_expr), 0),
+        ).where(
+            Entitlement.user_id == user_id,
+            Entitlement.status == "active",
+        )
+    ).one()
+    granted, consumed, remaining = (int(value or 0) for value in row)
+    return {
+        "credits_granted": granted,
+        "credits_consumed": consumed,
+        "credits_remaining": remaining,
+    }
 
 
 def _quota(db: Session, user_id: int) -> int:
