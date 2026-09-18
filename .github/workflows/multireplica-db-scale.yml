@@ -101,8 +101,12 @@ jobs:
           set -euo pipefail
           urls=""
           for port in $(seq 8001 $((8000 + REPLICAS))); do
-            if [ -n "${urls}" ]; then urls=",${urls}"; fi
-            urls="${urls}http://127.0.0.1:${port}/api/v2/darkhorse/discover"
+            new_url="http://127.0.0.1:${port}/api/v2/darkhorse/discover"
+            if [ -n "${urls}" ]; then
+              urls="${urls},${new_url}"
+            else
+              urls="${new_url}"
+            fi
           done
           mkdir -p artifacts
           SCALE_REPLICA_URLS="${urls}" python tools/multireplica_scale_probe.py | tee artifacts/multireplica-db-scale.json
