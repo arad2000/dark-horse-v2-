@@ -164,6 +164,18 @@ def test_frontend_quota_contract_has_one_canonical_charge_path() -> None:
     assert 'تلاش دوباره' in failure_ui
 
 
+def test_audit_runs_session_concurrency_regression() -> None:
+    workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
+    assert "test_hybrid_session_concurrency.py" in workflow
+
+
+def test_session_creation_preserves_uuid_on_integrity_conflict() -> None:
+    source = read("main_v2.py")
+    assert "except IntegrityError:" in source
+    assert "Another concurrent request may have inserted the same" in source
+    assert "return session_uuid, int(existing.id)" in source
+
+
 def test_audit_runs_p0_quota_regression() -> None:
     workflow = read(".github/workflows/hybrid-reconciled-audit.yml")
     assert "test_p0_quota_consumption.py" in workflow
