@@ -115,19 +115,20 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           import statistics
           from pathlib import Path
 
-          trials = int("${SCALE_TRIALS}")
+          trials = int(os.environ["SCALE_TRIALS"])
           summary = {
               "methodology": {
                   "runner": "single",
                   "postgres_instance": "single per workflow",
                   "trials_per_replica_count": trials,
                   "replica_counts": [1, 2, 3],
-                  "requests_per_trial": int("${SCALE_REQUESTS}"),
-                  "concurrency": int("${SCALE_CONCURRENCY}"),
-                  "warmup": int("${SCALE_WARMUP}"),
+                  "requests_per_trial": int(os.environ["SCALE_REQUESTS"]),
+                  "concurrency": int(os.environ["SCALE_CONCURRENCY"]),
+                  "warmup": int(os.environ["SCALE_WARMUP"]),
               },
               "replicas": {},
           }
