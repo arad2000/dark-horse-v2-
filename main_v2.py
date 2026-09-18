@@ -40,8 +40,12 @@ async def lifespan(app: FastAPI):
         from database import init_db, is_configured
 
         if is_configured():
-            init_db()
-            logger.info("✅ Operational DB tables ready (init_db).")
+            bootstrap = os.getenv("ALLOW_RUNTIME_SCHEMA_BOOTSTRAP", "false").strip().lower() in {"1", "true", "yes", "on"}
+            if bootstrap:
+                init_db()
+                logger.warning("⚠️ Runtime schema bootstrap enabled; use Alembic for production/staging deployments.")
+            else:
+                logger.info("✅ Operational DB configured; schema bootstrap is disabled and Alembic is authoritative.")
         else:
             logger.warning("⚠️ DATABASE_URL not configured; operational DB disabled.")
     except Exception as e:
