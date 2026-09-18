@@ -153,6 +153,16 @@ def test_schema_is_alembic_authoritative_in_runtime_and_scale_ci() -> None:
     assert "balanced pool order trial" in auth_workflow
 
 
+def test_staging_release_checklist_exists() -> None:
+    checklist = read("docs/STAGING_HYBRID_RELEASE_CHECKLIST.md")
+    assert "Shared-DB commercial smoke" in checklist
+    assert "Real staging scale" in checklist
+    assert "Post-deploy release smoke" in checklist
+    assert "PR #42 remains Draft / Unmerged" in checklist
+    assert "POSTGRES_RUNTIME_CUTOVER=false" in checklist
+    assert "POSTGRES_RUNTIME_CUTOVER_APPROVED=false" in checklist
+
+
 def test_real_staging_hybrid_gate_exists_and_is_safe() -> None:
     workflow = read(".github/workflows/staging-hybrid-gate.yml")
     smoke = read("tools/staging_hybrid_smoke.py")
