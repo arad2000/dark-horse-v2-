@@ -9,6 +9,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from sqlalchemy import text
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -31,8 +33,9 @@ def main() -> None:
         raise RuntimeError("SCALE_USER_COUNT and SCALE_USER_CREDITS must be >= 1")
 
     if reset_db:
-        Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+        with engine.begin() as conn:
+            # Preserve the Alembic-managed schema; reset only benchmark data.
+            conn.execute(text("TRUNCATE TABLE users, premium_plans RESTART IDENTITY CASCADE"))
     now = datetime.now(timezone.utc)
     tokens: list[dict[str, object]] = []
 
