@@ -1,0 +1,103 @@
+name: Auth Quota PostgreSQL Scale
+
+on:
+  push:
+    branches:
+      - integration/hybrid-reconciled
+  workflow_dispatch:
+
+env:
+  PYTHONUNBUFFERED: "1"
+  DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/darkhorse
+  POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+  DARK_HORSE_SHADOW_PERSISTENCE: "false"
+  DB_POOL_SIZE: "5"
+  DB_MAX_OVERFLOW: "5"
+  DB_POOL_TIMEOUT: "30"
+  DB_POOL_RECYCLE: "1800"
+  SCALE_USER_COUNT: "100"
+  SCALE_USER_CREDITS: "10"
+  SCALE_REQUESTS: "300"
+  SCALE_CONCURRENCY: "30"
+  SCALE_WARMUP: "15"
+  SCALE_TIMEOUT: "60"
+
+jobs:
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [quota, consume]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: darkhorse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d darkhorse"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime and probe dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Seed disposable auth/quota DB
+        run: python tools/seed_quota_scale_db.py
+
+      - name: Start isolated API replicas
+        run: |
+          set -euo pipefail
+          rm -f /tmp/darkhorse-api-*.pid /tmp/darkhorse-api-*.log
+          for port in 8001 8002 8003; do
+            python -m uvicorn main_v2:app --host 127.0.0.1 --port "${port}" > "/tmp/darkhorse-api-${port}.log" 2>&1 &
+            echo $! > "/tmp/darkhorse-api-${port}.pid"
+          done
+          for port in 8001 8002 8003; do
+            ready=0
+            for i in $(seq 1 45); do
+              if curl -fsS "http://127.0.0.1:${port}/" >/dev/null; then ready=1; break; fi
+              sleep 1
+            done
+            if [ "${ready}" -ne 1 ]; then
+              echo "Replica ${port} failed to start"
+              cat "/tmp/darkhorse-api-${port}.log" || true
+              exit 1
+            fi
+          done
+
+      - name: Run auth/quota scale probe
+        env:
+          SCALE_MODE: ${{ matrix.mode }}
+          SCALE_AUTH_FILE: /tmp/darkhorse-scale-users.json
+          SCALE_REPLICA_URLS: http://127.0.0.1:8001,http://127.0.0.1:8002,http://127.0.0.1:8003
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python tools/quota_db_scale_probe.py | tee "artifacts/auth-quota-${{ matrix.mode }}.json"
+
+      - name: Upload benchmark result
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-quota-postgresql-scale-${{ matrix.mode }}
+          path: artifacts/auth-quota-${{ matrix.mode }}.json
+
+      - name: Stop isolated API replicas
+        if: always()
+        run: |
+          for pid in /tmp/darkhorse-api-*.pid; do
+            if test -f "${pid}"; then kill "$(cat "${pid}")" || true; fi
+          done
