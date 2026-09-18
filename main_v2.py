@@ -180,8 +180,26 @@ def _persist_discovery_session(req: Request, request: DarkHorseDiscoverRequest, 
                     language_preference="fa",
                 )
                 db.add(row)
-                db.commit()
-                return session_uuid, int(row.id)
+                try:
+                    db.commit()
+                    return session_uuid, int(row.id)
+                except Exception:
+                    # Another concurrent request may have inserted the same
+                    # authenticated journey UUID. Never invent a new UUID on
+                    # this conflict: recover the canonical row and preserve
+                    # billing idempotency across retries.
+                    db.rollback()
+                    existing = db.scalar(
+                        select(UserSession).where(UserSession.session_uuid == session_uuid)
+                    )
+                    if existing is None:
+                        raise
+                    if existing.user_id not in (None, user_id):
+                        raise HTTPException(status_code=403, detail="session does not belong to this user")
+                    if existing.user_id is None:
+                        existing.user_id = user_id
+                        db.commit()
+                    return session_uuid, int(existing.id)
             finally:
                 db.close()
 
