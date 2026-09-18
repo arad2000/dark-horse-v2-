@@ -147,6 +147,9 @@ def test_schema_is_alembic_authoritative_in_runtime_and_scale_ci() -> None:
     assert "Base.metadata.create_all" not in seed_auth
     assert "Base.metadata.create_all" not in seed_scale
     assert "TRUNCATE TABLE users, premium_plans, feedback_submissions" in seed_scale
+    assert 'SCALE_TRIALS: "5"' in auth_workflow
+    assert '"2 5 10", "10 2 5", "5 10 2", "2 10 5", "5 2 10"' in auth_workflow
+    assert "balanced pool order trial" in auth_workflow
 
 
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
