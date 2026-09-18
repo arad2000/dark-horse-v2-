@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -80,6 +81,37 @@ class P0HybridQuotaConsumptionTests(unittest.TestCase):
                 )
             )
             db.commit()
+
+    def test_concurrent_same_journey_charges_only_once(self):
+        headers = {"Authorization": f"Bearer {self.token}"}
+        session_uuid = str(uuid4())
+
+        def charge_once():
+            with TestClient(app) as client:
+                return client.post(
+                    "/api/v1/me/consume-test",
+                    headers=headers,
+                    json={"session_uuid": session_uuid},
+                )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            responses = list(pool.map(lambda _: charge_once(), range(2)))
+
+        self.assertEqual([response.status_code for response in responses], [200, 200])
+        bodies = [response.json() for response in responses]
+        self.assertEqual(sum(body["consumed"] for body in bodies), 1)
+        self.assertEqual(sum(body["already_consumed"] for body in bodies), 1)
+        self.assertEqual({body["credits_remaining"] for body in bodies}, {2})
+
+        with next(get_db()) as db:
+            ledger = list(
+                db.scalars(
+                    select(JourneyCreditConsumption).where(
+                        JourneyCreditConsumption.session_uuid == session_uuid
+                    )
+                )
+            )
+            self.assertEqual(len(ledger), 1)
 
     def test_missing_session_is_provisioned_and_each_journey_charges_once(self):
         headers = {"Authorization": f"Bearer {self.token}"}
