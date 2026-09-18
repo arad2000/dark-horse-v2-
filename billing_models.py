@@ -130,7 +130,11 @@ class Payment(Base):
 
 class Entitlement(Base):
     __tablename__ = "entitlements"
-    __table_args__ = (Index("idx_entitlement_user_status", "user_id", "status"), Index("idx_entitlement_user_credits", "user_id", "credits_remaining"))
+    __table_args__ = (
+        Index("idx_entitlement_user_status", "user_id", "status"),
+        Index("idx_entitlement_user_credits", "user_id", "credits_remaining"),
+        UniqueConstraint("order_id", name="uq_entitlement_order"),
+    )
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     plan_id = Column(BigInteger, ForeignKey("premium_plans.id", ondelete="RESTRICT"), nullable=False)
