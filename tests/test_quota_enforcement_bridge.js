@@ -30,9 +30,17 @@ async function run() {
     }
   ];
 
+  class Storage {
+    constructor() { this._storage = localStorage; }
+    getItem(key) { return this._storage.getItem(key); }
+    setItem(key, value) { return this._storage.setItem(key, value); }
+    removeItem(key) { return this._storage.removeItem(key); }
+  }
+
   const context = {
     console,
     localStorage,
+    Storage,
     document: {
       readyState: 'complete',
       addEventListener() {}
