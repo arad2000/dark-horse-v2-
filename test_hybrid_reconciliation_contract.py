@@ -40,6 +40,7 @@ def test_migration_chain_is_single_and_contiguous() -> None:
     assert 'revision = "0010_entitlement_order_unique"' in source_0010
     assert 'down_revision = "0009_journey_credit_consumptions"' in source_0010
     assert 'op.create_unique_constraint("uq_entitlement_order"' in source_0010
+    assert "duplicate paid entitlements exist" in source_0010
 
 
 def test_main_runtime_import_graph_exists() -> None:
