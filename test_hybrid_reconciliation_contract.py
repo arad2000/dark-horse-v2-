@@ -10,7 +10,7 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def test_migration_chain_has_single_0009_and_contiguous_revisions() -> None:
+def test_migration_chain_is_single_and_contiguous() -> None:
     versions = sorted((ROOT / "alembic" / "versions").glob("*.py"))
     names = [p.name for p in versions if p.name[:4].isdigit()]
     assert names == [
@@ -90,6 +90,9 @@ def test_auth_quota_scale_path_uses_single_lookup_and_sql_aggregate() -> None:
     newline = chr(10)
     assert ("details = _quota_details(db, user.id)" + newline + "            db.rollback()" + newline + "            logger.info(\"quota consume idempotent user_id=%s") in commercial
     assert ("details = _quota_details(db, user.id)" + newline + "            db.rollback()" + newline + "            logger.info(\"quota consume idempotent-after-lock user_id=%s") in commercial
+
+    billing_models = read("billing_models.py")
+    assert 'UniqueConstraint("order_id", name="uq_entitlement_order")' in billing_models
 
     credit = read("billing_credit_service.py")
     assert "update(Entitlement)" in credit
