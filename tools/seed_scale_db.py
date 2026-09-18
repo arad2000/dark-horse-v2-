@@ -12,6 +12,10 @@ from pathlib import Path
 from sqlalchemy import delete
 
 from database import engine
+# Register every ORM table in the shared Base metadata before create_all(),
+# including the users table referenced by UserSession.
+import billing_models  # noqa: F401,E402
+import feedback_models  # noqa: F401,E402
 from models import Base, Major
 
 ROOT = Path(__file__).resolve().parent.parent
