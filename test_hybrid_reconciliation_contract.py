@@ -122,6 +122,7 @@ def test_schema_is_alembic_authoritative_in_runtime_and_scale_ci() -> None:
     assert "alembic upgrade head" in replica_workflow
     assert "Base.metadata.create_all" not in seed_auth
     assert "Base.metadata.create_all" not in seed_scale
+    assert "TRUNCATE TABLE users, premium_plans, feedback_submissions" in seed_scale
 
 
 def test_cutover_flags_stay_disabled_in_ci_contract() -> None:
