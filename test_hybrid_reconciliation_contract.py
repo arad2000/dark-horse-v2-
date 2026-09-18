@@ -92,6 +92,16 @@ def test_auth_quota_scale_path_uses_single_lookup_and_sql_aggregate() -> None:
     assert "Entitlement.credits_remaining > 0" in credit
 
 
+def test_staging_load_workflow_blocks_production_targets_and_limits_probe() -> None:
+    workflow = read(".github/workflows/scale-baseline.yml")
+    assert "production load testing is blocked by CI safety guard" in workflow
+    assert '"api.asbe-siah.ir"' in workflow
+    assert '"www.asbe-siah.ir"' in workflow
+    assert '"asbe-siah.ir"' in workflow
+    assert '"REQUESTS": (1, 5000)' in workflow
+    assert '"CONCURRENCY": (1, 100)' in workflow
+
+
 def test_multireplica_scale_workflow_is_paired_on_one_runner() -> None:
     workflow = read(".github/workflows/multireplica-db-scale.yml")
     assert "runs-on: ubuntu-latest" in workflow
