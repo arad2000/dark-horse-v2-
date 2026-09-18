@@ -108,6 +108,9 @@ def test_payment_verification_serializes_concurrent_callbacks() -> None:
     lock_expr = 'select(Payment).where(Payment.id == payment_public_id).with_for_update()'
     assert lock_expr in source
     assert source.index(lock_expr) < source.index('if payment.status == "verified":')
+    free_lock = 'select(User).where(User.id == user_id).with_for_update()'
+    assert free_lock in source
+    assert source.index(free_lock) < source.index('select(PremiumPlan).where(PremiumPlan.code == FREE_PLAN_CODE)')
 
 
 def test_schema_is_alembic_authoritative_in_runtime_and_scale_ci() -> None:
