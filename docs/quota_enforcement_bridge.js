@@ -14,6 +14,7 @@
   var AUTH_KEY = 'dh_auth_v1';
   var JOURNEY_KEY = 'darkhorse_session_v2';
   var QUOTA_KEY = 'dh_local_quota_v1';
+  var CHARGED_SESSION_KEY = 'dh_quota_charged_session_v1';
   var SESSION_MEMORY = null;
 
   function parse(raw) {
@@ -58,10 +59,30 @@
 
   function setJourneySession(sessionId) {
     if (!sessionId) return;
-    SESSION_MEMORY = String(sessionId);
+    var candidate = String(sessionId);
     var j = readJourney();
+    // The client creates the journey UUID before the first discovery request.
+    // Discovery responses must never replace it: doing so can turn one journey
+    // into two billing identities and charge the same completed test twice.
+    if (j.sessionId && String(j.sessionId) !== candidate) {
+      SESSION_MEMORY = String(j.sessionId);
+      return SESSION_MEMORY;
+    }
+    SESSION_MEMORY = candidate;
     j.sessionId = SESSION_MEMORY;
     try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}
+    return SESSION_MEMORY;
+  }
+
+  function chargedSessionId() {
+    try {
+      var raw = localStorage.getItem(CHARGED_SESSION_KEY);
+      return raw ? String(raw) : null;
+    } catch (_) { return null; }
+  }
+
+  function markCharged(sessionId) {
+    try { localStorage.setItem(CHARGED_SESSION_KEY, String(sessionId)); } catch (_) {}
   }
 
   function persistQuota(data) {
@@ -121,6 +142,8 @@
 
   async function consumeForJourney(sessionId) {
     if (!loggedIn() || !sessionId) return null;
+    sessionId = String(sessionId);
+    if (chargedSessionId() === sessionId) return { consumed: 0, already_consumed: true, local_guard: true, session_uuid: sessionId };
     var a = auth();
     var headers = { 'Content-Type': 'application/json' };
     if (a && a.token) headers.Authorization = 'Bearer ' + a.token;
@@ -136,6 +159,7 @@
       throw new Error(typeof msg === 'string' ? msg : ('خطا در ثبت مصرف اعتبار (' + res.status + ')'));
     }
     persistQuota(body);
+    if (body && (body.consumed === 1 || body.already_consumed === true)) markCharged(sessionId);
     return body;
   }
 
