@@ -51,6 +51,9 @@ jobs:
       - name: Install runtime and probe dependencies
         run: python -m pip install -r requirements.txt
 
+      - name: Apply Alembic schema
+        run: alembic upgrade head
+
       - name: Run paired multi-replica trials on one runner
         run: |
           set -euo pipefail
