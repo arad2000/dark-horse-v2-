@@ -22,7 +22,7 @@ const index = fs.readFileSync('docs/index.html', 'utf8');
 assert.match(shell, /dh-commercial-ui-loader/);
 assert.match(shell, /commercial_ui\.js\?v=30/);
 assert.match(shell, /ورود موقتاً در دسترس نیست/);
-assert.doesNotMatch(shell, /alert\('ماژول ورود\/ثبت‌نام هنوز بارگذاری نشده\. صفحه را یک‌بار تازه کنید。'\)/);
+assert.doesNotMatch(shell, /alert\('ماژول ورود\/ثبت‌نام هنوز بارگذاری نشده\. صفحه را یک‌بار تازه کنید.'\)/);
 
 assert.match(commercial, /if\(el\('dh-admin-panel'\)\)return;/);
 assert.match(admin, /id="dh-admin-feedback"/);
