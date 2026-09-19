@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from admin_api import admin_grant_credits, admin_revoke_entitlement, dashboard_summary
+from admin_service import list_user_summary
 from billing_models import AdminAuditLog, Entitlement, PremiumPlan, User
 from models import Base
 
@@ -40,6 +41,17 @@ class AdminApiTests(unittest.TestCase):
             self.assertEqual(summary["users_total"], 2)
             with self.assertRaises(PermissionError):
                 dashboard_summary(db, user)
+
+    def test_user_summary_exposes_numeric_user_id_for_admin_ui(self):
+        with self.SessionLocal() as db:
+            admin = db.query(User).filter(User.role == "admin").one()
+            user = db.query(User).filter(User.role == "user").one()
+            rows = list_user_summary(db, admin, limit=10)
+            target = next(row for row in rows if row["public_id"] == user.public_id)
+            self.assertEqual(target["id"], user.id)
+            self.assertEqual(target["user_id"], user.id)
+            self.assertEqual(target["name"], user.name)
+            self.assertEqual(target["phone"], user.phone)
 
     def test_grant_and_revoke_are_audited(self):
         with self.SessionLocal() as db:
