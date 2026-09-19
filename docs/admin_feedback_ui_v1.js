@@ -125,7 +125,7 @@
         dash.textContent =
           'کاربران: ' + (d && d.users_total || 0) +
           ' · بازخورد: ' + (d && d.feedback_total || 0) +
-          ' · پرداخت: ' + (d && d.payments_total || 0) +
+          ' · پرداخت موفق: ' + (d && d.payments_verified != null ? d.payments_verified : '—') +
           ' · اعتبارها: ' + (d && d.entitlements_total || 0);
       }
 
