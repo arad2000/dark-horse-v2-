@@ -5,6 +5,10 @@ const assert = require('assert');
 const authSource = fs.readFileSync('docs/auth_api_client.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
+const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
+const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
+const pwaBootSource = fs.readFileSync('docs/pwa-boot.js', 'utf8');
+const swSource = fs.readFileSync('docs/sw.js', 'utf8');
 
 function storage(seed) {
   const data = new Map(Object.entries(seed || {}));
@@ -96,6 +100,21 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /اعتبار به کاربر/);
   assert.match(commercialSource, /در حال اعطا/);
   assert.match(indexSource, /auth_api_client\.js\?v=10/);
+
+  assert.match(shellSource, /dh-commercial-ui-loader/);
+  assert.match(shellSource, /capturedError/);
+  assert.match(shellSource, /خطای رابط ورود/);
+  assert.match(shellSource, /commercial_ui\.js\?v=31/);
+  assert.doesNotMatch(shellSource, /ماژول ورود\/ثبت‌نام هنوز بارگذاری نشده/);
+  assert.match(commercialSource, /auth-ui-modal-root-missing/);
+  assert.match(commercialSource, /showAuthModal failed/);
+  assert.match(commercialSource, /__dhCommercialUIReady/);
+  assert.match(indexSource, /shell\.js\?v=74/);
+  assert.match(indexSource, /commercial_ui\.js\?v=31/);
+  assert.match(indexSource, /pwa-boot\.js\?v=63/);
+  assert.match(pwaBootSource, /sw\.js\?v=63/);
+  assert.match(swSource, /darkhorse-v63/);
+
   assert.match(indexSource, /commercial_ui\.js\?v=30/);
 
   console.log('admin_credit_grant_ui regression: PASS');
