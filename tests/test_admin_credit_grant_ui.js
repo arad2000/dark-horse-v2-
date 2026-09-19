@@ -99,6 +99,10 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /id="dh-admin-grant-reason"[^>]+value="هدیه مالک"/);
   assert.match(commercialSource, /DHAuth\.adminGrantCredits/);
   assert.match(commercialSource, /اعتبار به کاربر/);
+  assert.match(commercialSource, /payments_verified/);
+  assert.match(commercialSource, /ناموفق\/لغوشده/);
+  assert.match(commercialSource, /در انتظار/);
+  assert.doesNotMatch(commercialSource, /محیط تست/);
   assert.match(commercialSource, /در حال اعطا/);
   assert.match(indexSource, /auth_api_client\.js\?v=10/);
 
