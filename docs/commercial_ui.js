@@ -1,6 +1,7 @@
 /* commercial_ui.js — server-authoritative auth + OTP + credit gate + payment UI + admin feedback */
 (function (global) {
   'use strict';
+  if (global.__dhCommercialUIReady) return;
   var USER_KEY='dh_local_user_v1',QUOTA_KEY='dh_local_quota_v1',BUSY=false;
   function el(id){return document.getElementById(id);} function text(v){return String(v==null?'':v);} function digits(v){return text(v).replace(/[۰-۹]/g,function(d){return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d));});} function escapeHtml(v){return text(v).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');}
   function saveLocalUser(u){try{localStorage.setItem(USER_KEY,JSON.stringify(u||null));}catch(_){}} function clearLocalUser(){try{localStorage.removeItem(USER_KEY);}catch(_){}} function setLocalQuota(q){try{localStorage.setItem(QUOTA_KEY,JSON.stringify(q||{}));}catch(_){} }
@@ -294,6 +295,7 @@
     setTimeout(function(){try{syncServerQuota();}catch(_){}},2000);
   }
   if (!global.DHCommercialUI) global.DHCommercialUI={showAuth:showAuthModal,showPurchase:openPurchaseModal,startServerAuthorizedJourney:continueAfterAuth,logout:doLogout,syncQuota:syncServerQuota};
+  global.__dhCommercialUIReady = true;
   window.addEventListener('dh-open-purchase',function(){try{openPurchaseModal();}catch(e){console.error(e);}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })(window);
