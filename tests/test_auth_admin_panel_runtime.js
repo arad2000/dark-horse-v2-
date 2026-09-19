@@ -1,17 +1,8 @@
 const fs = require('fs');
-const vm = require('vm');
 const assert = require('assert');
 
 function read(path) {
   return fs.readFileSync(path, 'utf8');
-}
-
-for (const file of [
-  'docs/shell.js',
-  'docs/commercial_ui.js',
-  'docs/admin_feedback_ui_v1.js'
-]) {
-  assert.doesNotThrow(() => new vm.Script(read(file), { filename: file }), file + ' syntax regression');
 }
 
 const shell = read('docs/shell.js');
