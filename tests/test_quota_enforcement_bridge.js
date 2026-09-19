@@ -66,13 +66,13 @@ async function run() {
   vm.runInContext(source, context);
 
   const indexSource = fs.readFileSync('docs/index.html', 'utf8');
-  assert.match(indexSource, /quota_runtime\\.js\\?v=1/);
-  assert.doesNotMatch(indexSource, /journey_session_boot\\.js/);
-  assert.doesNotMatch(indexSource, /quota_enforcement_bridge\\.js/);
-  assert.doesNotMatch(indexSource, /quota_charge_failure_ui\\.js/);
-  assert.doesNotMatch(indexSource, /quota_consume_session_adapter\\.js/);
-  assert.match(source, /global\\.DHJourneySessionBoot/);
-  assert.match(source, /global\\.DHQuotaEnforcement/);
+  assert.match(indexSource, /quota_runtime\.js\?v=1/);
+  assert.doesNotMatch(indexSource, /journey_session_boot\.js/);
+  assert.doesNotMatch(indexSource, /quota_enforcement_bridge\.js/);
+  assert.doesNotMatch(indexSource, /quota_charge_failure_ui\.js/);
+  assert.doesNotMatch(indexSource, /quota_consume_session_adapter\.js/);
+  assert.match(source, /global\.DHJourneySessionBoot/);
+  assert.match(source, /global\.DHQuotaEnforcement/);
   assert.match(source, /dh-quota-charge-error/);
   assert.match(source, /dhQuotaConsumeSessionAdapterWrapped/);
 
