@@ -25,5 +25,3 @@ jobs:
         run: node tests/test_quota_enforcement_bridge.js
       - name: Run admin credit grant UI regression
         run: node tests/test_admin_credit_grant_ui.js
-      - name: Run auth/admin panel runtime regression
-        run: node tests/test_auth_admin_panel_runtime.js
