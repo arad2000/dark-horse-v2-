@@ -19,6 +19,23 @@ def dashboard_summary(db: Session, actor: User) -> dict[str, int]:
         "users_total": int(db.scalar(select(func.count(User.id))) or 0),
         "orders_total": int(db.scalar(select(func.count(Order.id))) or 0),
         "payments_total": int(db.scalar(select(func.count(Payment.id))) or 0),
+        "payments_verified": int(
+            db.scalar(select(func.count(Payment.id)).where(Payment.status == "verified")) or 0
+        ),
+        "payments_failed_or_canceled": int(
+            db.scalar(
+                select(func.count(Payment.id)).where(
+                    Payment.status.in_([ "failed", "canceled", "cancelled" ])
+                )
+            ) or 0
+        ),
+        "payments_pending": int(
+            db.scalar(
+                select(func.count(Payment.id)).where(
+                    Payment.status.in_([ "initiated", "pending" ])
+                )
+            ) or 0
+        ),
         "entitlements_total": int(db.scalar(select(func.count(Entitlement.id))) or 0),
         "audit_logs_total": int(db.scalar(select(func.count(AdminAuditLog.id))) or 0),
         "active_plans_total": int(
