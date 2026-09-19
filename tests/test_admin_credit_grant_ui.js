@@ -104,13 +104,19 @@ async function loadAuth(fetchImpl) {
   assert.match(shellSource, /dh-commercial-ui-loader/);
   assert.match(shellSource, /capturedError/);
   assert.match(shellSource, /خطای رابط ورود/);
-  assert.match(shellSource, /commercial_ui\.js\?v=31/);
+  assert.match(shellSource, /commercial_ui\.js\?v=32/);
   assert.doesNotMatch(shellSource, /ماژول ورود\/ثبت‌نام هنوز بارگذاری نشده/);
   assert.match(commercialSource, /auth-ui-modal-root-missing/);
   assert.match(commercialSource, /showAuthModal failed/);
   assert.match(commercialSource, /__dhCommercialUIReady/);
-  assert.match(indexSource, /shell\.js\?v=74/);
-  assert.match(indexSource, /commercial_ui\.js\?v=31/);
+  assert.match(indexSource, /shell\.js\?v=75/);
+  assert.match(indexSource, /commercial_ui\.js\?v=32/);
+  const adminSource = fs.readFileSync('docs/admin.html', 'utf8');
+  assert.match(adminSource, /شناسه \/ user_id/);
+  assert.match(adminSource, /class="pick-grant"/);
+  assert.match(adminSource, /class="copy-user-id"/);
+  assert.match(adminSource, /api\/v1\/admin\/credits\/grant/);
+  assert.match(adminSource, /user_id:userId/);
   assert.match(indexSource, /pwa-boot\.js\?v=63/);
   assert.match(swSource, /darkhorse-v63/);
 
