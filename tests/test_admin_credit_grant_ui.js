@@ -6,7 +6,7 @@ const authSource = fs.readFileSync('docs/auth_api_client.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
-const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
+
 const pwaBootSource = fs.readFileSync('docs/pwa-boot.js', 'utf8');
 const swSource = fs.readFileSync('docs/sw.js', 'utf8');
 
