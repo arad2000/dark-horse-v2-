@@ -195,6 +195,7 @@
         if(global.DHAuth&&typeof global.DHAuth.quota==='function'){
           try{await global.DHAuth.quota();}catch(_){}
         }
+        global.__dh_admin_loading=false;
         await load();
       }catch(e){
         if(msg){
