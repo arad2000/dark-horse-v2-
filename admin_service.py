@@ -80,6 +80,8 @@ def list_user_summary(db: Session, actor: User, *, limit: int = 100) -> list[dic
     return [
         {
             "public_id": user.public_id,
+            "id": user.id,
+            "user_id": user.id,
             "name": user.name,
             "phone": user.phone,
             "status": user.status,
