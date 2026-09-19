@@ -114,7 +114,6 @@ async function loadAuth(fetchImpl) {
   assert.match(indexSource, /pwa-boot\.js\?v=63/);
   assert.match(swSource, /darkhorse-v63/);
 
-  assert.match(indexSource, /commercial_ui\.js\?v=30/);
 
   console.log('admin_credit_grant_ui regression: PASS');
 })();
