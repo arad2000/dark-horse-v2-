@@ -99,19 +99,23 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /id="dh-admin-grant-reason"[^>]+value="هدیه مالک"/);
   assert.match(commercialSource, /DHAuth\.adminGrantCredits/);
   assert.match(commercialSource, /اعتبار به کاربر/);
+  assert.match(commercialSource, /payments_verified/);
+  assert.match(commercialSource, /ناموفق\/لغوشده/);
+  assert.match(commercialSource, /در انتظار/);
+  assert.doesNotMatch(commercialSource, /محیط تست/);
   assert.match(commercialSource, /در حال اعطا/);
   assert.match(indexSource, /auth_api_client\.js\?v=10/);
 
   assert.match(shellSource, /dh-commercial-ui-loader/);
   assert.match(shellSource, /capturedError/);
   assert.match(shellSource, /خطای رابط ورود/);
-  assert.match(shellSource, /commercial_ui\.js\?v=32/);
+  assert.match(shellSource, /commercial_ui\.js\?v=33/);
   assert.doesNotMatch(shellSource, /ماژول ورود\/ثبت‌نام هنوز بارگذاری نشده/);
   assert.match(commercialSource, /auth-ui-modal-root-missing/);
   assert.match(commercialSource, /showAuthModal failed/);
   assert.match(commercialSource, /__dhCommercialUIReady/);
-  assert.match(indexSource, /shell\.js\?v=75/);
-  assert.match(indexSource, /commercial_ui\.js\?v=32/);
+  assert.match(indexSource, /shell\.js\?v=76/);
+  assert.match(indexSource, /commercial_ui\.js\?v=33/);
   assert.match(indexSource, /profile_ux_v1\.js\?v=7/);
   assert.match(profileSource, /function adminUserId\(user\)/);
   assert.match(profileSource, /user\.user_id \|\| user\.id \|\| user\.userId/);

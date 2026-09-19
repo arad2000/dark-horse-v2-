@@ -88,7 +88,7 @@
     try{closeModal();}catch(_){}
     showModal(
       '<h2 class="dh-commercial-title">خرید بسته ۳ تست</h2>'+
-      '<p class="dh-commercial-sub">پرداخت امن از طریق زرین‌پال (محیط تست)</p>'+
+      '<p class="dh-commercial-sub">پرداخت امن از طریق زرین‌پال</p>'+
       '<div class="dh-commercial-pack"><span class="badge">بسته استاندارد</span>'+
       '<div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>'+
       '<p class="dh-commercial-sub">مبلغ فقط از سمت سرور تعیین می‌شود.</p>'+
@@ -185,7 +185,7 @@
       }
       try{
         var d=await global.DHAuth.adminDashboard();
-        if(dash)dash.textContent='کاربران: '+(d.users_total||0)+' · بازخورد: '+(d.feedback_total||0)+' · پرداخت: '+(d.payments_total||0)+' · اعتبارها: '+(d.entitlements_total||0);
+        var verifiedPayments=Number(d&&d.payments_verified),failedOrCanceledPayments=Number(d&&d.payments_failed_or_canceled),pendingPayments=Number(d&&d.payments_pending);if(!Number.isFinite(verifiedPayments))verifiedPayments='—';if(!Number.isFinite(failedOrCanceledPayments))failedOrCanceledPayments='—';if(!Number.isFinite(pendingPayments))pendingPayments='—';if(dash)dash.textContent='کاربران: '+(d.users_total||0)+' · بازخورد: '+(d.feedback_total||0)+' · پرداخت موفق: '+verifiedPayments+' · ناموفق/لغوشده: '+failedOrCanceledPayments+' · در انتظار: '+pendingPayments+' · اعتبارها: '+(d.entitlements_total||0);
         var rows=await global.DHAuth.adminFeedback(40);
         if(!list)return;
         if(!rows||!rows.length){
