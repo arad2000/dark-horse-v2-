@@ -88,7 +88,7 @@
     try{closeModal();}catch(_){}
     showModal(
       '<h2 class="dh-commercial-title">خرید بسته ۳ تست</h2>'+
-      '<p class="dh-commercial-sub">پرداخت امن از طریق زرین‌پال (محیط تست)</p>'+
+      '<p class="dh-commercial-sub">پرداخت امن از طریق زرین‌پال</p>'+
       '<div class="dh-commercial-pack"><span class="badge">بسته استاندارد</span>'+
       '<div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>'+
       '<p class="dh-commercial-sub">مبلغ فقط از سمت سرور تعیین می‌شود.</p>'+
