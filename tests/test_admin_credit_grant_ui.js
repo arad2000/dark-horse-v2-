@@ -4,6 +4,7 @@ const assert = require('assert');
 
 const authSource = fs.readFileSync('docs/auth_api_client.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
+const adminFeedbackSource = fs.readFileSync('docs/admin_feedback_ui_v1.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
 const profileSource = fs.readFileSync('docs/profile_ux_v1.js', 'utf8');
@@ -103,6 +104,10 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /ناموفق\/لغوشده/);
   assert.match(commercialSource, /در انتظار/);
   assert.doesNotMatch(commercialSource, /محیط تست/);
+  assert.match(adminFeedbackSource, /پرداخت موفق/);
+  assert.match(adminFeedbackSource, /payments_verified/);
+  assert.doesNotMatch(adminFeedbackSource, /payments_total/);
+  assert.match(indexSource, /admin_feedback_ui_v1\.js\?v=2/);
   assert.match(commercialSource, /در حال اعطا/);
   assert.match(indexSource, /auth_api_client\.js\?v=10/);
 
