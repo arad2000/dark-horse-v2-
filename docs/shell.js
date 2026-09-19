@@ -702,6 +702,7 @@
         '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#c9b896;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#c9b896;font-size:.8rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
         '</div></div>';
       $('dh-p-home').onclick = function () { switchTab('home'); };
+      var __dhAuthUiLoad = null;
       var openAuth = function (mode) {
         try {
           if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
@@ -709,7 +710,33 @@
             return;
           }
         } catch (e) {}
-        alert('ماژول ورود/ثبت‌نام هنوز بارگذاری نشده. صفحه را یک‌بار تازه کنید.');
+        if (!__dhAuthUiLoad) {
+          __dhAuthUiLoad = new Promise(function (resolve, reject) {
+            var existing = document.getElementById('dh-commercial-ui-loader');
+            if (existing) {
+              existing.addEventListener('load', function () { resolve(); }, { once: true });
+              existing.addEventListener('error', function () { reject(new Error('auth-ui-load-failed')); }, { once: true });
+              return;
+            }
+            var script = document.createElement('script');
+            script.id = 'dh-commercial-ui-loader';
+            script.defer = true;
+            script.src = 'commercial_ui.js?v=30';
+            script.onload = function () { resolve(); };
+            script.onerror = function () { reject(new Error('auth-ui-load-failed')); };
+            document.head.appendChild(script);
+          });
+        }
+        __dhAuthUiLoad.then(function () {
+          if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
+            DHCommercialUI.showAuth(mode);
+          } else {
+            throw new Error('auth-ui-missing');
+          }
+        }).catch(function () {
+          alert('ورود موقتاً در دسترس نیست؛ اتصال صفحه را بررسی و دوباره تلاش کنید.');
+          __dhAuthUiLoad = null;
+        });
       };
       var regBtn = $('dh-p-register');
       if (regBtn) regBtn.onclick = function () { openAuth('register'); };
