@@ -87,7 +87,10 @@
     try { body = await res.json(); } catch (_) {}
     if (!res.ok) {
       const msg = (body && (body.detail || body.message)) || ('خطا ' + res.status);
-      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const error = new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      error.status = res.status;
+      error.serverMessage = msg;
+      throw error;
     }
     return body;
   }
@@ -201,6 +204,44 @@
     async adminUsers(limit) {
       const n = Math.max(1, Math.min(500, Number(limit) || 50));
       return req('/api/v1/admin/users?limit=' + n);
+    },
+
+    async adminGrantCredits(userId, planCode = 'pack_3_tests', reason = 'هدیه مالک') {
+      const id = Number(userId);
+      if (!Number.isInteger(id) || id <= 0) {
+        throw new Error('شناسه کاربر باید یک عدد صحیح مثبت باشد.');
+      }
+      const code = String(planCode || '').trim();
+      const why = String(reason || '').trim() || 'هدیه مالک';
+      if (!code) throw new Error('کد پلن اعتبار الزامی است.');
+      try {
+        return await req('/api/v1/admin/credits/grant', {
+          method: 'POST',
+          body: JSON.stringify({
+            user_id: id,
+            plan_code: code,
+            reason: why
+          })
+        });
+      } catch (e) {
+        const status = Number(e && e.status);
+        const server = String((e && (e.serverMessage || e.message)) || '');
+        if (status === 401) throw new Error('احراز هویت لازم است.');
+        if (status === 403 || /admin access required/i.test(server)) {
+          throw new Error('دسترسی مدیر برای اعطای اعتبار لازم است.');
+        }
+        if (status === 404) throw new Error('کاربر یا سرویس اعطای اعتبار پیدا نشد.');
+        if (status === 400 || status === 422) {
+          if (/unknown\/inactive user|unknown.*user.*inactive|inactive plan/i.test(server)) {
+            throw new Error('کاربر پیدا نشد یا غیرفعال است، یا پلن فعال نیست.');
+          }
+          if (/plan does not grant credits/i.test(server)) {
+            throw new Error('این پلن قابلیت اعطای اعتبار ندارد.');
+          }
+          throw new Error(server || 'اطلاعات اعطای اعتبار نامعتبر است.');
+        }
+        throw new Error(server || 'اعطای اعتبار ناموفق بود.');
+      }
     }
   };
 

@@ -1,0 +1,102 @@
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert');
+
+const authSource = fs.readFileSync('docs/auth_api_client.js', 'utf8');
+const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
+const indexSource = fs.readFileSync('docs/index.html', 'utf8');
+
+function storage(seed) {
+  const data = new Map(Object.entries(seed || {}));
+  return {
+    getItem(key) { return data.has(key) ? data.get(key) : null; },
+    setItem(key, value) { data.set(key, String(value)); },
+    removeItem(key) { data.delete(key); }
+  };
+}
+
+function response(status, body) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async json() { return body; }
+  };
+}
+
+async function loadAuth(fetchImpl) {
+  const context = {
+    localStorage: storage({
+      dh_auth_v1: JSON.stringify({
+        token: 'admin-token',
+        user: { id: 1, role: 'admin', status: 'active' }
+      })
+    }),
+    fetch: fetchImpl,
+    window: null,
+    Date,
+    JSON,
+    Number,
+    String,
+    Object,
+    Math,
+    console,
+    Promise
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(authSource, context);
+  return context;
+}
+
+(async () => {
+  let calls = [];
+  const okContext = await loadAuth(async (url, options) => {
+    calls.push({ url, options });
+    return response(200, {
+      entitlement_id: 88,
+      user_id: 123,
+      plan_id: 3,
+      credits_granted: 3,
+      credits_remaining: 3,
+      status: 'active'
+    });
+  });
+
+  const granted = await okContext.DHAuth.adminGrantCredits(123, 'pack_3_tests', 'هدیه مالک');
+  assert.strictEqual(granted.user_id, 123);
+  assert.strictEqual(granted.credits_granted, 3);
+  assert.strictEqual(calls.length, 1);
+  assert.strictEqual(calls[0].url, 'https://api.asbe-siah.ir/api/v1/admin/credits/grant');
+  assert.strictEqual(calls[0].options.method, 'POST');
+  assert.strictEqual(calls[0].options.headers.Authorization, 'Bearer admin-token');
+  assert.deepStrictEqual(JSON.parse(calls[0].options.body), {
+    user_id: 123,
+    plan_code: 'pack_3_tests',
+    reason: 'هدیه مالک'
+  });
+
+  await assert.rejects(
+    () => okContext.DHAuth.adminGrantCredits(0, 'pack_3_tests', 'هدیه مالک'),
+    /شناسه کاربر باید یک عدد صحیح مثبت باشد/
+  );
+
+  const badContext = await loadAuth(async () =>
+    response(400, { detail: 'unknown/inactive user or inactive plan' })
+  );
+  await assert.rejects(
+    () => badContext.DHAuth.adminGrantCredits(999, 'pack_3_tests', 'هدیه مالک'),
+    /کاربر پیدا نشد یا غیرفعال است، یا پلن فعال نیست/
+  );
+
+  assert.match(commercialSource, /if\(!isAdminUser\(\)\)return;/);
+  assert.match(commercialSource, /id="dh-admin-grant-user-id"/);
+  assert.match(commercialSource, /id="dh-admin-grant-plan"[^>]+value="pack_3_tests"/);
+  assert.match(commercialSource, /id="dh-admin-grant-reason"[^>]+value="هدیه مالک"/);
+  assert.match(commercialSource, /DHAuth\.adminGrantCredits/);
+  assert.match(commercialSource, /اعتبار به کاربر/);
+  assert.match(commercialSource, /در حال اعطا/);
+  assert.match(indexSource, /auth_api_client\.js\?v=10/);
+  assert.match(indexSource, /commercial_ui\.js\?v=29/);
+
+  console.log('admin_credit_grant_ui regression: PASS');
+})();
