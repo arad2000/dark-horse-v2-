@@ -2,7 +2,7 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
 
-const source = fs.readFileSync('docs/quota_enforcement_bridge.js', 'utf8');
+const source = fs.readFileSync('docs/quota_runtime.js', 'utf8');
 
 function storage() {
   const data = new Map();
@@ -65,6 +65,17 @@ async function run() {
   vm.createContext(context);
   vm.runInContext(source, context);
 
+  const indexSource = fs.readFileSync('docs/index.html', 'utf8');
+  assert.match(indexSource, /quota_runtime\\.js\\?v=1/);
+  assert.doesNotMatch(indexSource, /journey_session_boot\\.js/);
+  assert.doesNotMatch(indexSource, /quota_enforcement_bridge\\.js/);
+  assert.doesNotMatch(indexSource, /quota_charge_failure_ui\\.js/);
+  assert.doesNotMatch(indexSource, /quota_consume_session_adapter\\.js/);
+  assert.match(source, /global\\.DHJourneySessionBoot/);
+  assert.match(source, /global\\.DHQuotaEnforcement/);
+  assert.match(source, /dh-quota-charge-error/);
+  assert.match(source, /dhQuotaConsumeSessionAdapterWrapped/);
+
   localStorage.setItem('dh_auth_v1', JSON.stringify({ token: 'test-token', user: { public_id: 'u1' } }));
 
   const first = await context.DHQuotaEnforcement.consumeForJourney('journey-uuid-1');
@@ -80,7 +91,7 @@ async function run() {
   context.DHQuotaEnforcement.ensureJourneySession();
   assert.strictEqual(localStorage.getItem('darkhorse_session_v2'), JSON.stringify({ sessionId: 'journey-uuid-1' }));
 
-  console.log('quota_enforcement_bridge regression: PASS');
+  console.log('quota_runtime consolidation regression: PASS');
 }
 
 run().catch((error) => {
