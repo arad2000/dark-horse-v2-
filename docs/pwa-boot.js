@@ -1,4 +1,4 @@
-/* pwa-boot.js v62 — force SW v62 cache drop + one reload */
+/* pwa-boot.js v63 — force SW v63 cache drop + one reload */
 (function () {
   'use strict';
 
@@ -28,8 +28,8 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v62') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v62', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v63') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v63', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();

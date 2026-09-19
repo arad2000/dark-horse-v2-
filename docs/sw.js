@@ -1,7 +1,7 @@
-/* Dark Horse SW v62 — drop stale PWA caches
+/* Dark Horse SW v63 — drop stale PWA caches
  * Do not precache mutable JS; HTML/JS/CSS use network-first.
  */
-const CACHE = 'darkhorse-v62';
+const CACHE = 'darkhorse-v63';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
