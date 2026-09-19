@@ -703,39 +703,77 @@
         '</div></div>';
       $('dh-p-home').onclick = function () { switchTab('home'); };
       var __dhAuthUiLoad = null;
+      function reportAuthRuntimeError(phase, error) {
+        var err = error instanceof Error ? error : new Error(String(error || 'unknown error'));
+        try { console.error('[DarkHorse][AuthUI] ' + phase, err); } catch (_) {}
+        var message = String(err.message || err || 'خطای ناشناخته');
+        var host = document.getElementById('dh-p-auth-runtime-error');
+        if (!host) {
+          host = document.createElement('div');
+          host.id = 'dh-p-auth-runtime-error';
+          host.setAttribute('role', 'alert');
+          host.style.cssText = 'margin:10px 0;padding:11px 13px;border-radius:10px;border:1px solid rgba(255,100,100,.42);background:rgba(120,20,20,.16);color:#ffb0b0;font-size:.8rem;line-height:1.8;text-align:right;';
+          var card = document.querySelector('.dh-profile-v2') || document.querySelector('.dh-home-wrap') || document.getElementById('app');
+          if (card) card.appendChild(host);
+        }
+        if (host) {
+          host.textContent = 'خطای رابط ورود: ' + message + ' — دوباره تلاش کنید.';
+          host.style.display = '';
+        }
+      }
+      function loadCommercialAuthUi() {
+        if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
+          return Promise.resolve();
+        }
+        if (__dhAuthUiLoad) return __dhAuthUiLoad;
+        __dhAuthUiLoad = new Promise(function (resolve, reject) {
+          var existing = document.getElementById('dh-commercial-ui-loader');
+          if (existing) {
+            if (existing.__dhReady) { resolve(); return; }
+            existing.addEventListener('load', function () { resolve(); }, { once: true });
+            existing.addEventListener('error', function () { reject(new Error('auth-ui-script-load-failed')); }, { once: true });
+            return;
+          }
+          var script = document.createElement('script');
+          script.id = 'dh-commercial-ui-loader';
+          script.async = false;
+          script.src = 'commercial_ui.js?v=31';
+          script.onload = function () {
+            if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
+              script.__dhReady = true;
+              resolve();
+            } else {
+              reject(new Error('auth-ui-module-not-ready'));
+            }
+          };
+          script.onerror = function () { reject(new Error('auth-ui-script-load-failed')); };
+          document.head.appendChild(script);
+        }).catch(function (error) {
+          __dhAuthUiLoad = null;
+          throw error;
+        });
+        return __dhAuthUiLoad;
+      }
       var openAuth = function (mode) {
         try {
           if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
             DHCommercialUI.showAuth(mode);
             return;
           }
-        } catch (e) {}
-        if (!__dhAuthUiLoad) {
-          __dhAuthUiLoad = new Promise(function (resolve, reject) {
-            var existing = document.getElementById('dh-commercial-ui-loader');
-            if (existing) {
-              existing.addEventListener('load', function () { resolve(); }, { once: true });
-              existing.addEventListener('error', function () { reject(new Error('auth-ui-load-failed')); }, { once: true });
-              return;
-            }
-            var script = document.createElement('script');
-            script.id = 'dh-commercial-ui-loader';
-            script.defer = true;
-            script.src = 'commercial_ui.js?v=30';
-            script.onload = function () { resolve(); };
-            script.onerror = function () { reject(new Error('auth-ui-load-failed')); };
-            document.head.appendChild(script);
-          });
+        } catch (e) {
+          reportAuthRuntimeError('showAuth initial call', e);
         }
-        __dhAuthUiLoad.then(function () {
-          if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
+        loadCommercialAuthUi().then(function () {
+          try {
+            if (!window.DHCommercialUI || typeof DHCommercialUI.showAuth !== 'function') {
+              throw new Error('auth-ui-module-not-ready');
+            }
             DHCommercialUI.showAuth(mode);
-          } else {
-            throw new Error('auth-ui-missing');
+          } catch (e) {
+            reportAuthRuntimeError('showAuth after module load', e);
           }
-        }).catch(function () {
-          alert('ورود موقتاً در دسترس نیست؛ اتصال صفحه را بررسی و دوباره تلاش کنید.');
-          __dhAuthUiLoad = null;
+        }).catch(function (e) {
+          reportAuthRuntimeError('commercial_ui dynamic load', e);
         });
       };
       var regBtn = $('dh-p-register');
