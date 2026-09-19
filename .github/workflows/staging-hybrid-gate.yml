@@ -1,0 +1,128 @@
+name: Staging Hybrid Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: Requests for the real-staging scale round
+        required: true
+        default: "300"
+        type: string
+      concurrency:
+        description: Concurrent staging requests
+        required: true
+        default: "30"
+        type: string
+      warmup:
+        description: Warm-up requests
+        required: true
+        default: "15"
+        type: string
+
+env:
+  PYTHONUNBUFFERED: "1"
+  POSTGRES_RUNTIME_CUTOVER: "false"
+  POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+  STAGING_REPLICA_URLS: ${{ secrets.STAGING_REPLICA_URLS }}
+  STAGING_SCALE_URL: ${{ secrets.STAGING_SCALE_URL }}
+
+jobs:
+  staging-gate:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime and probe dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run shared-DB commercial smoke
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python tools/staging_hybrid_smoke.py | tee artifacts/staging-smoke.txt
+
+      - name: Verify cutover remains disabled in gate
+        run: |
+          test "${POSTGRES_RUNTIME_CUTOVER}" = "false"
+          test "${POSTGRES_RUNTIME_CUTOVER_APPROVED}" = "false"
+
+      - name: Validate staging scale target
+        env:
+          TARGET_URL: ${{ env.STAGING_SCALE_URL }}
+          REQUESTS: ${{ inputs.requests }}
+          CONCURRENCY: ${{ inputs.concurrency }}
+          WARMUP: ${{ inputs.warmup }}
+        run: |
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+
+          urls = [value.strip() for value in os.environ.get("STAGING_REPLICA_URLS", "").split(",") if value.strip()]
+          if len(urls) < 2:
+              raise SystemExit("STAGING_REPLICA_URLS must contain at least two replicas")
+
+          target = os.environ["TARGET_URL"].strip() or urls[0]
+          parsed = urlparse(target)
+          if parsed.scheme != "https" or not parsed.hostname:
+              raise SystemExit("real staging scale requires an explicit HTTPS endpoint")
+
+          production_hosts = {"api.asbe-siah.ir", "www.asbe-siah.ir", "asbe-siah.ir"}
+          if parsed.hostname.lower() in production_hosts:
+              raise SystemExit("production load testing is blocked by CI safety guard")
+
+          limits = {"REQUESTS": (1, 1000), "CONCURRENCY": (1, 50), "WARMUP": (0, 100)}
+          for name, (minimum, maximum) in limits.items():
+              value = int(os.environ[name])
+              if not minimum <= value <= maximum:
+                  raise SystemExit(f"{name} must be between {minimum} and {maximum}")
+          print(f"real staging target accepted: {parsed.hostname}")
+          print(f"replicas configured: {len(urls)}")
+
+          os.environ["STAGING_SCALE_TARGET"] = target
+          PY
+
+      - name: Run real-staging scale round
+        env:
+          SCALE_BASE_URL: ${{ env.STAGING_SCALE_URL }}
+          SCALE_METHOD: GET
+          SCALE_REQUESTS: ${{ inputs.requests }}
+          SCALE_CONCURRENCY: ${{ inputs.concurrency }}
+          SCALE_WARMUP: ${{ inputs.warmup }}
+          SCALE_TIMEOUT: "60"
+        run: |
+          set -euo pipefail
+          export SCALE_BASE_URL="${SCALE_BASE_URL:-${STAGING_REPLICA_URLS%%,*}}"
+          SCALE_BEARER_TOKEN="$(cat /tmp/darkhorse-staging-token)"
+          echo "::add-mask::${SCALE_BEARER_TOKEN}"
+          export SCALE_BEARER_TOKEN
+          mkdir -p artifacts
+          python tools/scale_probe.py | tee artifacts/staging-scale.json
+
+      - name: Enforce staging scale health
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path("artifacts/staging-scale.json").read_text(encoding="utf-8"))
+          error_rate = float(result["error_rate"])
+          p95 = float(result["latency_ms"]["p95"])
+          if error_rate > 0:
+              raise SystemExit(f"staging scale error-rate is non-zero: {error_rate}")
+          print(f"staging scale passed: error_rate={error_rate:.4f}, p95_ms={p95:.2f}, rps={result['rps']:.2f}")
+          PY
+
+      - name: Upload staging gate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-hybrid-gate
+          path: |
+            artifacts/staging-scale.json
+            artifacts/staging-smoke.txt

@@ -1,0 +1,162 @@
+name: Scale Baseline
+
+on:
+  push:
+    branches:
+      - integration/hybrid-reconciled
+  workflow_dispatch:
+    inputs:
+      endpoint_url:
+        description: Full staging API endpoint to probe (for example https://staging.example/api/v2/darkhorse/discover)
+        required: true
+        type: string
+      confirm_staging:
+        description: Safety confirmation. Load testing production is forbidden.
+        required: true
+        default: NO
+        type: choice
+        options:
+          - NO
+          - YES
+      method:
+        description: HTTP method
+        required: true
+        default: POST
+        type: choice
+        options:
+          - GET
+          - POST
+      requests:
+        description: Total requests in the probe
+        required: true
+        default: "200"
+        type: string
+      concurrency:
+        description: Concurrent requests
+        required: true
+        default: "20"
+        type: string
+      warmup:
+        description: Warm-up requests
+        required: true
+        default: "10"
+        type: string
+      payload_json:
+        description: Representative POST body as compact JSON; leave empty to use the probe default
+        required: false
+        default: ""
+        type: string
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  local-regression:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime and probe dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Start isolated local API
+        run: |
+          python -m uvicorn main_v2:app --host 127.0.0.1 --port 8000 > /tmp/darkhorse-api.log 2>&1 &
+          echo $! > /tmp/darkhorse-api.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/darkhorse-api.log
+          exit 1
+
+      - name: Run local scoring scale regression
+        env:
+          SCALE_BASE_URL: http://127.0.0.1:8000/api/v2/darkhorse/discover
+          SCALE_METHOD: POST
+          SCALE_REQUESTS: "100"
+          SCALE_CONCURRENCY: "10"
+          SCALE_WARMUP: "5"
+          SCALE_TIMEOUT: "60"
+          SCALE_PAYLOAD_JSON: '{"micro_motives":["MED-001","MED-002","MED-003"],"sjt_answers":{"sjt_1":"A","sjt_2":"B","sjt_3":"C","sjt_4":"D","sjt_5":"E","sjt_6":"A","sjt_7":"B","sjt_8":"C","sjt_9":"D","sjt_10":"E","sjt_11":"A","sjt_12":"B","sjt_13":"C","sjt_14":"D","sjt_15":"E","sjt_16":"A","sjt_17":"B","sjt_18":"C","sjt_19":"D","sjt_20":"E","sjt_21":"A","sjt_22":"B","sjt_23":"C","sjt_24":"D","sjt_25":"E"},"conjoint_choices":{"conj_1":"Q1A","conj_2":"Q2A","conj_3":"Q3A","conj_4":"Q4A","conj_5":"Q5A","conj_6":"Q6A","conj_7":"Q7A","conj_8":"Q8A","conj_9":"Q9A","conj_10":"Q10A","conj_11":"Q11A","conj_12":"Q12A","conj_13":"Q13A","conj_14":"Q14A","conj_15":"Q15A"}}'
+        run: |
+          mkdir -p artifacts
+          python tools/scale_probe.py | tee artifacts/scale-baseline.json
+
+      - name: Upload local scale result
+        uses: actions/upload-artifact@v4
+        with:
+          name: scale-baseline-local
+          path: artifacts/scale-baseline.json
+
+      - name: Stop isolated local API
+        if: always()
+        run: |
+          if test -f /tmp/darkhorse-api.pid; then kill $(cat /tmp/darkhorse-api.pid) || true; fi
+
+  staging-probe:
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_staging == 'YES'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate staging target and probe limits
+        env:
+          TARGET_URL: ${{ inputs.endpoint_url }}
+          REQUESTS: ${{ inputs.requests }}
+          CONCURRENCY: ${{ inputs.concurrency }}
+          WARMUP: ${{ inputs.warmup }}
+        run: |
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+
+          parsed = urlparse(os.environ["TARGET_URL"])
+          if parsed.scheme != "https" or not parsed.hostname:
+              raise SystemExit("staging probe requires an explicit HTTPS endpoint")
+          production_hosts = {
+              "api.asbe-siah.ir",
+              "www.asbe-siah.ir",
+              "asbe-siah.ir",
+          }
+          if parsed.hostname.lower() in production_hosts:
+              raise SystemExit("production load testing is blocked by CI safety guard")
+
+          limits = {
+              "REQUESTS": (1, 5000),
+              "CONCURRENCY": (1, 100),
+              "WARMUP": (0, 100),
+          }
+          for name, (minimum, maximum) in limits.items():
+              value = int(os.environ[name])
+              if not minimum <= value <= maximum:
+                  raise SystemExit(f"{name} must be between {minimum} and {maximum}")
+          print(f"staging target accepted: {parsed.hostname}")
+          PY
+
+      - name: Run staging scale probe
+        env:
+          SCALE_BASE_URL: ${{ inputs.endpoint_url }}
+          SCALE_METHOD: ${{ inputs.method }}
+          SCALE_REQUESTS: ${{ inputs.requests }}
+          SCALE_CONCURRENCY: ${{ inputs.concurrency }}
+          SCALE_WARMUP: ${{ inputs.warmup }}
+          SCALE_PAYLOAD_JSON: ${{ inputs.payload_json }}
+        run: |
+          mkdir -p artifacts
+          python tools/scale_probe.py | tee artifacts/scale-baseline.json
+
+      - name: Upload staging scale result
+        uses: actions/upload-artifact@v4
+        with:
+          name: scale-baseline-staging
+          path: artifacts/scale-baseline.json

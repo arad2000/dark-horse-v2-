@@ -1,11 +1,9 @@
-/* free_journey_mode.js — intentionally disabled.
- * Commercial quota enforcement is server-authoritative.
- * This compatibility stub prevents stale/cached HTML from restoring
- * the old free-access journey handlers.
+/* Compatibility stub: legacy free-journey mode is intentionally disabled.
+ * Server-authoritative quota enforcement is mandatory for authenticated
+ * commercial journeys. Kept only for stale-cache compatibility.
  */
 (function (global) {
   'use strict';
-
   global.DHFreeJourney = {
     enabled: false,
     start: function () {}

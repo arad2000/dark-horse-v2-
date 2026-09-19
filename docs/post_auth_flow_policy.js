@@ -1,4 +1,4 @@
-/* post_auth_flow_policy.js v3
+/* post_auth_flow_policy.js v4
  * Authentication must not trigger a purchase or consume a test automatically.
  * After successful login/OTP the user remains on Profile with the server-granted
  * free credit. Journey consumption starts only after an explicit Journey click.
@@ -15,7 +15,7 @@
     try {
       var u = global.DHAuth && typeof global.DHAuth.getUser === 'function'
         ? (global.DHAuth.getUser() || {}) : {};
-      return String(u.id || u.user_id || u.phone || u.mobile || u.username || '');
+      return String(u.id || u.user_id || u.public_id || u.phone || u.mobile || u.username || '');
     } catch (_) { return ''; }
   }
 
@@ -26,21 +26,25 @@
     } catch (_) { return null; }
   }
 
-  function writeQuotaSnapshot(remaining) {
+  function writeQuotaSnapshot(data) {
     var current = readQuotaCache() || {};
     var userKey = getUserKey();
     var sameUser = !!userKey && String(current.userKey || '') === userKey;
-    var used = sameUser ? Number(current.used) : 0;
-    if (!isFinite(used) || used < 0) used = 0;
-    var q = Number(remaining);
-    if (!isFinite(q) || q < 0) q = 0;
+    var remaining = Number(data && data.credits_remaining);
+    var consumed = Number(data && data.credits_consumed);
+    var granted = Number(data && data.credits_granted);
+    if (!isFinite(remaining) || remaining < 0) remaining = sameUser && isFinite(Number(current.serverRemaining)) ? Number(current.serverRemaining) : 0;
+    if (!isFinite(consumed) || consumed < 0) consumed = sameUser && isFinite(Number(current.used)) ? Number(current.used) : 0;
+    if (!isFinite(granted) || granted < 0) granted = sameUser && isFinite(Number(current.serverGranted)) ? Number(current.serverGranted) : 0;
     try {
       localStorage.setItem(QUOTA_KEY, JSON.stringify({
         userKey: userKey,
-        used: used,
+        used: consumed,
         premium: sameUser ? !!current.premium : false,
-        serverRemaining: q,
-        remaining: q
+        serverRemaining: remaining,
+        remaining: remaining,
+        serverGranted: granted,
+        syncedAt: new Date().toISOString()
       }));
     } catch (_) {}
   }
@@ -82,7 +86,7 @@
         return;
       }
       global.DHAuth.quota().then(function (data) {
-        writeQuotaSnapshot(data && data.credits_remaining);
+        writeQuotaSnapshot(data);
         renderProfile();
       }).catch(function () { renderProfile(); });
     } catch (_) { renderProfile(); }
@@ -125,16 +129,16 @@
     if (original.__dhPostAuthWrapped) return;
     var wrapped = async function () {
       if (justAuthenticated && !explicitJourneyRequested) {
-        var q = 0;
-        try {
-          var serverQ = await global.DHAuth.quota();
-          q = Number(serverQ && serverQ.credits_remaining);
-          if (isFinite(q) && q >= 0) writeQuotaSnapshot(q);
-        } catch (_) {}
-        return { consumed: 0, credits_remaining: isFinite(q) && q >= 0 ? q : 0, automatic: true };
+        var data = null;
+        try { data = await global.DHAuth.quota(); } catch (_) {}
+        if (data) writeQuotaSnapshot(data);
+        var q = data && Number(data.credits_remaining);
+        return {
+          consumed: 0,
+          credits_remaining: isFinite(q) && q >= 0 ? q : 0,
+          automatic: true
+        };
       }
-      // DHAuth.consumeTest persists the successful consumption locally.
-      // This guard only blocks an automatic post-auth call.
       return original.apply(this, arguments);
     };
     wrapped.__dhPostAuthWrapped = true;
