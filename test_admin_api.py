@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from admin_api import admin_grant_credits, admin_revoke_entitlement, dashboard_summary
 from admin_service import list_user_summary
-from billing_models import AdminAuditLog, Entitlement, PremiumPlan, User
+from billing_models import AdminAuditLog, Entitlement, Order, Payment, PremiumPlan, User
 from models import Base
 
 
@@ -52,6 +52,43 @@ class AdminApiTests(unittest.TestCase):
             self.assertEqual(target["user_id"], user.id)
             self.assertEqual(target["name"], user.name)
             self.assertEqual(target["phone"], user.phone)
+
+    def test_dashboard_splits_payment_outcomes(self):
+        with self.SessionLocal() as db:
+            admin = db.query(User).filter(User.role == "admin").one()
+            user = db.query(User).filter(User.role == "user").one()
+            plan = db.query(PremiumPlan).filter(PremiumPlan.code == "pack_3_tests").one()
+
+            statuses = ["verified", "failed", "canceled", "initiated"]
+            for index, payment_status in enumerate(statuses, start=1):
+                order = Order(
+                    public_id=f"order-payment-{index}",
+                    user_id=user.id,
+                    plan_id=plan.id,
+                    amount_minor=2_490_000,
+                    currency="IRR",
+                    status="paid" if payment_status == "verified" else "pending",
+                )
+                db.add(order)
+                db.flush()
+                db.add(
+                    Payment(
+                        order_id=order.id,
+                        provider="mock",
+                        provider_request_id=f"request-{index}",
+                        provider_authority=f"authority-{index}",
+                        amount_minor=2_490_000,
+                        currency="IRR",
+                        status=payment_status,
+                    )
+                )
+            db.commit()
+
+            summary = dashboard_summary(db, admin)
+            self.assertEqual(summary["payments_total"], 4)
+            self.assertEqual(summary["payments_verified"], 1)
+            self.assertEqual(summary["payments_failed_or_canceled"], 2)
+            self.assertEqual(summary["payments_pending"], 1)
 
     def test_grant_and_revoke_are_audited(self):
         with self.SessionLocal() as db:
