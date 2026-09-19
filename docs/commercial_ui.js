@@ -195,7 +195,7 @@
         list.innerHTML=rows.map(function(r){
           var title=r.suggested_major||r.exam_code||('#'+r.id);
           var scores='رضایت: '+(r.satisfaction_score!=null?r.satisfaction_score:'—')+' · دقت: '+(r.accuracy_rating!=null?r.accuracy_rating:'—')+' · توصیه: '+(r.would_recommend?'بله':'خیر');
-          var c=text(r.comments||'').replace(/\\s*\\|?\\s*payload=.*$/,'').trim();
+          var c=text(r.comments||'').replace(/\s*\|?\s*payload=.*$/,'').trim();
           var when=text(r.created_at||'').slice(0,19).replace('T',' ');
           return '<div style="border-top:1px solid rgba(255,255,255,.08);padding:9px 0;"><div style="color:#f0c040;font-weight:700;">'+escapeHtml(title)+'</div><div>'+escapeHtml(scores)+'</div><div style="color:#8f845f;font-size:.74rem;">'+escapeHtml(when)+'</div>'+(c?'<div style="margin-top:4px;color:#cbb98a;">'+escapeHtml(c.slice(0,220))+'</div>':'')+'</div>';
         }).join('');
