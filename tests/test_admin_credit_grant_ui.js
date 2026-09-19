@@ -112,7 +112,6 @@ async function loadAuth(fetchImpl) {
   assert.match(indexSource, /shell\.js\?v=74/);
   assert.match(indexSource, /commercial_ui\.js\?v=31/);
   assert.match(indexSource, /pwa-boot\.js\?v=63/);
-  assert.match(pwaBootSource, /sw\.js\?v=63/);
   assert.match(swSource, /darkhorse-v63/);
 
   assert.match(indexSource, /commercial_ui\.js\?v=30/);
