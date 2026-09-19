@@ -6,6 +6,7 @@ const authSource = fs.readFileSync('docs/auth_api_client.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
+const profileSource = fs.readFileSync('docs/profile_ux_v1.js', 'utf8');
 
 const pwaBootSource = fs.readFileSync('docs/pwa-boot.js', 'utf8');
 const swSource = fs.readFileSync('docs/sw.js', 'utf8');
@@ -111,6 +112,13 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /__dhCommercialUIReady/);
   assert.match(indexSource, /shell\.js\?v=75/);
   assert.match(indexSource, /commercial_ui\.js\?v=32/);
+  assert.match(indexSource, /profile_ux_v1\.js\?v=7/);
+  assert.match(profileSource, /function adminUserId\(user\)/);
+  assert.match(profileSource, /user\.user_id \|\| user\.id \|\| user\.userId/);
+  assert.match(profileSource, /textContent = 'کپی'/);
+  assert.match(profileSource, /textContent = 'اعطا'/);
+  assert.match(profileSource, /dh-admin-grant-user-id/);
+  assert.match(profileSource, /__dhAdminGrantSelectedUserId/);
   const adminSource = fs.readFileSync('docs/admin.html', 'utf8');
   assert.match(adminSource, /شناسه \/ user_id/);
   assert.match(adminSource, /class="pick-grant"/);
