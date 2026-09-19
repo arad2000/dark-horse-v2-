@@ -110,6 +110,7 @@
   function isAdminUser(){try{if(global.DHAuth&&typeof global.DHAuth.isAdmin==='function'&&global.DHAuth.isAdmin())return true;var u=global.DHAuth&&global.DHAuth.getUser&&global.DHAuth.getUser();return !!(u&&(u.role==='admin'||u.role==='support'||u.is_admin===true));}catch(_){return false;}}
   function ensureAdminFeedbackPanel(){
     if(!isAdminUser())return;
+    if(el('dh-admin-panel'))return;
     if(el('dh-admin-feedback'))return;
     var out=el('dh-p-out');
     if(!out||!out.parentNode)return;

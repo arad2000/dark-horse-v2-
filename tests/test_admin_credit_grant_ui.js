@@ -96,7 +96,7 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /اعتبار به کاربر/);
   assert.match(commercialSource, /در حال اعطا/);
   assert.match(indexSource, /auth_api_client\.js\?v=10/);
-  assert.match(indexSource, /commercial_ui\.js\?v=29/);
+  assert.match(indexSource, /commercial_ui\.js\?v=30/);
 
   console.log('admin_credit_grant_ui regression: PASS');
 })();
