@@ -735,18 +735,34 @@
             return;
           }
           var script = document.createElement('script');
+          var capturedError = null;
+          var onWindowError = function (event) {
+            if (event && event.error) capturedError = event.error;
+          };
           script.id = 'dh-commercial-ui-loader';
           script.async = false;
           script.src = 'commercial_ui.js?v=31';
+          script.setAttribute('data-dh-load-state', 'loading');
+          window.addEventListener('error', onWindowError, true);
+          function cleanup() {
+            try { window.removeEventListener('error', onWindowError, true); } catch (_) {}
+          }
           script.onload = function () {
-            if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
+            cleanup();
+            if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function' && window.__dhCommercialUIReady) {
               script.__dhReady = true;
+              script.setAttribute('data-dh-load-state', 'ready');
               resolve();
             } else {
-              reject(new Error('auth-ui-module-not-ready'));
+              script.setAttribute('data-dh-load-state', 'failed');
+              reject(capturedError || new Error('auth-ui-module-not-ready'));
             }
           };
-          script.onerror = function () { reject(new Error('auth-ui-script-load-failed')); };
+          script.onerror = function () {
+            cleanup();
+            script.setAttribute('data-dh-load-state', 'failed');
+            reject(capturedError || new Error('auth-ui-script-load-failed'));
+          };
           document.head.appendChild(script);
         }).catch(function (error) {
           __dhAuthUiLoad = null;
@@ -756,6 +772,7 @@
       }
       var openAuth = function (mode) {
         try {
+          if (!document || !document.body) throw new Error('auth-ui-dom-not-ready');
           if (window.DHCommercialUI && typeof DHCommercialUI.showAuth === 'function') {
             DHCommercialUI.showAuth(mode);
             return;
