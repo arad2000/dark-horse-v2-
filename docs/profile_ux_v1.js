@@ -130,6 +130,89 @@
     return panel;
   }
 
+  function adminUserId(user) {
+    if (!user) return '';
+    var id = user.user_id || user.id || user.userId || '';
+    return text(id).trim();
+  }
+
+  function setAdminGrantUserId(userId, focus) {
+    var id = text(userId).trim();
+    if (!id) return false;
+
+    /* Keep the latest selection so the grant UI can consume it even if it mounts a moment later. */
+    global.__dhAdminGrantSelectedUserId = id;
+
+    try {
+      var input = document.getElementById('dh-admin-grant-user-id');
+      if (!input) return false;
+      input.value = id;
+      try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+      try { input.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
+      if (focus !== false) {
+        try {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          input.focus();
+        } catch (_) {}
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function retryAdminGrantSelection(userId) {
+    if (setAdminGrantUserId(userId, true)) return;
+    var attempts = 0;
+    var timer = setInterval(function () {
+      attempts += 1;
+      if (setAdminGrantUserId(userId, true) || attempts >= 12) {
+        clearInterval(timer);
+      }
+    }, 250);
+  }
+
+  function copyAdminUserId(userId, button) {
+    var id = text(userId).trim();
+    if (!id) return;
+
+    function done() {
+      if (!button) return;
+      var old = button.textContent;
+      button.textContent = 'کپی شد';
+      setTimeout(function () { button.textContent = old || 'کپی'; }, 1200);
+    }
+
+    try {
+      if (global.navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(id).then(done).catch(function () {
+          fallbackCopy();
+        });
+        return;
+      }
+    } catch (_) {}
+
+    fallbackCopy();
+
+    function fallbackCopy() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = id;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        done();
+      } catch (_) {
+        /* Clipboard is a convenience only; the visible ID remains selectable. */
+      }
+    }
+  }
+
   function renderAdminUsers(panel, users) {
     var target = panel.querySelector('[data-admin-users]');
     if (!target) return;
@@ -155,7 +238,7 @@
 
     var thead = document.createElement('thead');
     var headerRow = document.createElement('tr');
-    ['نام', 'شماره تماس', 'وضعیت'].forEach(function (label) {
+    ['شناسه', 'نام', 'شماره تماس', 'وضعیت', 'عملیات'].forEach(function (label) {
       var th = document.createElement('th');
       th.scope = 'col';
       th.textContent = label;
@@ -167,6 +250,34 @@
     var tbody = document.createElement('tbody');
     users.forEach(function (user) {
       var row = document.createElement('tr');
+      var userId = adminUserId(user);
+
+      var idCell = document.createElement('td');
+      idCell.dir = 'ltr';
+      idCell.style.fontVariantNumeric = 'tabular-nums';
+
+      if (userId) {
+        var idWrap = document.createElement('div');
+        idWrap.style.cssText = 'display:flex;align-items:center;gap:6px;direction:ltr;justify-content:flex-start;';
+
+        var code = document.createElement('code');
+        code.textContent = userId;
+        code.style.cssText = 'user-select:text;font-size:.82rem;color:#e8d79d;';
+
+        var copy = document.createElement('button');
+        copy.type = 'button';
+        copy.textContent = 'کپی';
+        copy.setAttribute('aria-label', 'کپی شناسه ' + userId);
+        copy.style.cssText = 'padding:5px 8px;border-radius:8px;border:1px solid rgba(212,175,55,.28);background:transparent;color:#d9c27d;font:inherit;cursor:pointer;';
+        copy.addEventListener('click', function () { copyAdminUserId(userId, copy); });
+
+        idWrap.appendChild(code);
+        idWrap.appendChild(copy);
+        idCell.appendChild(idWrap);
+      } else {
+        idCell.textContent = '—';
+      }
+      row.appendChild(idCell);
 
       var name = document.createElement('td');
       name.textContent = text(user && user.name ? user.name : '—');
@@ -182,6 +293,22 @@
       status.textContent = statusMap[user && user.status] || text(user && user.status ? user.status : '—');
       row.appendChild(status);
 
+      var actions = document.createElement('td');
+      if (userId) {
+        var grant = document.createElement('button');
+        grant.type = 'button';
+        grant.textContent = 'اعطا';
+        grant.setAttribute('aria-label', 'اعطای اعتبار به کاربر ' + userId);
+        grant.style.cssText = 'padding:6px 10px;border-radius:8px;border:1px solid rgba(126,200,163,.35);background:transparent;color:#9fe3a2;font:inherit;font-weight:700;cursor:pointer;';
+        grant.addEventListener('click', function () {
+          retryAdminGrantSelection(userId);
+        });
+        actions.appendChild(grant);
+      } else {
+        actions.textContent = '—';
+      }
+      row.appendChild(actions);
+
       tbody.appendChild(row);
     });
 
@@ -193,6 +320,11 @@
     meta.className = 'dh-admin-status';
     meta.textContent = users.length + ' کاربر اخیر';
     target.appendChild(meta);
+
+    /* A prior row selection is preserved across async admin-feedback mount/re-render. */
+    if (global.__dhAdminGrantSelectedUserId) {
+      retryAdminGrantSelection(global.__dhAdminGrantSelectedUserId);
+    }
   }
 
   async function loadAdminUsers(panel) {
