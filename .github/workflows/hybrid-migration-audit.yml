@@ -60,7 +60,7 @@ jobs:
 
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
-
+\n      - name: Verify canonical reference data matches main\n        run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main\n
       - name: Compile Python sources
         run: python -m compileall -q .
 
