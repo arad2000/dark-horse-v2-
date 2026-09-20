@@ -1,0 +1,40 @@
+name: Dual-Run Main vs Liara Build
+
+on:
+  pull_request:
+    branches:
+      - deploy/liara-commercial-sandbox
+  workflow_dispatch:
+
+jobs:
+  dual-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch canonical refs
+        run: |
+          git fetch --no-tags --prune origin main deploy/liara-commercial-sandbox
+
+      - name: Run deterministic main vs Liara dual-run
+        env:
+          MAIN_REF: origin/main
+          LIARA_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'origin/deploy/liara-commercial-sandbox' }}
+        run: |
+          python tests/dual_run_main_liara.py --main-ref "$MAIN_REF" --liara-ref "$LIARA_REF" --output dual_run_report.json
+
+      - name: Publish raw Dual-Run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dual-run-main-liara-report
+          path: dual_run_report.json
+          if-no-files-found: error
