@@ -25,7 +25,6 @@ logger = logging.getLogger("darkhorse_api_v2")
 
 
 _SCORING_FINGERPRINT_FILES = (
-    "main_v2.py",
     "dark_horse_engine_v2.py",
     "docs/data/micro_motives.json",
     "docs/data/questions_v2.json",
