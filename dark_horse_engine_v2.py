@@ -32,6 +32,7 @@ class DarkHorseEngineV2:
         self.school_branches: Dict[str, Dict] = {}
         self._load_data(motives_path, majors_path, trait_map_path, value_poles_path, school_branches_path)
         self._validate_schema_consistency()
+        self._precompute_alternative_paths()
 
     def _load_data(self, motives_path, majors_path, trait_map_path, value_poles_path, school_branches_path):
         try:
@@ -296,8 +297,34 @@ class DarkHorseEngineV2:
         )
         return total_dist, v_dist, s_dist
 
+    # ── مسیرهای جایگزین: محاسبهٔ یک‌باره در startup و cache ──
+    def _precompute_alternative_paths(self) -> None:
+        """Precompute alternative paths once so request-time scoring stays bounded."""
+        try:
+            for major_id in list(self.majors_db.keys()):
+                self._alt_paths_cache[major_id] = self._compute_alternative_paths(major_id, top_n=3)
+            for branch_name in list(self.school_branches.keys()):
+                self._branch_alt_paths_cache[branch_name] = self._compute_branch_alternative_paths(
+                    branch_name, top_n=3
+                )
+            logger.info(
+                "✅ Alternative paths precomputed: %s majors, %s branches",
+                len(self._alt_paths_cache),
+                len(self._branch_alt_paths_cache),
+            )
+        except Exception as exc:
+            logger.error("Alternative paths precompute failed: %s", exc)
+            self._alt_paths_cache = {}
+            self._branch_alt_paths_cache = {}
+
     # ── مسیرهای جایگزین برای رشته‌های دانشگاهی ──
     def _find_alternative_paths(self, major_id: str, top_n: int = 3) -> List[Dict]:
+        cached = self._alt_paths_cache.get(major_id)
+        if cached is not None:
+            return list(cached)[:top_n]
+        return self._compute_alternative_paths(major_id, top_n=top_n)
+
+    def _compute_alternative_paths(self, major_id: str, top_n: int = 3) -> List[Dict]:
         target = self.majors_db.get(major_id)
         if not target:
             return []
@@ -339,6 +366,12 @@ class DarkHorseEngineV2:
 
     # ── مسیرهای جایگزین برای شاخه‌های دبیرستانی ──
     def _find_branch_alternative_paths(self, branch_name: str, top_n: int = 3) -> List[Dict]:
+        cached = self._branch_alt_paths_cache.get(branch_name)
+        if cached is not None:
+            return list(cached)[:top_n]
+        return self._compute_branch_alternative_paths(branch_name, top_n=top_n)
+
+    def _compute_branch_alternative_paths(self, branch_name: str, top_n: int = 3) -> List[Dict]:
         if branch_name not in self.school_branches:
             return []
 
