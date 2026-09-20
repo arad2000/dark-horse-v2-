@@ -16,8 +16,23 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: darkhorse_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d darkhorse_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
     env:
-      DATABASE_URL: sqlite:///./commercial_ci.db
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/darkhorse_ci
       APP_ENV: staging
       POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
       DARK_HORSE_SHADOW_PERSISTENCE: "false"
@@ -43,6 +58,9 @@ jobs:
 
       - name: Import application
         run: python -c "from main_v2 import app; assert app.title == 'Dark Horse API V2.0'; print('APP_IMPORT=PASS')"
+
+      - name: Apply Alembic schema
+        run: alembic upgrade head
 
       - name: Verify runtime schema bootstrap is fail-closed
         run: |
