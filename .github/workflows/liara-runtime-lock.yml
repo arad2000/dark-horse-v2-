@@ -1,0 +1,101 @@
+name: Liara Runtime Lock
+
+on:
+  push:
+    branches:
+      - deploy/liara-commercial-sandbox
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout deployed build candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Verify live Liara root is online
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o /tmp/liara-root.json -w '%{http_code}' --max-time 20 https://api.asbe-siah.ir/)"
+          test "$code" = "200"
+          cat /tmp/liara-root.json
+
+      - name: Verify live scoring build fingerprint
+        env:
+          LIVE_FINGERPRINT_URL: https://api.asbe-siah.ir/__runtime_fingerprint
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import time
+          import urllib.request
+
+          files = (
+              "dark_horse_engine_v2.py",
+              "docs/data/micro_motives.json",
+              "docs/data/questions_v2.json",
+              "majors_database_v2.json",
+              "trait_map_v3.json",
+              "value_poles_v2.json",
+              "school_branches_v2.json",
+          )
+
+          aggregate = hashlib.sha256()
+          expected_files = {}
+          for relative_path in files:
+              with open(relative_path, "rb") as fh:
+                  payload = fh.read()
+              digest = hashlib.sha256(payload).hexdigest()
+              expected_files[relative_path] = digest
+              aggregate.update(relative_path.encode("utf-8"))
+              aggregate.update(b"\0")
+              aggregate.update(payload)
+          expected = aggregate.hexdigest()
+          print("expected scoring_build_fingerprint:", expected)
+
+          last_payload = None
+          for attempt in range(1, 31):
+              try:
+                  with urllib.request.urlopen(
+                      os.environ["LIVE_FINGERPRINT_URL"], timeout=20
+                  ) as response:
+                      status = response.status
+                      payload = json.load(response)
+                  last_payload = payload
+                  print(
+                      f"attempt={attempt} status={status} "
+                      f"runtime_commit={payload.get('runtime_commit')} "
+                      f"runtime_version={payload.get('runtime_version')}"
+                  )
+                  actual = payload.get("scoring_build_fingerprint")
+                  if status == 200 and actual == expected:
+                      remote_files = payload.get("scoring_fingerprinted_files") or {}
+                      missing = [
+                          path for path in files
+                          if remote_files.get(path, {}).get("sha256") != expected_files[path]
+                      ]
+                      if missing:
+                          raise SystemExit(
+                              "fingerprint aggregate matched but per-file hashes differ: "
+                              + repr(missing)
+                          )
+                      print("LIVE_RUNTIME_LOCK=PASS")
+                      print("live scoring build is hash-equivalent to the deployed Git build")
+                      raise SystemExit(0)
+              except Exception as exc:
+                  print("probe error:", exc)
+              time.sleep(10)
+
+          print(json.dumps(last_payload or {}, ensure_ascii=False, indent=2))
+          raise SystemExit(
+              "LIVE_RUNTIME_LOCK=FAIL: Liara runtime fingerprint did not match "
+              "the deployed scoring build"
+          )
+          PY
