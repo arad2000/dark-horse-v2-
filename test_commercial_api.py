@@ -21,21 +21,19 @@ class FakeDB:
         pass
 
     def scalar(self, statement):
-        entity = getattr(getattr(statement, "_raw_columns", [None])[0], "__name__", "")
-        if entity == "User":
-            return SimpleNamespace(
-                id=11,
-                public_id="public-11",
-                name="Consume User",
-                phone="09120000004",
-                role="user",
-                status="active",
-            )
-        if entity == "UserSession":
-            return SimpleNamespace(user_id=11)
-        if entity == "JourneyCreditConsumption":
+        sql = str(statement)
+        if "journey_credit_consumptions" in sql:
             return None
-        return None
+        if "user_sessions" in sql:
+            return SimpleNamespace(user_id=11)
+        return SimpleNamespace(
+            id=11,
+            public_id="public-11",
+            name="Consume User",
+            phone="09120000004",
+            role="user",
+            status="active",
+        )
 
     def scalars(self, _statement):
         return [
