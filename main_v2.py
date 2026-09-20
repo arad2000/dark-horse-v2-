@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("darkhorse_api_v2")
 
 
-_RUNTIME_FINGERPRINT_FILES = (
+_SCORING_FINGERPRINT_FILES = (
     "main_v2.py",
     "dark_horse_engine_v2.py",
     "docs/data/micro_motives.json",
@@ -40,7 +40,7 @@ def _runtime_build_fingerprint() -> dict:
     root = os.path.dirname(os.path.abspath(__file__))
     files = {}
     aggregate = hashlib.sha256()
-    for relative_path in _RUNTIME_FINGERPRINT_FILES:
+    for relative_path in _SCORING_FINGERPRINT_FILES:
         path = os.path.join(root, relative_path)
         try:
             with open(path, "rb") as fh:
