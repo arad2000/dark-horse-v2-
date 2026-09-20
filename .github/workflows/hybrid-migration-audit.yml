@@ -60,7 +60,10 @@ jobs:
 
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
-\n      - name: Verify canonical reference data matches main\n        run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main\n
+
+      - name: Verify canonical reference data matches main
+        run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main
+
       - name: Run deterministic main vs Liara dual-run
         env:
           MAIN_REF: origin/main
@@ -90,7 +93,10 @@ jobs:
 
       - name: Verify canonical frontend auth/purchase contract
         run: python -m unittest -v test_frontend_auth_purchase_contract.py
-\n      - name: Verify alternative-path cache equivalence\n        run: python -m unittest -v test_alternative_cache_equivalence.py\n
+
+      - name: Verify alternative-path cache equivalence
+        run: python -m unittest -v test_alternative_cache_equivalence.py
+
       - name: Verify commercial UI contract
         run: python -m unittest -v test_commercial_ui_contract.py
 
