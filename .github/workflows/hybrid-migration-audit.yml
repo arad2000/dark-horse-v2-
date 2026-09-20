@@ -75,7 +75,7 @@ jobs:
 
       - name: Verify canonical frontend auth/purchase contract
         run: python -m unittest -v test_frontend_auth_purchase_contract.py
-
+\n      - name: Verify alternative-path cache equivalence\n        run: python -m unittest -v test_alternative_cache_equivalence.py\n
       - name: Verify commercial UI contract
         run: python -m unittest -v test_commercial_ui_contract.py
 
