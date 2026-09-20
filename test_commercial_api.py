@@ -12,17 +12,36 @@ from main_v2 import app
 
 
 class FakeDB:
+    bind = None
+
     def commit(self) -> None:
         pass
 
     def rollback(self) -> None:
         pass
 
+    def scalar(self, statement):
+        entity = getattr(getattr(statement, "_raw_columns", [None])[0], "__name__", "")
+        if entity == "User":
+            return SimpleNamespace(
+                id=11,
+                public_id="public-11",
+                name="Consume User",
+                phone="09120000004",
+                role="user",
+                status="active",
+            )
+        if entity == "UserSession":
+            return SimpleNamespace(user_id=11)
+        if entity == "JourneyCreditConsumption":
+            return None
+        return None
+
     def scalars(self, _statement):
         return [
             SimpleNamespace(
-                credits_granted=1,
-                credits_remaining=1,
+                credits_granted=3,
+                credits_remaining=3,
                 expires_at=None,
             )
         ]
@@ -90,20 +109,26 @@ class CommercialApiContractTests(unittest.TestCase):
 
     def test_quota_contract(self):
         user = SimpleNamespace(id=10)
-        with patch("commercial_api.resolve_session", return_value=user), patch("commercial_api._quota", return_value=3):
+        with patch("commercial_api.resolve_session", return_value=user):
             response = self.client.get("/api/v1/me/quota", headers={"Authorization": "Bearer token"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"credits_remaining": 3, "user_id": 10})
+        self.assertEqual(
+            response.json(),
+            {"credits_granted": 3, "credits_consumed": 0, "credits_remaining": 3},
+        )
 
     def test_consume_contract(self):
         user = SimpleNamespace(id=11, public_id="public-11", name="Consume User", phone="09120000004", role="user", status="active")
         entitlement = SimpleNamespace(id=55)
-        with patch("commercial_api.resolve_session", return_value=user), patch("commercial_api.consume_one_test", return_value=entitlement), patch("commercial_api._quota", return_value=2):
+        with patch("commercial_api.resolve_session", return_value=user), patch("commercial_api.consume_one_test", return_value=entitlement), patch(
+            "commercial_api._quota_details",
+            return_value={"credits_granted": 3, "credits_consumed": 1, "credits_remaining": 2},
+        ):
             response = self.client.post(
-            "/api/v1/me/consume-test",
-            headers={"Authorization": "Bearer token"},
-            json={"session_uuid": "sess-123456789"},
-        )
+                "/api/v1/me/consume-test",
+                headers={"Authorization": "Bearer token"},
+                json={"session_uuid": "sess-123456789"},
+            )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["consumed"], 1)
         self.assertEqual(response.json()["credits_remaining"], 2)
