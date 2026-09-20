@@ -69,12 +69,20 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    """Create ORM tables for local/dev bootstrap only.
+    """Create ORM tables only when explicit local/dev bootstrap is enabled.
 
-    Production schema evolution should use Alembic in the next phase.
+    Production and commercial rollout paths are Alembic-only. Runtime schema
+    creation is fail-closed unless ALLOW_RUNTIME_SCHEMA_BOOTSTRAP=true is set
+    deliberately for an isolated local/dev environment.
     """
     if engine is None:
         raise RuntimeError("DATABASE_URL is not configured")
+    allow = os.getenv("ALLOW_RUNTIME_SCHEMA_BOOTSTRAP", "false").strip().lower() in {"1", "true", "yes", "on"}
+    if not allow:
+        raise RuntimeError(
+            "Runtime schema bootstrap is disabled; apply the schema with Alembic. "
+            "Set ALLOW_RUNTIME_SCHEMA_BOOTSTRAP=true only for isolated local/dev use."
+        )
     Base.metadata.create_all(bind=engine)
     seed_default_plans()
 
