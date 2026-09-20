@@ -3,6 +3,7 @@ Dark Horse API V2.0 — نسخه اصلاح‌شده با پشتیبانی کا�
 """
 
 import asyncio
+import hashlib
 import logging
 import os
 import uuid
@@ -21,6 +22,43 @@ from ai_rate_limit import COUNSEL_RATE_LIMITER
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("darkhorse_api_v2")
+
+
+_SCORING_FINGERPRINT_FILES = (
+    "dark_horse_engine_v2.py",
+    "docs/data/micro_motives.json",
+    "docs/data/questions_v2.json",
+    "majors_database_v2.json",
+    "trait_map_v3.json",
+    "value_poles_v2.json",
+    "school_branches_v2.json",
+)
+
+
+def _runtime_build_fingerprint() -> dict:
+    root = os.path.dirname(os.path.abspath(__file__))
+    files = {}
+    aggregate = hashlib.sha256()
+    for relative_path in _SCORING_FINGERPRINT_FILES:
+        path = os.path.join(root, relative_path)
+        try:
+            with open(path, "rb") as fh:
+                payload = fh.read()
+        except OSError as exc:
+            files[relative_path] = {"available": False, "error": str(exc)}
+            continue
+        digest = hashlib.sha256(payload).hexdigest()
+        files[relative_path] = {"available": True, "sha256": digest, "bytes": len(payload)}
+        aggregate.update(relative_path.encode("utf-8"))
+        aggregate.update(b"\\0")
+        aggregate.update(payload)
+    return {
+        "algorithm": "sha256",
+        "fingerprint": aggregate.hexdigest(),
+        "files": files,
+        "runtime_commit": os.getenv("GIT_COMMIT") or os.getenv("SOURCE_COMMIT") or None,
+        "runtime_version": os.getenv("APP_VERSION") or os.getenv("RELEASE_VERSION") or None,
+    }
 
 
 class DarkHorseDiscoverRequest(BaseModel):
@@ -88,6 +126,7 @@ logger.info("✅ ROUTERS_MOUNTED commercial=/api/v1 admin=/api/v1/admin feedback
 
 @app.get("/__runtime_fingerprint")
 async def runtime_fingerprint():
+    build = _runtime_build_fingerprint()
     return {
         "service": "dark-horse-v2",
         "commercial_router_mounted": True,
@@ -99,6 +138,11 @@ async def runtime_fingerprint():
         "legacy_feedback_submit": "/api/feedback/submit",
         "commit_hint": "deploy/liara-commercial-sandbox",
         "ai_counsel_endpoint": "/api/v2/darkhorse/counsel",
+        "runtime_commit": build["runtime_commit"],
+        "runtime_version": build["runtime_version"],
+        "scoring_build_fingerprint": build["fingerprint"],
+        "fingerprint_algorithm": build["algorithm"],
+        "scoring_fingerprinted_files": build["files"],
     }
 
 
