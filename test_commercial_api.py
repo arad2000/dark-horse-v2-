@@ -14,26 +14,31 @@ from main_v2 import app
 class FakeDB:
     bind = None
 
+    def __init__(self):
+        self._scalar_calls = 0
+
     def commit(self) -> None:
         pass
 
     def rollback(self) -> None:
         pass
 
-    def scalar(self, statement):
-        sql = str(statement)
-        if "journey_credit_consumptions" in sql:
-            return None
-        if "user_sessions" in sql:
+    def scalar(self, _statement):
+        self._scalar_calls += 1
+        if self._scalar_calls in {1, 2}:
+            if self._scalar_calls == 1:
+                return SimpleNamespace(
+                    id=11,
+                    public_id="public-11",
+                    name="Consume User",
+                    phone="09120000004",
+                    role="user",
+                    status="active",
+                )
             return SimpleNamespace(user_id=11)
-        return SimpleNamespace(
-            id=11,
-            public_id="public-11",
-            name="Consume User",
-            phone="09120000004",
-            role="user",
-            status="active",
-        )
+        if self._scalar_calls == 3:
+            return None
+        return None
 
     def scalars(self, _statement):
         return [
