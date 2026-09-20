@@ -1,0 +1,17 @@
+{
+  "schema": "dual-run-main-liara-v1",
+  "status": "FAIL",
+  "contract": {
+    "comparison": "main engine build vs Liara/deploy engine build",
+    "scoring_formulas_changed": false,
+    "reference_data_must_be_byte_identical": true,
+    "cutover_required_off": true,
+    "top_n": 5,
+    "primary_score_tolerance": 1e-09
+  },
+  "main": {},
+  "liara": {},
+  "reference_data": {},
+  "fixtures": [],
+  "error": "CalledProcessError: Command '['git', 'rev-parse', 'origin/deploy/liara-commercial-sandbox']' returned non-zero exit status 128."
+}
