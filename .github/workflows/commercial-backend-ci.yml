@@ -78,6 +78,9 @@ jobs:
       - name: Reference-data integrity
         run: python test_reference_data_integrity.py
 
+      - name: Save-result API contract
+        run: python -m pytest -q test_save_result_contract.py
+
       - name: API smoke contracts
         run: python -m pytest -q           test_main_api_contract.py           test_commercial_api.py           test_billing_api.py           test_billing_credits.py           test_billing_models.py           test_p0_quota_consumption.py           test_password_reset_contract.py
 
