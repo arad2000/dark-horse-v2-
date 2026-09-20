@@ -54,7 +54,8 @@ class ConsumeTestRequest(BaseModel):
 
 
 class SaveResultRequest(BaseModel):
-    session_id: str = Field(min_length=8, max_length=64)
+    """Canonical journey identifier shared by discovery, quota and result APIs."""
+    session_uuid: str = Field(min_length=8, max_length=64)
     result_summary: dict = Field(min_length=1)
 
 
@@ -366,19 +367,19 @@ def save_result(req: SaveResultRequest, user: User = Depends(_current_user)) -> 
     try:
         assert_safe_mode()
         summary = dict(req.result_summary)
-        nested_session_id = summary.get("session_id")
-        if nested_session_id is not None and str(nested_session_id) != req.session_id:
-            raise ValueError("result_summary session_id does not match session_id")
-        summary["session_id"] = req.session_id
+        nested_session_uuid = summary.get("session_uuid") or summary.get("session_id")
+        if nested_session_uuid is not None and str(nested_session_uuid) != req.session_uuid:
+            raise ValueError("result_summary session_uuid does not match session_uuid")
+        summary["session_uuid"] = req.session_uuid
         session = OperationalPersistenceAdapter(OperationalStore()).save_result(
-            req.session_id,
+            req.session_uuid,
             int(user.id),
             summary,
         )
         return {
             "saved": True,
             "completed": bool(session.is_completed),
-            "session_id": session.session_uuid,
+            "session_uuid": session.session_uuid,
             "operational_session_id": int(session.id),
         }
     except HTTPException:
