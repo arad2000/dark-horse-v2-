@@ -1,0 +1,30 @@
+{
+  "fixture_id": "fixture_branch_03",
+  "target": "school_branch",
+  "micro_motives": [
+    "AI-001",
+    "AI-002",
+    "AI-003",
+    "CYBER-001",
+    "CYBER-002",
+    "CYBER-003",
+    "UXDS-001",
+    "UXDS-002",
+    "UXDS-003",
+    "ENT-001",
+    "ENT-002",
+    "ENT-003"
+  ],
+  "sjt_answers": {
+    "S01": "E", "S02": "D", "S03": "C", "S04": "B", "S05": "A",
+    "S06": "E", "S07": "D", "S08": "C", "S09": "B", "S10": "A",
+    "S11": "E", "S12": "D", "S13": "C", "S14": "B", "S15": "A",
+    "S16": "E", "S17": "D", "S18": "C", "S19": "B", "S20": "A",
+    "S21": "E", "S22": "D", "S23": "C", "S24": "B", "S25": "A"
+  },
+  "conjoint_choices": {
+    "Q1": "Q1B", "Q2": "Q2B", "Q3": "Q3B", "Q4": "Q4B", "Q5": "Q5B",
+    "Q6": "Q6B", "Q7": "Q7B", "Q8": "Q8B", "Q9": "Q9B", "Q10": "Q10B",
+    "Q11": "Q11B", "Q12": "Q12B", "Q13": "Q13B", "Q14": "Q14B", "Q15": "Q15B"
+  }
+}
