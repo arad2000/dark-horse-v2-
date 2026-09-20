@@ -62,7 +62,7 @@ class PasswordResetContractTests(unittest.TestCase):
 
     def test_home_loads_reset_ui_after_auth_client(self):
         html = (DOCS / "index.html").read_text(encoding="utf-8")
-        auth_pos = html.index('src="auth_api_client.js?v=6"')
+        auth_pos = html.index('src="auth_api_client.js?v=7"')
         reset_pos = html.index('src="password_reset_ui.js?v=4"')
         self.assertLess(auth_pos, reset_pos)
 
