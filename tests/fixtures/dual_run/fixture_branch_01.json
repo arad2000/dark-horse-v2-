@@ -1,0 +1,27 @@
+{
+  "fixture_id": "fixture_branch_01",
+  "target": "school_branch",
+  "micro_motives": [
+    "MED-001",
+    "MED-004",
+    "MED-007",
+    "BIOINF-001",
+    "BIOINF-002",
+    "BIOINF-003",
+    "NEURO-001",
+    "NEURO-002",
+    "NEURO-003"
+  ],
+  "sjt_answers": {
+    "S01": "A", "S02": "A", "S03": "A", "S04": "A", "S05": "A",
+    "S06": "A", "S07": "A", "S08": "A", "S09": "A", "S10": "A",
+    "S11": "A", "S12": "A", "S13": "A", "S14": "A", "S15": "A",
+    "S16": "A", "S17": "A", "S18": "A", "S19": "A", "S20": "A",
+    "S21": "A", "S22": "A", "S23": "A", "S24": "A", "S25": "A"
+  },
+  "conjoint_choices": {
+    "Q1": "Q1A", "Q2": "Q2A", "Q3": "Q3A", "Q4": "Q4A", "Q5": "Q5A",
+    "Q6": "Q6A", "Q7": "Q7A", "Q8": "Q8A", "Q9": "Q9A", "Q10": "Q10A",
+    "Q11": "Q11A", "Q12": "Q12A", "Q13": "Q13A", "Q14": "Q14A", "Q15": "Q15A"
+  }
+}
