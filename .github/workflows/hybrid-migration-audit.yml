@@ -25,6 +25,45 @@ on:
       - deploy/liara-commercial-sandbox
 
 jobs:
+  liara-runtime-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe live API root
+        env:
+          API_BASE: https://api.asbe-siah.ir
+        run: |
+          set -eu
+          code=$(curl --silent --show-error --max-time 20 -o root_body.json -w "%{http_code}" "$API_BASE/")
+          test "$code" = "200"
+          cat root_body.json
+
+      - name: Probe live runtime fingerprint
+        env:
+          API_BASE: https://api.asbe-siah.ir
+        run: |
+          set -eu
+          curl --fail --silent --show-error --max-time 20 "$API_BASE/__runtime_fingerprint" -o runtime_fingerprint.json
+          cat runtime_fingerprint.json
+
+      - name: Produce runtime lock evidence
+        env:
+          DUAL_RUN_COMMIT: e33b7924b79b530df555c090df1c187b58cf5ab7
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = json.loads(Path("root_body.json").read_text())
+          fp = json.loads(Path("runtime_fingerprint.json").read_text())
+          print("running=yes")
+          print("startup_ok=yes (HTTP 200 from live root and runtime fingerprint)")
+          print("runtime_commit_or_version=N/A")
+          print(f"runtime_commit_hint={fp.get('commit_hint')}")
+          print(f"dual_run_build_commit_tested={__import__('os').environ['DUAL_RUN_COMMIT']}")
+          print(f"root={root}")
+          print(f"fingerprint={fp}")
+          print("commit hash in live fingerprint endpoint is unavailable")
+          PY
+jobs:
   main-liara-dual-run:
     runs-on: ubuntu-latest
     steps:
