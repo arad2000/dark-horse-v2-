@@ -1,6 +1,6 @@
 {
   "schema": "dual-run-main-liara-v1",
-  "status": "FAIL",
+  "status": "PASS",
   "contract": {
     "comparison": "main engine build vs Liara/deploy engine build",
     "scoring_formulas_changed": false,
@@ -9,9 +9,1993 @@
     "top_n": 5,
     "primary_score_tolerance": 1e-09
   },
-  "main": {},
-  "liara": {},
-  "reference_data": {},
-  "fixtures": [],
-  "error": "CalledProcessError: Command '['git', 'rev-parse', 'origin/deploy/liara-commercial-sandbox']' returned non-zero exit status 128."
+  "main": {
+    "ref": "origin/main",
+    "commit": "ce94f573de58c90bdf45ec87473d6bd84e9b228b",
+    "engine_blob_sha": "a299174478e30dea5baa82434eb0ea1c7ea67e34",
+    "engine_sha256": "59d56311191978b3c90677ae333f40fa4fcd9d88283e1aa895f1335346a687af",
+    "engine_bytes": 38066,
+    "function_fingerprints": {
+      "_compute_m_score": "8587e50e490b4bfb6caa273882dc357665ed5c6b63cda595aa0377de26d683fe",
+      "_compute_branch_m_score": "c3c5a4f6c0354d067575ca94edfcdb420d8a51aba8353b0f5967c375ab6a638e",
+      "_compute_s_score": "09163fec0d0e1c009c88fddc67a18f810cfdcfa7a8235c6630a7d09ff999814b",
+      "_compute_v_score": "ec938d3cee25c2e15c3a41ba7c80caa9a3eabe3c4d21c832952af5b331690d1b",
+      "_find_alternative_paths": "735881c0e109769c0e92f828ae99acbd7b73db9efc7bc362b22c1417b2121dbd",
+      "_find_branch_alternative_paths": "6da0d47f5bbf21500968647760c5139511a09e897f36cdb4553aadd72aa45842",
+      "discover_individuality": "a170f67ad1d67795ffc2875fabe43a572133559330684f15bf1ac4cdb91433ff",
+      "recommend_school_branch": "e91baa5528e6796e727ab617ea0f9b82b3f9a3ae22a16e9d8283a004e9c6a91f"
+    }
+  },
+  "liara": {
+    "ref": "origin/deploy/liara-commercial-sandbox",
+    "commit": "e33b7924b79b530df555c090df1c187b58cf5ab7",
+    "engine_blob_sha": "a738481d38fc370531cca8d26b8a31cba40e9b80",
+    "engine_sha256": "7e9dd9c861e9b17378b5c866238dea0d2a941186b268b78aad09923fdf988e4c",
+    "engine_bytes": 39721,
+    "function_fingerprints": {
+      "_compute_m_score": "8587e50e490b4bfb6caa273882dc357665ed5c6b63cda595aa0377de26d683fe",
+      "_compute_branch_m_score": "c3c5a4f6c0354d067575ca94edfcdb420d8a51aba8353b0f5967c375ab6a638e",
+      "_compute_s_score": "09163fec0d0e1c009c88fddc67a18f810cfdcfa7a8235c6630a7d09ff999814b",
+      "_compute_v_score": "ec938d3cee25c2e15c3a41ba7c80caa9a3eabe3c4d21c832952af5b331690d1b",
+      "_precompute_alternative_paths": "f0c4082c54d014247f556f8be89373089bb3ff716b21abc9d5f1ce9e48272426",
+      "_find_alternative_paths": "8e62ae33f6645f1be0cdec7fe961a12892fd0608ce94fd65c31de9f71002ca5b",
+      "_find_branch_alternative_paths": "3ecab3159ac6300cd56370e70cdf15f01494ee71dc5e38e6d8e100af4c9a512f",
+      "_compute_alternative_paths": "bb9cc9f50687aca60011068c148de8c0e99f4d31d1e9bf3421c0aea0f8de953b",
+      "_compute_branch_alternative_paths": "1ae5dbf56cb63bbaad9561247a3780e88f53819cb0362c64b4ecac1edd31e769",
+      "discover_individuality": "a170f67ad1d67795ffc2875fabe43a572133559330684f15bf1ac4cdb91433ff",
+      "recommend_school_branch": "e91baa5528e6796e727ab617ea0f9b82b3f9a3ae22a16e9d8283a004e9c6a91f"
+    }
+  },
+  "reference_data": {
+    "docs/data/micro_motives.json": {
+      "main": {
+        "git_blob_sha": "2d06662cee13bb89cc28d22f7b92d2395cdb8721",
+        "sha256": "49a8f293d509cd3940dc21ed1d6370f1e80542bd753bba28d3c7bfd974ee11b9",
+        "bytes": 180989
+      },
+      "liara": {
+        "git_blob_sha": "2d06662cee13bb89cc28d22f7b92d2395cdb8721",
+        "sha256": "49a8f293d509cd3940dc21ed1d6370f1e80542bd753bba28d3c7bfd974ee11b9",
+        "bytes": 180989
+      },
+      "byte_identical": true
+    },
+    "majors_database_v2.json": {
+      "main": {
+        "git_blob_sha": "95c9bdf7c91de00fee3acd7ccafa8b0a41628912",
+        "sha256": "a6faeea52c789ee387538765f371aa877aff4db1323ad3bfd941e4ef48bd829b",
+        "bytes": 570119
+      },
+      "liara": {
+        "git_blob_sha": "95c9bdf7c91de00fee3acd7ccafa8b0a41628912",
+        "sha256": "a6faeea52c789ee387538765f371aa877aff4db1323ad3bfd941e4ef48bd829b",
+        "bytes": 570119
+      },
+      "byte_identical": true
+    },
+    "school_branches_v2.json": {
+      "main": {
+        "git_blob_sha": "6a7f1a04d04d95ff8d2cca4fb01d3537235555b5",
+        "sha256": "173021e7acec21c24d10003dc0ea5cfbe697809596826eed640262e8e0f572a9",
+        "bytes": 32583
+      },
+      "liara": {
+        "git_blob_sha": "6a7f1a04d04d95ff8d2cca4fb01d3537235555b5",
+        "sha256": "173021e7acec21c24d10003dc0ea5cfbe697809596826eed640262e8e0f572a9",
+        "bytes": 32583
+      },
+      "byte_identical": true
+    },
+    "trait_map_v3.json": {
+      "main": {
+        "git_blob_sha": "466280fe517b7e6ba68e54dbe8535de7444c7f4a",
+        "sha256": "6d11d19b8ac565f84a6e44a6cc8e91832891a557cce694650852b02bfc6a4bc1",
+        "bytes": 9212
+      },
+      "liara": {
+        "git_blob_sha": "466280fe517b7e6ba68e54dbe8535de7444c7f4a",
+        "sha256": "6d11d19b8ac565f84a6e44a6cc8e91832891a557cce694650852b02bfc6a4bc1",
+        "bytes": 9212
+      },
+      "byte_identical": true
+    },
+    "value_poles_v2.json": {
+      "main": {
+        "git_blob_sha": "251d435d57b90e325ff671a4f8c69c530de61494",
+        "sha256": "84390b1d3c00b08f86492e48c8b301d3d3fc61a1f24a5d6727f0f08bbc68c82b",
+        "bytes": 991
+      },
+      "liara": {
+        "git_blob_sha": "251d435d57b90e325ff671a4f8c69c530de61494",
+        "sha256": "84390b1d3c00b08f86492e48c8b301d3d3fc61a1f24a5d6727f0f08bbc68c82b",
+        "bytes": 991
+      },
+      "byte_identical": true
+    }
+  },
+  "fixtures": [
+    {
+      "fixture_id": "fixture_branch_01",
+      "target": "school_branch",
+      "status": "PASS",
+      "comparison": {
+        "status": "PASS",
+        "tolerance_mode": "1e-9",
+        "rank1_match": true,
+        "top3_match": true,
+        "top5_match": true,
+        "scores_within_1e-9": true,
+        "scores_within_1e-6": true,
+        "alternative_order_and_id_match": true,
+        "max_score_delta": 0.0,
+        "strict_tolerance": 1e-09,
+        "relaxed_tolerance": 1e-06,
+        "rank1_main": {
+          "id": "علوم تجربی",
+          "name": "علوم تجربی",
+          "score": 18.0,
+          "components": {
+            "m_score": 30.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            "علوم انسانی",
+            "ریاضی فیزیک",
+            "فنی و حرفه‌ای"
+          ]
+        },
+        "rank1_liara": {
+          "id": "علوم تجربی",
+          "name": "علوم تجربی",
+          "score": 18.0,
+          "components": {
+            "m_score": 30.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            "علوم انسانی",
+            "ریاضی فیزیک",
+            "فنی و حرفه‌ای"
+          ]
+        }
+      },
+      "main": {
+        "elapsed_ms": 0.933,
+        "ranked_ids": [
+          "علوم تجربی",
+          "ریاضی فیزیک",
+          "علوم انسانی",
+          "فنی و حرفه‌ای"
+        ],
+        "ranking": [
+          {
+            "id": "علوم تجربی",
+            "name": "علوم تجربی",
+            "score": 18.0,
+            "components": {
+              "m_score": 30.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "ریاضی فیزیک",
+            "name": "ریاضی فیزیک",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "علوم انسانی",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم انسانی",
+            "name": "علوم انسانی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "فنی و حرفه‌ای",
+            "name": "فنی و حرفه‌ای",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "علوم تجربی",
+              "ریاضی فیزیک"
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "branch_name": "علوم تجربی",
+            "average_score": 18.0,
+            "count": 371,
+            "max_score": 18.0,
+            "min_score": 18.0,
+            "avg_components": {
+              "m_score": 30.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "MED-001",
+                  "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                },
+                {
+                  "code": "MED-004",
+                  "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                },
+                {
+                  "code": "MED-007",
+                  "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                },
+                {
+                  "code": "BIOINF-001",
+                  "description": "تحلیل توالی‌های ژنتیکی با BLAST و پیدا کردن ژن همولوگ در یک گونهٔ دور"
+                },
+                {
+                  "code": "BIOINF-002",
+                  "description": "مدل‌سازی ساختار سه‌بعدی یک پروتئین با AlphaFold و دیدن تطابق با داده‌های کریستالوگرافی"
+                },
+                {
+                  "code": "BIOINF-003",
+                  "description": "نوشتن یک پایپ‌لاین تحلیل NGS که داده‌های خام را به واریانت‌های بیماری‌زا تبدیل می‌کند"
+                },
+                {
+                  "code": "NEURO-001",
+                  "description": "ثبت فعالیت نورون‌ها با الکترود و دیدن پتانسیل عمل روی اسیلوسکوپ"
+                },
+                {
+                  "code": "NEURO-002",
+                  "description": "تحلیل تصاویر fMRI و پیدا کردن شبکه‌ای از مغز که در حافظهٔ کاری فعال است"
+                },
+                {
+                  "code": "NEURO-003",
+                  "description": "مدل‌سازی یک شبکهٔ عصبی بیولوژیک و دیدن رفتار جمعی نورون‌ها"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ]
+          },
+          {
+            "branch_name": "ریاضی فیزیک",
+            "average_score": 0.0,
+            "count": 350,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "علوم انسانی",
+            "average_score": 0.0,
+            "count": 294,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "فنی و حرفه‌ای",
+            "average_score": 0.0,
+            "count": 84,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          }
+        ]
+      },
+      "liara": {
+        "elapsed_ms": 0.245,
+        "ranked_ids": [
+          "علوم تجربی",
+          "ریاضی فیزیک",
+          "علوم انسانی",
+          "فنی و حرفه‌ای"
+        ],
+        "ranking": [
+          {
+            "id": "علوم تجربی",
+            "name": "علوم تجربی",
+            "score": 18.0,
+            "components": {
+              "m_score": 30.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "ریاضی فیزیک",
+            "name": "ریاضی فیزیک",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "علوم انسانی",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم انسانی",
+            "name": "علوم انسانی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "فنی و حرفه‌ای",
+            "name": "فنی و حرفه‌ای",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "علوم تجربی",
+              "ریاضی فیزیک"
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "branch_name": "علوم تجربی",
+            "average_score": 18.0,
+            "count": 371,
+            "max_score": 18.0,
+            "min_score": 18.0,
+            "avg_components": {
+              "m_score": 30.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "MED-001",
+                  "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                },
+                {
+                  "code": "MED-004",
+                  "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                },
+                {
+                  "code": "MED-007",
+                  "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                },
+                {
+                  "code": "BIOINF-001",
+                  "description": "تحلیل توالی‌های ژنتیکی با BLAST و پیدا کردن ژن همولوگ در یک گونهٔ دور"
+                },
+                {
+                  "code": "BIOINF-002",
+                  "description": "مدل‌سازی ساختار سه‌بعدی یک پروتئین با AlphaFold و دیدن تطابق با داده‌های کریستالوگرافی"
+                },
+                {
+                  "code": "BIOINF-003",
+                  "description": "نوشتن یک پایپ‌لاین تحلیل NGS که داده‌های خام را به واریانت‌های بیماری‌زا تبدیل می‌کند"
+                },
+                {
+                  "code": "NEURO-001",
+                  "description": "ثبت فعالیت نورون‌ها با الکترود و دیدن پتانسیل عمل روی اسیلوسکوپ"
+                },
+                {
+                  "code": "NEURO-002",
+                  "description": "تحلیل تصاویر fMRI و پیدا کردن شبکه‌ای از مغز که در حافظهٔ کاری فعال است"
+                },
+                {
+                  "code": "NEURO-003",
+                  "description": "مدل‌سازی یک شبکهٔ عصبی بیولوژیک و دیدن رفتار جمعی نورون‌ها"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ]
+          },
+          {
+            "branch_name": "ریاضی فیزیک",
+            "average_score": 0.0,
+            "count": 350,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "علوم انسانی",
+            "average_score": 0.0,
+            "count": 294,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "فنی و حرفه‌ای",
+            "average_score": 0.0,
+            "count": 84,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "fixture_branch_02",
+      "target": "school_branch",
+      "status": "PASS",
+      "comparison": {
+        "status": "PASS",
+        "tolerance_mode": "1e-9",
+        "rank1_match": true,
+        "top3_match": true,
+        "top5_match": true,
+        "scores_within_1e-9": true,
+        "scores_within_1e-6": true,
+        "alternative_order_and_id_match": true,
+        "max_score_delta": 0.0,
+        "strict_tolerance": 1e-09,
+        "relaxed_tolerance": 1e-06,
+        "rank1_main": {
+          "id": "ریاضی فیزیک",
+          "name": "ریاضی فیزیک",
+          "score": 12.0,
+          "components": {
+            "m_score": 20.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            "علوم تجربی",
+            "علوم انسانی",
+            "فنی و حرفه‌ای"
+          ]
+        },
+        "rank1_liara": {
+          "id": "ریاضی فیزیک",
+          "name": "ریاضی فیزیک",
+          "score": 12.0,
+          "components": {
+            "m_score": 20.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            "علوم تجربی",
+            "علوم انسانی",
+            "فنی و حرفه‌ای"
+          ]
+        }
+      },
+      "main": {
+        "elapsed_ms": 0.864,
+        "ranked_ids": [
+          "ریاضی فیزیک",
+          "علوم تجربی",
+          "علوم انسانی",
+          "فنی و حرفه‌ای"
+        ],
+        "ranking": [
+          {
+            "id": "ریاضی فیزیک",
+            "name": "ریاضی فیزیک",
+            "score": 12.0,
+            "components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "علوم انسانی",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم تجربی",
+            "name": "علوم تجربی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم انسانی",
+            "name": "علوم انسانی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "فنی و حرفه‌ای",
+            "name": "فنی و حرفه‌ای",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "علوم تجربی",
+              "ریاضی فیزیک"
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "branch_name": "ریاضی فیزیک",
+            "average_score": 12.0,
+            "count": 350,
+            "max_score": 12.0,
+            "min_score": 12.0,
+            "avg_components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "ROBOT-001",
+                  "description": "برنامه‌نویسی یک بازوی رباتیک و دیدن اینکه قطعه را با دقت میلی‌متری جابجا می‌کند"
+                },
+                {
+                  "code": "ROBOT-002",
+                  "description": "طراحی الگوریتم مسیریابی که ربات را در محیط پرازدحام بدون برخورد هدایت می‌کند"
+                },
+                {
+                  "code": "ROBOT-003",
+                  "description": "کالیبره کردن سنسورهای یک ربات و دیدن داده‌های دقیق روی مانیتور"
+                },
+                {
+                  "code": "RENW-001",
+                  "description": "طراحی یک آرایهٔ خورشیدی و بهینه‌سازی زاویهٔ پنل‌ها برای حداکثر جذب نور"
+                },
+                {
+                  "code": "RENW-002",
+                  "description": "شبیه‌سازی عملکرد یک توربین بادی در سرعت‌های مختلف باد با نرم‌افزار CFD"
+                },
+                {
+                  "code": "RENW-003",
+                  "description": "طراحی سیستم ذخیره‌سازی انرژی با باتری و دیدن پایداری شبکه در ساعات پیک"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ]
+          },
+          {
+            "branch_name": "علوم تجربی",
+            "average_score": 0.0,
+            "count": 371,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "علوم انسانی",
+            "average_score": 0.0,
+            "count": 294,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "فنی و حرفه‌ای",
+            "average_score": 0.0,
+            "count": 84,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          }
+        ]
+      },
+      "liara": {
+        "elapsed_ms": 0.223,
+        "ranked_ids": [
+          "ریاضی فیزیک",
+          "علوم تجربی",
+          "علوم انسانی",
+          "فنی و حرفه‌ای"
+        ],
+        "ranking": [
+          {
+            "id": "ریاضی فیزیک",
+            "name": "ریاضی فیزیک",
+            "score": 12.0,
+            "components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "علوم انسانی",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم تجربی",
+            "name": "علوم تجربی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم انسانی",
+            "name": "علوم انسانی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "فنی و حرفه‌ای",
+            "name": "فنی و حرفه‌ای",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "علوم تجربی",
+              "ریاضی فیزیک"
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "branch_name": "ریاضی فیزیک",
+            "average_score": 12.0,
+            "count": 350,
+            "max_score": 12.0,
+            "min_score": 12.0,
+            "avg_components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "ROBOT-001",
+                  "description": "برنامه‌نویسی یک بازوی رباتیک و دیدن اینکه قطعه را با دقت میلی‌متری جابجا می‌کند"
+                },
+                {
+                  "code": "ROBOT-002",
+                  "description": "طراحی الگوریتم مسیریابی که ربات را در محیط پرازدحام بدون برخورد هدایت می‌کند"
+                },
+                {
+                  "code": "ROBOT-003",
+                  "description": "کالیبره کردن سنسورهای یک ربات و دیدن داده‌های دقیق روی مانیتور"
+                },
+                {
+                  "code": "RENW-001",
+                  "description": "طراحی یک آرایهٔ خورشیدی و بهینه‌سازی زاویهٔ پنل‌ها برای حداکثر جذب نور"
+                },
+                {
+                  "code": "RENW-002",
+                  "description": "شبیه‌سازی عملکرد یک توربین بادی در سرعت‌های مختلف باد با نرم‌افزار CFD"
+                },
+                {
+                  "code": "RENW-003",
+                  "description": "طراحی سیستم ذخیره‌سازی انرژی با باتری و دیدن پایداری شبکه در ساعات پیک"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ]
+          },
+          {
+            "branch_name": "علوم تجربی",
+            "average_score": 0.0,
+            "count": 371,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "علوم انسانی",
+            "average_score": 0.0,
+            "count": 294,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "فنی و حرفه‌ای",
+            "average_score": 0.0,
+            "count": 84,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "fixture_branch_03",
+      "target": "school_branch",
+      "status": "PASS",
+      "comparison": {
+        "status": "PASS",
+        "tolerance_mode": "1e-9",
+        "rank1_match": true,
+        "top3_match": true,
+        "top5_match": true,
+        "scores_within_1e-9": true,
+        "scores_within_1e-6": true,
+        "alternative_order_and_id_match": true,
+        "max_score_delta": 0.0,
+        "strict_tolerance": 1e-09,
+        "relaxed_tolerance": 1e-06,
+        "rank1_main": {
+          "id": "ریاضی فیزیک",
+          "name": "ریاضی فیزیک",
+          "score": 12.0,
+          "components": {
+            "m_score": 20.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            "علوم تجربی",
+            "علوم انسانی",
+            "فنی و حرفه‌ای"
+          ]
+        },
+        "rank1_liara": {
+          "id": "ریاضی فیزیک",
+          "name": "ریاضی فیزیک",
+          "score": 12.0,
+          "components": {
+            "m_score": 20.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            "علوم تجربی",
+            "علوم انسانی",
+            "فنی و حرفه‌ای"
+          ]
+        }
+      },
+      "main": {
+        "elapsed_ms": 0.87,
+        "ranked_ids": [
+          "ریاضی فیزیک",
+          "علوم انسانی",
+          "فنی و حرفه‌ای",
+          "علوم تجربی"
+        ],
+        "ranking": [
+          {
+            "id": "ریاضی فیزیک",
+            "name": "ریاضی فیزیک",
+            "score": 12.0,
+            "components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "علوم انسانی",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم انسانی",
+            "name": "علوم انسانی",
+            "score": 6.0,
+            "components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "فنی و حرفه‌ای",
+            "name": "فنی و حرفه‌ای",
+            "score": 6.0,
+            "components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "علوم تجربی",
+              "ریاضی فیزیک"
+            ]
+          },
+          {
+            "id": "علوم تجربی",
+            "name": "علوم تجربی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "branch_name": "ریاضی فیزیک",
+            "average_score": 12.0,
+            "count": 350,
+            "max_score": 12.0,
+            "min_score": 12.0,
+            "avg_components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "AI-001",
+                  "description": "آموزش یک مدل یادگیری عمیق و دیدن کاهش خطا در هر اپوک، مثل تربیت یک شاگرد باهوش"
+                },
+                {
+                  "code": "AI-002",
+                  "description": "طراحی معماری یک شبکه عصبی جدید و دیدن اینکه از مدل‌های موجود بهتر عمل می‌کند"
+                },
+                {
+                  "code": "AI-003",
+                  "description": "دیباگ کردن یک مدل که نتایج عجیب می‌دهد و پیدا کردن باگ در داده‌های آموزشی"
+                },
+                {
+                  "code": "CYBER-001",
+                  "description": "شناسایی یک آسیب‌پذیری zero-day در یک نرم‌افزار پرکاربرد قبل از سوءاستفادهٔ مهاجمان"
+                },
+                {
+                  "code": "CYBER-002",
+                  "description": "تحلیل یک بدافزار پیچیده و رمزگشایی رفتار آن در محیط ایزوله (Sandbox)"
+                },
+                {
+                  "code": "CYBER-003",
+                  "description": "طراحی یک پروتکل رمزنگاری که در برابر حملات کوانتومی مقاوم باشد"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ]
+          },
+          {
+            "branch_name": "علوم انسانی",
+            "average_score": 6.0,
+            "count": 294,
+            "max_score": 6.0,
+            "min_score": 6.0,
+            "avg_components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "ENT-001",
+                  "description": "نوشتن یک طرح کسب‌وکار و برنده شدن در یک مسابقهٔ استارتاپی"
+                },
+                {
+                  "code": "ENT-002",
+                  "description": "ساختن یک MVP با کمترین هزینه و تست کردن آن روی مشتری واقعی"
+                },
+                {
+                  "code": "ENT-003",
+                  "description": "Pitch کردن ایده به یک سرمایه‌گذار و دیدن چک سرمایه‌گذاری"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "فنی و حرفه‌ای",
+            "average_score": 6.0,
+            "count": 84,
+            "max_score": 6.0,
+            "min_score": 6.0,
+            "avg_components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "UXDS-001",
+                  "description": "مصاحبه با کاربران و کشف نیازی که خودشان هم نمی‌دانستند دارند"
+                },
+                {
+                  "code": "UXDS-002",
+                  "description": "طراحی وایرفریم یک اپلیکیشن و دیدن اینکه کاربر بدون آموزش مسیر را پیدا می‌کند"
+                },
+                {
+                  "code": "UXDS-003",
+                  "description": "اجرای تست کاربردپذیری و دیدن اینکه کاربر در کدام مرحله گیر می‌کند"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "علوم تجربی",
+            "average_score": 0.0,
+            "count": 371,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          }
+        ]
+      },
+      "liara": {
+        "elapsed_ms": 0.239,
+        "ranked_ids": [
+          "ریاضی فیزیک",
+          "علوم انسانی",
+          "فنی و حرفه‌ای",
+          "علوم تجربی"
+        ],
+        "ranking": [
+          {
+            "id": "ریاضی فیزیک",
+            "name": "ریاضی فیزیک",
+            "score": 12.0,
+            "components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "علوم انسانی",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "علوم انسانی",
+            "name": "علوم انسانی",
+            "score": 6.0,
+            "components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم تجربی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          },
+          {
+            "id": "فنی و حرفه‌ای",
+            "name": "فنی و حرفه‌ای",
+            "score": 6.0,
+            "components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "علوم تجربی",
+              "ریاضی فیزیک"
+            ]
+          },
+          {
+            "id": "علوم تجربی",
+            "name": "علوم تجربی",
+            "score": 0.0,
+            "components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              "علوم انسانی",
+              "ریاضی فیزیک",
+              "فنی و حرفه‌ای"
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "branch_name": "ریاضی فیزیک",
+            "average_score": 12.0,
+            "count": 350,
+            "max_score": 12.0,
+            "min_score": 12.0,
+            "avg_components": {
+              "m_score": 20.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "AI-001",
+                  "description": "آموزش یک مدل یادگیری عمیق و دیدن کاهش خطا در هر اپوک، مثل تربیت یک شاگرد باهوش"
+                },
+                {
+                  "code": "AI-002",
+                  "description": "طراحی معماری یک شبکه عصبی جدید و دیدن اینکه از مدل‌های موجود بهتر عمل می‌کند"
+                },
+                {
+                  "code": "AI-003",
+                  "description": "دیباگ کردن یک مدل که نتایج عجیب می‌دهد و پیدا کردن باگ در داده‌های آموزشی"
+                },
+                {
+                  "code": "CYBER-001",
+                  "description": "شناسایی یک آسیب‌پذیری zero-day در یک نرم‌افزار پرکاربرد قبل از سوءاستفادهٔ مهاجمان"
+                },
+                {
+                  "code": "CYBER-002",
+                  "description": "تحلیل یک بدافزار پیچیده و رمزگشایی رفتار آن در محیط ایزوله (Sandbox)"
+                },
+                {
+                  "code": "CYBER-003",
+                  "description": "طراحی یک پروتکل رمزنگاری که در برابر حملات کوانتومی مقاوم باشد"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ]
+          },
+          {
+            "branch_name": "علوم انسانی",
+            "average_score": 6.0,
+            "count": 294,
+            "max_score": 6.0,
+            "min_score": 6.0,
+            "avg_components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "ENT-001",
+                  "description": "نوشتن یک طرح کسب‌وکار و برنده شدن در یک مسابقهٔ استارتاپی"
+                },
+                {
+                  "code": "ENT-002",
+                  "description": "ساختن یک MVP با کمترین هزینه و تست کردن آن روی مشتری واقعی"
+                },
+                {
+                  "code": "ENT-003",
+                  "description": "Pitch کردن ایده به یک سرمایه‌گذار و دیدن چک سرمایه‌گذاری"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.124,
+                "value_distance": 0.147,
+                "strategy_distance": 0.078,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "فنی و حرفه‌ای",
+            "average_score": 6.0,
+            "count": 84,
+            "max_score": 6.0,
+            "min_score": 6.0,
+            "avg_components": {
+              "m_score": 10.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [
+                {
+                  "code": "UXDS-001",
+                  "description": "مصاحبه با کاربران و کشف نیازی که خودشان هم نمی‌دانستند دارند"
+                },
+                {
+                  "code": "UXDS-002",
+                  "description": "طراحی وایرفریم یک اپلیکیشن و دیدن اینکه کاربر بدون آموزش مسیر را پیدا می‌کند"
+                },
+                {
+                  "code": "UXDS-003",
+                  "description": "اجرای تست کاربردپذیری و دیدن اینکه کاربر در کدام مرحله گیر می‌کند"
+                }
+              ],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.18,
+                "value_distance": 0.219,
+                "strategy_distance": 0.091,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "علوم تجربی",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.216,
+                "value_distance": 0.266,
+                "strategy_distance": 0.101,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          },
+          {
+            "branch_name": "علوم تجربی",
+            "average_score": 0.0,
+            "count": 371,
+            "max_score": 0.0,
+            "min_score": 0.0,
+            "avg_components": {
+              "m_score": 0.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "evidence": {
+              "micro_motives_matched": [],
+              "strategy_highlights": [],
+              "value_alignment": []
+            },
+            "alternative_paths": [
+              {
+                "branch_name": "علوم انسانی",
+                "distance": 0.07,
+                "value_distance": 0.081,
+                "strategy_distance": 0.051,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "ریاضی فیزیک",
+                "distance": 0.099,
+                "value_distance": 0.122,
+                "strategy_distance": 0.043,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              },
+              {
+                "branch_name": "فنی و حرفه‌ای",
+                "distance": 0.205,
+                "value_distance": 0.256,
+                "strategy_distance": 0.085,
+                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+              }
+            ],
+            "warning": "همخوانی انگیزه در این شاخه پایین است. ممکن است این شاخه برای شما جذابیت روزمره‌ی کمتری داشته باشد."
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "fixture_major_01",
+      "target": "major",
+      "status": "PASS",
+      "comparison": {
+        "status": "PASS",
+        "tolerance_mode": "1e-9",
+        "rank1_match": true,
+        "top3_match": true,
+        "top5_match": true,
+        "scores_within_1e-9": true,
+        "scores_within_1e-6": true,
+        "alternative_order_and_id_match": true,
+        "max_score_delta": 0.0,
+        "strict_tolerance": 1e-09,
+        "relaxed_tolerance": 1e-06,
+        "rank1_main": null,
+        "rank1_liara": null
+      },
+      "main": {
+        "elapsed_ms": 0.591,
+        "ranked_ids": [],
+        "ranking": [],
+        "raw_top5": []
+      },
+      "liara": {
+        "elapsed_ms": 0.52,
+        "ranked_ids": [],
+        "ranking": [],
+        "raw_top5": []
+      }
+    },
+    {
+      "fixture_id": "fixture_major_02",
+      "target": "major",
+      "status": "PASS",
+      "comparison": {
+        "status": "PASS",
+        "tolerance_mode": "1e-9",
+        "rank1_match": true,
+        "top3_match": true,
+        "top5_match": true,
+        "scores_within_1e-9": true,
+        "scores_within_1e-6": true,
+        "alternative_order_and_id_match": true,
+        "max_score_delta": 0.0,
+        "strict_tolerance": 1e-09,
+        "relaxed_tolerance": 1e-06,
+        "rank1_main": null,
+        "rank1_liara": null
+      },
+      "main": {
+        "elapsed_ms": 0.492,
+        "ranked_ids": [],
+        "ranking": [],
+        "raw_top5": []
+      },
+      "liara": {
+        "elapsed_ms": 0.497,
+        "ranked_ids": [],
+        "ranking": [],
+        "raw_top5": []
+      }
+    },
+    {
+      "fixture_id": "fixture_major_03",
+      "target": "major",
+      "status": "PASS",
+      "comparison": {
+        "status": "PASS",
+        "tolerance_mode": "1e-9",
+        "rank1_match": true,
+        "top3_match": true,
+        "top5_match": true,
+        "scores_within_1e-9": true,
+        "scores_within_1e-6": true,
+        "alternative_order_and_id_match": true,
+        "max_score_delta": 0.0,
+        "strict_tolerance": 1e-09,
+        "relaxed_tolerance": 1e-06,
+        "rank1_main": null,
+        "rank1_liara": null
+      },
+      "main": {
+        "elapsed_ms": 0.565,
+        "ranked_ids": [],
+        "ranking": [],
+        "raw_top5": []
+      },
+      "liara": {
+        "elapsed_ms": 0.574,
+        "ranked_ids": [],
+        "ranking": [],
+        "raw_top5": []
+      }
+    }
+  ],
+  "verdict": "خروجی دو build با معیارهای Dual-Run یکسان است."
 }
