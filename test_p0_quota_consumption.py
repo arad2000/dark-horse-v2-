@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 
 from auth_service import hash_password, issue_session
 from billing_models import AuthSession, Entitlement, JourneyCreditConsumption, PremiumPlan, User
@@ -28,12 +28,9 @@ class P0QuotaConsumptionTests(unittest.TestCase):
 
     def setUp(self):
         with next(get_db()) as db:
-            db.execute(delete(JourneyCreditConsumption))
-            db.execute(delete(AuthSession))
-            db.execute(delete(Entitlement))
-            db.execute(delete(UserSession))
-            db.execute(delete(User))
-            db.execute(delete(PremiumPlan))
+            # This is an isolated CI database. Truncate the billing/auth graph
+            # with CASCADE so test fixtures cannot inherit rows from prior cases.
+            db.execute(text("TRUNCATE TABLE users, premium_plans RESTART IDENTITY CASCADE"))
             db.commit()
 
             plan = PremiumPlan(
