@@ -79,11 +79,10 @@ async def lifespan(app: FastAPI):
     try:
         import billing_models  # noqa: F401
         import models  # noqa: F401
-        from database import init_db, is_configured
+        from database import is_configured
 
         if is_configured():
-            init_db()
-            logger.info("✅ Operational DB tables ready (init_db).")
+            logger.info("✅ Operational DB configured; schema lifecycle is Alembic-only.")
         else:
             logger.warning("⚠️ DATABASE_URL not configured; operational DB disabled.")
     except Exception as e:
