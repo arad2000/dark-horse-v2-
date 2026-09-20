@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_DIR = ROOT / "tests" / "fixtures" / "dual_run"
 DATA_PATHS = (
     "docs/data/micro_motives.json",
