@@ -12,29 +12,45 @@ from main_v2 import app
 
 
 class FakeDB:
+    """Small Session-shaped harness for the production consume-test call path."""
+
     bind = None
 
     def __init__(self):
         self._scalar_calls = 0
+        self.added = []
+        self.deleted = []
+
+    def add(self, instance) -> None:
+        self.added.append(instance)
 
     def commit(self) -> None:
         pass
 
+    def refresh(self, _instance) -> None:
+        pass
+
+    def delete(self, instance) -> None:
+        self.deleted.append(instance)
+
     def rollback(self) -> None:
+        pass
+
+    def flush(self) -> None:
         pass
 
     def scalar(self, _statement):
         self._scalar_calls += 1
-        if self._scalar_calls in {1, 2}:
-            if self._scalar_calls == 1:
-                return SimpleNamespace(
-                    id=11,
-                    public_id="public-11",
-                    name="Consume User",
-                    phone="09120000004",
-                    role="user",
-                    status="active",
-                )
+        if self._scalar_calls == 1:
+            return SimpleNamespace(
+                id=11,
+                public_id="public-11",
+                name="Consume User",
+                phone="09120000004",
+                role="user",
+                status="active",
+            )
+        if self._scalar_calls == 2:
             return SimpleNamespace(user_id=11)
         if self._scalar_calls == 3:
             return None
