@@ -110,16 +110,16 @@ def validate_fixture(fixture: dict[str, Any], motive_codes: set[str]) -> None:
     assert not unknown, f'{fixture["fixture_id"]}: unknown motive codes {sorted(unknown)}'
 
     sjt = fixture["sjt_answers"]
-    expected_sjt = {f"S{i:02d}" for i in range(1, 26)}
-    assert set(sjt) == expected_sjt, f'{fixture["fixture_id"]}: S01..S25 contract mismatch'
+    expected_sjt = {f"sjt_{i}" for i in range(1, 26)}
+    assert set(sjt) == expected_sjt, f'{fixture["fixture_id"]}: sjt_1..sjt_25 contract mismatch'
     assert all(str(v).upper() in {"A", "B", "C", "D", "E"} for v in sjt.values())
 
     conjoint = fixture["conjoint_choices"]
-    expected_conj = {f"Q{i}" for i in range(1, 16)}
-    assert set(conjoint) == expected_conj, f'{fixture["fixture_id"]}: Q1..Q15 contract mismatch'
+    expected_conj = {f"conj_{i}" for i in range(1, 16)}
+    assert set(conjoint) == expected_conj, f'{fixture["fixture_id"]}: conj_1..conj_15 contract mismatch'
     for key, value in conjoint.items():
         value = str(value).strip().upper()
-        q_num = int(key[1:])
+        q_num = int(key.split("_", 1)[1])
         assert value in {f"Q{q_num}A", f"Q{q_num}B"}, (
             f'{fixture["fixture_id"]}: invalid conjoint choice {key}={value}'
         )
@@ -247,8 +247,9 @@ def compare_runs(target: str, main_run: dict[str, Any], liara_run: dict[str, Any
             alternatives_match = False
             break
 
-    expected_top_len = min(5, len(main_run["ranking"]))
-    strict_scores = len(main_top) == len(liara_top) == expected_top_len and max_delta <= STRICT_TOLERANCE
+    expected_top_len = 5 if target == "major" else 4
+    enough_ranking = len(main_run["ranking"]) >= expected_top_len and len(liara_run["ranking"]) >= expected_top_len
+    strict_scores = enough_ranking and len(main_top) == len(liara_top) == expected_top_len and max_delta <= STRICT_TOLERANCE
     relaxed_scores = enough_ranking and len(main_top) == len(liara_top) == expected_top_len and max_delta <= RELAXED_TOLERANCE
     strict_pass = all((rank1_match, top3_match, top5_match, strict_scores, alternatives_match))
     relaxed_pass = all((rank1_match, top3_match, top5_match, relaxed_scores, alternatives_match))
