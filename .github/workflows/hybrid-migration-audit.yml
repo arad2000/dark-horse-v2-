@@ -30,6 +30,56 @@ permissions:
   contents: write
 
 jobs:
+  main-liara-dual-run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch canonical refs
+        run: |
+          git fetch --no-tags --prune origin main deploy/liara-commercial-sandbox
+
+      - name: Run deterministic main vs Liara dual-run
+        env:
+          MAIN_REF: origin/main
+          LIARA_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'origin/deploy/liara-commercial-sandbox' }}
+        run: |
+          python tests/dual_run_main_liara.py --main-ref "$MAIN_REF" --liara-ref "$LIARA_REF" --output dual_run_report.json
+
+      - name: Publish raw Dual-Run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dual-run-main-liara-report
+          path: dual_run_report.json
+          if-no-files-found: error
+
+      - name: Persist Dual-Run report on audit branch
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f dual_run_report.json ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add dual_run_report.json
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(dual-run): record audit report"
+              TARGET_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+              git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${TARGET_BRANCH}"
+            fi
+          fi
+
   postgres-staging-audit:
     runs-on: ubuntu-latest
     services:
@@ -69,37 +119,6 @@ jobs:
 
       - name: Verify canonical reference data matches main
         run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main
-
-      - name: Run deterministic main vs Liara dual-run
-        env:
-          MAIN_REF: origin/main
-          LIARA_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'origin/deploy/liara-commercial-sandbox' }}
-        run: |
-          python tests/dual_run_main_liara.py --main-ref "$MAIN_REF" --liara-ref "$LIARA_REF" --output dual_run_report.json
-
-      - name: Publish raw Dual-Run report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dual-run-main-liara-report
-          path: dual_run_report.json
-          if-no-files-found: error
-
-      - name: Persist Dual-Run report on audit branch
-        if: always()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ -f dual_run_report.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add dual_run_report.json
-            if ! git diff --cached --quiet; then
-              git commit -m "chore(dual-run): record audit report"
-              TARGET_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
-              git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${TARGET_BRANCH}"
-            fi
-          fi
 
       - name: Compile Python sources
         run: python -m compileall -q .
