@@ -17,6 +17,7 @@ on:
       - fix/sandbox-billing-admin-ui
       - hardening/evaluator-closeout
       - release/auth-free-launch
+      - audit/dual-run-main-liara
   pull_request:
     branches:
       - main
