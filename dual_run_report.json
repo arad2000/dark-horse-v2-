@@ -162,7 +162,7 @@
         }
       },
       "main": {
-        "elapsed_ms": 0.933,
+        "elapsed_ms": 0.532,
         "ranked_ids": [
           "علوم تجربی",
           "ریاضی فیزیک",
@@ -435,7 +435,7 @@
         ]
       },
       "liara": {
-        "elapsed_ms": 0.245,
+        "elapsed_ms": 0.148,
         "ranked_ids": [
           "علوم تجربی",
           "ریاضی فیزیک",
@@ -756,7 +756,7 @@
         }
       },
       "main": {
-        "elapsed_ms": 0.864,
+        "elapsed_ms": 0.459,
         "ranked_ids": [
           "ریاضی فیزیک",
           "علوم تجربی",
@@ -1017,7 +1017,7 @@
         ]
       },
       "liara": {
-        "elapsed_ms": 0.223,
+        "elapsed_ms": 0.132,
         "ranked_ids": [
           "ریاضی فیزیک",
           "علوم تجربی",
@@ -1326,7 +1326,7 @@
         }
       },
       "main": {
-        "elapsed_ms": 0.87,
+        "elapsed_ms": 0.457,
         "ranked_ids": [
           "ریاضی فیزیک",
           "علوم انسانی",
@@ -1613,7 +1613,7 @@
         ]
       },
       "liara": {
-        "elapsed_ms": 0.239,
+        "elapsed_ms": 0.127,
         "ranked_ids": [
           "ریاضی فیزیک",
           "علوم انسانی",
@@ -1916,20 +1916,1094 @@
         "max_score_delta": 0.0,
         "strict_tolerance": 1e-09,
         "relaxed_tolerance": 1e-06,
-        "rank1_main": null,
-        "rank1_liara": null
+        "rank1_main": {
+          "id": 1,
+          "name": "پزشکی",
+          "score": 55.0,
+          "components": {
+            "m_score": 100.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            33,
+            104,
+            37
+          ]
+        },
+        "rank1_liara": {
+          "id": 1,
+          "name": "پزشکی",
+          "score": 55.0,
+          "components": {
+            "m_score": 100.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            33,
+            104,
+            37
+          ]
+        }
       },
       "main": {
-        "elapsed_ms": 0.591,
-        "ranked_ids": [],
-        "ranking": [],
-        "raw_top5": []
+        "elapsed_ms": 19.443,
+        "ranked_ids": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "ranking": [
+          {
+            "id": 1,
+            "name": "پزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              33,
+              104,
+              37
+            ]
+          },
+          {
+            "id": 2,
+            "name": "دندانپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              15,
+              10,
+              137
+            ]
+          },
+          {
+            "id": 3,
+            "name": "داروسازی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              16,
+              28,
+              29
+            ]
+          },
+          {
+            "id": 4,
+            "name": "دامپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              10,
+              27,
+              7
+            ]
+          },
+          {
+            "id": 5,
+            "name": "پرستاری",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              6,
+              37,
+              109
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "major_id": 1,
+            "major_name_fa": "پزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "MED-001",
+                    "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                  },
+                  {
+                    "code": "MED-002",
+                    "description": "حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش"
+                  },
+                  {
+                    "code": "MED-003",
+                    "description": "ایستادن در اتاق عمل و حس کردن بار مسئولیت جان یک انسان"
+                  },
+                  {
+                    "code": "MED-004",
+                    "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                  },
+                  {
+                    "code": "MED-005",
+                    "description": "تصمیم‌گیری آنی در اورژانس وقتی همه منتظر فرمان تو هستند"
+                  },
+                  {
+                    "code": "MED-006",
+                    "description": "توضیح دادن تشخیص سخت به خانواده بیمار، وقتی کلمات درست را یکی‌یکی انتخاب می‌کنی"
+                  },
+                  {
+                    "code": "MED-007",
+                    "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای، حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "تشخیصگر-نجاتبخش-پزشکی",
+                "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 33,
+                  "major_name": "ژنتیک پزشکی",
+                  "distance": 0.139,
+                  "value_distance": 0.128,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 104,
+                  "major_name": "فقه و مبانی حقوق",
+                  "distance": 0.143,
+                  "value_distance": 0.095,
+                  "strategy_distance": 0.193,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.146,
+                  "value_distance": 0.139,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد."
+            }
+          },
+          {
+            "major_id": 2,
+            "major_name_fa": "دندانپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "DENT-001",
+                    "description": "تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار"
+                  },
+                  {
+                    "code": "DENT-002",
+                    "description": "ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید"
+                  },
+                  {
+                    "code": "DENT-003",
+                    "description": "کار در فضای کوچک دهان با ابزارهای ظریف، مثل یک جراح مینیاتوریست"
+                  },
+                  {
+                    "code": "DENT-004",
+                    "description": "ترکیب حس مجسمه‌سازی و پزشکی در بازسازی یک دندان"
+                  },
+                  {
+                    "code": "DENT-005",
+                    "description": "حس قدرت و کنترل مطلق وقتی بیمار روی یونیت به تو اعتماد دارد"
+                  },
+                  {
+                    "code": "DENT-006",
+                    "description": "بوی کامپوزیت تازه و صدای آرام توربین دندانپزشکی در یک درمانگاه خلوت"
+                  },
+                  {
+                    "code": "DENT-007",
+                    "description": "کار دقیق روی دندان دردناک و حس کردن لحظه‌ای که بیمار بعد از ماه‌ها، بدون ترس دهانش را باز می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دندانپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار، ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "جراح-زیبایی‌ساز",
+                "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 15,
+                  "major_name": "اعضای مصنوعی",
+                  "distance": 0.18,
+                  "value_distance": 0.168,
+                  "strategy_distance": 0.198,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.187,
+                  "value_distance": 0.205,
+                  "strategy_distance": 0.158,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 137,
+                  "major_name": "طراحی صنعتی",
+                  "distance": 0.207,
+                  "value_distance": 0.226,
+                  "strategy_distance": 0.176,
+                  "group": "هنر",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند."
+            }
+          },
+          {
+            "major_id": 3,
+            "major_name_fa": "داروسازی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "PHAR-001",
+                    "description": "درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین"
+                  },
+                  {
+                    "code": "PHAR-002",
+                    "description": "کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند"
+                  },
+                  {
+                    "code": "PHAR-003",
+                    "description": "ساختن داروی ترکیبی خاص برای بیماری با نیاز منحصربه‌فرد"
+                  },
+                  {
+                    "code": "PHAR-004",
+                    "description": "مشاوره به بیماری که همزمان ۷ دارو مصرف می‌کند و نظم دادن به آن"
+                  },
+                  {
+                    "code": "PHAR-005",
+                    "description": "ساده کردن پیچیدگی داروها برای بیماری که گیج و نگران است"
+                  },
+                  {
+                    "code": "PHAR-006",
+                    "description": "ایستادن پشت پیشخوان داروخانه و حس کردن مسئولیت لحظه‌ای که داروی حیاتی را به دست بیمار می‌رسانی"
+                  },
+                  {
+                    "code": "PHAR-007",
+                    "description": "تنظیم فرمولاسیون دارو ساعت‌ها روی کاغذ و در آزمایشگاه تا به تعادلی برسی که هم اثر کند و هم عارضه کم داشته باشد"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 داروسازی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین، کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مولکول‌شناس-درمانگر",
+                "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 16,
+                  "major_name": "علوم آزمایشگاهی",
+                  "distance": 0.105,
+                  "value_distance": 0.121,
+                  "strategy_distance": 0.076,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 28,
+                  "major_name": "بیوشیمی بالینی",
+                  "distance": 0.134,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.154,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 29,
+                  "major_name": "میکروبیولوژی پزشکی",
+                  "distance": 0.134,
+                  "value_distance": 0.133,
+                  "strategy_distance": 0.136,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد."
+            }
+          },
+          {
+            "major_id": 4,
+            "major_name_fa": "دامپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "VET-001",
+                    "description": "جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش"
+                  },
+                  {
+                    "code": "VET-002",
+                    "description": "تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید"
+                  },
+                  {
+                    "code": "VET-003",
+                    "description": "معاینهٔ اسب قبل از مسابقه و تأیید سلامت کاملش"
+                  },
+                  {
+                    "code": "VET-004",
+                    "description": "واکسیناسیون یک گلهٔ بزرگ در یک روز"
+                  },
+                  {
+                    "code": "VET-005",
+                    "description": "آرام کردن سگ ترسیده و انجام معاینه بدون گاز گرفتن"
+                  },
+                  {
+                    "code": "VET-006",
+                    "description": "بوی یونجه و ضدعفونی‌کننده در یک درمانگاه دامپزشکی روستایی در صبح زود"
+                  },
+                  {
+                    "code": "VET-007",
+                    "description": "دیدن تولد گوسالهٔ سالم بعد از سخت‌زایی"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دامپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش، تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "حیات‌پزشک-همدل",
+                "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.166,
+                  "value_distance": 0.184,
+                  "strategy_distance": 0.137,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 27,
+                  "major_name": "علوم تغذیه",
+                  "distance": 0.169,
+                  "value_distance": 0.17,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 7,
+                  "major_name": "فوریت‌های پزشکی",
+                  "distance": 0.179,
+                  "value_distance": 0.187,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند."
+            }
+          },
+          {
+            "major_id": 5,
+            "major_name_fa": "پرستاری",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "NURS-001",
+                    "description": "گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله"
+                  },
+                  {
+                    "code": "NURS-002",
+                    "description": "تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود"
+                  },
+                  {
+                    "code": "NURS-003",
+                    "description": "مراقبت شبانه از بیماری که هیچ‌کس دیگر کنارش نیست"
+                  },
+                  {
+                    "code": "NURS-004",
+                    "description": "تنظیم دقیق پمپ سرم و داروها، مثل خلبانی که سیستم را هدایت می‌کند، و تعویض پانسمان پیچیده با دقت وسواس‌گونه"
+                  },
+                  {
+                    "code": "NURS-005",
+                    "description": "هماهنگ کردن پزشک، بیمار و خانواده برای بهترین تصمیم"
+                  },
+                  {
+                    "code": "NURS-006",
+                    "description": "قدم زدن در بخش در سکوت نیمه‌شب و چک کردن تک‌تک بیماران، وقتی همه آرام خوابیده‌اند"
+                  },
+                  {
+                    "code": "NURS-007",
+                    "description": "مراقبت از بیمار بدحال در شیفت شب، وقتی خسته‌ای اما حواست به هر تغییر کوچک علائم است"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پرستاری: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله، تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مراقبت‌گر-همراه",
+                "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 6,
+                  "major_name": "مامایی",
+                  "distance": 0.131,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.146,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.149,
+                  "value_distance": 0.137,
+                  "strategy_distance": 0.166,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 109,
+                  "major_name": "آموزش ابتدایی",
+                  "distance": 0.16,
+                  "value_distance": 0.161,
+                  "strategy_distance": 0.157,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد."
+            }
+          }
+        ]
       },
       "liara": {
-        "elapsed_ms": 0.52,
-        "ranked_ids": [],
-        "ranking": [],
-        "raw_top5": []
+        "elapsed_ms": 0.696,
+        "ranked_ids": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "ranking": [
+          {
+            "id": 1,
+            "name": "پزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              33,
+              104,
+              37
+            ]
+          },
+          {
+            "id": 2,
+            "name": "دندانپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              15,
+              10,
+              137
+            ]
+          },
+          {
+            "id": 3,
+            "name": "داروسازی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              16,
+              28,
+              29
+            ]
+          },
+          {
+            "id": 4,
+            "name": "دامپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              10,
+              27,
+              7
+            ]
+          },
+          {
+            "id": 5,
+            "name": "پرستاری",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              6,
+              37,
+              109
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "major_id": 1,
+            "major_name_fa": "پزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "MED-001",
+                    "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                  },
+                  {
+                    "code": "MED-002",
+                    "description": "حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش"
+                  },
+                  {
+                    "code": "MED-003",
+                    "description": "ایستادن در اتاق عمل و حس کردن بار مسئولیت جان یک انسان"
+                  },
+                  {
+                    "code": "MED-004",
+                    "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                  },
+                  {
+                    "code": "MED-005",
+                    "description": "تصمیم‌گیری آنی در اورژانس وقتی همه منتظر فرمان تو هستند"
+                  },
+                  {
+                    "code": "MED-006",
+                    "description": "توضیح دادن تشخیص سخت به خانواده بیمار، وقتی کلمات درست را یکی‌یکی انتخاب می‌کنی"
+                  },
+                  {
+                    "code": "MED-007",
+                    "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای، حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "تشخیصگر-نجاتبخش-پزشکی",
+                "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 33,
+                  "major_name": "ژنتیک پزشکی",
+                  "distance": 0.139,
+                  "value_distance": 0.128,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 104,
+                  "major_name": "فقه و مبانی حقوق",
+                  "distance": 0.143,
+                  "value_distance": 0.095,
+                  "strategy_distance": 0.193,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.146,
+                  "value_distance": 0.139,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد."
+            }
+          },
+          {
+            "major_id": 2,
+            "major_name_fa": "دندانپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "DENT-001",
+                    "description": "تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار"
+                  },
+                  {
+                    "code": "DENT-002",
+                    "description": "ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید"
+                  },
+                  {
+                    "code": "DENT-003",
+                    "description": "کار در فضای کوچک دهان با ابزارهای ظریف، مثل یک جراح مینیاتوریست"
+                  },
+                  {
+                    "code": "DENT-004",
+                    "description": "ترکیب حس مجسمه‌سازی و پزشکی در بازسازی یک دندان"
+                  },
+                  {
+                    "code": "DENT-005",
+                    "description": "حس قدرت و کنترل مطلق وقتی بیمار روی یونیت به تو اعتماد دارد"
+                  },
+                  {
+                    "code": "DENT-006",
+                    "description": "بوی کامپوزیت تازه و صدای آرام توربین دندانپزشکی در یک درمانگاه خلوت"
+                  },
+                  {
+                    "code": "DENT-007",
+                    "description": "کار دقیق روی دندان دردناک و حس کردن لحظه‌ای که بیمار بعد از ماه‌ها، بدون ترس دهانش را باز می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دندانپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار، ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "جراح-زیبایی‌ساز",
+                "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 15,
+                  "major_name": "اعضای مصنوعی",
+                  "distance": 0.18,
+                  "value_distance": 0.168,
+                  "strategy_distance": 0.198,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.187,
+                  "value_distance": 0.205,
+                  "strategy_distance": 0.158,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 137,
+                  "major_name": "طراحی صنعتی",
+                  "distance": 0.207,
+                  "value_distance": 0.226,
+                  "strategy_distance": 0.176,
+                  "group": "هنر",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند."
+            }
+          },
+          {
+            "major_id": 3,
+            "major_name_fa": "داروسازی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "PHAR-001",
+                    "description": "درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین"
+                  },
+                  {
+                    "code": "PHAR-002",
+                    "description": "کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند"
+                  },
+                  {
+                    "code": "PHAR-003",
+                    "description": "ساختن داروی ترکیبی خاص برای بیماری با نیاز منحصربه‌فرد"
+                  },
+                  {
+                    "code": "PHAR-004",
+                    "description": "مشاوره به بیماری که همزمان ۷ دارو مصرف می‌کند و نظم دادن به آن"
+                  },
+                  {
+                    "code": "PHAR-005",
+                    "description": "ساده کردن پیچیدگی داروها برای بیماری که گیج و نگران است"
+                  },
+                  {
+                    "code": "PHAR-006",
+                    "description": "ایستادن پشت پیشخوان داروخانه و حس کردن مسئولیت لحظه‌ای که داروی حیاتی را به دست بیمار می‌رسانی"
+                  },
+                  {
+                    "code": "PHAR-007",
+                    "description": "تنظیم فرمولاسیون دارو ساعت‌ها روی کاغذ و در آزمایشگاه تا به تعادلی برسی که هم اثر کند و هم عارضه کم داشته باشد"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 داروسازی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین، کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مولکول‌شناس-درمانگر",
+                "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 16,
+                  "major_name": "علوم آزمایشگاهی",
+                  "distance": 0.105,
+                  "value_distance": 0.121,
+                  "strategy_distance": 0.076,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 28,
+                  "major_name": "بیوشیمی بالینی",
+                  "distance": 0.134,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.154,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 29,
+                  "major_name": "میکروبیولوژی پزشکی",
+                  "distance": 0.134,
+                  "value_distance": 0.133,
+                  "strategy_distance": 0.136,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد."
+            }
+          },
+          {
+            "major_id": 4,
+            "major_name_fa": "دامپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "VET-001",
+                    "description": "جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش"
+                  },
+                  {
+                    "code": "VET-002",
+                    "description": "تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید"
+                  },
+                  {
+                    "code": "VET-003",
+                    "description": "معاینهٔ اسب قبل از مسابقه و تأیید سلامت کاملش"
+                  },
+                  {
+                    "code": "VET-004",
+                    "description": "واکسیناسیون یک گلهٔ بزرگ در یک روز"
+                  },
+                  {
+                    "code": "VET-005",
+                    "description": "آرام کردن سگ ترسیده و انجام معاینه بدون گاز گرفتن"
+                  },
+                  {
+                    "code": "VET-006",
+                    "description": "بوی یونجه و ضدعفونی‌کننده در یک درمانگاه دامپزشکی روستایی در صبح زود"
+                  },
+                  {
+                    "code": "VET-007",
+                    "description": "دیدن تولد گوسالهٔ سالم بعد از سخت‌زایی"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دامپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش، تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "حیات‌پزشک-همدل",
+                "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.166,
+                  "value_distance": 0.184,
+                  "strategy_distance": 0.137,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 27,
+                  "major_name": "علوم تغذیه",
+                  "distance": 0.169,
+                  "value_distance": 0.17,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 7,
+                  "major_name": "فوریت‌های پزشکی",
+                  "distance": 0.179,
+                  "value_distance": 0.187,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند."
+            }
+          },
+          {
+            "major_id": 5,
+            "major_name_fa": "پرستاری",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "NURS-001",
+                    "description": "گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله"
+                  },
+                  {
+                    "code": "NURS-002",
+                    "description": "تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود"
+                  },
+                  {
+                    "code": "NURS-003",
+                    "description": "مراقبت شبانه از بیماری که هیچ‌کس دیگر کنارش نیست"
+                  },
+                  {
+                    "code": "NURS-004",
+                    "description": "تنظیم دقیق پمپ سرم و داروها، مثل خلبانی که سیستم را هدایت می‌کند، و تعویض پانسمان پیچیده با دقت وسواس‌گونه"
+                  },
+                  {
+                    "code": "NURS-005",
+                    "description": "هماهنگ کردن پزشک، بیمار و خانواده برای بهترین تصمیم"
+                  },
+                  {
+                    "code": "NURS-006",
+                    "description": "قدم زدن در بخش در سکوت نیمه‌شب و چک کردن تک‌تک بیماران، وقتی همه آرام خوابیده‌اند"
+                  },
+                  {
+                    "code": "NURS-007",
+                    "description": "مراقبت از بیمار بدحال در شیفت شب، وقتی خسته‌ای اما حواست به هر تغییر کوچک علائم است"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پرستاری: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله، تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مراقبت‌گر-همراه",
+                "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 6,
+                  "major_name": "مامایی",
+                  "distance": 0.131,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.146,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.149,
+                  "value_distance": 0.137,
+                  "strategy_distance": 0.166,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 109,
+                  "major_name": "آموزش ابتدایی",
+                  "distance": 0.16,
+                  "value_distance": 0.161,
+                  "strategy_distance": 0.157,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد."
+            }
+          }
+        ]
       }
     },
     {
@@ -1948,20 +3022,1094 @@
         "max_score_delta": 0.0,
         "strict_tolerance": 1e-09,
         "relaxed_tolerance": 1e-06,
-        "rank1_main": null,
-        "rank1_liara": null
+        "rank1_main": {
+          "id": 1,
+          "name": "پزشکی",
+          "score": 55.0,
+          "components": {
+            "m_score": 100.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            33,
+            104,
+            37
+          ]
+        },
+        "rank1_liara": {
+          "id": 1,
+          "name": "پزشکی",
+          "score": 55.0,
+          "components": {
+            "m_score": 100.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            33,
+            104,
+            37
+          ]
+        }
       },
       "main": {
-        "elapsed_ms": 0.492,
-        "ranked_ids": [],
-        "ranking": [],
-        "raw_top5": []
+        "elapsed_ms": 19.177,
+        "ranked_ids": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "ranking": [
+          {
+            "id": 1,
+            "name": "پزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              33,
+              104,
+              37
+            ]
+          },
+          {
+            "id": 2,
+            "name": "دندانپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              15,
+              10,
+              137
+            ]
+          },
+          {
+            "id": 3,
+            "name": "داروسازی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              16,
+              28,
+              29
+            ]
+          },
+          {
+            "id": 4,
+            "name": "دامپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              10,
+              27,
+              7
+            ]
+          },
+          {
+            "id": 5,
+            "name": "پرستاری",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              6,
+              37,
+              109
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "major_id": 1,
+            "major_name_fa": "پزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "MED-001",
+                    "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                  },
+                  {
+                    "code": "MED-002",
+                    "description": "حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش"
+                  },
+                  {
+                    "code": "MED-003",
+                    "description": "ایستادن در اتاق عمل و حس کردن بار مسئولیت جان یک انسان"
+                  },
+                  {
+                    "code": "MED-004",
+                    "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                  },
+                  {
+                    "code": "MED-005",
+                    "description": "تصمیم‌گیری آنی در اورژانس وقتی همه منتظر فرمان تو هستند"
+                  },
+                  {
+                    "code": "MED-006",
+                    "description": "توضیح دادن تشخیص سخت به خانواده بیمار، وقتی کلمات درست را یکی‌یکی انتخاب می‌کنی"
+                  },
+                  {
+                    "code": "MED-007",
+                    "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای، حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "تشخیصگر-نجاتبخش-پزشکی",
+                "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 33,
+                  "major_name": "ژنتیک پزشکی",
+                  "distance": 0.139,
+                  "value_distance": 0.128,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 104,
+                  "major_name": "فقه و مبانی حقوق",
+                  "distance": 0.143,
+                  "value_distance": 0.095,
+                  "strategy_distance": 0.193,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.146,
+                  "value_distance": 0.139,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد."
+            }
+          },
+          {
+            "major_id": 2,
+            "major_name_fa": "دندانپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "DENT-001",
+                    "description": "تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار"
+                  },
+                  {
+                    "code": "DENT-002",
+                    "description": "ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید"
+                  },
+                  {
+                    "code": "DENT-003",
+                    "description": "کار در فضای کوچک دهان با ابزارهای ظریف، مثل یک جراح مینیاتوریست"
+                  },
+                  {
+                    "code": "DENT-004",
+                    "description": "ترکیب حس مجسمه‌سازی و پزشکی در بازسازی یک دندان"
+                  },
+                  {
+                    "code": "DENT-005",
+                    "description": "حس قدرت و کنترل مطلق وقتی بیمار روی یونیت به تو اعتماد دارد"
+                  },
+                  {
+                    "code": "DENT-006",
+                    "description": "بوی کامپوزیت تازه و صدای آرام توربین دندانپزشکی در یک درمانگاه خلوت"
+                  },
+                  {
+                    "code": "DENT-007",
+                    "description": "کار دقیق روی دندان دردناک و حس کردن لحظه‌ای که بیمار بعد از ماه‌ها، بدون ترس دهانش را باز می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دندانپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار، ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "جراح-زیبایی‌ساز",
+                "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 15,
+                  "major_name": "اعضای مصنوعی",
+                  "distance": 0.18,
+                  "value_distance": 0.168,
+                  "strategy_distance": 0.198,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.187,
+                  "value_distance": 0.205,
+                  "strategy_distance": 0.158,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 137,
+                  "major_name": "طراحی صنعتی",
+                  "distance": 0.207,
+                  "value_distance": 0.226,
+                  "strategy_distance": 0.176,
+                  "group": "هنر",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند."
+            }
+          },
+          {
+            "major_id": 3,
+            "major_name_fa": "داروسازی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "PHAR-001",
+                    "description": "درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین"
+                  },
+                  {
+                    "code": "PHAR-002",
+                    "description": "کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند"
+                  },
+                  {
+                    "code": "PHAR-003",
+                    "description": "ساختن داروی ترکیبی خاص برای بیماری با نیاز منحصربه‌فرد"
+                  },
+                  {
+                    "code": "PHAR-004",
+                    "description": "مشاوره به بیماری که همزمان ۷ دارو مصرف می‌کند و نظم دادن به آن"
+                  },
+                  {
+                    "code": "PHAR-005",
+                    "description": "ساده کردن پیچیدگی داروها برای بیماری که گیج و نگران است"
+                  },
+                  {
+                    "code": "PHAR-006",
+                    "description": "ایستادن پشت پیشخوان داروخانه و حس کردن مسئولیت لحظه‌ای که داروی حیاتی را به دست بیمار می‌رسانی"
+                  },
+                  {
+                    "code": "PHAR-007",
+                    "description": "تنظیم فرمولاسیون دارو ساعت‌ها روی کاغذ و در آزمایشگاه تا به تعادلی برسی که هم اثر کند و هم عارضه کم داشته باشد"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 داروسازی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین، کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مولکول‌شناس-درمانگر",
+                "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 16,
+                  "major_name": "علوم آزمایشگاهی",
+                  "distance": 0.105,
+                  "value_distance": 0.121,
+                  "strategy_distance": 0.076,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 28,
+                  "major_name": "بیوشیمی بالینی",
+                  "distance": 0.134,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.154,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 29,
+                  "major_name": "میکروبیولوژی پزشکی",
+                  "distance": 0.134,
+                  "value_distance": 0.133,
+                  "strategy_distance": 0.136,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد."
+            }
+          },
+          {
+            "major_id": 4,
+            "major_name_fa": "دامپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "VET-001",
+                    "description": "جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش"
+                  },
+                  {
+                    "code": "VET-002",
+                    "description": "تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید"
+                  },
+                  {
+                    "code": "VET-003",
+                    "description": "معاینهٔ اسب قبل از مسابقه و تأیید سلامت کاملش"
+                  },
+                  {
+                    "code": "VET-004",
+                    "description": "واکسیناسیون یک گلهٔ بزرگ در یک روز"
+                  },
+                  {
+                    "code": "VET-005",
+                    "description": "آرام کردن سگ ترسیده و انجام معاینه بدون گاز گرفتن"
+                  },
+                  {
+                    "code": "VET-006",
+                    "description": "بوی یونجه و ضدعفونی‌کننده در یک درمانگاه دامپزشکی روستایی در صبح زود"
+                  },
+                  {
+                    "code": "VET-007",
+                    "description": "دیدن تولد گوسالهٔ سالم بعد از سخت‌زایی"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دامپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش، تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "حیات‌پزشک-همدل",
+                "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.166,
+                  "value_distance": 0.184,
+                  "strategy_distance": 0.137,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 27,
+                  "major_name": "علوم تغذیه",
+                  "distance": 0.169,
+                  "value_distance": 0.17,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 7,
+                  "major_name": "فوریت‌های پزشکی",
+                  "distance": 0.179,
+                  "value_distance": 0.187,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند."
+            }
+          },
+          {
+            "major_id": 5,
+            "major_name_fa": "پرستاری",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "NURS-001",
+                    "description": "گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله"
+                  },
+                  {
+                    "code": "NURS-002",
+                    "description": "تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود"
+                  },
+                  {
+                    "code": "NURS-003",
+                    "description": "مراقبت شبانه از بیماری که هیچ‌کس دیگر کنارش نیست"
+                  },
+                  {
+                    "code": "NURS-004",
+                    "description": "تنظیم دقیق پمپ سرم و داروها، مثل خلبانی که سیستم را هدایت می‌کند، و تعویض پانسمان پیچیده با دقت وسواس‌گونه"
+                  },
+                  {
+                    "code": "NURS-005",
+                    "description": "هماهنگ کردن پزشک، بیمار و خانواده برای بهترین تصمیم"
+                  },
+                  {
+                    "code": "NURS-006",
+                    "description": "قدم زدن در بخش در سکوت نیمه‌شب و چک کردن تک‌تک بیماران، وقتی همه آرام خوابیده‌اند"
+                  },
+                  {
+                    "code": "NURS-007",
+                    "description": "مراقبت از بیمار بدحال در شیفت شب، وقتی خسته‌ای اما حواست به هر تغییر کوچک علائم است"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پرستاری: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله، تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مراقبت‌گر-همراه",
+                "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 6,
+                  "major_name": "مامایی",
+                  "distance": 0.131,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.146,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.149,
+                  "value_distance": 0.137,
+                  "strategy_distance": 0.166,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 109,
+                  "major_name": "آموزش ابتدایی",
+                  "distance": 0.16,
+                  "value_distance": 0.161,
+                  "strategy_distance": 0.157,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد."
+            }
+          }
+        ]
       },
       "liara": {
-        "elapsed_ms": 0.497,
-        "ranked_ids": [],
-        "ranking": [],
-        "raw_top5": []
+        "elapsed_ms": 0.655,
+        "ranked_ids": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "ranking": [
+          {
+            "id": 1,
+            "name": "پزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              33,
+              104,
+              37
+            ]
+          },
+          {
+            "id": 2,
+            "name": "دندانپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              15,
+              10,
+              137
+            ]
+          },
+          {
+            "id": 3,
+            "name": "داروسازی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              16,
+              28,
+              29
+            ]
+          },
+          {
+            "id": 4,
+            "name": "دامپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              10,
+              27,
+              7
+            ]
+          },
+          {
+            "id": 5,
+            "name": "پرستاری",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              6,
+              37,
+              109
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "major_id": 1,
+            "major_name_fa": "پزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "MED-001",
+                    "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                  },
+                  {
+                    "code": "MED-002",
+                    "description": "حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش"
+                  },
+                  {
+                    "code": "MED-003",
+                    "description": "ایستادن در اتاق عمل و حس کردن بار مسئولیت جان یک انسان"
+                  },
+                  {
+                    "code": "MED-004",
+                    "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                  },
+                  {
+                    "code": "MED-005",
+                    "description": "تصمیم‌گیری آنی در اورژانس وقتی همه منتظر فرمان تو هستند"
+                  },
+                  {
+                    "code": "MED-006",
+                    "description": "توضیح دادن تشخیص سخت به خانواده بیمار، وقتی کلمات درست را یکی‌یکی انتخاب می‌کنی"
+                  },
+                  {
+                    "code": "MED-007",
+                    "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای، حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "تشخیصگر-نجاتبخش-پزشکی",
+                "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 33,
+                  "major_name": "ژنتیک پزشکی",
+                  "distance": 0.139,
+                  "value_distance": 0.128,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 104,
+                  "major_name": "فقه و مبانی حقوق",
+                  "distance": 0.143,
+                  "value_distance": 0.095,
+                  "strategy_distance": 0.193,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.146,
+                  "value_distance": 0.139,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد."
+            }
+          },
+          {
+            "major_id": 2,
+            "major_name_fa": "دندانپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "DENT-001",
+                    "description": "تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار"
+                  },
+                  {
+                    "code": "DENT-002",
+                    "description": "ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید"
+                  },
+                  {
+                    "code": "DENT-003",
+                    "description": "کار در فضای کوچک دهان با ابزارهای ظریف، مثل یک جراح مینیاتوریست"
+                  },
+                  {
+                    "code": "DENT-004",
+                    "description": "ترکیب حس مجسمه‌سازی و پزشکی در بازسازی یک دندان"
+                  },
+                  {
+                    "code": "DENT-005",
+                    "description": "حس قدرت و کنترل مطلق وقتی بیمار روی یونیت به تو اعتماد دارد"
+                  },
+                  {
+                    "code": "DENT-006",
+                    "description": "بوی کامپوزیت تازه و صدای آرام توربین دندانپزشکی در یک درمانگاه خلوت"
+                  },
+                  {
+                    "code": "DENT-007",
+                    "description": "کار دقیق روی دندان دردناک و حس کردن لحظه‌ای که بیمار بعد از ماه‌ها، بدون ترس دهانش را باز می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دندانپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار، ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "جراح-زیبایی‌ساز",
+                "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 15,
+                  "major_name": "اعضای مصنوعی",
+                  "distance": 0.18,
+                  "value_distance": 0.168,
+                  "strategy_distance": 0.198,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.187,
+                  "value_distance": 0.205,
+                  "strategy_distance": 0.158,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 137,
+                  "major_name": "طراحی صنعتی",
+                  "distance": 0.207,
+                  "value_distance": 0.226,
+                  "strategy_distance": 0.176,
+                  "group": "هنر",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند."
+            }
+          },
+          {
+            "major_id": 3,
+            "major_name_fa": "داروسازی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "PHAR-001",
+                    "description": "درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین"
+                  },
+                  {
+                    "code": "PHAR-002",
+                    "description": "کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند"
+                  },
+                  {
+                    "code": "PHAR-003",
+                    "description": "ساختن داروی ترکیبی خاص برای بیماری با نیاز منحصربه‌فرد"
+                  },
+                  {
+                    "code": "PHAR-004",
+                    "description": "مشاوره به بیماری که همزمان ۷ دارو مصرف می‌کند و نظم دادن به آن"
+                  },
+                  {
+                    "code": "PHAR-005",
+                    "description": "ساده کردن پیچیدگی داروها برای بیماری که گیج و نگران است"
+                  },
+                  {
+                    "code": "PHAR-006",
+                    "description": "ایستادن پشت پیشخوان داروخانه و حس کردن مسئولیت لحظه‌ای که داروی حیاتی را به دست بیمار می‌رسانی"
+                  },
+                  {
+                    "code": "PHAR-007",
+                    "description": "تنظیم فرمولاسیون دارو ساعت‌ها روی کاغذ و در آزمایشگاه تا به تعادلی برسی که هم اثر کند و هم عارضه کم داشته باشد"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 داروسازی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین، کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مولکول‌شناس-درمانگر",
+                "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 16,
+                  "major_name": "علوم آزمایشگاهی",
+                  "distance": 0.105,
+                  "value_distance": 0.121,
+                  "strategy_distance": 0.076,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 28,
+                  "major_name": "بیوشیمی بالینی",
+                  "distance": 0.134,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.154,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 29,
+                  "major_name": "میکروبیولوژی پزشکی",
+                  "distance": 0.134,
+                  "value_distance": 0.133,
+                  "strategy_distance": 0.136,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد."
+            }
+          },
+          {
+            "major_id": 4,
+            "major_name_fa": "دامپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "VET-001",
+                    "description": "جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش"
+                  },
+                  {
+                    "code": "VET-002",
+                    "description": "تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید"
+                  },
+                  {
+                    "code": "VET-003",
+                    "description": "معاینهٔ اسب قبل از مسابقه و تأیید سلامت کاملش"
+                  },
+                  {
+                    "code": "VET-004",
+                    "description": "واکسیناسیون یک گلهٔ بزرگ در یک روز"
+                  },
+                  {
+                    "code": "VET-005",
+                    "description": "آرام کردن سگ ترسیده و انجام معاینه بدون گاز گرفتن"
+                  },
+                  {
+                    "code": "VET-006",
+                    "description": "بوی یونجه و ضدعفونی‌کننده در یک درمانگاه دامپزشکی روستایی در صبح زود"
+                  },
+                  {
+                    "code": "VET-007",
+                    "description": "دیدن تولد گوسالهٔ سالم بعد از سخت‌زایی"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دامپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش، تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "حیات‌پزشک-همدل",
+                "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.166,
+                  "value_distance": 0.184,
+                  "strategy_distance": 0.137,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 27,
+                  "major_name": "علوم تغذیه",
+                  "distance": 0.169,
+                  "value_distance": 0.17,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 7,
+                  "major_name": "فوریت‌های پزشکی",
+                  "distance": 0.179,
+                  "value_distance": 0.187,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند."
+            }
+          },
+          {
+            "major_id": 5,
+            "major_name_fa": "پرستاری",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "NURS-001",
+                    "description": "گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله"
+                  },
+                  {
+                    "code": "NURS-002",
+                    "description": "تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود"
+                  },
+                  {
+                    "code": "NURS-003",
+                    "description": "مراقبت شبانه از بیماری که هیچ‌کس دیگر کنارش نیست"
+                  },
+                  {
+                    "code": "NURS-004",
+                    "description": "تنظیم دقیق پمپ سرم و داروها، مثل خلبانی که سیستم را هدایت می‌کند، و تعویض پانسمان پیچیده با دقت وسواس‌گونه"
+                  },
+                  {
+                    "code": "NURS-005",
+                    "description": "هماهنگ کردن پزشک، بیمار و خانواده برای بهترین تصمیم"
+                  },
+                  {
+                    "code": "NURS-006",
+                    "description": "قدم زدن در بخش در سکوت نیمه‌شب و چک کردن تک‌تک بیماران، وقتی همه آرام خوابیده‌اند"
+                  },
+                  {
+                    "code": "NURS-007",
+                    "description": "مراقبت از بیمار بدحال در شیفت شب، وقتی خسته‌ای اما حواست به هر تغییر کوچک علائم است"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پرستاری: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله، تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مراقبت‌گر-همراه",
+                "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 6,
+                  "major_name": "مامایی",
+                  "distance": 0.131,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.146,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.149,
+                  "value_distance": 0.137,
+                  "strategy_distance": 0.166,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 109,
+                  "major_name": "آموزش ابتدایی",
+                  "distance": 0.16,
+                  "value_distance": 0.161,
+                  "strategy_distance": 0.157,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد."
+            }
+          }
+        ]
       }
     },
     {
@@ -1980,20 +4128,1094 @@
         "max_score_delta": 0.0,
         "strict_tolerance": 1e-09,
         "relaxed_tolerance": 1e-06,
-        "rank1_main": null,
-        "rank1_liara": null
+        "rank1_main": {
+          "id": 1,
+          "name": "پزشکی",
+          "score": 55.0,
+          "components": {
+            "m_score": 100.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            33,
+            104,
+            37
+          ]
+        },
+        "rank1_liara": {
+          "id": 1,
+          "name": "پزشکی",
+          "score": 55.0,
+          "components": {
+            "m_score": 100.0,
+            "s_score": 0.0,
+            "v_score": 0.0
+          },
+          "alternative_ids": [
+            33,
+            104,
+            37
+          ]
+        }
       },
       "main": {
-        "elapsed_ms": 0.565,
-        "ranked_ids": [],
-        "ranking": [],
-        "raw_top5": []
+        "elapsed_ms": 19.14,
+        "ranked_ids": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "ranking": [
+          {
+            "id": 1,
+            "name": "پزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              33,
+              104,
+              37
+            ]
+          },
+          {
+            "id": 2,
+            "name": "دندانپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              15,
+              10,
+              137
+            ]
+          },
+          {
+            "id": 3,
+            "name": "داروسازی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              16,
+              28,
+              29
+            ]
+          },
+          {
+            "id": 4,
+            "name": "دامپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              10,
+              27,
+              7
+            ]
+          },
+          {
+            "id": 5,
+            "name": "پرستاری",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              6,
+              37,
+              109
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "major_id": 1,
+            "major_name_fa": "پزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "MED-001",
+                    "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                  },
+                  {
+                    "code": "MED-002",
+                    "description": "حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش"
+                  },
+                  {
+                    "code": "MED-003",
+                    "description": "ایستادن در اتاق عمل و حس کردن بار مسئولیت جان یک انسان"
+                  },
+                  {
+                    "code": "MED-004",
+                    "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                  },
+                  {
+                    "code": "MED-005",
+                    "description": "تصمیم‌گیری آنی در اورژانس وقتی همه منتظر فرمان تو هستند"
+                  },
+                  {
+                    "code": "MED-006",
+                    "description": "توضیح دادن تشخیص سخت به خانواده بیمار، وقتی کلمات درست را یکی‌یکی انتخاب می‌کنی"
+                  },
+                  {
+                    "code": "MED-007",
+                    "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای، حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "تشخیصگر-نجاتبخش-پزشکی",
+                "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 33,
+                  "major_name": "ژنتیک پزشکی",
+                  "distance": 0.139,
+                  "value_distance": 0.128,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 104,
+                  "major_name": "فقه و مبانی حقوق",
+                  "distance": 0.143,
+                  "value_distance": 0.095,
+                  "strategy_distance": 0.193,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.146,
+                  "value_distance": 0.139,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد."
+            }
+          },
+          {
+            "major_id": 2,
+            "major_name_fa": "دندانپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "DENT-001",
+                    "description": "تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار"
+                  },
+                  {
+                    "code": "DENT-002",
+                    "description": "ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید"
+                  },
+                  {
+                    "code": "DENT-003",
+                    "description": "کار در فضای کوچک دهان با ابزارهای ظریف، مثل یک جراح مینیاتوریست"
+                  },
+                  {
+                    "code": "DENT-004",
+                    "description": "ترکیب حس مجسمه‌سازی و پزشکی در بازسازی یک دندان"
+                  },
+                  {
+                    "code": "DENT-005",
+                    "description": "حس قدرت و کنترل مطلق وقتی بیمار روی یونیت به تو اعتماد دارد"
+                  },
+                  {
+                    "code": "DENT-006",
+                    "description": "بوی کامپوزیت تازه و صدای آرام توربین دندانپزشکی در یک درمانگاه خلوت"
+                  },
+                  {
+                    "code": "DENT-007",
+                    "description": "کار دقیق روی دندان دردناک و حس کردن لحظه‌ای که بیمار بعد از ماه‌ها، بدون ترس دهانش را باز می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دندانپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار، ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "جراح-زیبایی‌ساز",
+                "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 15,
+                  "major_name": "اعضای مصنوعی",
+                  "distance": 0.18,
+                  "value_distance": 0.168,
+                  "strategy_distance": 0.198,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.187,
+                  "value_distance": 0.205,
+                  "strategy_distance": 0.158,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 137,
+                  "major_name": "طراحی صنعتی",
+                  "distance": 0.207,
+                  "value_distance": 0.226,
+                  "strategy_distance": 0.176,
+                  "group": "هنر",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند."
+            }
+          },
+          {
+            "major_id": 3,
+            "major_name_fa": "داروسازی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "PHAR-001",
+                    "description": "درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین"
+                  },
+                  {
+                    "code": "PHAR-002",
+                    "description": "کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند"
+                  },
+                  {
+                    "code": "PHAR-003",
+                    "description": "ساختن داروی ترکیبی خاص برای بیماری با نیاز منحصربه‌فرد"
+                  },
+                  {
+                    "code": "PHAR-004",
+                    "description": "مشاوره به بیماری که همزمان ۷ دارو مصرف می‌کند و نظم دادن به آن"
+                  },
+                  {
+                    "code": "PHAR-005",
+                    "description": "ساده کردن پیچیدگی داروها برای بیماری که گیج و نگران است"
+                  },
+                  {
+                    "code": "PHAR-006",
+                    "description": "ایستادن پشت پیشخوان داروخانه و حس کردن مسئولیت لحظه‌ای که داروی حیاتی را به دست بیمار می‌رسانی"
+                  },
+                  {
+                    "code": "PHAR-007",
+                    "description": "تنظیم فرمولاسیون دارو ساعت‌ها روی کاغذ و در آزمایشگاه تا به تعادلی برسی که هم اثر کند و هم عارضه کم داشته باشد"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 داروسازی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین، کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مولکول‌شناس-درمانگر",
+                "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 16,
+                  "major_name": "علوم آزمایشگاهی",
+                  "distance": 0.105,
+                  "value_distance": 0.121,
+                  "strategy_distance": 0.076,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 28,
+                  "major_name": "بیوشیمی بالینی",
+                  "distance": 0.134,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.154,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 29,
+                  "major_name": "میکروبیولوژی پزشکی",
+                  "distance": 0.134,
+                  "value_distance": 0.133,
+                  "strategy_distance": 0.136,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد."
+            }
+          },
+          {
+            "major_id": 4,
+            "major_name_fa": "دامپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "VET-001",
+                    "description": "جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش"
+                  },
+                  {
+                    "code": "VET-002",
+                    "description": "تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید"
+                  },
+                  {
+                    "code": "VET-003",
+                    "description": "معاینهٔ اسب قبل از مسابقه و تأیید سلامت کاملش"
+                  },
+                  {
+                    "code": "VET-004",
+                    "description": "واکسیناسیون یک گلهٔ بزرگ در یک روز"
+                  },
+                  {
+                    "code": "VET-005",
+                    "description": "آرام کردن سگ ترسیده و انجام معاینه بدون گاز گرفتن"
+                  },
+                  {
+                    "code": "VET-006",
+                    "description": "بوی یونجه و ضدعفونی‌کننده در یک درمانگاه دامپزشکی روستایی در صبح زود"
+                  },
+                  {
+                    "code": "VET-007",
+                    "description": "دیدن تولد گوسالهٔ سالم بعد از سخت‌زایی"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دامپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش، تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "حیات‌پزشک-همدل",
+                "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.166,
+                  "value_distance": 0.184,
+                  "strategy_distance": 0.137,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 27,
+                  "major_name": "علوم تغذیه",
+                  "distance": 0.169,
+                  "value_distance": 0.17,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 7,
+                  "major_name": "فوریت‌های پزشکی",
+                  "distance": 0.179,
+                  "value_distance": 0.187,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند."
+            }
+          },
+          {
+            "major_id": 5,
+            "major_name_fa": "پرستاری",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "NURS-001",
+                    "description": "گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله"
+                  },
+                  {
+                    "code": "NURS-002",
+                    "description": "تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود"
+                  },
+                  {
+                    "code": "NURS-003",
+                    "description": "مراقبت شبانه از بیماری که هیچ‌کس دیگر کنارش نیست"
+                  },
+                  {
+                    "code": "NURS-004",
+                    "description": "تنظیم دقیق پمپ سرم و داروها، مثل خلبانی که سیستم را هدایت می‌کند، و تعویض پانسمان پیچیده با دقت وسواس‌گونه"
+                  },
+                  {
+                    "code": "NURS-005",
+                    "description": "هماهنگ کردن پزشک، بیمار و خانواده برای بهترین تصمیم"
+                  },
+                  {
+                    "code": "NURS-006",
+                    "description": "قدم زدن در بخش در سکوت نیمه‌شب و چک کردن تک‌تک بیماران، وقتی همه آرام خوابیده‌اند"
+                  },
+                  {
+                    "code": "NURS-007",
+                    "description": "مراقبت از بیمار بدحال در شیفت شب، وقتی خسته‌ای اما حواست به هر تغییر کوچک علائم است"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پرستاری: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله، تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مراقبت‌گر-همراه",
+                "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 6,
+                  "major_name": "مامایی",
+                  "distance": 0.131,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.146,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.149,
+                  "value_distance": 0.137,
+                  "strategy_distance": 0.166,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 109,
+                  "major_name": "آموزش ابتدایی",
+                  "distance": 0.16,
+                  "value_distance": 0.161,
+                  "strategy_distance": 0.157,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد."
+            }
+          }
+        ]
       },
       "liara": {
-        "elapsed_ms": 0.574,
-        "ranked_ids": [],
-        "ranking": [],
-        "raw_top5": []
+        "elapsed_ms": 0.661,
+        "ranked_ids": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "ranking": [
+          {
+            "id": 1,
+            "name": "پزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              33,
+              104,
+              37
+            ]
+          },
+          {
+            "id": 2,
+            "name": "دندانپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              15,
+              10,
+              137
+            ]
+          },
+          {
+            "id": 3,
+            "name": "داروسازی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              16,
+              28,
+              29
+            ]
+          },
+          {
+            "id": 4,
+            "name": "دامپزشکی",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              10,
+              27,
+              7
+            ]
+          },
+          {
+            "id": 5,
+            "name": "پرستاری",
+            "score": 55.0,
+            "components": {
+              "m_score": 100.0,
+              "s_score": 0.0,
+              "v_score": 0.0
+            },
+            "alternative_ids": [
+              6,
+              37,
+              109
+            ]
+          }
+        ],
+        "raw_top5": [
+          {
+            "major_id": 1,
+            "major_name_fa": "پزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "MED-001",
+                    "description": "حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای"
+                  },
+                  {
+                    "code": "MED-002",
+                    "description": "حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش"
+                  },
+                  {
+                    "code": "MED-003",
+                    "description": "ایستادن در اتاق عمل و حس کردن بار مسئولیت جان یک انسان"
+                  },
+                  {
+                    "code": "MED-004",
+                    "description": "تشخیص بیماری نادری که دیگران نتوانسته‌اند، و اثبات آن با آزمایش"
+                  },
+                  {
+                    "code": "MED-005",
+                    "description": "تصمیم‌گیری آنی در اورژانس وقتی همه منتظر فرمان تو هستند"
+                  },
+                  {
+                    "code": "MED-006",
+                    "description": "توضیح دادن تشخیص سخت به خانواده بیمار، وقتی کلمات درست را یکی‌یکی انتخاب می‌کنی"
+                  },
+                  {
+                    "code": "MED-007",
+                    "description": "خواندن پرونده قطور در نیمه‌شب و پیدا کردن همان یک نکته که مسیر درمان را عوض می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: حدس زدن تشخیص در ۳۰ ثانیهٔ اول شرح حال، مثل یک کارآگاه حرفه‌ای، حل پازل علائم پراکنده و رسیدن به یک تشخیص منسجم و رضایت‌بخش و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "تشخیصگر-نجاتبخش-پزشکی",
+                "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 33,
+                  "major_name": "ژنتیک پزشکی",
+                  "distance": 0.139,
+                  "value_distance": 0.128,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 104,
+                  "major_name": "فقه و مبانی حقوق",
+                  "distance": 0.143,
+                  "value_distance": 0.095,
+                  "strategy_distance": 0.193,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.146,
+                  "value_distance": 0.139,
+                  "strategy_distance": 0.155,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با حدسِ کارآگاهیِ دقیق، علتِ پنهانِ بیماری را در کمتر از ۳۰ ثانیه کشف می‌کند و جانِ یک انسان را نجات می‌دهد."
+            }
+          },
+          {
+            "major_id": 2,
+            "major_name_fa": "دندانپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "DENT-001",
+                    "description": "تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار"
+                  },
+                  {
+                    "code": "DENT-002",
+                    "description": "ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید"
+                  },
+                  {
+                    "code": "DENT-003",
+                    "description": "کار در فضای کوچک دهان با ابزارهای ظریف، مثل یک جراح مینیاتوریست"
+                  },
+                  {
+                    "code": "DENT-004",
+                    "description": "ترکیب حس مجسمه‌سازی و پزشکی در بازسازی یک دندان"
+                  },
+                  {
+                    "code": "DENT-005",
+                    "description": "حس قدرت و کنترل مطلق وقتی بیمار روی یونیت به تو اعتماد دارد"
+                  },
+                  {
+                    "code": "DENT-006",
+                    "description": "بوی کامپوزیت تازه و صدای آرام توربین دندانپزشکی در یک درمانگاه خلوت"
+                  },
+                  {
+                    "code": "DENT-007",
+                    "description": "کار دقیق روی دندان دردناک و حس کردن لحظه‌ای که بیمار بعد از ماه‌ها، بدون ترس دهانش را باز می‌کند"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دندانپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: تراشیدن دندان با دقت میلی‌متری و دیدن انحنای نهایی کار، ساختن لبخندی که بیمار سال‌ها از نشان دادنش خجالت می‌کشید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "جراح-زیبایی‌ساز",
+                "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 15,
+                  "major_name": "اعضای مصنوعی",
+                  "distance": 0.18,
+                  "value_distance": 0.168,
+                  "strategy_distance": 0.198,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.187,
+                  "value_distance": 0.205,
+                  "strategy_distance": 0.158,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 137,
+                  "major_name": "طراحی صنعتی",
+                  "distance": 0.207,
+                  "value_distance": 0.226,
+                  "strategy_distance": 0.176,
+                  "group": "هنر",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک لبخندِ ناقص را به اثری هنری تبدیل می‌کند و بیمار، سال‌ها بعد با افتخار به آینه نگاه می‌کند."
+            }
+          },
+          {
+            "major_id": 3,
+            "major_name_fa": "داروسازی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "PHAR-001",
+                    "description": "درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین"
+                  },
+                  {
+                    "code": "PHAR-002",
+                    "description": "کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند"
+                  },
+                  {
+                    "code": "PHAR-003",
+                    "description": "ساختن داروی ترکیبی خاص برای بیماری با نیاز منحصربه‌فرد"
+                  },
+                  {
+                    "code": "PHAR-004",
+                    "description": "مشاوره به بیماری که همزمان ۷ دارو مصرف می‌کند و نظم دادن به آن"
+                  },
+                  {
+                    "code": "PHAR-005",
+                    "description": "ساده کردن پیچیدگی داروها برای بیماری که گیج و نگران است"
+                  },
+                  {
+                    "code": "PHAR-006",
+                    "description": "ایستادن پشت پیشخوان داروخانه و حس کردن مسئولیت لحظه‌ای که داروی حیاتی را به دست بیمار می‌رسانی"
+                  },
+                  {
+                    "code": "PHAR-007",
+                    "description": "تنظیم فرمولاسیون دارو ساعت‌ها روی کاغذ و در آزمایشگاه تا به تعادلی برسی که هم اثر کند و هم عارضه کم داشته باشد"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 داروسازی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: درک مکانیسم مولکولی یک دارو در سطح اتم و پروتئین، کشف تداخل دارویی خطرناکی که می‌توانست فاجعه بیافریند و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مولکول‌شناس-درمانگر",
+                "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 16,
+                  "major_name": "علوم آزمایشگاهی",
+                  "distance": 0.105,
+                  "value_distance": 0.121,
+                  "strategy_distance": 0.076,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 28,
+                  "major_name": "بیوشیمی بالینی",
+                  "distance": 0.134,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.154,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 29,
+                  "major_name": "میکروبیولوژی پزشکی",
+                  "distance": 0.134,
+                  "value_distance": 0.133,
+                  "strategy_distance": 0.136,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی یک تداخلِ داروییِ مرگبار را قبل از وقوع شناسایی می‌کند و درمانِ هزاران بیمار را با یک فرمولاسیونِ جدید، بهینه می‌سازد."
+            }
+          },
+          {
+            "major_id": 4,
+            "major_name_fa": "دامپزشکی",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "VET-001",
+                    "description": "جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش"
+                  },
+                  {
+                    "code": "VET-002",
+                    "description": "تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید"
+                  },
+                  {
+                    "code": "VET-003",
+                    "description": "معاینهٔ اسب قبل از مسابقه و تأیید سلامت کاملش"
+                  },
+                  {
+                    "code": "VET-004",
+                    "description": "واکسیناسیون یک گلهٔ بزرگ در یک روز"
+                  },
+                  {
+                    "code": "VET-005",
+                    "description": "آرام کردن سگ ترسیده و انجام معاینه بدون گاز گرفتن"
+                  },
+                  {
+                    "code": "VET-006",
+                    "description": "بوی یونجه و ضدعفونی‌کننده در یک درمانگاه دامپزشکی روستایی در صبح زود"
+                  },
+                  {
+                    "code": "VET-007",
+                    "description": "دیدن تولد گوسالهٔ سالم بعد از سخت‌زایی"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 دامپزشکی: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: جراحی روی سگ و دیدن بازگشت انرژی و دم‌تکان دادنش، تشخیص بیماری در گاوی که نمی‌تواند دردش را بگوید و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "حیات‌پزشک-همدل",
+                "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 10,
+                  "major_name": "فیزیوتراپی",
+                  "distance": 0.166,
+                  "value_distance": 0.184,
+                  "strategy_distance": 0.137,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 27,
+                  "major_name": "علوم تغذیه",
+                  "distance": 0.169,
+                  "value_distance": 0.17,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 7,
+                  "major_name": "فوریت‌های پزشکی",
+                  "distance": 0.179,
+                  "value_distance": 0.187,
+                  "strategy_distance": 0.167,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی با دستانِ خود، زندگی را به یک حیوانِ بی‌زبان بازمی‌گرداند و نگاهِ سپاس‌گزارِ صاحبش را می‌بیند."
+            }
+          },
+          {
+            "major_id": 5,
+            "major_name_fa": "پرستاری",
+            "realm_fa": "علوم پزشکی",
+            "individuality_fit": {
+              "score": 55.0,
+              "level": "همخوانی متوسط",
+              "market_demand_level": null,
+              "raw_components": {
+                "m_score": 100.0,
+                "s_score": 0.0,
+                "v_score": 0.0
+              },
+              "evidence": {
+                "micro_motives_matched": [
+                  {
+                    "code": "NURS-001",
+                    "description": "گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله"
+                  },
+                  {
+                    "code": "NURS-002",
+                    "description": "تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود"
+                  },
+                  {
+                    "code": "NURS-003",
+                    "description": "مراقبت شبانه از بیماری که هیچ‌کس دیگر کنارش نیست"
+                  },
+                  {
+                    "code": "NURS-004",
+                    "description": "تنظیم دقیق پمپ سرم و داروها، مثل خلبانی که سیستم را هدایت می‌کند، و تعویض پانسمان پیچیده با دقت وسواس‌گونه"
+                  },
+                  {
+                    "code": "NURS-005",
+                    "description": "هماهنگ کردن پزشک، بیمار و خانواده برای بهترین تصمیم"
+                  },
+                  {
+                    "code": "NURS-006",
+                    "description": "قدم زدن در بخش در سکوت نیمه‌شب و چک کردن تک‌تک بیماران، وقتی همه آرام خوابیده‌اند"
+                  },
+                  {
+                    "code": "NURS-007",
+                    "description": "مراقبت از بیمار بدحال در شیفت شب، وقتی خسته‌ای اما حواست به هر تغییر کوچک علائم است"
+                  }
+                ],
+                "warnings": [
+                  "راهبردهای شخصی شما با الگوی رایج این رشته تفاوت‌هایی دارد.",
+                  "برخی ارزش‌های بنیادین شما با اولویت‌های این رشته فاصله دارد."
+                ]
+              },
+              "personalized_description": "📌 پرستاری: خرده‌انگیزه‌های شما با این رشته همسو هستند، اما راهبردهای شخصی و ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارند. پیشنهاد می‌شود با آگاهی از این تفاوت‌ها، در انتخاب این مسیر باریک دقت بیشتری کنید. (جرقه‌ها: گرفتن دست بیمار در لحظات درد و آرام کردنش فقط با تُن صدا و چند جمله، تشخیص افت فشار یا تب خطرناک پیش از آنکه پزشک متوجه شود و 5 جرقهٔ دیگر)",
+              "archetype": {
+                "archetype": "مراقبت‌گر-همراه",
+                "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد.",
+                "dominant_traits": [],
+                "dominant_values": []
+              },
+              "alternative_paths": [
+                {
+                  "major_id": 6,
+                  "major_name": "مامایی",
+                  "distance": 0.131,
+                  "value_distance": 0.119,
+                  "strategy_distance": 0.146,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 37,
+                  "major_name": "سالمندشناسی",
+                  "distance": 0.149,
+                  "value_distance": 0.137,
+                  "strategy_distance": 0.166,
+                  "group": "علوم پزشکی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                },
+                {
+                  "major_id": 109,
+                  "major_name": "آموزش ابتدایی",
+                  "distance": 0.16,
+                  "value_distance": 0.161,
+                  "strategy_distance": 0.157,
+                  "group": "علوم انسانی",
+                  "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                }
+              ],
+              "fulfillment_source": "وقتی در سکوتِ نیمه‌شبِ بخش، با یک نگاه و یک جمله، ترسِ یک بیمارِ تنها را به آرامش تبدیل می‌کند و علائمِ حیاتیِ او را پایدار نگه می‌دارد."
+            }
+          }
+        ]
       }
     }
   ],
