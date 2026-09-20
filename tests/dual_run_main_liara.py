@@ -225,7 +225,7 @@ def invoke(engine: Any, fixture: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def compare_runs(main_run: dict[str, Any], liara_run: dict[str, Any]) -> dict[str, Any]:
+def compare_runs(target: str, main_run: dict[str, Any], liara_run: dict[str, Any]) -> dict[str, Any]:
     main_top = main_run["ranking"][:5]
     liara_top = liara_run["ranking"][:5]
     main_ids = [x["id"] for x in main_top]
@@ -249,7 +249,7 @@ def compare_runs(main_run: dict[str, Any], liara_run: dict[str, Any]) -> dict[st
 
     expected_top_len = min(5, len(main_run["ranking"]))
     strict_scores = len(main_top) == len(liara_top) == expected_top_len and max_delta <= STRICT_TOLERANCE
-    relaxed_scores = len(main_top) == len(liara_top) == expected_top_len and max_delta <= RELAXED_TOLERANCE
+    relaxed_scores = enough_ranking and len(main_top) == len(liara_top) == expected_top_len and max_delta <= RELAXED_TOLERANCE
     strict_pass = all((rank1_match, top3_match, top5_match, strict_scores, alternatives_match))
     relaxed_pass = all((rank1_match, top3_match, top5_match, relaxed_scores, alternatives_match))
 
@@ -297,6 +297,7 @@ def main() -> int:
             "cutover_required_off": True,
             "top_n": 5,
             "primary_score_tolerance": STRICT_TOLERANCE,
+            "production_input_contract": {"strategy_keys": "sjt_1..sjt_25", "conjoint_keys": "conj_1..conj_15"},
         },
         "main": {},
         "liara": {},
@@ -377,7 +378,7 @@ def main() -> int:
                 try:
                     main_run = invoke(main_engine, fixture)
                     liara_run = invoke(liara_engine, fixture)
-                    comparison = compare_runs(main_run, liara_run)
+                    comparison = compare_runs(fixture["target"], main_run, liara_run)
                     item = {
                         "fixture_id": fixture["fixture_id"],
                         "target": fixture["target"],
