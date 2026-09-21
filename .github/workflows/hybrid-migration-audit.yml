@@ -83,7 +83,8 @@ jobs:
       - name: Run deterministic main vs Liara dual-run
         env:
           MAIN_REF: origin/main
-          LIARA_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'origin/deploy/liara-commercial-sandbox' }}
+          # Always compare against the current deploy branch, not a stale PR event base SHA.
+          LIARA_REF: origin/deploy/liara-commercial-sandbox
         run: |
           python tests/dual_run_main_liara.py --main-ref "$MAIN_REF" --liara-ref "$LIARA_REF" --output dual_run_report.json
 
