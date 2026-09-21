@@ -576,7 +576,10 @@
             typeof DHAuth.isLoggedIn === 'function' &&
             DHAuth.isLoggedIn() &&
             typeof DHAuth.quota === 'function') {
-          quotaRefreshPromise = DHAuth.quota();
+          quotaRefreshPromise = DHAuth.quota().catch(function (quotaError) {
+            console.warn('[DarkHorse][Journey] quota refresh failed; using cached gate', quotaError);
+            return null;
+          });
           if (!allowed) {
             var quotaWait = await Promise.race([
               quotaRefreshPromise,
