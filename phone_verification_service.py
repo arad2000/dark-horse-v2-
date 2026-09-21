@@ -11,7 +11,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from auth_service import hash_password
@@ -21,6 +21,11 @@ OTP_TTL_SECONDS = 300
 RESEND_COOLDOWN_SECONDS = 60
 MAX_ATTEMPTS = 5
 OTP_LENGTH = 6
+PHONE_WINDOW_SECONDS = 10 * 60
+PHONE_WINDOW_MAX_SMS = 3
+IP_WINDOW_SECONDS = 60 * 60
+IP_WINDOW_MAX_SMS = 10
+OTP_RATE_LIMIT_PURPOSES = ("register", "password_reset")
 
 
 def utcnow() -> datetime:
@@ -52,6 +57,53 @@ def _otp_client() -> tuple[str, str]:
     return api_key, template
 
 
+def _lock_rate_limit_keys(db: Session, *, phone: str, request_ip: str | None) -> None:
+    """Serialize concurrent SMS reservations on the production PostgreSQL DB."""
+    if db.bind is None or db.bind.dialect.name != "postgresql":
+        return
+
+    keys = [f"otp:phone:{phone}"]
+    if request_ip:
+        keys.append(f"otp:ip:{request_ip}")
+    for key in sorted(keys):
+        db.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+            {"key": key},
+        )
+
+
+def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -> None:
+    """Limit outbound OTP SMS across registration and password reset."""
+    _lock_rate_limit_keys(db, phone=phone, request_ip=request_ip)
+    now = utcnow()
+    phone_since = now - timedelta(seconds=PHONE_WINDOW_SECONDS)
+    phone_count = db.scalar(
+        select(func.count())
+        .select_from(PhoneVerification)
+        .where(
+            PhoneVerification.phone == phone,
+            PhoneVerification.purpose.in_(OTP_RATE_LIMIT_PURPOSES),
+            PhoneVerification.created_at >= phone_since,
+        )
+    ) or 0
+    if int(phone_count) >= PHONE_WINDOW_MAX_SMS:
+        raise TimeoutError("please try again later")
+
+    if request_ip:
+        ip_since = now - timedelta(seconds=IP_WINDOW_SECONDS)
+        ip_count = db.scalar(
+            select(func.count())
+            .select_from(PhoneVerification)
+            .where(
+                PhoneVerification.request_ip == request_ip,
+                PhoneVerification.purpose.in_(OTP_RATE_LIMIT_PURPOSES),
+                PhoneVerification.created_at >= ip_since,
+            )
+        ) or 0
+        if int(ip_count) >= IP_WINDOW_MAX_SMS:
+            raise TimeoutError("please try again later")
+
+
 def _send_kavenegar_otp(phone: str, code: str) -> None:
     api_key, template = _otp_client()
     url = f"https://api.kavenegar.com/v1/{api_key}/verify/lookup.json"
@@ -70,7 +122,9 @@ def _send_kavenegar_otp(phone: str, code: str) -> None:
         raise RuntimeError(result.get("message") or "Kavenegar rejected the OTP request")
 
 
-def request_registration_otp(db: Session, *, name: str, phone: str, password: str) -> dict[str, object]:
+def request_registration_otp(
+    db: Session, *, name: str, phone: str, password: str, request_ip: str | None = None
+) -> dict[str, object]:
     phone = normalize_phone(phone)
     name = (name or "").strip()
     if len(name) < 2:
@@ -81,6 +135,7 @@ def request_registration_otp(db: Session, *, name: str, phone: str, password: st
         raise ValueError("phone already registered")
 
     now = utcnow()
+    enforce_sms_rate_limit(db, phone=phone, request_ip=request_ip)
     recent = db.scalar(
         select(PhoneVerification)
         .where(PhoneVerification.phone == phone, PhoneVerification.purpose == "register")
@@ -104,6 +159,7 @@ def request_registration_otp(db: Session, *, name: str, phone: str, password: st
         code_hash=_hash_code(challenge_id, code),
         expires_at=now + timedelta(seconds=OTP_TTL_SECONDS),
         attempts=0,
+        request_ip=request_ip,
     )
     db.add(challenge)
     db.flush()

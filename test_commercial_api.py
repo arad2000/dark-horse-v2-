@@ -93,7 +93,13 @@ class CommercialApiContractTests(unittest.TestCase):
             response = self.client.post("/api/v1/auth/register", json={"name": "Test User", "phone": "09120000001", "password": "strong-pass-123"})
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json(), expected)
-        request_otp.assert_called_once_with(self.db, name="Test User", phone="09120000001", password="strong-pass-123")
+        request_otp.assert_called_once_with(
+            self.db,
+            name="Test User",
+            phone="09120000001",
+            password="strong-pass-123",
+            request_ip="testclient",
+        )
 
     def test_verify_registration_creates_session_and_free_credit(self):
         user = SimpleNamespace(id=7, public_id="public-7", name="Test User", phone="09120000001", role="user", status="active")
