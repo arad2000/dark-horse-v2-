@@ -81,10 +81,19 @@ def request_password_reset_otp(
     """
     phone = normalize_phone(phone)
     user = db.scalar(select(User).where(User.phone == phone, User.status == "active"))
-    if user is None or not user.password_hash:
-        return {"otp_required": False, "message": "اگر حسابی با این شماره وجود داشته باشد، کد بازیابی ارسال می‌شود."}
-
     now = utcnow()
+    generic_response = {
+        "otp_required": True,
+        "challenge_id": secrets.token_urlsafe(18),
+        "expires_in": OTP_TTL_SECONDS,
+        "resend_after": RESEND_COOLDOWN_SECONDS,
+        "message": "اگر حسابی با این شماره وجود داشته باشد، کد بازیابی ارسال می‌شود.",
+    }
+    if user is None or not user.password_hash:
+        # Keep the response shape and otp_required flag identical for unknown
+        # and known phones. No challenge is persisted and no SMS is sent.
+        return generic_response
+
     enforce_sms_rate_limit(db, phone=phone, request_ip=request_ip)
     recent = db.scalar(
         select(PhoneVerification)
@@ -117,13 +126,8 @@ def request_password_reset_otp(
         db.delete(challenge)
         db.flush()
         raise
-    return {
-        "otp_required": True,
-        "challenge_id": challenge_id,
-        "expires_in": OTP_TTL_SECONDS,
-        "resend_after": RESEND_COOLDOWN_SECONDS,
-        "message": "کد بازیابی ارسال شد.",
-    }
+    generic_response["challenge_id"] = challenge_id
+    return generic_response
 
 
 def reset_password_with_otp(
