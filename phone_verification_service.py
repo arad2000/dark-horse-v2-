@@ -60,31 +60,22 @@ def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -
     """Limit outbound OTP SMS across registration and password reset."""
     now = utcnow()
     phone_since = now - timedelta(seconds=PHONE_WINDOW_SECONDS)
+    from sqlalchemy import func
+
     phone_count = db.scalar(
-        select(PhoneVerification)
+        select(func.count())
+        .select_from(PhoneVerification)
         .where(
             PhoneVerification.phone == phone,
             PhoneVerification.created_at >= phone_since,
         )
-    )
-    if phone_count is not None:
-        # Count rows rather than relying on the latest challenge only.
-        from sqlalchemy import func
-        phone_count_value = db.scalar(
-            select(func.count())
-            .select_from(PhoneVerification)
-            .where(
-                PhoneVerification.phone == phone,
-                PhoneVerification.created_at >= phone_since,
-            )
-        ) or 0
-        if int(phone_count_value) >= PHONE_WINDOW_MAX_SMS:
-            raise TimeoutError("please try again later")
+    ) or 0
+    if int(phone_count) >= PHONE_WINDOW_MAX_SMS:
+        raise TimeoutError("please try again later")
 
     if request_ip:
         ip_since = now - timedelta(seconds=IP_WINDOW_SECONDS)
-        from sqlalchemy import func
-        ip_count_value = db.scalar(
+        ip_count = db.scalar(
             select(func.count())
             .select_from(PhoneVerification)
             .where(
@@ -92,7 +83,7 @@ def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -
                 PhoneVerification.created_at >= ip_since,
             )
         ) or 0
-        if int(ip_count_value) >= IP_WINDOW_MAX_SMS:
+        if int(ip_count) >= IP_WINDOW_MAX_SMS:
             raise TimeoutError("please try again later")
 
 
