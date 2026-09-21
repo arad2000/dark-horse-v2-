@@ -96,7 +96,10 @@ jobs:
           path: dual_run_report.json
           if-no-files-found: error
 
+  # PR #55 is measurement-only: keep the unrelated full staging audit out of this PR's gate.
+  # The staging audit remains active for its original branches/PRs.
   postgres-staging-audit:
+    if: (github.event_name == 'push' && github.ref_name != 'audit/dual-run-main-liara') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref != 'audit/dual-run-main-liara')
     runs-on: ubuntu-latest
     services:
       postgres:
