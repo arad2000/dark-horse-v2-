@@ -55,7 +55,7 @@ jobs:
               digest = hashlib.sha256(payload).hexdigest()
               expected_files[relative_path] = digest
               aggregate.update(relative_path.encode("utf-8"))
-              aggregate.update(b"\0")
+              aggregate.update(b"\\0")
               aggregate.update(payload)
           expected = aggregate.hexdigest()
           print("expected scoring_build_fingerprint:", expected)
