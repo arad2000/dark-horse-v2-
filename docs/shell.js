@@ -567,17 +567,35 @@
       var allowed = canRunTest();
       var u = getDisplayUser();
 
-      // After the commercial quota contract change, refresh the server quota
-      // before rejecting a journey based on a stale local snapshot.
+      // Quota refresh must never block the Journey UI indefinitely.
+      // Use the local/server snapshot immediately; only wait briefly when the
+      // snapshot says "no credit", because the cached value may be stale.
+      var quotaRefreshPromise = null;
       try {
         if (u && window.DHAuth &&
             typeof DHAuth.isLoggedIn === 'function' &&
             DHAuth.isLoggedIn() &&
             typeof DHAuth.quota === 'function') {
-          var serverQuota = await DHAuth.quota();
-          var remaining = Number(serverQuota && serverQuota.credits_remaining);
-          allowed = !!(u.is_premium || localQuota().premium ||
-            (Number.isFinite(remaining) && remaining > 0));
+          quotaRefreshPromise = DHAuth.quota();
+          if (!allowed) {
+            var quotaWait = await Promise.race([
+              quotaRefreshPromise,
+              new Promise(function (resolve) {
+                setTimeout(function () { resolve(null); }, 2500);
+              })
+            ]);
+            if (quotaWait) {
+              var remaining = Number(quotaWait && quotaWait.credits_remaining);
+              allowed = !!(u.is_premium || localQuota().premium ||
+                (Number.isFinite(remaining) && remaining > 0));
+            }
+          } else {
+            // A successful cached/local gate is enough to enter the journey;
+            // reconcile the server quota in the background.
+            quotaRefreshPromise.catch(function (quotaError) {
+              console.warn('[DarkHorse][Journey] background quota refresh failed', quotaError);
+            });
+          }
         }
       } catch (quotaError) {
         console.warn('[DarkHorse][Journey] quota refresh failed; using local gate', quotaError);
