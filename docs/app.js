@@ -313,6 +313,8 @@ function startNewJourney() {
       return;
     }
     state.stage = 'realm';
+    window.__dhInJourney = true;
+    try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e) {}
     // Shell نباید پس از شروع سفر، صفحهٔ خانه را دوباره روی سفر نقاشی کند.
     window.__dhInJourney = true;
     try { if (typeof setActiveTab === 'function') setActiveTab('journey'); } catch (e) {}
