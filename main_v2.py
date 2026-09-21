@@ -46,7 +46,7 @@ def _runtime_env_commit() -> str | None:
 
 
 def _git_blob_sha1(payload: bytes) -> str:
-    header = f"blob {len(payload)}\\0".encode("utf-8")
+    header = f"blob {len(payload)}\0".encode("utf-8")
     return hashlib.sha1(header + payload).hexdigest()
 
 
