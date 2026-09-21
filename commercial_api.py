@@ -155,11 +155,22 @@ def _frontend_redirect(payment: str, *, order_id: str | None = None, credits_add
 
 
 @router.post("/auth/register")
-def register(req: RegisterRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+def register(
+    req: RegisterRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
     """Start a verified registration. No user is created before OTP validation."""
     assert_production_billing_configuration()
     try:
-        result = request_registration_otp(db, name=req.name, phone=req.phone, password=req.password)
+        request_ip = request.client.host if request.client else None
+        result = request_registration_otp(
+            db,
+            name=req.name,
+            phone=req.phone,
+            password=req.password,
+            request_ip=request_ip,
+        )
         db.commit()
         return result
     except TimeoutError as exc:
