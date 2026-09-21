@@ -313,6 +313,8 @@ function startNewJourney() {
       return;
     }
     state.stage = 'realm';
+    window.__dhInJourney = true;
+    try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e) {}
     // ذخیرهٔ تمیز بدون تیک‌های قبلی
     saveSession();
     render();
@@ -648,6 +650,8 @@ function renderSplash() {
 }
 
 function dhResumeFromSplash() {
+  window.__dhInJourney = true;
+  try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e0) {}
   const data = window.__dhSavedSession;
   // اگر کاربر قبلاً نتیجه را دیده، ادامه = شروع تمیز (بدون تیک‌های قبلی)
   if (!data || data.journeyFinished || window.__dhJourneyFinished) {
