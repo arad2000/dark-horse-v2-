@@ -137,10 +137,19 @@ class PasswordResetServiceTests(unittest.TestCase):
                 new_password="AnotherPassword123",
             )
 
-    def test_unknown_phone_does_not_issue_a_challenge(self):
+    def test_unknown_phone_keeps_generic_response_without_persisting_challenge(self):
         result = prs.request_password_reset_otp(self.db, phone="09120000000")
-        self.assertFalse(result["otp_required"])
+        self.assertTrue(result["otp_required"])
+        self.assertTrue(result["challenge_id"])
+        self.assertEqual(result["expires_in"], prs.OTP_TTL_SECONDS)
+        self.assertEqual(result["resend_after"], prs.RESEND_COOLDOWN_SECONDS)
         self.assertIn("اگر حسابی", result["message"])
+
+        stored = self.db.execute(
+            text("SELECT COUNT(*) FROM phone_verifications WHERE phone = :phone"),
+            {"phone": "09120000000"},
+        ).scalar_one()
+        self.assertEqual(stored, 0)
 
     def test_resend_is_rate_limited(self):
         user = User(
