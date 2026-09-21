@@ -255,7 +255,16 @@
   function installButtonHooks(){function patch(){
     document.querySelectorAll('#dh-start-journey,#dh-continue-journey,#dh-p-journey').forEach(function(b){
       if(b.__dhCommercialHooked)return;b.__dhCommercialHooked=true;
-      b.onclick=function(e){if(e)e.preventDefault();continueAfterAuth();};
+      b.onclick=function(e){
+        if(e){e.preventDefault();e.stopPropagation();}
+        try{
+          if(global.DHAuth && typeof global.DHAuth.isLoggedIn === 'function' && global.DHAuth.isLoggedIn()){
+            if(global.DHShell && typeof global.DHShell.startJourney === 'function') global.DHShell.startJourney();
+            return;
+          }
+        }catch(_){}
+        showAuthModal('login');
+      };
     });
     var buy=el('dh-p-buy');
     if(buy&&!buy.__dhCommercialHooked){buy.__dhCommercialHooked=true;buy.onclick=function(e){if(e)e.preventDefault();openPurchaseModal();};}
