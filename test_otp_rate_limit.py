@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from datetime import timedelta
+from unittest.mock import patch
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -139,17 +140,77 @@ class OtpRateLimitTests(unittest.TestCase):
                 request_ip="10.0.0.3",
             )
 
-    def test_password_reset_unknown_phone_remains_generic_without_sms(self):
-        result = prs.request_password_reset_otp(
-            self.db,
-            phone="09129999999",
-            request_ip="10.0.0.4",
+    def test_phone_window_is_shared_across_register_and_password_reset(self):
+        now = pvs.utcnow()
+        for idx, purpose in enumerate(("register", "register", "password_reset"), start=1):
+            self._add_verification(
+                ident=idx,
+                phone="09123334455",
+                purpose=purpose,
+                request_ip="10.0.0.5",
+                created_at=now - timedelta(minutes=idx + 1),
+            )
+        with self.assertRaises(TimeoutError):
+            pvs.enforce_sms_rate_limit(
+                self.db,
+                phone="09123334455",
+                request_ip="10.0.0.5",
+            )
+
+    def test_ip_window_is_shared_across_register_and_password_reset(self):
+        now = pvs.utcnow()
+        for idx in range(1, 11):
+            self._add_verification(
+                ident=idx,
+                phone=f"0912333{idx:04d}",
+                purpose="register" if idx < 10 else "password_reset",
+                request_ip="10.0.0.6",
+                created_at=now - timedelta(minutes=idx),
+            )
+        with self.assertRaises(TimeoutError):
+            pvs.enforce_sms_rate_limit(
+                self.db,
+                phone="09127770001",
+                request_ip="10.0.0.6",
+            )
+
+    def test_password_reset_unknown_and_known_phone_response_shapes_match(self):
+        self.db.execute(
+            text("""
+                INSERT INTO users
+                (public_id, name, phone, password_hash, role, status, created_at)
+                VALUES ('known-reset-user', 'Known Reset', '09124445566', 'hash', 'user', 'active', :created_at)
+            """),
+            {"created_at": prs.utcnow()},
         )
-        self.assertFalse(result["otp_required"])
-        self.assertEqual(
-            result["message"],
-            "اگر حسابی با این شماره وجود داشته باشد، کد بازیابی ارسال می‌شود.",
-        )
+        self.db.commit()
+
+        with patch.object(prs, "_send_reset_otp"):
+            known = prs.request_password_reset_otp(
+                self.db,
+                phone="09124445566",
+                request_ip="10.0.0.7",
+            )
+            unknown = prs.request_password_reset_otp(
+                self.db,
+                phone="09129999999",
+                request_ip="10.0.0.7",
+            )
+
+        self.assertEqual(set(known), set(unknown))
+        self.assertTrue(known["otp_required"])
+        self.assertTrue(unknown["otp_required"])
+        self.assertTrue(known["challenge_id"])
+        self.assertTrue(unknown["challenge_id"])
+        self.assertEqual(known["expires_in"], prs.OTP_TTL_SECONDS)
+        self.assertEqual(unknown["expires_in"], prs.OTP_TTL_SECONDS)
+        self.assertEqual(known["resend_after"], prs.RESEND_COOLDOWN_SECONDS)
+        self.assertEqual(unknown["resend_after"], prs.RESEND_COOLDOWN_SECONDS)
+        self.assertEqual(known["message"], unknown["message"])
+        stored = self.db.execute(
+            text("SELECT COUNT(*) FROM phone_verifications WHERE phone = '09124445566'")
+        ).scalar_one()
+        self.assertEqual(stored, 1)
 
 
 if __name__ == "__main__":
