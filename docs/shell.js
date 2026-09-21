@@ -542,17 +542,57 @@
     on('dh-open-guide', function () { try { shellScrollTop(); } catch (eS) {} openSystemGuide(); try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {} });
   }
 
-  function startJourneyFromShell() {
+  async function startJourneyFromShell() {
+    if (window.__dhJourneyStarting) return;
+    window.__dhJourneyStarting = true;
+
     try { shellScrollTop(); } catch (eS) {}
 
-    if (!canRunTest()) {
-      switchTab('profile');
-      setTimeout(function () { alert('سهمیه رایگان تمام شده. از پروفایل اشتراک تستی را فعال کن.'); }, 150);
-      return;
-    }
+    // Lock the shell immediately so boot/profile timers cannot repaint Home
+    // while the quota check or journey restoration is in progress.
     window.__dhInJourney = true;
     setActiveTab('journey');
+
+    var root = $('app');
+    if (root) {
+      root.innerHTML =
+        '<div class="card" style="margin:24px 0;text-align:center;">' +
+          '<div style="font-size:1.8rem;margin-bottom:10px;">🧭</div>' +
+          '<h2 style="color:#f0c040;margin:0 0 8px;">در حال آماده‌سازی سفر</h2>' +
+          '<p style="color:#c9b896;margin:0;line-height:1.9;">داریم مسیرت را آماده می‌کنیم…</p>' +
+        '</div>';
+    }
+
     try {
+      var allowed = canRunTest();
+      var u = getDisplayUser();
+
+      // After the commercial quota contract change, refresh the server quota
+      // before rejecting a journey based on a stale local snapshot.
+      try {
+        if (u && window.DHAuth &&
+            typeof DHAuth.isLoggedIn === 'function' &&
+            DHAuth.isLoggedIn() &&
+            typeof DHAuth.quota === 'function') {
+          var serverQuota = await DHAuth.quota();
+          var remaining = Number(serverQuota && serverQuota.credits_remaining);
+          allowed = !!(u.is_premium || localQuota().premium ||
+            (Number.isFinite(remaining) && remaining > 0));
+        }
+      } catch (quotaError) {
+        console.warn('[DarkHorse][Journey] quota refresh failed; using local gate', quotaError);
+      }
+
+      if (!allowed) {
+        window.__dhInJourney = false;
+        setActiveTab('profile');
+        try { renderProfile(); } catch (eProfile) {}
+        setTimeout(function () {
+          alert('سهمیه رایگان تمام شده. از پروفایل اشتراک تستی را فعال کن.');
+        }, 100);
+        return;
+      }
+
       if (typeof saveSession === 'function') {
         try { saveSession(); } catch (e1) {}
       }
@@ -586,7 +626,8 @@
         return;
       }
 
-      // سفر تازه → صفحه شهر رؤیاها (splash)، نه پرش مستقیم به محله‌ها
+      // A fresh click on «سفر اکتشافی» should enter the actual journey,
+      // not land on another Home-like splash screen.
       if (typeof fullResetState === 'function') {
         fullResetState(true);
       } else {
@@ -596,7 +637,7 @@
       window.__dhJourneyFinished = false;
       window.__dhSavedSession = null;
       if (typeof state !== 'undefined') {
-        state.stage = 'splash';
+        state.stage = 'realm';
         state.history = [];
         state.journeyFinished = false;
       }
@@ -605,7 +646,15 @@
       }
       if (typeof render === 'function') render();
     } catch (e) {
-      console.error(e);
+      console.error('[DarkHorse][Journey] start failed', e);
+      window.__dhInJourney = false;
+      try { setActiveTab('home'); renderHome(); } catch (eHome) {}
+      var msg = String(e && e.message ? e.message : e);
+      setTimeout(function () {
+        try { alert('ورود به سفر انجام نشد: ' + msg); } catch (_) {}
+      }, 50);
+    } finally {
+      window.__dhJourneyStarting = false;
     }
   }
 
