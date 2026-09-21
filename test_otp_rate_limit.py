@@ -49,6 +49,9 @@ class OtpRateLimitTests(unittest.TestCase):
 
     def setUp(self):
         self.db = self.Session()
+        self.db.execute(text("DELETE FROM phone_verifications"))
+        self.db.execute(text("DELETE FROM users"))
+        self.db.commit()
         self.addCleanup(self.db.close)
 
     def _add_verification(self, *, ident: int, phone: str, purpose: str, request_ip: str, created_at):
