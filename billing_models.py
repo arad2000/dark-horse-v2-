@@ -48,6 +48,7 @@ class PhoneVerification(Base):
     __tablename__ = "phone_verifications"
     __table_args__ = (
         Index("idx_phone_verification_phone", "phone", "purpose", "created_at"),
+        Index("idx_phone_verification_ip_created", "request_ip", "created_at"),
         UniqueConstraint("challenge_id", name="uq_phone_verification_challenge"),
     )
     id = Column(BigInteger, primary_key=True)
@@ -60,6 +61,7 @@ class PhoneVerification(Base):
     attempts = Column(Integer, nullable=False, default=0, server_default="0")
     expires_at = Column(DateTime(timezone=True), nullable=False)
     verified_at = Column(DateTime(timezone=True), nullable=True)
+    request_ip = Column(String(45), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
