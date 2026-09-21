@@ -11,13 +11,14 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from auth_service import hash_password, issue_session, revoke_all_sessions
 from billing_models import PhoneVerification, User
+from phone_verification_service import enforce_sms_rate_limit
 from database import get_db
 
 OTP_TTL_SECONDS = 300
@@ -70,7 +71,9 @@ def _send_reset_otp(phone: str, code: str) -> None:
         raise RuntimeError(result.get("message") or "Kavenegar rejected the password reset OTP request")
 
 
-def request_password_reset_otp(db: Session, *, phone: str) -> dict[str, object]:
+def request_password_reset_otp(
+    db: Session, *, phone: str, request_ip: str | None = None
+) -> dict[str, object]:
     """Issue a reset challenge when the phone is registered.
 
     The API keeps a generic response for unknown phones to avoid account
@@ -82,6 +85,7 @@ def request_password_reset_otp(db: Session, *, phone: str) -> dict[str, object]:
         return {"otp_required": False, "message": "اگر حسابی با این شماره وجود داشته باشد، کد بازیابی ارسال می‌شود."}
 
     now = utcnow()
+    enforce_sms_rate_limit(db, phone=phone, request_ip=request_ip)
     recent = db.scalar(
         select(PhoneVerification)
         .where(PhoneVerification.phone == phone, PhoneVerification.purpose == RESET_PURPOSE)
@@ -101,6 +105,7 @@ def request_password_reset_otp(db: Session, *, phone: str) -> dict[str, object]:
         password_hash="reset-pending",
         code_hash=_hash_code(challenge_id, code),
         attempts=0,
+        request_ip=request_ip,
         expires_at=now + timedelta(seconds=OTP_TTL_SECONDS),
         created_at=now,
     )
@@ -180,9 +185,14 @@ reset_router = APIRouter(prefix="/auth/password-reset", tags=["auth"])
 
 
 @reset_router.post("/request")
-def password_reset_request(req: PasswordResetRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+def password_reset_request(
+    req: PasswordResetRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
     try:
-        result = request_password_reset_otp(db, phone=req.phone)
+        request_ip = request.client.host if request.client else None
+        result = request_password_reset_otp(db, phone=req.phone, request_ip=request_ip)
         db.commit()
         return result
     except TimeoutError as exc:
