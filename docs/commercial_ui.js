@@ -327,11 +327,49 @@
   }
 
   function installButtonHooks() {
-    bindButton('dh-start-journey', continueAfterAuth);
-    bindButton('dh-continue-journey', continueAfterAuth);
-    bindButton('dh-p-journey', continueAfterAuth);
-    bindButton('dh-p-buy', openPurchaseModal);
-    bindButton('dh-p-out', function () { doLogout(true); });
+    function patch() {
+      document.querySelectorAll('#dh-start-journey,#dh-continue-journey,#dh-p-journey').forEach(function (b) {
+        if (b.__dhCommercialHooked) return;
+        b.__dhCommercialHooked = true;
+        b.onclick = function (e) {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          try {
+            if (global.DHAuth && typeof global.DHAuth.isLoggedIn === 'function' && global.DHAuth.isLoggedIn()) {
+              if (global.DHShell && typeof global.DHShell.startJourney === 'function') {
+                global.DHShell.startJourney();
+              }
+              return;
+            }
+          } catch (_) {}
+          showAuthModal('login');
+        };
+      });
+      var buy = el('dh-p-buy');
+      if (buy && !buy.__dhCommercialHooked) {
+        buy.__dhCommercialHooked = true;
+        buy.onclick = function (e) {
+          if (e) e.preventDefault();
+          openPurchaseModal();
+        };
+      }
+      var out = el('dh-p-out');
+      if (out && !out.__dhCommercialHooked) {
+        out.__dhCommercialHooked = true;
+        out.onclick = function (e) {
+          if (e) e.preventDefault();
+          doLogout();
+        };
+      }
+    }
+    patch();
+    var _obsT = null;
+    new MutationObserver(function () {
+      if (_obsT) return;
+      _obsT = setTimeout(function () {
+        _obsT = null;
+        try { patch(); } catch (_) {}
+      }, 500);
+    }).observe(document.body, { childList: true, subtree: true });
   }
 
   function syncQuota(done) {
