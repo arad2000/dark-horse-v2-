@@ -11,7 +11,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from auth_service import hash_password
@@ -56,8 +56,24 @@ def _otp_client() -> tuple[str, str]:
     return api_key, template
 
 
+def _lock_rate_limit_keys(db: Session, *, phone: str, request_ip: str | None) -> None:
+    """Serialize concurrent SMS reservations on the production PostgreSQL DB."""
+    if db.bind is None or db.bind.dialect.name != "postgresql":
+        return
+
+    keys = [f"otp:phone:{phone}"]
+    if request_ip:
+        keys.append(f"otp:ip:{request_ip}")
+    for key in sorted(keys):
+        db.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+            {"key": key},
+        )
+
+
 def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -> None:
     """Limit outbound OTP SMS across registration and password reset."""
+    _lock_rate_limit_keys(db, phone=phone, request_ip=request_ip)
     now = utcnow()
     phone_since = now - timedelta(seconds=PHONE_WINDOW_SECONDS)
     phone_count = db.scalar(
