@@ -35,10 +35,26 @@ _SCORING_FINGERPRINT_FILES = (
 )
 
 
+def _runtime_env_commit() -> str | None:
+    return (
+        os.getenv("GIT_COMMIT")
+        or os.getenv("SOURCE_COMMIT")
+        or os.getenv("COMMIT_SHA")
+        or os.getenv("LIARA_GIT_COMMIT")
+        or None
+    )
+
+
+def _git_blob_sha1(payload: bytes) -> str:
+    header = f"blob {len(payload)}\0".encode("utf-8")
+    return hashlib.sha1(header + payload).hexdigest()
+
+
 def _runtime_build_fingerprint() -> dict:
     root = os.path.dirname(os.path.abspath(__file__))
     files = {}
     aggregate = hashlib.sha256()
+    git_blobs = {}
     for relative_path in _SCORING_FINGERPRINT_FILES:
         path = os.path.join(root, relative_path)
         try:
@@ -49,6 +65,8 @@ def _runtime_build_fingerprint() -> dict:
             continue
         digest = hashlib.sha256(payload).hexdigest()
         files[relative_path] = {"available": True, "sha256": digest, "bytes": len(payload)}
+        if relative_path in {"majors_database_v2.json", "school_branches_v2.json"}:
+            git_blobs[relative_path] = _git_blob_sha1(payload)
         aggregate.update(relative_path.encode("utf-8"))
         aggregate.update(b"\\0")
         aggregate.update(payload)
@@ -56,8 +74,13 @@ def _runtime_build_fingerprint() -> dict:
         "algorithm": "sha256",
         "fingerprint": aggregate.hexdigest(),
         "files": files,
-        "runtime_commit": os.getenv("GIT_COMMIT") or os.getenv("SOURCE_COMMIT") or None,
+        "git_sha": _runtime_env_commit(),
+        "runtime_commit": _runtime_env_commit(),
         "runtime_version": os.getenv("APP_VERSION") or os.getenv("RELEASE_VERSION") or None,
+        "majors_blob_sha": git_blobs.get("majors_database_v2.json"),
+        "school_branches_blob_sha": git_blobs.get("school_branches_v2.json"),
+        "engine_file_sha": files.get("dark_horse_engine_v2.py", {}).get("sha256"),
+        "cutover": str(os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false")).strip().lower() == "true",
     }
 
 
@@ -137,6 +160,11 @@ async def runtime_fingerprint():
         "legacy_feedback_submit": "/api/feedback/submit",
         "commit_hint": "deploy/liara-commercial-sandbox",
         "ai_counsel_endpoint": "/api/v2/darkhorse/counsel",
+        "git_sha": build["git_sha"],
+        "majors_blob_sha": build["majors_blob_sha"],
+        "school_branches_blob_sha": build["school_branches_blob_sha"],
+        "cutover": build["cutover"],
+        "engine_file_sha": build["engine_file_sha"],
         "runtime_commit": build["runtime_commit"],
         "runtime_version": build["runtime_version"],
         "scoring_build_fingerprint": build["fingerprint"],
