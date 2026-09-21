@@ -11,7 +11,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from auth_service import hash_password
@@ -60,8 +60,6 @@ def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -
     """Limit outbound OTP SMS across registration and password reset."""
     now = utcnow()
     phone_since = now - timedelta(seconds=PHONE_WINDOW_SECONDS)
-    from sqlalchemy import func
-
     phone_count = db.scalar(
         select(func.count())
         .select_from(PhoneVerification)
