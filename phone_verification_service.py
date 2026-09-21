@@ -21,6 +21,10 @@ OTP_TTL_SECONDS = 300
 RESEND_COOLDOWN_SECONDS = 60
 MAX_ATTEMPTS = 5
 OTP_LENGTH = 6
+PHONE_WINDOW_SECONDS = 10 * 60
+PHONE_WINDOW_MAX_SMS = 3
+IP_WINDOW_SECONDS = 60 * 60
+IP_WINDOW_MAX_SMS = 10
 
 
 def utcnow() -> datetime:
@@ -52,6 +56,46 @@ def _otp_client() -> tuple[str, str]:
     return api_key, template
 
 
+def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -> None:
+    """Limit outbound OTP SMS across registration and password reset."""
+    now = utcnow()
+    phone_since = now - timedelta(seconds=PHONE_WINDOW_SECONDS)
+    phone_count = db.scalar(
+        select(PhoneVerification)
+        .where(
+            PhoneVerification.phone == phone,
+            PhoneVerification.created_at >= phone_since,
+        )
+    )
+    if phone_count is not None:
+        # Count rows rather than relying on the latest challenge only.
+        from sqlalchemy import func
+        phone_count_value = db.scalar(
+            select(func.count())
+            .select_from(PhoneVerification)
+            .where(
+                PhoneVerification.phone == phone,
+                PhoneVerification.created_at >= phone_since,
+            )
+        ) or 0
+        if int(phone_count_value) >= PHONE_WINDOW_MAX_SMS:
+            raise TimeoutError("please try again later")
+
+    if request_ip:
+        ip_since = now - timedelta(seconds=IP_WINDOW_SECONDS)
+        from sqlalchemy import func
+        ip_count_value = db.scalar(
+            select(func.count())
+            .select_from(PhoneVerification)
+            .where(
+                PhoneVerification.request_ip == request_ip,
+                PhoneVerification.created_at >= ip_since,
+            )
+        ) or 0
+        if int(ip_count_value) >= IP_WINDOW_MAX_SMS:
+            raise TimeoutError("please try again later")
+
+
 def _send_kavenegar_otp(phone: str, code: str) -> None:
     api_key, template = _otp_client()
     url = f"https://api.kavenegar.com/v1/{api_key}/verify/lookup.json"
@@ -70,7 +114,9 @@ def _send_kavenegar_otp(phone: str, code: str) -> None:
         raise RuntimeError(result.get("message") or "Kavenegar rejected the OTP request")
 
 
-def request_registration_otp(db: Session, *, name: str, phone: str, password: str) -> dict[str, object]:
+def request_registration_otp(
+    db: Session, *, name: str, phone: str, password: str, request_ip: str | None = None
+) -> dict[str, object]:
     phone = normalize_phone(phone)
     name = (name or "").strip()
     if len(name) < 2:
@@ -81,6 +127,7 @@ def request_registration_otp(db: Session, *, name: str, phone: str, password: st
         raise ValueError("phone already registered")
 
     now = utcnow()
+    enforce_sms_rate_limit(db, phone=phone, request_ip=request_ip)
     recent = db.scalar(
         select(PhoneVerification)
         .where(PhoneVerification.phone == phone, PhoneVerification.purpose == "register")
@@ -104,6 +151,7 @@ def request_registration_otp(db: Session, *, name: str, phone: str, password: st
         code_hash=_hash_code(challenge_id, code),
         expires_at=now + timedelta(seconds=OTP_TTL_SECONDS),
         attempts=0,
+        request_ip=request_ip,
     )
     db.add(challenge)
     db.flush()
