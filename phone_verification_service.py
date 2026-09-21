@@ -25,6 +25,7 @@ PHONE_WINDOW_SECONDS = 10 * 60
 PHONE_WINDOW_MAX_SMS = 3
 IP_WINDOW_SECONDS = 60 * 60
 IP_WINDOW_MAX_SMS = 10
+OTP_RATE_LIMIT_PURPOSES = ("register", "password_reset")
 
 
 def utcnow() -> datetime:
@@ -81,6 +82,7 @@ def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -
         .select_from(PhoneVerification)
         .where(
             PhoneVerification.phone == phone,
+            PhoneVerification.purpose.in_(OTP_RATE_LIMIT_PURPOSES),
             PhoneVerification.created_at >= phone_since,
         )
     ) or 0
@@ -94,6 +96,7 @@ def enforce_sms_rate_limit(db: Session, *, phone: str, request_ip: str | None) -
             .select_from(PhoneVerification)
             .where(
                 PhoneVerification.request_ip == request_ip,
+                PhoneVerification.purpose.in_(OTP_RATE_LIMIT_PURPOSES),
                 PhoneVerification.created_at >= ip_since,
             )
         ) or 0
