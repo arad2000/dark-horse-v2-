@@ -647,8 +647,8 @@
         return;
       }
 
-      // A fresh click on «سفر اکتشافی» should enter the actual journey,
-      // not land on another Home-like splash screen.
+      // A fresh click on «سفر اکتشافی» enters the canonical City of Dreams
+      // splash first; the splash action then advances into the realms.
       if (typeof fullResetState === 'function') {
         fullResetState(true);
       } else {
@@ -658,7 +658,7 @@
       window.__dhJourneyFinished = false;
       window.__dhSavedSession = null;
       if (typeof state !== 'undefined') {
-        state.stage = 'realm';
+        state.stage = 'splash';
         state.history = [];
         state.journeyFinished = false;
       }
