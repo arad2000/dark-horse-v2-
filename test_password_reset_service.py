@@ -51,6 +51,7 @@ class PasswordResetServiceTests(unittest.TestCase):
                     attempts INTEGER NOT NULL DEFAULT 0,
                     expires_at DATETIME NOT NULL,
                     verified_at DATETIME,
+                    request_ip VARCHAR(45),
                     created_at DATETIME
                 )
             """))
