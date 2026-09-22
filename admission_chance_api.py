@@ -34,7 +34,7 @@ def _normalize_text(value: Any) -> str:
     text = str(value or "")
     text = text.replace("ي", "ی").replace("ى", "ی").replace("ك", "ک")
     text = text.replace("\u200c", " ").replace("\u200f", " ")
-    text = re.sub(r"\\s+", " ", text)
+    text = re.sub(r"\s+", " ", text)
     return text.strip().lower()
 
 
@@ -124,7 +124,7 @@ def filter_programs(
 
 
 def _year_number(value: Any) -> int:
-    match = re.search(r"(\\d{4})", str(value))
+    match = re.search(r"(\d{4})", str(value))
     return int(match.group(1)) if match else -1
 
 
@@ -214,11 +214,11 @@ def _select_exam_cutoff(
         if cutoff is not None and note is None and bomi_type == "ghotbi":
             note = GHOTBI_NOTE
 
-    if cutoff is None:
-        # A non-standard quota name such as "azad" has no dedicated cutoff
-        # dimension in the phase-1 source; the zone dimension is used instead.
-        if cutoff_dimension != quota_key:
-            note = note or UNSUPPORTED_QUOTA_NOTE
+    # The phase-1 dataset has no independent "azad" cutoff dimension.
+    # Known veteran/quota dimensions use their own cutoff key; every other
+    # quota name falls back to the supplied region zone and is disclosed.
+    if quota_key not in {"isargaran_25", "isargaran_5", "shahid"}:
+        note = note or UNSUPPORTED_QUOTA_NOTE
     return cutoff, year, cutoff_dimension, note
 
 
