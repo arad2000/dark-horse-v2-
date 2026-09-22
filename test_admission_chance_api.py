@@ -243,6 +243,15 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertIn("region_zone", response.json()["detail"])
         self.assertIn("quota", response.json()["detail"])
 
+    def test_runtime_fingerprint_reports_admission_file_and_route(self):
+        response = self.client.get("/__runtime_fingerprint")
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        file_info = payload["admission_runtime_files"]["admission_chance_api.py"]
+        self.assertTrue(file_info["available"])
+        self.assertEqual(len(file_info["sha256"]), 64)
+        self.assertTrue(payload["admission_chance_route_mounted"])
+
     def test_endpoint_returns_qualitative_items(self):
         with patch(
             "admission_chance_api.load_programs",
