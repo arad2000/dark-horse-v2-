@@ -203,11 +203,12 @@ def _select_exam_cutoff(
         note = "بومی استانی فقط در صورت تطابق استان داوطلب و محل تحصیل اعمال شد."
 
     source = program.get("cutoffs_bomi") if use_bomi else program.get("cutoffs_predicted_1405")
-    cutoff = _cutoff_from_dimension(source, cutoff_dimension)
-    year: int | None = 1405 if cutoff is not None and not use_bomi else None
-    if cutoff is not None and use_bomi:
+    if use_bomi:
         # cutoffs_bomi is versioned by historical year in phase 1.
         cutoff, year = _latest_historical_cutoff(source, cutoff_dimension)
+    else:
+        cutoff = _cutoff_from_dimension(source, cutoff_dimension)
+        year = 1405 if cutoff is not None else None
 
     if cutoff is None:
         cutoff, year = _latest_historical_cutoff(program.get("cutoffs_historical"), cutoff_dimension)
