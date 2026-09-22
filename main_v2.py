@@ -34,6 +34,10 @@ _SCORING_FINGERPRINT_FILES = (
     "school_branches_v2.json",
 )
 
+_ADMISSION_RUNTIME_FINGERPRINT_FILES = (
+    "admission_chance_api.py",
+)
+
 
 def _runtime_env_commit() -> str | None:
     return (
@@ -81,7 +85,26 @@ def _runtime_build_fingerprint() -> dict:
         "school_branches_blob_sha": git_blobs.get("school_branches_v2.json"),
         "engine_file_sha": files.get("dark_horse_engine_v2.py", {}).get("sha256"),
         "cutover": str(os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false")).strip().lower() == "true",
+        "admission_runtime_files": _runtime_file_fingerprints(root, _ADMISSION_RUNTIME_FINGERPRINT_FILES),
     }
+
+
+def _runtime_file_fingerprints(root: str, relative_paths: tuple[str, ...]) -> dict:
+    result = {}
+    for relative_path in relative_paths:
+        path = os.path.join(root, relative_path)
+        try:
+            with open(path, "rb") as fh:
+                payload = fh.read()
+        except OSError as exc:
+            result[relative_path] = {"available": False, "error": str(exc)}
+            continue
+        result[relative_path] = {
+            "available": True,
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "bytes": len(payload),
+        }
+    return result
 
 
 class DarkHorseDiscoverRequest(BaseModel):
@@ -170,6 +193,12 @@ async def runtime_fingerprint():
         "scoring_build_fingerprint": build["fingerprint"],
         "fingerprint_algorithm": build["algorithm"],
         "scoring_fingerprinted_files": build["files"],
+        "admission_runtime_files": build["admission_runtime_files"],
+        "admission_chance_route_mounted": any(
+            getattr(route, "path", None) == "/api/v1/admission/chance"
+            and "POST" in (getattr(route, "methods", None) or set())
+            for route in app.routes
+        ),
     }
 
 
