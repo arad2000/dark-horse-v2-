@@ -14,6 +14,7 @@ from admission_chance_api import (
     LOWER_LABEL,
     build_results,
     filter_programs,
+    load_programs,
 )
 from main_v2 import app
 
@@ -106,6 +107,45 @@ class AdmissionChanceServiceTests(unittest.TestCase):
             course_types=["roozaneh"],
         )
         self.assertEqual([item["program_id"] for item in kept], ["EXAM-1"])
+
+    def test_source_dataset_has_expected_program_count_and_unique_ids(self):
+        programs = load_programs()
+        self.assertEqual(len(programs), 4150)
+        self.assertEqual(
+            len({str(item.get("program_id")) for item in programs}),
+            4150,
+        )
+
+    def test_ostani_bomi_uses_matching_province_and_latest_bomi_cutoff(self):
+        program = _program(
+            program_id="BOMI-1",
+            major_id=1,
+            method="با آزمون",
+            course_type="roozaneh",
+            province="تهران",
+            bomi_type="ostani",
+            predicted={"zone_2": 1200},
+            historical={"1404": {"zone_2": 1100}},
+        )
+        program["cutoffs_bomi"] = {
+            "1403": {"zone_2": 800},
+            "1404": {"zone_2": 700},
+        }
+        result = build_results(
+            major_ids=[1],
+            rank=600,
+            region_zone=2,
+            quota="azad",
+            province="تهران",
+            diploma_type="تجربی",
+            gpa=None,
+            course_types=["roozaneh"],
+            limit=30,
+            programs=[program],
+        )[0]
+        self.assertEqual(result["cutoff_used"], 700)
+        self.assertEqual(result["cutoff_year"], 1404)
+        self.assertEqual(result["label"], HIGHER_LABEL)
 
     def test_rank_better_than_cutoff_gets_higher_label(self):
         result = build_results(
