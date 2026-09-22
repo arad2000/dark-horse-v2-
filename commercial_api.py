@@ -18,6 +18,7 @@ from sqlalchemy import inspect, select, text
 from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, resolve_session
+from admission_chance_api import attach_router as attach_admission_chance_router
 from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
 from billing_models import Entitlement, JourneyCreditConsumption, Payment, User
@@ -29,6 +30,7 @@ from production_billing_guard import assert_production_billing_configuration
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
 attach_router(router)
+attach_admission_chance_router(router)
 logger = logging.getLogger("darkhorse.quota")
 
 
