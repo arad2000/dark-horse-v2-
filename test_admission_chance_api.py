@@ -27,7 +27,7 @@ def _program(
     course_type: str,
     diploma: str = "تجربی",
     province: str = "تهران",
-    bomi_type: str = "ostani",
+    bomi_type: str = "keshvari",
     predicted=None,
     historical=None,
     academic=None,
