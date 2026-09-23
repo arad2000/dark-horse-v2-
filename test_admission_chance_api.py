@@ -250,7 +250,12 @@ class AdmissionChanceApiTests(unittest.TestCase):
         file_info = payload["admission_runtime_files"]["admission_chance_api.py"]
         self.assertTrue(file_info["available"])
         self.assertEqual(len(file_info["sha256"]), 64)
-        self.assertTrue(payload["admission_chance_route_mounted"])
+        self.assertIn("admission_route_probe", payload)
+        self.assertTrue(payload["admission_route_probe"]["registered"])
+        self.assertEqual(
+            payload["admission_route_probe"]["resolved_path"],
+            "/api/v1/admission/chance",
+        )
 
     def test_runtime_module_paths_and_registered_routes(self):
         response = self.client.get("/__runtime_fingerprint")
