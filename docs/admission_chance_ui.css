@@ -1,4 +1,4 @@
-/* Phase 2 university-admission chance UI. Independent from scoring UI. */
+/* Phase 3 admission-path UI. Independent from scoring and Hybrid. */
 .dh-admission-chance-widget {
   margin: 24px 0 18px;
   padding: 20px;
@@ -13,11 +13,46 @@
   color: #f0c040;
   font-size: 1.25rem;
 }
+.dh-admission-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
 .dh-admission-chance-lead {
   margin: 0 0 14px;
   color: #c9b896;
   line-height: 1.9;
   font-size: 0.9rem;
+}
+.dh-admission-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 16px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #0c0c13;
+  border: 1px solid #2d2d39;
+}
+.dh-admission-tab {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 11px 10px;
+  background: transparent;
+  color: #bfb49c;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dh-admission-tab.active {
+  background: rgba(240, 192, 64, 0.12);
+  border-color: rgba(240, 192, 64, 0.45);
+  color: #f0c040;
+}
+.dh-admission-panel[hidden],
+.dh-admission-path-form[hidden] {
+  display: none !important;
 }
 .dh-admission-chance-form {
   display: grid;
@@ -49,9 +84,33 @@
   font: inherit;
 }
 .dh-admission-field input:focus,
-.dh-admission-field select:focus {
+.dh-admission-field select:focus,
+.dh-admission-tab:focus-visible {
   outline: 2px solid rgba(240, 192, 64, 0.28);
   border-color: #d4af37;
+}
+.dh-admission-help {
+  color: #9f947e;
+  font-size: 0.72rem;
+  line-height: 1.7;
+}
+.dh-admission-subtitle {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #2b2b35;
+  color: #f0c040;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.dh-admission-info {
+  grid-column: 1 / -1;
+  padding: 11px 12px;
+  border: 1px dashed rgba(240, 192, 64, 0.35);
+  border-radius: 10px;
+  color: #c9b896;
+  font-size: 0.78rem;
+  line-height: 1.9;
 }
 .dh-admission-submit {
   grid-column: 1 / -1;
@@ -91,6 +150,11 @@
   border: 1px solid #34343f;
   border-radius: 12px;
   background: #11111a;
+}
+.dh-admission-empty p {
+  margin: 0;
+  color: #c9b896;
+  line-height: 1.9;
 }
 .dh-admission-card-head {
   display: flex;
@@ -156,6 +220,10 @@
   }
   .dh-admission-field.full,
   .dh-admission-submit {
+    grid-column: auto;
+  }
+  .dh-admission-subtitle,
+  .dh-admission-info {
     grid-column: auto;
   }
   .dh-admission-meta {
