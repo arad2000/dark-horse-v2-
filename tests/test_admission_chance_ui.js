@@ -5,7 +5,7 @@ const source = fs.readFileSync('docs/admission_chance_ui.js', 'utf8');
 const css = fs.readFileSync('docs/admission_chance_ui.css', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 
-assert.match(source, //api/v1/admission/chance/);
+assert.ok(source.includes('/api/v1/admission/chance'));
 assert.match(source, /state\.majorsResult/);
 assert.match(source, /major_ids/);
 assert.match(source, /rank/);
