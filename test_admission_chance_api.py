@@ -323,7 +323,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertIn("رتبه", response.json()["detail"])
         self.assertIn("استان", response.json()["detail"])
 
-    def test_invalid_province_returns_400(self):
+    def test_missing_province_returns_400(self):\n        body = {\n            "major_ids": [1],\n            "rank_in_quota": 850,\n            "quota_type": "region_2",\n        }\n        response = self.client.post("/api/v1/admission/chance", json=body)\n        self.assertEqual(response.status_code, 400)\n        self.assertIn("استان", response.json()["detail"])\n\n    def test_invalid_province_returns_400(self):
         body = {
             "major_ids": [1],
             "rank_in_quota": 850,
