@@ -242,6 +242,9 @@ async def runtime_fingerprint():
             for route in app.routes
         ),
         "runtime_module_diagnostics": _runtime_module_diagnostics(),
+        "openapi_has_admission_route": "/api/v1/admission/chance" in (
+            app.openapi().get("paths", {}) or {}
+        ),
     }
 
 
