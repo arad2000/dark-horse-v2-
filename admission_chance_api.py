@@ -637,8 +637,17 @@ class AdmissionChanceRequest(BaseModel):
         description="رتبه در سهمیه — کارنامه ملاک عمل انتخاب رشته.",
     )
     region_zone: int | None = Field(default=None, ge=1, le=3)
-    special_quota: str = Field(default="none")
-    province: str | None = Field(default=None, max_length=64)
+    special_quota: str = Field(
+        default="none",
+        description="سهمیه خاص؛ از سهمیه منطقه جداست.",
+        json_schema_extra={"enum": ["none", "isargaran_25", "isargaran_5", "shahid"]},
+    )
+    province: str | None = Field(
+        default=None,
+        max_length=64,
+        description="استان بومی؛ یکی از ۳۱ استان استاندارد.",
+        json_schema_extra={"enum": list(PROVINCE_OPTIONS)},
+    )
     national_rank: int | None = Field(default=None, ge=1)
     gpa_written: float | None = Field(default=None, ge=0, le=20)
 
@@ -686,6 +695,9 @@ def _resolve_exam_request(request: AdmissionChanceRequest) -> dict[str, Any]:
         "isargaran5": "isargaran_5",
         "خانواده شهدا": "shahid",
     }
+    if special == "none" and request.quota in {"isargaran_25", "isargaran_5", "shahid"}:
+        special = str(request.quota)
+
     special = special_aliases.get(special, special)
     if special not in {"none", *QUOTA_DIMENSIONS.keys()}:
         raise AdmissionInputError("special_quota نامعتبر است.")
