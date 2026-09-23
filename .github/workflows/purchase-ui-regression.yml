@@ -25,3 +25,5 @@ jobs:
         run: node tests/test_quota_enforcement_bridge.js
       - name: Run admin credit grant UI regression
         run: node tests/test_admin_credit_grant_ui.js
+      - name: Run admission chance UI regression
+        run: node tests/test_admission_chance_ui.js
