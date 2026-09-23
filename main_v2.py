@@ -14,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from admin_router import router as admin_router
+import admission_chance_api as admission_chance_api_module
+import commercial_api as commercial_api_module
 from commercial_api import router as commercial_router
 from dark_horse_engine_v2 import DarkHorseEngineV2
 from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
@@ -32,6 +34,10 @@ _SCORING_FINGERPRINT_FILES = (
     "trait_map_v3.json",
     "value_poles_v2.json",
     "school_branches_v2.json",
+)
+
+_ADMISSION_RUNTIME_FINGERPRINT_FILES = (
+    "admission_chance_api.py",
 )
 
 
@@ -81,6 +87,81 @@ def _runtime_build_fingerprint() -> dict:
         "school_branches_blob_sha": git_blobs.get("school_branches_v2.json"),
         "engine_file_sha": files.get("dark_horse_engine_v2.py", {}).get("sha256"),
         "cutover": str(os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false")).strip().lower() == "true",
+        "admission_runtime_files": _runtime_file_fingerprints(root, _ADMISSION_RUNTIME_FINGERPRINT_FILES),
+    }
+
+
+def _runtime_file_fingerprints(root: str, relative_paths: tuple[str, ...]) -> dict:
+    result = {}
+    for relative_path in relative_paths:
+        path = os.path.join(root, relative_path)
+        try:
+            with open(path, "rb") as fh:
+                payload = fh.read()
+        except OSError as exc:
+            result[relative_path] = {"available": False, "error": str(exc)}
+            continue
+        result[relative_path] = {
+            "available": True,
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "bytes": len(payload),
+        }
+    return result
+
+
+def _describe_routes(routes) -> list[dict]:
+    described = []
+    for route in routes:
+        endpoint = getattr(route, "endpoint", None)
+        described.append(
+            {
+                "path": getattr(route, "path", None),
+                "methods": sorted(getattr(route, "methods", None) or []),
+                "name": getattr(route, "name", None),
+                "endpoint_module": getattr(endpoint, "__module__", None),
+                "endpoint_name": getattr(endpoint, "__name__", None),
+            }
+        )
+    return described
+
+
+def _runtime_admission_route_probe() -> dict:
+    expected_path = "/api/v1/admission/chance"
+    try:
+        resolved = str(app.url_path_for("admission_chance"))
+    except Exception as exc:
+        return {
+            "registered": False,
+            "resolved_path": None,
+            "error": str(exc),
+        }
+    return {
+        "registered": resolved == expected_path,
+        "resolved_path": resolved,
+    }
+
+
+def _runtime_module_diagnostics() -> dict:
+    admission_router = getattr(admission_chance_api_module, "router", None)
+    commercial_module_router = getattr(commercial_api_module, "router", None)
+    return {
+        "commercial_api": {
+            "loaded": True,
+            "file": getattr(commercial_api_module, "__file__", None),
+            "router_route_count": len(getattr(commercial_module_router, "routes", ()) or ()),
+        },
+        "admission_chance_api": {
+            "loaded": True,
+            "file": getattr(admission_chance_api_module, "__file__", None),
+            "router_route_count": len(getattr(admission_router, "routes", ()) or ()),
+        },
+        "admission_module_routes": _describe_routes(
+            getattr(admission_router, "routes", ()) or ()
+        ),
+        "commercial_router_routes": _describe_routes(
+            getattr(commercial_router, "routes", ()) or ()
+        ),
+        "app_registered_routes": _describe_routes(app.routes),
     }
 
 
@@ -170,6 +251,17 @@ async def runtime_fingerprint():
         "scoring_build_fingerprint": build["fingerprint"],
         "fingerprint_algorithm": build["algorithm"],
         "scoring_fingerprinted_files": build["files"],
+        "admission_runtime_files": build["admission_runtime_files"],
+        "admission_chance_route_mounted": any(
+            getattr(route, "path", None) == "/api/v1/admission/chance"
+            and "POST" in (getattr(route, "methods", None) or set())
+            for route in app.routes
+        ),
+        "runtime_module_diagnostics": _runtime_module_diagnostics(),
+        "admission_route_probe": _runtime_admission_route_probe(),
+        "openapi_has_admission_route": "/api/v1/admission/chance" in (
+            app.openapi().get("paths", {}) or {}
+        ),
     }
 
 
