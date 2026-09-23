@@ -14,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from admin_router import router as admin_router
+import admission_chance_api as admission_chance_api_module
+import commercial_api as commercial_api_module
 from commercial_api import router as commercial_router
 from dark_horse_engine_v2 import DarkHorseEngineV2
 from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
@@ -105,6 +107,46 @@ def _runtime_file_fingerprints(root: str, relative_paths: tuple[str, ...]) -> di
             "bytes": len(payload),
         }
     return result
+
+
+def _describe_routes(routes) -> list[dict]:
+    described = []
+    for route in routes:
+        endpoint = getattr(route, "endpoint", None)
+        described.append(
+            {
+                "path": getattr(route, "path", None),
+                "methods": sorted(getattr(route, "methods", None) or []),
+                "name": getattr(route, "name", None),
+                "endpoint_module": getattr(endpoint, "__module__", None),
+                "endpoint_name": getattr(endpoint, "__name__", None),
+            }
+        )
+    return described
+
+
+def _runtime_module_diagnostics() -> dict:
+    admission_router = getattr(admission_chance_api_module, "router", None)
+    commercial_module_router = getattr(commercial_api_module, "router", None)
+    return {
+        "commercial_api": {
+            "loaded": True,
+            "file": getattr(commercial_api_module, "__file__", None),
+            "router_route_count": len(getattr(commercial_module_router, "routes", ()) or ()),
+        },
+        "admission_chance_api": {
+            "loaded": True,
+            "file": getattr(admission_chance_api_module, "__file__", None),
+            "router_route_count": len(getattr(admission_router, "routes", ()) or ()),
+        },
+        "admission_module_routes": _describe_routes(
+            getattr(admission_router, "routes", ()) or ()
+        ),
+        "commercial_router_routes": _describe_routes(
+            getattr(commercial_router, "routes", ()) or ()
+        ),
+        "app_registered_routes": _describe_routes(app.routes),
+    }
 
 
 class DarkHorseDiscoverRequest(BaseModel):
@@ -199,6 +241,7 @@ async def runtime_fingerprint():
             and "POST" in (getattr(route, "methods", None) or set())
             for route in app.routes
         ),
+        "runtime_module_diagnostics": _runtime_module_diagnostics(),
     }
 
 
