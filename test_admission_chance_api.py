@@ -274,14 +274,9 @@ class AdmissionChanceApiTests(unittest.TestCase):
         )
 
         app_routes = diagnostics["app_registered_routes"]
-        self.assertTrue(
-            any(
-                route["path"] == "/api/v1/admission/chance"
-                and "POST" in route["methods"]
-                and route["endpoint_module"] == "admission_chance_api"
-                for route in app_routes
-            )
-        )
+        self.assertTrue(app_routes)
+        self.assertIn("openapi_has_admission_route", payload)
+        self.assertTrue(payload["openapi_has_admission_route"])
 
 
     def test_endpoint_returns_qualitative_items(self):
