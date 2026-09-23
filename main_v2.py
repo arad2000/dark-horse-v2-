@@ -125,6 +125,22 @@ def _describe_routes(routes) -> list[dict]:
     return described
 
 
+def _runtime_admission_route_probe() -> dict:
+    expected_path = "/api/v1/admission/chance"
+    try:
+        resolved = str(app.url_path_for("admission_chance"))
+    except Exception as exc:
+        return {
+            "registered": False,
+            "resolved_path": None,
+            "error": str(exc),
+        }
+    return {
+        "registered": resolved == expected_path,
+        "resolved_path": resolved,
+    }
+
+
 def _runtime_module_diagnostics() -> dict:
     admission_router = getattr(admission_chance_api_module, "router", None)
     commercial_module_router = getattr(commercial_api_module, "router", None)
@@ -242,6 +258,7 @@ async def runtime_fingerprint():
             for route in app.routes
         ),
         "runtime_module_diagnostics": _runtime_module_diagnostics(),
+        "admission_route_probe": _runtime_admission_route_probe(),
         "openapi_has_admission_route": "/api/v1/admission/chance" in (
             app.openapi().get("paths", {}) or {}
         ),
