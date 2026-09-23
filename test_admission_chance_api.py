@@ -180,6 +180,23 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(a["label"], b["label"])
         self.assertNotIn("rank", a)
 
+
+    def test_target_group_can_be_inferred_from_major_metadata(self):
+        result = build_record_results(
+            major_ids=[1],
+            diploma_type="ensani",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="تهران",
+            target_field_group=None,
+            course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM],
+            majors=MAJORS,
+            limit=30,
+        )[0]
+        self.assertEqual(result["target_field_group"], "tajrobi")
+        self.assertEqual(result["gpa_coefficient"], 57.1)
+
     def test_record_other_fani_requires_gpa_total(self):
         with self.assertRaises(ValueError):
             build_record_results(
@@ -327,6 +344,24 @@ class AdmissionChanceApiTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("admission_path", response.json()["detail"])
+
+    def test_legacy_special_quota_maps_without_merging_region(self):
+        with patch("admission_chance_api.load_programs", return_value=(SPECIAL_PROGRAM,)):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "major_ids": [1],
+                    "rank": 250,
+                    "region_zone": 2,
+                    "quota": "isargaran_25",
+                    "province": "تهران",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["context"]["region_zone"], 2)
+        self.assertEqual(payload["context"]["special_quota"], "isargaran_25")
+        self.assertEqual(payload["items"][0]["cutoff_dimension"], "isargaran_25")
 
     def test_legacy_exam_contract_still_works(self):
         with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):
