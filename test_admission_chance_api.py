@@ -275,8 +275,12 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
         app_routes = diagnostics["app_registered_routes"]
         self.assertTrue(app_routes)
-        self.assertIn("openapi_has_admission_route", payload)
-        self.assertTrue(payload["openapi_has_admission_route"])
+        self.assertIn("admission_route_probe", payload)
+        self.assertTrue(payload["admission_route_probe"]["registered"])
+        self.assertEqual(
+            payload["admission_route_probe"]["resolved_path"],
+            "/api/v1/admission/chance",
+        )
 
 
     def test_endpoint_returns_qualitative_items(self):
