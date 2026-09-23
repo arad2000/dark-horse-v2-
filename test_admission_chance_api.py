@@ -252,6 +252,38 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(len(file_info["sha256"]), 64)
         self.assertTrue(payload["admission_chance_route_mounted"])
 
+    def test_runtime_module_paths_and_registered_routes(self):
+        response = self.client.get("/__runtime_fingerprint")
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        diagnostics = payload["runtime_module_diagnostics"]
+
+        self.assertTrue(diagnostics["commercial_api"]["loaded"])
+        self.assertTrue(diagnostics["admission_chance_api"]["loaded"])
+        self.assertTrue(diagnostics["commercial_api"]["file"].endswith("commercial_api.py"))
+        self.assertTrue(diagnostics["admission_chance_api"]["file"].endswith("admission_chance_api.py"))
+
+        admission_module_routes = diagnostics["admission_module_routes"]
+        self.assertTrue(
+            any(
+                route["path"] == "/admission/chance"
+                and "POST" in route["methods"]
+                and route["endpoint_module"] == "admission_chance_api"
+                for route in admission_module_routes
+            )
+        )
+
+        app_routes = diagnostics["app_registered_routes"]
+        self.assertTrue(
+            any(
+                route["path"] == "/api/v1/admission/chance"
+                and "POST" in route["methods"]
+                and route["endpoint_module"] == "admission_chance_api"
+                for route in app_routes
+            )
+        )
+
+
     def test_endpoint_returns_qualitative_items(self):
         with patch(
             "admission_chance_api.load_programs",
