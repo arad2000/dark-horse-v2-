@@ -1,0 +1,164 @@
+/* Phase 1 university-admission chance UI. Independent from scoring UI. */
+.dh-admission-chance-widget {
+  margin: 24px 0 18px;
+  padding: 20px;
+  border: 1px solid rgba(240, 192, 64, 0.45);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #1a1a2e, #101018);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+  text-align: right;
+}
+.dh-admission-chance-widget h3 {
+  margin: 0 0 8px;
+  color: #f0c040;
+  font-size: 1.25rem;
+}
+.dh-admission-chance-lead {
+  margin: 0 0 14px;
+  color: #c9b896;
+  line-height: 1.9;
+  font-size: 0.9rem;
+}
+.dh-admission-chance-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.dh-admission-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dh-admission-field.full {
+  grid-column: 1 / -1;
+}
+.dh-admission-field label {
+  color: #ddd2b9;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+.dh-admission-field input,
+.dh-admission-field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #444;
+  border-radius: 10px;
+  background: #0c0c13;
+  color: #eee;
+  padding: 11px 12px;
+  font: inherit;
+}
+.dh-admission-field input:focus,
+.dh-admission-field select:focus {
+  outline: 2px solid rgba(240, 192, 64, 0.28);
+  border-color: #d4af37;
+}
+.dh-admission-submit {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f0c040, #d4af37);
+  color: #0a0a0f;
+  font-weight: 800;
+  cursor: pointer;
+}
+.dh-admission-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.dh-admission-status {
+  margin-top: 12px;
+  min-height: 24px;
+  color: #c9b896;
+  line-height: 1.8;
+}
+.dh-admission-status.error {
+  color: #ff8b8b;
+}
+.dh-admission-results {
+  margin-top: 16px;
+}
+.dh-admission-summary {
+  margin: 0 0 12px;
+  color: #c9b896;
+  font-size: 0.88rem;
+}
+.dh-admission-card {
+  margin: 10px 0;
+  padding: 14px;
+  border: 1px solid #34343f;
+  border-radius: 12px;
+  background: #11111a;
+}
+.dh-admission-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.dh-admission-university {
+  margin: 0;
+  color: #f0c040;
+  font-size: 1rem;
+}
+.dh-admission-major {
+  margin: 4px 0 0;
+  color: #eee;
+  font-size: 0.88rem;
+}
+.dh-admission-label {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: rgba(240, 192, 64, 0.1);
+  border: 1px solid rgba(240, 192, 64, 0.45);
+  color: #f0c040;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.dh-admission-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin-top: 10px;
+  color: #c9b896;
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+.dh-admission-note {
+  margin: 10px 0 0;
+  padding-top: 9px;
+  border-top: 1px solid #2c2c36;
+  color: #d8caa8;
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+.dh-admission-disclaimer {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 193, 7, 0.06);
+  border: 1px dashed rgba(240, 192, 64, 0.45);
+  color: #c9b896;
+  font-size: 0.78rem;
+  line-height: 1.9;
+}
+@media (max-width: 640px) {
+  .dh-admission-chance-widget {
+    padding: 15px;
+  }
+  .dh-admission-chance-form {
+    grid-template-columns: 1fr;
+  }
+  .dh-admission-field.full,
+  .dh-admission-submit {
+    grid-column: auto;
+  }
+  .dh-admission-meta {
+    grid-template-columns: 1fr;
+  }
+}
