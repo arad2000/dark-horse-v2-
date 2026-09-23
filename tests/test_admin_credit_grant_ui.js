@@ -119,7 +119,7 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /auth-ui-modal-root-missing/);
   assert.match(commercialSource, /showAuthModal failed/);
   assert.match(commercialSource, /__dhCommercialUIReady/);
-  assert.match(indexSource, /shell\.js\?v=76/);
+  assert.match(indexSource, /shell\.js\?v=79/);
   assert.match(indexSource, /commercial_ui\.js\?v=34/);
   assert.match(indexSource, /profile_ux_v1\.js\?v=7/);
   assert.match(profileSource, /function adminUserId\(user\)/);
