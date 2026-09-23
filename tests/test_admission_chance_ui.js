@@ -14,7 +14,7 @@ assert.match(source, /quota/);
 assert.match(source, /province/);
 assert.match(source, /نتایج تخمینی/);
 assert.match(source, /جایگزین دفترچه و نتایج رسمی سنجش نیست/);
-assert.match(source, /admission_chance_ui/);
+assert.match(source, /DHAdmissionChanceUI/);
 assert.doesNotMatch(source, /darkhorse\/discover/);
 assert.doesNotMatch(source, /individuality_fit\s*=|individuality_fit\s*=/);
 
