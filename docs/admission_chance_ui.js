@@ -1,5 +1,6 @@
-/* Dark Horse — Phase 1 university admission chance UI.
+/* Dark Horse — Phase 2 university admission chance UI.
  * This module is intentionally independent from scoring/ranking.
+ * It mirrors the admission API contract, not the Dark Horse scoring contract.
  */
 (function () {
   'use strict';
@@ -18,10 +19,46 @@
   };
 
   var QUOTA_OPTIONS = [
-    { value: 'azad', label: 'عادی / سایر سهمیه‌ها' },
+    { value: 'region_1', label: 'منطقه ۱' },
+    { value: 'region_2', label: 'منطقه ۲' },
+    { value: 'region_3', label: 'منطقه ۳' },
     { value: 'isargaran_25', label: 'ایثارگران ۲۵٪' },
     { value: 'isargaran_5', label: 'ایثارگران ۵٪' },
     { value: 'shahid', label: 'خانواده شهدا' }
+  ];
+
+  var PROVINCES = [
+    'آذربایجان شرقی',
+    'آذربایجان غربی',
+    'اردبیل',
+    'اصفهان',
+    'البرز',
+    'ایلام',
+    'بوشهر',
+    'تهران',
+    'چهارمحال و بختیاری',
+    'خراسان جنوبی',
+    'خراسان رضوی',
+    'خراسان شمالی',
+    'خوزستان',
+    'زنجان',
+    'سمنان',
+    'سیستان و بلوچستان',
+    'فارس',
+    'قزوین',
+    'قم',
+    'کردستان',
+    'کرمان',
+    'کرمانشاه',
+    'کهگیلویه و بویراحمد',
+    'گلستان',
+    'گیلان',
+    'لرستان',
+    'مازندران',
+    'مرکزی',
+    'هرمزگان',
+    'همدان',
+    'یزد'
   ];
 
   function escapeHtml(value) {
@@ -75,10 +112,10 @@
 
   function selectedFormValues(form) {
     return {
-      rank: Number(form.rank.value),
-      region_zone: Number(form.region_zone.value),
-      quota: String(form.quota.value || '').trim(),
-      province: String(form.province.value || '').trim()
+      rank_in_quota: Number(form.rank_in_quota.value),
+      quota_type: String(form.quota_type.value || '').trim(),
+      province: String(form.province.value || '').trim(),
+      gpa_written: Number(form.gpa_written.value)
     };
   }
 
@@ -86,38 +123,43 @@
     var values = selectedFormValues(form);
     return {
       major_ids: uniqueMajorIds(recommendations),
-      rank: values.rank,
-      region_zone: values.region_zone,
-      quota: values.quota,
+      rank_in_quota: values.rank_in_quota,
+      quota_type: values.quota_type,
       province: values.province || null,
+      gpa_written: values.gpa_written,
       limit: 30
     };
   }
 
   function validateValues(values, majorIds) {
     if (!majorIds.length) return 'رشته‌ای برای بررسی شانس قبولی در نتیجهٔ کشف رشته پیدا نشد.';
-    if (!Number.isInteger(values.rank) || values.rank < 1) {
-      return 'رتبه را به صورت یک عدد صحیح بزرگ‌تر از صفر وارد کن.';
+    if (!Number.isInteger(values.rank_in_quota) || values.rank_in_quota < 1) {
+      return 'رتبه در سهمیه را به صورت یک عدد صحیح بزرگ‌تر از صفر وارد کن.';
     }
-    if (![1, 2, 3].includes(values.region_zone)) {
-      return 'منطقه باید ۱، ۲ یا ۳ باشد.';
+    if (!values.quota_type) return 'سهمیه/منطقه را انتخاب کن.';
+    if (!values.province) return 'استان داوطلب را از فهرست ۳۱ استان انتخاب کن.';
+    if (!Number.isFinite(values.gpa_written) || values.gpa_written < 0 || values.gpa_written > 20) {
+      return 'معدل کتبی را بین ۰ تا ۲۰ وارد کن.';
     }
-    if (!values.quota) return 'سهمیه را انتخاب کن.';
-    if (!values.province) return 'استان داوطلب را وارد کن.';
     return '';
   }
 
   function cutoffText(item) {
     var cutoff = item && item.cutoff_used;
-    if (cutoff == null) return 'cutoff: اطلاعات کافی نیست';
+    if (cutoff == null) {
+      return 'cutoff: اطلاعات کافی نیست';
+    }
+
     if (typeof cutoff === 'object') {
       var parts = [];
       if (cutoff.minimum_gpa != null) parts.push('حداقل معدل: ' + cutoff.minimum_gpa);
       if (cutoff.minimum_traz != null) parts.push('حداقل تراز: ' + cutoff.minimum_traz);
       return parts.length ? parts.join(' · ') : 'cutoff: اطلاعات تحصیلی';
     }
+
+    var dimension = item.cutoff_dimension ? ' · بعد: ' + item.cutoff_dimension : '';
     var year = item.cutoff_year ? ' · سال ' + item.cutoff_year : '';
-    return 'cutoff: ' + cutoff + year;
+    return 'cutoff: ' + cutoff + dimension + year;
   }
 
   function renderItems(items, majorMap) {
@@ -154,36 +196,45 @@
     }).join('');
   }
 
-  function formHtml() {
-    var quotaOptions = QUOTA_OPTIONS.map(function (option) {
+  function quotaOptionsHtml() {
+    return QUOTA_OPTIONS.map(function (option) {
       return '<option value="' + escapeHtml(option.value) + '">' + escapeHtml(option.label) + '</option>';
     }).join('');
+  }
 
+  function provinceOptionsHtml() {
+    return PROVINCES.map(function (province) {
+      return '<option value="' + escapeHtml(province) + '">' + escapeHtml(province) + '</option>';
+    }).join('');
+  }
+
+  function formHtml() {
     return (
       '<form class="dh-admission-chance-form" id="dh-admission-chance-form">' +
-        '<div class="dh-admission-field">' +
-          '<label for="dh-admission-rank">رتبه</label>' +
-          '<input id="dh-admission-rank" name="rank" type="number" min="1" step="1" inputmode="numeric" placeholder="مثلاً 2500" required>' +
+        '<div class="dh-admission-field full">' +
+          '<label for="dh-admission-rank">رتبه در سهمیه (کارنامه ملاک عمل انتخاب رشته سنجش)</label>' +
+          '<input id="dh-admission-rank" name="rank_in_quota" type="number" min="1" step="1" inputmode="numeric" placeholder="مثلاً 2500" required>' +
+          '<small class="dh-admission-help">همان رتبه‌ای که در کارنامه ملاک عمل با سهمیه ثبت شده است.</small>' +
         '</div>' +
         '<div class="dh-admission-field">' +
-          '<label for="dh-admission-region">منطقه</label>' +
-          '<select id="dh-admission-region" name="region_zone" required>' +
-            '<option value="">انتخاب منطقه</option>' +
-            '<option value="1">منطقه ۱</option>' +
-            '<option value="2">منطقه ۲</option>' +
-            '<option value="3">منطقه ۳</option>' +
+          '<label for="dh-admission-quota">سهمیه / منطقه</label>' +
+          '<select id="dh-admission-quota" name="quota_type" required>' +
+            '<option value="">انتخاب سهمیه / منطقه</option>' +
+            quotaOptionsHtml() +
           '</select>' +
+          '<small class="dh-admission-help">این انتخاب مستقیماً dimension cutoff را تغییر می‌دهد.</small>' +
         '</div>' +
         '<div class="dh-admission-field">' +
-          '<label for="dh-admission-quota">سهمیه</label>' +
-          '<select id="dh-admission-quota" name="quota" required>' +
-            '<option value="">انتخاب سهمیه</option>' +
-            quotaOptions +
+          '<label for="dh-admission-gpa">معدل کتبی نهایی دیپلم</label>' +
+          '<input id="dh-admission-gpa" name="gpa_written" type="number" min="0" max="20" step="0.01" inputmode="decimal" placeholder="مثلاً 18.75" required>' +
+          '<small class="dh-admission-help">برای مسیر «سوابق تحصیلی»، فقط با حداقل معدل همان برنامه مقایسه می‌شود؛ رتبه جایگزین آن نیست.</small>' +
+        '</div>' +
+        '<div class="dh-admission-field full">' +
+          '<label for="dh-admission-province">استان بومی داوطلب</label>' +
+          '<select id="dh-admission-province" name="province" required>' +
+            '<option value="">انتخاب استان</option>' +
+            provinceOptionsHtml() +
           '</select>' +
-        '</div>' +
-        '<div class="dh-admission-field">' +
-          '<label for="dh-admission-province">استان داوطلب</label>' +
-          '<input id="dh-admission-province" name="province" type="text" maxlength="128" placeholder="مثلاً تهران" autocomplete="address-level1" required>' +
         '</div>' +
         '<button class="dh-admission-submit" id="dh-admission-submit" type="submit">🎯 بررسی شانس قبولی دانشگاه</button>' +
       '</form>' +
@@ -197,7 +248,7 @@
       '<section class="dh-admission-chance-widget" id="' + WIDGET_ID + '">' +
         '<h3>🎓 تخمین شانس قبولی دانشگاه</h3>' +
         '<p class="dh-admission-chance-lead">' +
-          'بعد از کشف رشته‌ها، می‌توانی با رتبه، منطقه، سهمیه و استان، برنامه‌های دانشگاهی مرتبط را با برچسب کیفی ببینی.' +
+          'بعد از کشف رشته‌ها، رتبه در سهمیه، سهمیه/منطقه، استان بومی و معدل کتبی را وارد کن تا برنامه‌های دانشگاهی مرتبط با برچسب کیفی نمایش داده شوند.' +
         '</p>' +
         '<button type="button" class="btn btn-primary dh-admission-submit" id="dh-admission-open-form">بررسی شانس قبولی</button>' +
         '<div id="dh-admission-form-wrap" hidden style="margin-top:14px;">' +
@@ -345,7 +396,9 @@
   window.DHAdmissionChanceUI = {
     init: init,
     buildRequestPayload: buildRequestPayload,
-    uniqueMajorIds: uniqueMajorIds
+    uniqueMajorIds: uniqueMajorIds,
+    provinces: PROVINCES.slice(),
+    quotaOptions: QUOTA_OPTIONS.slice()
   };
 
   if (document.readyState === 'loading') {
