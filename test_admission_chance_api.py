@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from admission_chance_api import (
+    ACADEMIC_GPA_LOW_LABEL,
+    ACADEMIC_GPA_OK_LABEL,
     ACADEMIC_LABEL,
     BORDERLINE_LABEL,
     GHOTBI_NOTE,
@@ -59,8 +60,8 @@ EXAM_PROGRAM = _program(
     major_id=1,
     method="با آزمون",
     course_type="roozaneh",
-    predicted={"zone_2": 1000},
-    historical={"1404": {"zone_2": 1100}},
+    predicted={"zone_1": 500, "zone_2": 1000, "zone_3": 1500, "isargaran_25": 300},
+    historical={"1404": {"zone_2": 1100, "zone_3": 1600}},
 )
 
 BORDER_PROGRAM = _program(
@@ -133,32 +134,72 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         }
         result = build_results(
             major_ids=[1],
-            rank=600,
-            region_zone=2,
-            quota="azad",
+            programs=[program],
+            rank_in_quota=600,
+            quota_type="region_2",
             province="تهران",
             diploma_type="تجربی",
-            gpa=None,
+            gpa_written=None,
             course_types=["roozaneh"],
             limit=30,
-            programs=[program],
         )[0]
         self.assertEqual(result["cutoff_used"], 700)
         self.assertEqual(result["cutoff_year"], 1404)
+        self.assertEqual(result["cutoff_dimension"], "zone_2")
         self.assertEqual(result["label"], HIGHER_LABEL)
+
+    def test_quota_change_changes_cutoff_dimension_and_value(self):
+        region_1 = build_results(
+            major_ids=[1],
+            programs=[EXAM_PROGRAM],
+            rank_in_quota=450,
+            quota_type="region_1",
+            province="تهران",
+            diploma_type="تجربی",
+            course_types=["roozaneh"],
+            limit=30,
+        )[0]
+        region_3 = build_results(
+            major_ids=[1],
+            programs=[EXAM_PROGRAM],
+            rank_in_quota=450,
+            quota_type="region_3",
+            province="تهران",
+            diploma_type="تجربی",
+            course_types=["roozaneh"],
+            limit=30,
+        )[0]
+        self.assertEqual(region_1["cutoff_dimension"], "zone_1")
+        self.assertEqual(region_3["cutoff_dimension"], "zone_3")
+        self.assertEqual(region_1["cutoff_used"], 500)
+        self.assertEqual(region_3["cutoff_used"], 1500)
+        self.assertNotEqual(region_1["cutoff_used"], region_3["cutoff_used"])
+
+    def test_special_quota_uses_its_own_dimension(self):
+        result = build_results(
+            major_ids=[1],
+            programs=[EXAM_PROGRAM],
+            rank_in_quota=250,
+            quota_type="isargaran_25",
+            province="تهران",
+            diploma_type="تجربی",
+            course_types=["roozaneh"],
+            limit=30,
+        )[0]
+        self.assertEqual(result["cutoff_dimension"], "isargaran_25")
+        self.assertEqual(result["cutoff_used"], 300)
 
     def test_rank_better_than_cutoff_gets_higher_label(self):
         result = build_results(
             major_ids=[1],
-            rank=850,
-            region_zone=2,
-            quota="azad",
+            programs=[EXAM_PROGRAM],
+            rank_in_quota=850,
+            quota_type="region_2",
             province="تهران",
             diploma_type="تجربی",
-            gpa=18.5,
+            gpa_written=18.5,
             course_types=["roozaneh"],
             limit=30,
-            programs=[EXAM_PROGRAM],
         )[0]
         self.assertEqual(result["label"], HIGHER_LABEL)
         self.assertEqual(result["cutoff_used"], 1000)
@@ -167,68 +208,108 @@ class AdmissionChanceServiceTests(unittest.TestCase):
     def test_rank_near_cutoff_gets_borderline_label(self):
         result = build_results(
             major_ids=[1],
-            rank=1050,
-            region_zone=2,
-            quota="azad",
+            programs=[BORDER_PROGRAM],
+            rank_in_quota=1050,
+            quota_type="region_2",
             province="تهران",
             diploma_type="تجربی",
-            gpa=18.5,
+            gpa_written=18.5,
             course_types=["nobat_dovom"],
             limit=30,
-            programs=[BORDER_PROGRAM],
         )[0]
         self.assertEqual(result["label"], BORDERLINE_LABEL)
 
     def test_rank_worse_than_cutoff_gets_lower_label(self):
         result = build_results(
             major_ids=[1],
-            rank=1200,
-            region_zone=2,
-            quota="azad",
+            programs=[EXAM_PROGRAM],
+            rank_in_quota=1200,
+            quota_type="region_2",
             province="تهران",
             diploma_type="تجربی",
-            gpa=18.5,
+            gpa_written=18.5,
             course_types=["roozaneh"],
             limit=30,
-            programs=[EXAM_PROGRAM],
         )[0]
         self.assertEqual(result["label"], LOWER_LABEL)
 
-    def test_academic_uses_only_gpa_cutoff_and_no_rank_cutoff(self):
-        result = build_results(
+    def test_academic_uses_only_written_gpa_and_ignores_rank(self):
+        low_gpa_result = build_results(
             major_ids=[1],
-            rank=2500,
-            region_zone=2,
-            quota="azad",
+            programs=[ACADEMIC_PROGRAM],
+            rank_in_quota=1,
+            quota_type="region_1",
             province="تهران",
             diploma_type="تجربی",
-            gpa=18.5,
+            gpa_written=13.5,
             course_types=["savabegh_dolati"],
             limit=30,
-            programs=[ACADEMIC_PROGRAM],
         )[0]
-        self.assertEqual(result["label"], ACADEMIC_LABEL)
-        self.assertEqual(
-            result["cutoff_used"],
-            {"minimum_gpa": 14, "minimum_traz": 6000},
-        )
-        self.assertIsNone(result["cutoff_year"])
+        high_gpa_result = build_results(
+            major_ids=[1],
+            programs=[ACADEMIC_PROGRAM],
+            rank_in_quota=999999,
+            quota_type="region_3",
+            province="تهران",
+            diploma_type="تجربی",
+            gpa_written=15.0,
+            national_rank=1,
+            course_types=["savabegh_dolati"],
+            limit=30,
+        )[0]
+        self.assertEqual(low_gpa_result["label"], ACADEMIC_GPA_LOW_LABEL)
+        self.assertEqual(high_gpa_result["label"], ACADEMIC_GPA_OK_LABEL)
+        self.assertEqual(low_gpa_result["cutoff_used"]["minimum_gpa"], 14)
+        self.assertEqual(high_gpa_result["cutoff_used"]["minimum_gpa"], 14)
+
+    def test_gpa_path_never_uses_rank_cutoff(self):
+        result_a = build_results(
+            major_ids=[1],
+            programs=[ACADEMIC_PROGRAM],
+            rank_in_quota=1,
+            quota_type="region_1",
+            province="تهران",
+            gpa_written=15.0,
+            limit=30,
+        )[0]
+        result_b = build_results(
+            major_ids=[1],
+            programs=[ACADEMIC_PROGRAM],
+            rank_in_quota=500000,
+            quota_type="region_3",
+            province="تهران",
+            gpa_written=15.0,
+            limit=30,
+        )[0]
+        self.assertEqual(result_a["label"], result_b["label"])
+        self.assertEqual(result_a["cutoff_used"], result_b["cutoff_used"])
+        self.assertNotIn("cutoff_year", result_a, msg="academic result must not expose rank cutoff year")
 
     def test_ghotbi_returns_explicit_official_mapping_caution(self):
         result = build_results(
             major_ids=[1],
-            rank=900,
-            region_zone=2,
-            quota="azad",
+            programs=[GHOTBI_PROGRAM],
+            rank_in_quota=900,
+            quota_type="region_2",
             province="تهران",
             diploma_type="تجربی",
-            gpa=None,
+            gpa_written=None,
             course_types=["roozaneh"],
             limit=30,
-            programs=[GHOTBI_PROGRAM],
         )[0]
         self.assertEqual(result["label"], HIGHER_LABEL)
         self.assertEqual(result["note"], GHOTBI_NOTE)
+
+    def test_unsupported_quota_does_not_fallback_silently(self):
+        with self.assertRaises(ValueError):
+            build_results(
+                major_ids=[1],
+                programs=[EXAM_PROGRAM],
+                rank_in_quota=900,
+                quota_type="unsupported_quota",
+                province="تهران",
+                limit=30,
+            )
 
 
 class AdmissionChanceApiTests(unittest.TestCase):
@@ -239,9 +320,32 @@ class AdmissionChanceApiTests(unittest.TestCase):
     def test_missing_required_fields_returns_400(self):
         response = self.client.post("/api/v1/admission/chance", json={"major_ids": [1]})
         self.assertEqual(response.status_code, 400)
-        self.assertIn("rank", response.json()["detail"])
-        self.assertIn("region_zone", response.json()["detail"])
-        self.assertIn("quota", response.json()["detail"])
+        self.assertIn("رتبه", response.json()["detail"])
+        self.assertIn("استان", response.json()["detail"])
+
+    def test_missing_province_returns_400(self):\n        body = {\n            "major_ids": [1],\n            "rank_in_quota": 850,\n            "quota_type": "region_2",\n        }\n        response = self.client.post("/api/v1/admission/chance", json=body)\n        self.assertEqual(response.status_code, 400)\n        self.assertIn("استان", response.json()["detail"])\n\n    def test_invalid_province_returns_400(self):
+        body = {
+            "major_ids": [1],
+            "rank_in_quota": 850,
+            "quota_type": "region_2",
+            "province": "استان نامعتبر",
+            "gpa_written": 18.5,
+        }
+        response = self.client.post("/api/v1/admission/chance", json=body)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("استان نامعتبر", response.json()["detail"])
+
+    def test_invalid_quota_type_returns_400_without_zone_fallback(self):
+        body = {
+            "major_ids": [1],
+            "rank_in_quota": 850,
+            "quota_type": "unsupported_quota",
+            "province": "تهران",
+            "gpa_written": 18.5,
+        }
+        response = self.client.post("/api/v1/admission/chance", json=body)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("quota_type", response.json()["detail"])
 
     def test_runtime_fingerprint_reports_admission_file_and_route(self):
         response = self.client.get("/__runtime_fingerprint")
@@ -287,11 +391,39 @@ class AdmissionChanceApiTests(unittest.TestCase):
             "/api/v1/admission/chance",
         )
 
-
-    def test_endpoint_returns_qualitative_items(self):
+    def test_endpoint_returns_new_contract_and_qualitative_items(self):
         with patch(
             "admission_chance_api.load_programs",
             return_value=(EXAM_PROGRAM, ACADEMIC_PROGRAM),
+        ):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "major_ids": [1],
+                    "rank_in_quota": 850,
+                    "quota_type": "region_2",
+                    "province": "تهران",
+                    "gpa_written": 18.5,
+                    "gpa_total": 19.0,
+                    "national_rank": 1200,
+                    "course_types": ["roozaneh", "savabegh_dolati"],
+                    "diploma_type": "تجربی",
+                    "limit": 30,
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["count"], 2)
+        self.assertEqual(payload["context"]["quota_type"], "region_2")
+        self.assertEqual(payload["context"]["cutoff_dimension"], "zone_2")
+        self.assertEqual(payload["items"][0]["label"], HIGHER_LABEL)
+        self.assertEqual(payload["items"][1]["label"], ACADEMIC_GPA_OK_LABEL)
+        self.assertIn("جایگزین دفترچه و نتایج رسمی سنجش نیست", payload["disclaimer"])
+
+    def test_legacy_contract_still_works(self):
+        with patch(
+            "admission_chance_api.load_programs",
+            return_value=(EXAM_PROGRAM,),
         ):
             response = self.client.post(
                 "/api/v1/admission/chance",
@@ -301,18 +433,12 @@ class AdmissionChanceApiTests(unittest.TestCase):
                     "region_zone": 2,
                     "quota": "azad",
                     "province": "تهران",
-                    "diploma_type": "تجربی",
-                    "gpa": 18.5,
-                    "course_types": ["roozaneh", "savabegh_dolati"],
-                    "limit": 30,
                 },
             )
         self.assertEqual(response.status_code, 200, response.text)
         payload = response.json()
-        self.assertEqual(payload["count"], 2)
-        self.assertIn("جایگزین دفترچه و نتایج رسمی سنجش نیست", payload["disclaimer"])
-        self.assertEqual(payload["items"][0]["label"], HIGHER_LABEL)
-        self.assertEqual(payload["items"][1]["label"], ACADEMIC_LABEL)
+        self.assertEqual(payload["context"]["quota_type"], "region_2")
+        self.assertEqual(payload["context"]["cutoff_dimension"], "zone_2")
 
 
 if __name__ == "__main__":
