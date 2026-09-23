@@ -1,8 +1,8 @@
-"""Admission-chance service aligned to Senjesh-style quota/cutoff dimensions.
+"""Phase 3 admission-chance service.
 
-This module is intentionally separate from Dark Horse scoring/ranking.
-It reads the admission-only `program2s.json` dataset and never mutates
-scientific scoring data, the individuality engine, Hybrid, or cutover state.
+This module is isolated from Dark Horse scoring/ranking. It reads only
+admission datasets and never changes the individuality engine, Hybrid, or
+PostgreSQL runtime cutover.
 """
 from __future__ import annotations
 
@@ -10,28 +10,45 @@ import json
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-
 ROOT = Path(__file__).resolve().parent
 PROGRAMS_PATH = ROOT / "program2s.json"
+MAJORS_PATH = ROOT / "majors_database_v2.json"
 
 HIGHER_LABEL = "شانس بالاتر (تخمینی)"
 BORDERLINE_LABEL = "مرزی / رقابتی"
 LOWER_LABEL = "شانس پایین‌تر (تخمینی)"
-ACADEMIC_LABEL = "سوابق تحصیلی"
-ACADEMIC_GPA_OK_LABEL = "معدل حداقل را پوشش می‌دهد"
-ACADEMIC_GPA_LOW_LABEL = "معدل کمتر از حداقل"
-ACADEMIC_GPA_REQUIRED_LABEL = "معدل کتبی لازم است"
-ACADEMIC_GPA_DATA_MISSING_LABEL = "حداقل معدل در داده برنامه ثبت نشده"
+
+RECORD_ABOVE_LABEL = "معدل مؤثر بالاتر از حداقل"
+RECORD_AT_MIN_LABEL = "معدل مؤثر در حد حداقل"
+RECORD_BELOW_LABEL = "معدل مؤثر پایین‌تر از حداقل"
+RECORD_GPA_REQUIRED_LABEL = "معدل لازم برای ارزیابی وارد نشده"
+RECORD_GPA_DATA_MISSING_LABEL = "حداقل معدل در داده برنامه ثبت نشده"
+
+EXAM_METHOD = "با آزمون"
+RECORD_METHOD = "سوابق تحصیلی"
 
 GHOTBI_NOTE = "بومی قطبی: اعمال دقیق قطب نیازمند داده رسمی است"
 OSTANI_MISMATCH_NOTE = "بومی استانی فقط در صورت تطابق استان داوطلب و محل تحصیل اعمال شد."
-BOMI_DATA_MISSING_NOTE = "داده cutoff بومی این برنامه/بعد در منبع موجود نیست؛ cutoff بعد دیگری جایگزین نشد."
-CUTOFF_DIMENSION_MISSING_NOTE = "برای این سهمیه، cutoff همان بُعد در داده برنامه موجود نیست؛ بعد دیگری جایگزین نشد."
+SPECIAL_QUOTA_NOTE = (
+    "این مقایسه فعلاً روی dimension سهمیه خاص انتخاب‌شده انجام شده است؛ "
+    "رتبه منطقه نیز دریافت شده اما در این مقایسه cutoff منطقه ملاک label نیست."
+)
+SPECIAL_QUOTA_FALLBACK_NOTE = (
+    "برای سهمیه خاص انتخاب‌شده در این برنامه cutoff مستقل موجود نبود؛ "
+    "برای جلوگیری از fallback بی‌صدا، cutoff منطقه با ذکر این note استفاده شد."
+)
+CUTOFF_DIMENSION_MISSING_NOTE = (
+    "برای بعد cutoff انتخاب‌شده در داده برنامه cutoff قابل استفاده موجود نیست."
+)
+RECORD_COEFFICIENT_NOTE = (
+    "ضریب پایه جدول نوع دیپلم/گروه تحصیلی اعمال شد؛ استثناهای موردی سنجش "
+    "فقط در صورت وجود نگاشت رسمی در داده منبع قابل اعمال هستند."
+)
 
 QUOTA_DIMENSIONS = {
     "region_1": "zone_1",
@@ -41,7 +58,6 @@ QUOTA_DIMENSIONS = {
     "isargaran_5": "isargaran_5",
     "shahid": "shahid",
 }
-QUOTA_OPTIONS = tuple(QUOTA_DIMENSIONS.keys())
 
 PROVINCE_OPTIONS = (
     "آذربایجان شرقی",
@@ -76,19 +92,76 @@ PROVINCE_OPTIONS = (
     "همدان",
     "یزد",
 )
-PROVINCE_SET = set(PROVINCE_OPTIONS)
+
+# The Phase-3 base coefficient table requested by the product contract.
+# Rows = diploma type; columns = target admission group.
+GPA_COEFFICIENTS = {
+    "riazi": {
+        "riazi": 100.0,
+        "tajrobi": 100.0,
+        "ensani": 57.1,
+        "honar": 100.0,
+        "zaban": 100.0,
+    },
+    "tajrobi": {
+        "riazi": 100.0,
+        "tajrobi": 100.0,
+        "ensani": 57.1,
+        "honar": 100.0,
+        "zaban": 100.0,
+    },
+    "ensani": {
+        "riazi": 57.1,
+        "tajrobi": 57.1,
+        "ensani": 100.0,
+        "honar": 100.0,
+        "zaban": 100.0,
+    },
+    "maaref": {
+        "riazi": 57.1,
+        "tajrobi": 57.1,
+        "ensani": 100.0,
+        "honar": 100.0,
+        "zaban": 100.0,
+    },
+    "other_fani": {
+        "riazi": 51.4,
+        "tajrobi": 51.4,
+        "ensani": 51.4,
+        "honar": 100.0,
+        "zaban": 100.0,
+    },
+}
+
+TARGET_GROUP_VALUES = {"riazi", "tajrobi", "ensani", "honar", "zaban"}
+DIPLOMA_VALUES = set(GPA_COEFFICIENTS)
+
+GROUP_MAP = {
+    "ریاضی": "riazi",
+    "ریاضی فیزیک": "riazi",
+    "علوم ریاضی و فنی": "riazi",
+    "تجربی": "tajrobi",
+    "علوم تجربی": "tajrobi",
+    "انسانی": "ensani",
+    "علوم انسانی": "ensani",
+    "معارف": "maaref",
+    "علوم و معارف": "maaref",
+    "هنر": "honar",
+    "زبان": "zaban",
+    "زبانهای خارجه": "zaban",
+    "زبان های خارجه": "zaban",
+}
 
 
 class AdmissionInputError(ValueError):
-    """Client-provided admission input is invalid."""
+    """Invalid client-side admission input."""
 
 
 def _normalize_text(value: Any) -> str:
     text = str(value or "")
     text = text.replace("ي", "ی").replace("ى", "ی").replace("ك", "ک")
     text = text.replace("\u200c", " ").replace("\u200f", " ")
-    text = re.sub(r"\s+", " ", text)
-    return text.strip().lower()
+    return re.sub(r"\s+", " ", text).strip().lower()
 
 
 def _canonical_province(value: Any) -> str | None:
@@ -105,9 +178,8 @@ def _number(value: Any) -> int | float | None:
         return None
     if isinstance(value, (int, float)):
         return value
-    text = str(value).strip().replace(",", "").replace("٬", "")
     try:
-        return float(text)
+        return float(str(value).strip().replace(",", "").replace("٬", ""))
     except ValueError:
         return None
 
@@ -132,19 +204,38 @@ def load_programs() -> tuple[dict[str, Any], ...]:
     return tuple(programs)
 
 
+@lru_cache(maxsize=1)
+def load_majors() -> dict[str, dict[str, Any]]:
+    payload = json.loads(MAJORS_PATH.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise RuntimeError("majors_database_v2.json structure is unsupported")
+    return {str(item.get("id")): item for item in payload if isinstance(item, dict)}
+
+
+def _major_target_group(major_id: Any, majors: dict[str, dict[str, Any]]) -> str | None:
+    major = majors.get(str(major_id))
+    if not major:
+        return None
+    raw = _normalize_text(major.get("exam_group"))
+    for source, target in GROUP_MAP.items():
+        if _normalize_text(source) == raw:
+            return target
+    return None
+
+
 def _flatten_text(value: Any) -> list[str]:
     if isinstance(value, str):
         return [value]
     if isinstance(value, dict):
-        values: list[str] = []
+        items: list[str] = []
         for child in value.values():
-            values.extend(_flatten_text(child))
-        return values
+            items.extend(_flatten_text(child))
+        return items
     if isinstance(value, list):
-        values: list[str] = []
+        items: list[str] = []
         for child in value:
-            values.extend(_flatten_text(child))
-        return values
+            items.extend(_flatten_text(child))
+        return items
     return []
 
 
@@ -167,6 +258,7 @@ def filter_programs(
     major_ids: list[int] | None = None,
     diploma_type: str | None = None,
     course_types: list[str] | None = None,
+    admission_method: str | None = None,
 ) -> list[dict[str, Any]]:
     wanted_majors = {str(int(value)) for value in (major_ids or [])}
     wanted_courses = {_normalize_text(value) for value in (course_types or [])}
@@ -176,9 +268,10 @@ def filter_programs(
         if wanted_majors and str(program.get("major_id")) not in wanted_majors:
             continue
         admission = program.get("admission_info", {}) or {}
-        course_type = _normalize_text(
-            admission.get("course_type") or program.get("course_type")
-        )
+        method = str(admission.get("method") or "")
+        if admission_method and method != admission_method:
+            continue
+        course_type = _normalize_text(admission.get("course_type") or program.get("course_type"))
         if wanted_courses and course_type not in wanted_courses:
             continue
         if not _diploma_matches(program, diploma_type):
@@ -225,145 +318,85 @@ def _latest_historical_cutoff(
     return cutoff, year_num
 
 
-def _is_ostani_bomi(program: dict[str, Any], province: str | None) -> bool:
+def _is_ostani_bomi(program: dict[str, Any], province: str) -> bool:
     admission = program.get("admission_info", {}) or {}
-    bomi_type = _normalize_text(admission.get("bomi_type"))
+    if _normalize_text(admission.get("bomi_type")) != "ostani":
+        return False
     university = program.get("university", {}) or {}
-    university_province = _canonical_province(university.get("province"))
-    candidate_province = _canonical_province(province)
     return (
-        bomi_type == "ostani"
-        and bool(candidate_province)
-        and bool(university_province)
-        and candidate_province == university_province
+        _canonical_province(university.get("province")) == province
         and bool(program.get("cutoffs_bomi"))
     )
 
 
-def _resolve_context(
-    *,
-    major_ids: list[int] | None,
-    rank_in_quota: int | None,
-    rank_legacy: int | None,
-    quota_type: str | None,
-    quota_legacy: str | None,
-    region_zone_legacy: int | None,
-    province: str | None,
-    gpa_written: float | None,
-    gpa_legacy: float | None,
-) -> dict[str, Any]:
-    if not major_ids:
-        raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
-
-    if rank_in_quota is not None and rank_legacy is not None and rank_in_quota != rank_legacy:
-        raise AdmissionInputError("rank_in_quota و rank قدیمی نمی‌توانند متفاوت باشند.")
-    resolved_rank = rank_in_quota if rank_in_quota is not None else rank_legacy
-    if resolved_rank is None or int(resolved_rank) < 1:
-        raise AdmissionInputError("رتبه در سهمیه (کارنامه ملاک عمل) الزامی است و باید مثبت باشد.")
-
-    canonical_province = _canonical_province(province)
-    if canonical_province is None:
-        raise AdmissionInputError(
-            "استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید."
-        )
-
-    new_quota = _normalize_text(quota_type) if quota_type else ""
-    legacy_quota = _normalize_text(quota_legacy) if quota_legacy else ""
-
-    if new_quota:
-        if new_quota not in QUOTA_DIMENSIONS:
-            raise AdmissionInputError(
-                "quota_type باید یکی از region_1، region_2، region_3، "
-                "isargaran_25، isargaran_5 یا shahid باشد."
-            )
-        resolved_quota_type = new_quota
-        if legacy_quota and legacy_quota not in {"azad", new_quota}:
-            raise AdmissionInputError("quota_type با quota قدیمی ناسازگار است.")
-    elif legacy_quota:
-        if legacy_quota == "azad":
-            if region_zone_legacy not in {1, 2, 3}:
-                raise AdmissionInputError(
-                    "برای payload قدیمی با quota=azad، region_zone باید ۱، ۲ یا ۳ باشد."
-                )
-            resolved_quota_type = f"region_{int(region_zone_legacy)}"
-        elif legacy_quota in QUOTA_DIMENSIONS:
-            resolved_quota_type = legacy_quota
-        else:
-            raise AdmissionInputError(
-                "quota قدیمی فاقد cutoff dimension معتبر است؛ به منطقه دیگر fallback نشد."
-            )
-    elif region_zone_legacy in {1, 2, 3}:
-        resolved_quota_type = f"region_{int(region_zone_legacy)}"
-    else:
-        raise AdmissionInputError(
-            "quota_type الزامی است و باید یک dimension پشتیبانی‌شده را مشخص کند."
-        )
-
-    if (
-        region_zone_legacy in {1, 2, 3}
-        and resolved_quota_type.startswith("region_")
-        and int(resolved_quota_type[-1]) != int(region_zone_legacy)
-    ):
-        raise AdmissionInputError("region_zone قدیمی با quota_type جدید ناسازگار است.")
-
-    if gpa_written is not None and gpa_legacy is not None and abs(gpa_written - gpa_legacy) > 1e-9:
-        raise AdmissionInputError("gpa_written و gpa قدیمی نمی‌توانند متفاوت باشند.")
-    resolved_gpa = gpa_written if gpa_written is not None else gpa_legacy
-
-    return {
-        "rank_in_quota": int(resolved_rank),
-        "quota_type": resolved_quota_type,
-        "cutoff_dimension": QUOTA_DIMENSIONS[resolved_quota_type],
-        "province": canonical_province,
-        "gpa_written": resolved_gpa,
-    }
-
-
-def _select_exam_cutoff(
+def _exam_cutoff(
     program: dict[str, Any],
     *,
     cutoff_dimension: str,
+    region_dimension: str,
+    special_quota: str,
     province: str,
 ) -> tuple[int | float | None, int | None, str, str | None]:
     admission = program.get("admission_info", {}) or {}
     bomi_type = _normalize_text(admission.get("bomi_type"))
-    use_bomi = _is_ostani_bomi(program, province)
+    notes: list[str] = []
 
     if bomi_type == "ghotbi":
-        # The dataset deliberately has no province -> ghotb mapping. Do not invent one.
-        ghotbi_note = GHOTBI_NOTE
-    else:
-        ghotbi_note = None
+        notes.append(GHOTBI_NOTE)
 
-    note: str | None = ghotbi_note
-    if bomi_type == "ostani" and not use_bomi:
-        note = note or OSTANI_MISMATCH_NOTE
+    if bomi_type == "ostani" and not _is_ostani_bomi(program, province):
+        notes.append(OSTANI_MISMATCH_NOTE)
 
-    if use_bomi:
+    requested_dimension = cutoff_dimension
+    if special_quota != "none":
+        notes.append(SPECIAL_QUOTA_NOTE)
+
+    # Bomi is preferred when the province matches and the program has bomi data.
+    if _is_ostani_bomi(program, province):
         cutoff, year = _latest_historical_cutoff(
             program.get("cutoffs_bomi"),
-            cutoff_dimension,
+            requested_dimension,
         )
         if cutoff is not None:
-            return cutoff, year, cutoff_dimension, note
-        # Do not substitute another dimension when a bomi cutoff is missing.
-        note = note or BOMI_DATA_MISSING_NOTE
-        return None, None, cutoff_dimension, note
+            return cutoff, year, requested_dimension, " | ".join(notes) or None
+
+        # Explicitly disclosed fallback to the region dimension.
+        if requested_dimension != region_dimension:
+            cutoff, year = _latest_historical_cutoff(
+                program.get("cutoffs_bomi"),
+                region_dimension,
+            )
+            if cutoff is not None:
+                notes.append(SPECIAL_QUOTA_FALLBACK_NOTE)
+                return cutoff, year, region_dimension, " | ".join(notes)
 
     predicted = program.get("cutoffs_predicted_1405")
-    cutoff = _cutoff_from_dimension(predicted, cutoff_dimension)
+    cutoff = _cutoff_from_dimension(predicted, requested_dimension)
     if cutoff is not None:
-        return cutoff, 1405, cutoff_dimension, note
+        return cutoff, 1405, requested_dimension, " | ".join(notes) or None
 
-    # Historical fallback keeps the SAME dimension. It never swaps region/quota.
     cutoff, year = _latest_historical_cutoff(
         program.get("cutoffs_historical"),
-        cutoff_dimension,
+        requested_dimension,
     )
     if cutoff is not None:
-        return cutoff, year, cutoff_dimension, note
+        return cutoff, year, requested_dimension, " | ".join(notes) or None
 
-    return None, None, cutoff_dimension, note or CUTOFF_DIMENSION_MISSING_NOTE
+    # Special quota may be unavailable for a program; disclose the region fallback.
+    if special_quota != "none" and requested_dimension != region_dimension:
+        cutoff = _cutoff_from_dimension(predicted, region_dimension)
+        if cutoff is not None:
+            notes.append(SPECIAL_QUOTA_FALLBACK_NOTE)
+            return cutoff, 1405, region_dimension, " | ".join(notes)
+        cutoff, year = _latest_historical_cutoff(
+            program.get("cutoffs_historical"),
+            region_dimension,
+        )
+        if cutoff is not None:
+            notes.append(SPECIAL_QUOTA_FALLBACK_NOTE)
+            return cutoff, year, region_dimension, " | ".join(notes)
+
+    return None, None, requested_dimension, " | ".join(notes + [CUTOFF_DIMENSION_MISSING_NOTE])
 
 
 def qualitative_label(rank: int, cutoff: int | float) -> str:
@@ -385,182 +418,328 @@ def _academic_cutoff(program: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _academic_label(gpa_written: float | None, minimum_gpa: int | float | None) -> str:
+def _record_label(gpa_effective: float | None, minimum_gpa: float | None) -> str:
     if minimum_gpa is None:
-        return ACADEMIC_GPA_DATA_MISSING_LABEL
-    if gpa_written is None:
-        return ACADEMIC_GPA_REQUIRED_LABEL
-    return (
-        ACADEMIC_GPA_OK_LABEL
-        if float(gpa_written) >= float(minimum_gpa)
-        else ACADEMIC_GPA_LOW_LABEL
+        return RECORD_GPA_DATA_MISSING_LABEL
+    if gpa_effective is None:
+        return RECORD_GPA_REQUIRED_LABEL
+    if gpa_effective > minimum_gpa:
+        return RECORD_ABOVE_LABEL
+    if gpa_effective == minimum_gpa:
+        return RECORD_AT_MIN_LABEL
+    return RECORD_BELOW_LABEL
+
+
+def _canonical_diploma(value: str) -> str:
+    key = _normalize_text(value)
+    aliases = {
+        "ریاضی": "riazi",
+        "ریاضی فیزیک": "riazi",
+        "تجربی": "tajrobi",
+        "انسانی": "ensani",
+        "معارف": "maaref",
+        "علوم و معارف": "maaref",
+        "فنی": "other_fani",
+        "فنی حرفه ای": "other_fani",
+        "کاردانش": "other_fani",
+        "سایر": "other_fani",
+        "other": "other_fani",
+    }
+    return aliases.get(key, key)
+
+
+def _canonical_target_group(value: str) -> str:
+    key = _normalize_text(value)
+    aliases = {
+        "ریاضی": "riazi",
+        "ریاضی فیزیک": "riazi",
+        "تجربی": "tajrobi",
+        "انسانی": "ensani",
+        "هنر": "honar",
+        "زبان": "zaban",
+    }
+    return aliases.get(key, key)
+
+
+def _record_input_gpa(diploma_type: str, gpa_written: float | None, gpa_total: float | None) -> tuple[float, str]:
+    if diploma_type == "other_fani":
+        if gpa_total is None:
+            raise AdmissionInputError("برای دیپلم فنی/کاردانش فقط gpa_total الزامی است.")
+        if gpa_written is not None:
+            raise AdmissionInputError("برای دیپلم فنی/کاردانش gpa_written ارسال نشود؛ gpa_total استفاده می‌شود.")
+        return float(gpa_total), "gpa_total"
+    if diploma_type in {"riazi", "tajrobi", "ensani", "maaref"}:
+        if gpa_written is None:
+            raise AdmissionInputError("برای دیپلم نظری gpa_written الزامی است.")
+        if gpa_total is not None:
+            raise AdmissionInputError("برای دیپلم نظری gpa_total ارسال نشود؛ gpa_written استفاده می‌شود.")
+        return float(gpa_written), "gpa_written"
+    raise AdmissionInputError(
+        "diploma_type باید یکی از riazi، tajrobi، ensani، maaref یا other_fani باشد."
     )
 
 
-def build_results(
+def _record_target_group(
     *,
-    major_ids: list[int] | None,
+    explicit_target: str | None,
+    major_id: Any,
+    majors: dict[str, dict[str, Any]],
+) -> str:
+    if explicit_target:
+        target = _canonical_target_group(explicit_target)
+        if target not in TARGET_GROUP_VALUES:
+            raise AdmissionInputError("target_field_group نامعتبر است.")
+        return target
+
+    inferred = _major_target_group(major_id, majors)
+    if inferred is None:
+        raise AdmissionInputError(
+            "گروه تحصیلی هدف از major قابل استنتاج نیست؛ target_field_group را ارسال کنید."
+        )
+    return inferred
+
+
+def _coefficient(diploma_type: str, target_group: str) -> float:
+    return GPA_COEFFICIENTS[diploma_type][target_group]
+
+
+def build_exam_results(
+    *,
+    major_ids: list[int],
+    rank_in_quota: int,
+    region_zone: int,
+    special_quota: str,
+    province: str,
+    diploma_type: str | None,
+    gpa_written: float | None,
+    national_rank: int | None,
+    course_types: list[str],
     programs: list[dict[str, Any]] | tuple[dict[str, Any], ...],
-    rank_in_quota: int | None = None,
-    quota_type: str | None = None,
-    province: str | None = None,
-    diploma_type: str | None = None,
-    gpa_written: float | None = None,
-    gpa_total: float | None = None,
-    national_rank: int | None = None,
-    course_types: list[str] | None = None,
-    limit: int = 30,
-    # Backward-compatible aliases used by the Phase-1 contract.
-    rank: int | None = None,
-    region_zone: int | None = None,
-    quota: str | None = None,
-    gpa: float | None = None,
+    limit: int,
 ) -> list[dict[str, Any]]:
-    context = _resolve_context(
-        major_ids=major_ids,
-        rank_in_quota=rank_in_quota,
-        rank_legacy=rank,
-        quota_type=quota_type,
-        quota_legacy=quota,
-        region_zone_legacy=region_zone,
-        province=province,
-        gpa_written=gpa_written,
-        gpa_legacy=gpa,
-    )
+    region_dimension = f"zone_{region_zone}"
+    special_dimension = QUOTA_DIMENSIONS.get(special_quota, region_dimension)
+    cutoff_dimension = special_dimension if special_quota != "none" else region_dimension
 
     filtered = filter_programs(
         programs,
         major_ids=major_ids,
-        diploma_type=diploma_type,
         course_types=course_types,
+        admission_method=EXAM_METHOD,
     )
 
     results: list[dict[str, Any]] = []
     for program in filtered:
-        admission = program.get("admission_info", {}) or {}
-        method = admission.get("method") or ""
-        university = program.get("university", {}) or {}
-        base = {
+        cutoff, cutoff_year, used_dimension, note = _exam_cutoff(
+            program,
+            cutoff_dimension=cutoff_dimension,
+            region_dimension=region_dimension,
+            special_quota=special_quota,
+            province=province,
+        )
+        item = {
             "program_id": program.get("program_id"),
-            "university_name": university.get("name") or program.get("university_name") or "",
+            "university_name": (program.get("university") or {}).get("name") or program.get("university_name") or "",
             "major_id": int(program.get("major_id")),
-            "course_type": admission.get("course_type") or program.get("course_type"),
-            "method": method,
-            "cutoff_used": None,
-            "cutoff_year": None,
-            "cutoff_dimension": context["cutoff_dimension"],
-            "label": ACADEMIC_LABEL if method == ACADEMIC_LABEL else None,
-            "prestige_level": university.get("prestige_level"),
+            "course_type": (program.get("admission_info") or {}).get("course_type") or program.get("course_type"),
+            "method": EXAM_METHOD,
+            "cutoff_dimension": used_dimension,
+            "cutoff_used": cutoff,
+            "cutoff_year": cutoff_year,
+            "label": "اطلاعات cutoff کافی نیست" if cutoff is None else qualitative_label(rank_in_quota, cutoff),
         }
-
-        if method == "با آزمون":
-            cutoff, cutoff_year, dimension, note = _select_exam_cutoff(
-                program,
-                cutoff_dimension=context["cutoff_dimension"],
-                province=context["province"],
-            )
-            base["cutoff_used"] = cutoff
-            base["cutoff_year"] = cutoff_year
-            base["cutoff_dimension"] = dimension
-
-            if cutoff is None:
-                base["label"] = "اطلاعات cutoff کافی نیست"
-            else:
-                base["label"] = qualitative_label(context["rank_in_quota"], cutoff)
-            if note:
-                base["note"] = note
-
-        elif method == ACADEMIC_LABEL:
-            # Academic-record admission NEVER uses rank. Only written GPA is
-            # compared with the source program's minimum_gpa.
-            academic_cutoff = _academic_cutoff(program)
-            minimum_gpa = academic_cutoff["minimum_gpa"]
-            base["cutoff_used"] = academic_cutoff
-            base["label"] = _academic_label(context["gpa_written"], minimum_gpa)
-            if context["gpa_written"] is not None:
-                base["gpa_input"] = float(context["gpa_written"])
-            base["gpa_compared_to"] = minimum_gpa
-            if gpa_total is not None:
-                base["gpa_total_input"] = float(gpa_total)
-        else:
-            continue
-
-        results.append(base)
+        if special_quota != "none":
+            item["special_quota"] = special_quota
+        if diploma_type:
+            item["diploma_type"] = diploma_type
+        if gpa_written is not None:
+            item["gpa_input"] = float(gpa_written)
+            item["note_gpa"] = "اثر معدل در مسیر کنکور داخل رتبه/فرآیند سنجش داوطلب است؛ برای مقایسه cutoff این سرویس از رتبه در سهمیه استفاده می‌کند."
+        if national_rank is not None:
+            item["national_rank_input"] = int(national_rank)
+        if note:
+            item["note"] = note
+        results.append(item)
         if len(results) >= limit:
             break
+    return results
 
+
+def build_record_results(
+    *,
+    major_ids: list[int],
+    diploma_type: str,
+    gpa_written: float | None,
+    gpa_total: float | None,
+    province: str,
+    target_field_group: str | None,
+    course_types: list[str],
+    programs: list[dict[str, Any]] | tuple[dict[str, Any], ...],
+    majors: dict[str, dict[str, Any]],
+    limit: int,
+) -> list[dict[str, Any]]:
+    gpa_input, gpa_field = _record_input_gpa(diploma_type, gpa_written, gpa_total)
+
+    filtered = filter_programs(
+        programs,
+        major_ids=major_ids,
+        course_types=course_types,
+        admission_method=RECORD_METHOD,
+    )
+
+    results: list[dict[str, Any]] = []
+    for program in filtered:
+        target_group = _record_target_group(
+            explicit_target=target_field_group,
+            major_id=program.get("major_id"),
+            majors=majors,
+        )
+        coefficient = _coefficient(diploma_type, target_group)
+        effective = round(gpa_input * coefficient / 100.0, 4)
+
+        academic_cutoff = _academic_cutoff(program)
+        minimum_gpa = academic_cutoff["minimum_gpa"]
+
+        item = {
+            "program_id": program.get("program_id"),
+            "university_name": (program.get("university") or {}).get("name") or program.get("university_name") or "",
+            "major_id": int(program.get("major_id")),
+            "course_type": (program.get("admission_info") or {}).get("course_type") or program.get("course_type"),
+            "method": RECORD_METHOD,
+            "cutoff_dimension": None,
+            "cutoff_used": academic_cutoff,
+            "label": _record_label(effective, minimum_gpa),
+            "gpa_input": gpa_input,
+            "gpa_input_field": gpa_field,
+            "gpa_coefficient": coefficient,
+            "gpa_effective": effective,
+            "target_field_group": target_group,
+            "province": province,
+            "note": RECORD_COEFFICIENT_NOTE,
+        }
+        results.append(item)
+        if len(results) >= limit:
+            break
     return results
 
 
 class AdmissionChanceRequest(BaseModel):
-    major_ids: list[int] = Field(
-        default_factory=list,
-        description="شناسه رشته‌های کشف‌شده؛ حداقل یک شناسه.",
+    admission_path: Literal["exam", "record"] | None = Field(
+        default=None,
+        description="مسیر پذیرش: exam=با آزمون، record=صرفاً سوابق تحصیلی.",
     )
+    major_ids: list[int] = Field(default_factory=list)
 
+    # Exam path
     rank_in_quota: int | None = Field(
         default=None,
         ge=1,
-        description="رتبه در سهمیه (کارنامه ملاک عمل انتخاب رشته سنجش).",
+        description="رتبه در سهمیه — کارنامه ملاک عمل انتخاب رشته.",
     )
-    rank: int | None = Field(
-        default=None,
-        ge=1,
-        description="Deprecated legacy alias for rank_in_quota.",
-        deprecated=True,
+    region_zone: int | None = Field(default=None, ge=1, le=3)
+    special_quota: str = Field(
+        default="none",
+        description="سهمیه خاص؛ از سهمیه منطقه جداست.",
+        json_schema_extra={"enum": ["none", "isargaran_25", "isargaran_5", "shahid"]},
     )
-
-    quota_type: str | None = Field(
-        default=None,
-        description="سهمیه/بعد cutoff: region_1 | region_2 | region_3 | isargaran_25 | isargaran_5 | shahid",
-        json_schema_extra={"enum": list(QUOTA_OPTIONS)},
-    )
-    quota: str | None = Field(
-        default=None,
-        max_length=64,
-        description="Deprecated legacy alias. quota=azad uses region_zone only for backward compatibility.",
-        deprecated=True,
-    )
-    region_zone: int | None = Field(
-        default=None,
-        description="Deprecated legacy field; used only when quota_type/quota is omitted or quota=azad.",
-        deprecated=True,
-    )
-
     province: str | None = Field(
         default=None,
         max_length=64,
-        description="استان بومی داوطلب؛ یکی از ۳۱ استان استاندارد.",
+        description="استان بومی؛ یکی از ۳۱ استان استاندارد.",
         json_schema_extra={"enum": list(PROVINCE_OPTIONS)},
     )
+    national_rank: int | None = Field(default=None, ge=1)
+    gpa_written: float | None = Field(default=None, ge=0, le=20)
 
-    gpa_written: float | None = Field(
-        default=None,
-        ge=0,
-        le=20,
-        description="معدل کتبی نهایی دیپلم؛ برای مسیر سوابق تحصیلی با minimum_gpa مقایسه می‌شود.",
-    )
-    gpa: float | None = Field(
-        default=None,
-        ge=0,
-        le=20,
-        description="Deprecated legacy alias for gpa_written.",
-        deprecated=True,
-    )
-    gpa_total: float | None = Field(
-        default=None,
-        ge=0,
-        le=20,
-        description="معدل کل/اختیاری؛ در فاز فعلی cutoff سوابق با gpa_written انجام می‌شود.",
-    )
-    national_rank: int | None = Field(
-        default=None,
-        ge=1,
-        description="رتبه کشوری اختیاری؛ برای label سوابق تحصیلی استفاده نمی‌شود.",
-    )
-    course_types: list[str] = Field(default_factory=list)
+    # Record path
     diploma_type: str | None = Field(default=None, max_length=64)
+    gpa_total: float | None = Field(default=None, ge=0, le=20)
+    target_field_group: str | None = Field(default=None, max_length=32)
+
+    course_types: list[str] = Field(default_factory=list)
     limit: int = Field(default=30, ge=1, le=100)
+
+    # Legacy fields accepted only as a compatibility envelope.
+    rank: int | None = Field(default=None, ge=1, deprecated=True)
+    quota: str | None = Field(default=None, max_length=64, deprecated=True)
+    gpa: float | None = Field(default=None, ge=0, le=20, deprecated=True)
+
+
+def _resolve_legacy_path(request: AdmissionChanceRequest) -> str:
+    if request.admission_path:
+        return request.admission_path
+    # Legacy payloads were exam-oriented. Preserve that contract only when
+    # legacy rank/region/quota fields identify an exam request.
+    if request.rank_in_quota is not None or request.rank is not None or request.region_zone is not None or request.quota:
+        return "exam"
+    raise AdmissionInputError("admission_path باید یکی از exam یا record باشد.")
+
+
+def _resolve_exam_request(request: AdmissionChanceRequest) -> dict[str, Any]:
+    rank = request.rank_in_quota if request.rank_in_quota is not None else request.rank
+    if rank is None:
+        raise AdmissionInputError("برای مسیر با آزمون rank_in_quota الزامی است.")
+    region = request.region_zone
+    special = _normalize_text(request.special_quota or "none")
+    if special == "":
+        special = "none"
+    special_aliases = {
+        "none": "none",
+        "هیچکدام": "none",
+        "ندارد": "none",
+        "ایثارگران ۲۵": "isargaran_25",
+        "ایثارگران ۲۵٪": "isargaran_25",
+        "isargaran25": "isargaran_25",
+        "ایثارگران ۵": "isargaran_5",
+        "ایثارگران ۵٪": "isargaran_5",
+        "isargaran5": "isargaran_5",
+        "خانواده شهدا": "shahid",
+    }
+    if special == "none" and request.quota in {"isargaran_25", "isargaran_5", "shahid"}:
+        special = str(request.quota)
+
+    special = special_aliases.get(special, special)
+    if special not in {"none", *QUOTA_DIMENSIONS.keys()}:
+        raise AdmissionInputError("special_quota نامعتبر است.")
+    if region not in {1, 2, 3}:
+        if request.quota in {"region_1", "region_2", "region_3"}:
+            region = int(request.quota[-1])
+        elif request.quota == "azad" and request.region_zone in {1, 2, 3}:
+            region = int(request.region_zone)
+    if region not in {1, 2, 3}:
+        raise AdmissionInputError("region_zone در مسیر با آزمون باید ۱، ۲ یا ۳ باشد.")
+    province = _canonical_province(request.province)
+    if province is None:
+        raise AdmissionInputError("استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید.")
+    return {
+        "rank_in_quota": int(rank),
+        "region_zone": int(region),
+        "special_quota": special,
+        "province": province,
+        "diploma_type": request.diploma_type,
+        "gpa_written": request.gpa_written if request.gpa_written is not None else request.gpa,
+        "national_rank": request.national_rank,
+    }
+
+
+def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
+    province = _canonical_province(request.province)
+    if province is None:
+        raise AdmissionInputError("استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید.")
+
+    diploma = _canonical_diploma(request.diploma_type or "")
+    if diploma not in DIPLOMA_VALUES:
+        raise AdmissionInputError(
+            "diploma_type باید یکی از riazi، tajrobi، ensani، maaref یا other_fani باشد."
+        )
+    _record_input_gpa(diploma, request.gpa_written, request.gpa_total)
+    return {
+        "diploma_type": diploma,
+        "gpa_written": request.gpa_written,
+        "gpa_total": request.gpa_total,
+        "province": province,
+        "target_field_group": request.target_field_group,
+    }
 
 
 router = APIRouter()
@@ -569,52 +748,72 @@ router = APIRouter()
 @router.post("/admission/chance")
 def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
     try:
-        context = _resolve_context(
-            major_ids=request.major_ids,
-            rank_in_quota=request.rank_in_quota,
-            rank_legacy=request.rank,
-            quota_type=request.quota_type,
-            quota_legacy=request.quota,
-            region_zone_legacy=request.region_zone,
-            province=request.province,
-            gpa_written=request.gpa_written,
-            gpa_legacy=request.gpa,
-        )
+        path = _resolve_legacy_path(request)
+        if not request.major_ids:
+            raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
+
+        if path == "exam":
+            exam = _resolve_exam_request(request)
+            items = build_exam_results(
+                major_ids=request.major_ids,
+                rank_in_quota=exam["rank_in_quota"],
+                region_zone=exam["region_zone"],
+                special_quota=exam["special_quota"],
+                province=exam["province"],
+                diploma_type=exam["diploma_type"],
+                gpa_written=exam["gpa_written"],
+                national_rank=exam["national_rank"],
+                course_types=request.course_types,
+                programs=load_programs(),
+                limit=request.limit,
+            )
+            return {
+                "admission_path": "exam",
+                "items": items,
+                "count": len(items),
+                "context": {
+                    "rank_in_quota": exam["rank_in_quota"],
+                    "region_zone": exam["region_zone"],
+                    "special_quota": exam["special_quota"],
+                    "province": exam["province"],
+                },
+                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+            }
+
+        if path == "record":
+            record = _resolve_record_request(request)
+            items = build_record_results(
+                major_ids=request.major_ids,
+                diploma_type=record["diploma_type"],
+                gpa_written=record["gpa_written"],
+                gpa_total=record["gpa_total"],
+                province=record["province"],
+                target_field_group=record["target_field_group"],
+                course_types=request.course_types,
+                programs=load_programs(),
+                majors=load_majors(),
+                limit=request.limit,
+            )
+            return {
+                "admission_path": "record",
+                "items": items,
+                "count": len(items),
+                "context": {
+                    "diploma_type": record["diploma_type"],
+                    "province": record["province"],
+                    "target_field_group": record["target_field_group"],
+                },
+                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+            }
+
+        raise AdmissionInputError("admission_path نامعتبر است.")
+
     except AdmissionInputError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    try:
-        items = build_results(
-            major_ids=request.major_ids,
-            programs=load_programs(),
-            rank_in_quota=context["rank_in_quota"],
-            quota_type=context["quota_type"],
-            province=context["province"],
-            diploma_type=request.diploma_type,
-            gpa_written=context["gpa_written"],
-            gpa_total=request.gpa_total,
-            national_rank=request.national_rank,
-            course_types=request.course_types,
-            limit=request.limit,
-        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail="داده پذیرش دانشگاه در دسترس نیست") from exc
-    except (OSError, RuntimeError, ValueError) as exc:
+    except (OSError, RuntimeError) as exc:
         raise HTTPException(status_code=503, detail="داده پذیرش دانشگاه قابل استفاده نیست") from exc
-
-    return {
-        "items": items,
-        "count": len(items),
-        "limit": request.limit,
-        "context": {
-            "rank_in_quota": context["rank_in_quota"],
-            "quota_type": context["quota_type"],
-            "cutoff_dimension": context["cutoff_dimension"],
-            "province": context["province"],
-            "gpa_written": context["gpa_written"],
-        },
-        "disclaimer": "نتایج تخمینی و بر اساس مدل‌سازی آماری؛ جایگزین دفترچه و نتایج رسمی سنجش نیست.",
-    }
 
 
 def attach_router(target_router: APIRouter) -> None:
