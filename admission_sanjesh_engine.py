@@ -42,6 +42,9 @@ SPECIAL_QUOTA_FALLBACK_NOTE = (
     "برای سهمیه خاص انتخاب‌شده در این برنامه cutoff مستقل موجود نبود؛ "
     "برای جلوگیری از fallback بی‌صدا، cutoff منطقه با ذکر این note استفاده شد."
 )
+SPECIAL_QUOTA_THRESHOLD_NOTE = (
+    "حدنصاب کامل سهمیه خاص در این نسخه اعمال نشده است؛ قاعده سال هدف در داده/قرارداد مستند موجود نیست."
+)
 CUTOFF_DIMENSION_MISSING_NOTE = (
     "برای بعد cutoff انتخاب‌شده در داده برنامه cutoff قابل استفاده موجود نیست."
 )
@@ -352,6 +355,7 @@ def _exam_cutoff(
     notes = _locality_notes(program, province)
     if special_quota != "none":
         notes.append("dimension سهمیه خاص مستقل از منطقه انتخاب شد؛ رتبه منطقه جایگزین آن نیست.")
+        notes.append(SPECIAL_QUOTA_THRESHOLD_NOTE)
     requested_dimension = cutoff_dimension
 
     # Policy: never prefer or use cutoffs_bomi without an independently
@@ -599,8 +603,16 @@ def build_record_results(
             "gpa_effective": effective,
             "target_field_group": target_group,
             "province": province,
-            "notes": [RECORD_COEFFICIENT_NOTE, "ظرفیت تفکیکی در داده نیست"],
-            "note": RECORD_COEFFICIENT_NOTE + " | ظرفیت تفکیکی در داده نیست",
+            "notes": [
+                RECORD_COEFFICIENT_NOTE,
+                "ظرفیت تفکیکی در داده نیست",
+                "حداقل تراز در داده برنامه ثبت شده، اما ورودی تراز داوطلب در قرارداد مسیر سوابق وجود ندارد؛ بنابراین مقایسه تراز انجام نشد.",
+            ],
+            "note": (
+                RECORD_COEFFICIENT_NOTE
+                + " | ظرفیت تفکیکی در داده نیست"
+                + " | حداقل تراز در داده برنامه ثبت شده، اما ورودی تراز داوطلب در قرارداد مسیر سوابق وجود ندارد؛ بنابراین مقایسه تراز انجام نشد."
+            ),
         }
         results.append(item)
         if len(results) >= limit:
