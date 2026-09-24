@@ -2,6 +2,7 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
 const source = fs.readFileSync('docs/purchase_ui_fix.js', 'utf8');
+const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 
 function makeElement(id) {
   return {
@@ -84,6 +85,12 @@ async function run({ delay }) {
   const direct = await run({ delay: 50 });
   direct.button.onclick({ preventDefault() {}, stopPropagation() {} });
   assert.strictEqual(direct.location.href, 'https://example.com/pay');
+
+  assert.doesNotMatch(commercialSource, /intent:\/\//);
+  assert.doesNotMatch(commercialSource, /window\.open\(u/);
+  assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?window\.location\.assign\(u\)/);
+  assert.doesNotMatch(commercialSource, /dh-pay-intent/);
+  assert.doesNotMatch(commercialSource, /dh-pay-chrome/);
 
   console.log('purchase_ui_fix regression: PASS');
 })();
