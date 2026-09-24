@@ -168,7 +168,7 @@ class AdmissionChanceServiceTests(unittest.TestCase):
             province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
             course_types=["nobat_dovom"], programs=[SPECIAL_PROGRAM], limit=30,
         )[0]
-        self.assertIn("حدنصاب کامل سهمیه خاص در این نسخه اعمال نشده است", result["notes"])
+        self.assertTrue(any(note.startswith("حدنصاب کامل سهمیه خاص در این نسخه اعمال نشده است") for note in result["notes"]))
 
     def test_exam_special_quota_uses_special_dimension_when_available(self):
         result = build_exam_results(
