@@ -18,7 +18,7 @@ function makeElement(id) {
   };
 }
 
-async function run({ delay, userAgent }) {
+async function run({ delay }) {
   const overlay = makeElement('dh-commercial-overlay');
   const button = makeElement('dh-buy-now');
   const error = makeElement('dh-buy-err');
@@ -44,10 +44,7 @@ async function run({ delay, userAgent }) {
     document,
     setTimeout,
     Promise,
-    navigator: { userAgent },
     location,
-    open() { return {}; },
-    AndroidBridge: null,
     DHAuth: {
       isLoggedIn() { return true; },
       createPayment() {
@@ -69,7 +66,7 @@ async function run({ delay, userAgent }) {
 }
 
 (async () => {
-  const success = await run({ delay: 50, userAgent: 'Mozilla/5.0' });
+  const success = await run({ delay: 50 });
   assert.strictEqual(success.button.disabled, false);
   assert.strictEqual(success.button.textContent, 'پرداخت');
   assert.strictEqual(success.status.hidden, false);
@@ -77,16 +74,16 @@ async function run({ delay, userAgent }) {
   assert.match(success.statusText.textContent, /آماده پرداخت/);
   assert.strictEqual(success.error.textContent, '');
 
-  const timeout = await run({ delay: 2500, userAgent: 'Mozilla/5.0' });
+  const timeout = await run({ delay: 2500 });
   assert.strictEqual(timeout.button.disabled, false);
   assert.strictEqual(timeout.button.textContent, 'تلاش دوباره');
   assert.strictEqual(timeout.status.hidden, false);
   assert.strictEqual(timeout.spin.hidden, true);
   assert.match(timeout.error.textContent, /بیش از ۲ ثانیه/);
 
-  const android = await run({ delay: 50, userAgent: 'Mozilla/5.0 (Linux; Android 12)' });
-  android.button.onclick({ preventDefault() {}, stopPropagation() {} });
-  assert.match(android.location.href, /^intent:\/\//);
+  const direct = await run({ delay: 50 });
+  direct.button.onclick({ preventDefault() {}, stopPropagation() {} });
+  assert.strictEqual(direct.location.href, 'https://example.com/pay');
 
   console.log('purchase_ui_fix regression: PASS');
 })();
