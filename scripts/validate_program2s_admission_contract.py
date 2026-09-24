@@ -95,12 +95,19 @@ def audit(records: list[dict[str, Any]], majors: list[dict[str, Any]]) -> dict[s
             if not has_nonempty(get_path(program, path)):
                 core_missing[path] += 1
 
-        has_capacity = any(
-            "capacity" in key.lower() or "ظرفیت" in key
-            for key in key_counts
-        )
-        if has_capacity:
-            capacity_programs = len(records)
+        def contains_capacity(value: Any) -> bool:
+            if isinstance(value, dict):
+                return any(
+                    ("capacity" in str(key).lower() or "ظرفیت" in str(key))
+                    or contains_capacity(child)
+                    for key, child in value.items()
+                )
+            if isinstance(value, list):
+                return any(contains_capacity(child) for child in value)
+            return False
+
+        if contains_capacity(program):
+            capacity_programs += 1
         if admission.get("method") == "با آزمون":
             exam_records.append(program)
         elif admission.get("method") == "سوابق تحصیلی":
@@ -117,6 +124,7 @@ def audit(records: list[dict[str, Any]], majors: list[dict[str, Any]]) -> dict[s
     historical_missing = Counter()
     predicted_missing = Counter()
     bomi_missing = Counter()
+    historical_complete = predicted_complete = bomi_complete = 0
     historical_shape_errors: list[dict[str, Any]] = []
     predicted_shape_errors: list[dict[str, Any]] = []
     bomi_shape_errors: list[dict[str, Any]] = []
@@ -125,11 +133,15 @@ def audit(records: list[dict[str, Any]], majors: list[dict[str, Any]]) -> dict[s
         historical = program.get("cutoffs_historical") or {}
         predicted = program.get("cutoffs_predicted_1405") or {}
         bomi = program.get("cutoffs_bomi") or {}
+        hist_ok = bool(historical)
+        pred_ok = isinstance(predicted, dict)
+        bomi_ok = bool(bomi)
 
         for year, values in historical.items():
             for dimension in DIMENSIONS:
                 if not isinstance(values, dict) or not isinstance(values.get(dimension), (int, float)):
                     historical_missing[dimension] += 1
+                    hist_ok = False
                     if len(historical_shape_errors) < 20:
                         historical_shape_errors.append({
                             "program_id": program.get("program_id"),
@@ -150,12 +162,20 @@ def audit(records: list[dict[str, Any]], majors: list[dict[str, Any]]) -> dict[s
             for dimension in DIMENSIONS:
                 if not isinstance(values, dict) or not isinstance(values.get(dimension), (int, float)):
                     bomi_missing[dimension] += 1
+                    bomi_ok = False
                     if len(bomi_shape_errors) < 20:
                         bomi_shape_errors.append({
                             "program_id": program.get("program_id"),
                             "year": year,
                             "dimension": dimension,
                         })
+
+        if hist_ok:
+            historical_complete += 1
+        if pred_ok:
+            predicted_complete += 1
+        if bomi_ok:
+            bomi_complete += 1
 
     record_gpa_missing = sum(
         1 for program in record_records
@@ -185,9 +205,9 @@ def audit(records: list[dict[str, Any]], majors: list[dict[str, Any]]) -> dict[s
         "exam_program_count": len(exam_records),
         "record_program_count": len(record_records),
         "exam_cutoff_presence": {
-            "historical": len(exam_records) - bool(historical_missing),
-            "predicted_1405": len(exam_records) - bool(predicted_missing),
-            "bomi": len(exam_records) - bool(bomi_missing),
+            "historical": historical_complete,
+            "predicted_1405": predicted_complete,
+            "bomi": bomi_complete,
         },
         "historical_missing_by_dimension": dict(historical_missing),
         "predicted_1405_missing_by_dimension": dict(predicted_missing),
