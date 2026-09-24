@@ -323,6 +323,22 @@ def _latest_historical_cutoff(
 
 
 
+def _program_matches_locality(program: dict[str, Any], province: str) -> bool:
+    """Apply only locality rules directly represented in program2s."""
+    admission = program.get("admission_info", {}) or {}
+    bomi_type = _normalize_text(admission.get("bomi_type"))
+    if bomi_type != "ostani":
+        # ghotbi/nahieyi have no official province mapping here; keep them
+        # eligible and disclose the limitation in notes instead.
+        return True
+
+    university = program.get("university", {}) or {}
+    program_province = _canonical_province(university.get("province"))
+    candidate_province = _canonical_province(province)
+    # Never infer locality when either side is missing/unknown.
+    return bool(program_province and candidate_province and program_province == candidate_province)
+
+
 def _locality_notes(program: dict[str, Any], province: str) -> list[str]:
     admission = program.get("admission_info", {}) or {}
     bomi_type = _normalize_text(admission.get("bomi_type"))
@@ -506,12 +522,16 @@ def build_exam_results(
     special_dimension = QUOTA_DIMENSIONS.get(special_quota, region_dimension)
     cutoff_dimension = special_dimension if special_quota != "none" else region_dimension
 
-    filtered = filter_programs(
-        programs,
-        major_ids=major_ids,
-        course_types=course_types,
-        admission_method=EXAM_METHOD,
-    )
+    filtered = [
+        program
+        for program in filter_programs(
+            programs,
+            major_ids=major_ids,
+            course_types=course_types,
+            admission_method=EXAM_METHOD,
+        )
+        if _program_matches_locality(program, province)
+    ]
 
     results: list[dict[str, Any]] = []
     for program in filtered:
@@ -568,12 +588,16 @@ def build_record_results(
 ) -> list[dict[str, Any]]:
     gpa_input, gpa_field = _record_input_gpa(diploma_type, gpa_written, gpa_total)
 
-    filtered = filter_programs(
-        programs,
-        major_ids=major_ids,
-        course_types=course_types,
-        admission_method=RECORD_METHOD,
-    )
+    filtered = [
+        program
+        for program in filter_programs(
+            programs,
+            major_ids=major_ids,
+            course_types=course_types,
+            admission_method=RECORD_METHOD,
+        )
+        if _program_matches_locality(program, province)
+    ]
 
     results: list[dict[str, Any]] = []
     for program in filtered:
