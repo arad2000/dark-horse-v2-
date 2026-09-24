@@ -535,11 +535,12 @@ def build_exam_results(
             item["diploma_type"] = diploma_type
         if gpa_written is not None:
             item["gpa_input"] = float(gpa_written)
-            item["note_gpa"] = "اثر معدل در مسیر کنکور داخل رتبه/فرآیند سنجش داوطلب است؛ برای مقایسه cutoff این سرویس از رتبه در سهمیه استفاده می‌کند."
+            gpa_note = "اثر معدل در مسیر کنکور داخل رتبه/فرآیند سنجش داوطلب است؛ برای مقایسه cutoff این سرویس از رتبه در سهمیه استفاده می‌کند."
+            item["note_gpa"] = gpa_note
+            item["notes"].append(gpa_note)
+            item["note"] = " | ".join(item["notes"])
         if national_rank is not None:
             item["national_rank_input"] = int(national_rank)
-        if note:
-            item["note"] = note
         results.append(item)
         if len(results) >= limit:
             break
