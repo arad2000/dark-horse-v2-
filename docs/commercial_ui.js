@@ -53,12 +53,8 @@
   function openExternalPay(url){
     if(!url)return false;
     var u=String(url);
-    var isAndroid=/android/i.test(navigator.userAgent||'');
-    if(isAndroid){
-      try{window.location.href='intent://'+u.replace(/^https?:\/\//,'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';return true;}catch(_){}
-      try{window.location.href='intent://'+u.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';return true;}catch(_){}
-    }
-    try{var w=window.open(u,'_blank');if(w)return true;}catch(_){}
+    // One canonical gateway handoff: normal HTTPS navigation only.
+    // Do not use Android intent://, popup windows, or native bridges here.
     try{window.location.assign(u);return true;}catch(_){}
     try{window.location.href=u;return true;}catch(_){}
     return false;
@@ -68,19 +64,15 @@
     if(!e)return;
     e.style.color='#f0c040';
     e.innerHTML=
-      '<div style="text-align:center;line-height:1.7;margin-bottom:6px">درگاه در اپ باز نشد — یکی را بزنید:</div>'+
-      '<button type="button" id="dh-pay-intent" class="btn btn-primary" style="width:100%;margin-top:8px;padding:14px;font-weight:800">باز کردن با مرورگر سیستم</button>'+
-      '<button type="button" id="dh-pay-chrome" class="btn" style="width:100%;margin-top:8px;padding:12px">باز کردن در کروم</button>'+
+      '<div style="text-align:center;line-height:1.7;margin-bottom:6px">انتقال به درگاه انجام نشد؛ دوباره تلاش کنید:</div>'+
+      '<button type="button" id="dh-pay-retry" class="btn btn-primary" style="width:100%;margin-top:8px;padding:14px;font-weight:800">باز کردن درگاه</button>'+
       '<button type="button" id="dh-pay-copy" class="btn" style="width:100%;margin-top:8px;padding:12px">کپی لینک پرداخت</button>'+
       '<textarea id="dh-pay-url" readonly style="width:100%;margin-top:10px;min-height:70px;font-size:11px;direction:ltr;text-align:left;padding:8px;border-radius:10px;background:#0d0d14;color:#d7caa9;border:1px solid rgba(212,175,55,.35)"></textarea>'+
-      '<div style="margin-top:6px;font-size:.78rem;color:#b7ad98;text-align:center">یا لینک را در کروم بچسبانید</div>';
+      '<div style="margin-top:6px;font-size:.78rem;color:#b7ad98;text-align:center">لینک بالا مستقیماً به درگاه رسمی زرین‌پال می‌رود.</div>';
     var ta=el('dh-pay-url');
     if(ta)ta.value=url;
-    function goChrome(){try{window.location.href='intent://'+String(url).replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';}catch(_){openExternalPay(url);}}
-    function goIntent(){try{window.location.href='intent://'+String(url).replace(/^https?:\/\//,'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';}catch(_){openExternalPay(url);}}
-    var b1=el('dh-pay-intent');if(b1)b1.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}goIntent();};
-    var b2=el('dh-pay-chrome');if(b2)b2.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}goChrome();};
-    var b3=el('dh-pay-copy');if(b3)b3.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}var done=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){alert('لینک کپی شد. کروم را باز کنید و Paste کنید.');});done=true;}}catch(_){}if(!done){try{var t=el('dh-pay-url');if(t){t.focus();t.select();document.execCommand('copy');alert('لینک کپی شد.');done=true;}}catch(__){}}if(!done)alert('لینک پایین را نگه دارید و Copy کنید.');};
+    var retry=el('dh-pay-retry');if(retry)retry.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}openExternalPay(url);};
+    var b3=el('dh-pay-copy');if(b3)b3.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}var done=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){alert('لینک کپی شد.');});done=true;}}catch(_){}if(!done){try{var t=el('dh-pay-url');if(t){t.focus();t.select();document.execCommand('copy');alert('لینک کپی شد.');done=true;}}catch(__){}}if(!done)alert('لینک پایین را نگه دارید و Copy کنید.');};
   }
 
   function openPurchaseModal(){
