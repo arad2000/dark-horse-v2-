@@ -74,29 +74,9 @@
   function openPayment(url) {
     if (!url) return false;
     var target = String(url);
-    try {
-      if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
-        global.AndroidBridge.openExternalUrl(target);
-        return true;
-      }
-    } catch (_) {}
-    var isAndroid = /android/i.test((global.navigator && global.navigator.userAgent) || '');
-    if (isAndroid) {
-      try {
-        global.location.href = 'intent://' + target.replace(/^https?:\/\//, '') +
-          '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
-        return true;
-      } catch (_) {}
-      try {
-        global.location.href = 'intent://' + target.replace(/^https?:\/\//, '') +
-          '#Intent;scheme=https;package=com.android.chrome;end';
-        return true;
-      } catch (_) {}
-    }
-    try {
-      var opened = global.open(target, '_blank');
-      if (opened) return true;
-    } catch (_) {}
+    // Keep the gateway navigation as a normal HTTPS browser navigation.
+    // Do not rewrite to Android intent:// or native bridge URLs: the gateway
+    // can use the original web navigation context when validating the merchant.
     try { global.location.assign(target); return true; } catch (_) {}
     try { global.location.href = target; return true; } catch (_) {}
     return false;
