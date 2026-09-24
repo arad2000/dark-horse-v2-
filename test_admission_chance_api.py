@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from admission_chance_api import (
+from admission_sanjesh_engine import (
     BORDERLINE_LABEL,
     EXAM_METHOD,
     GHOTBI_NOTE,
@@ -91,6 +91,18 @@ GHOTBI_PROGRAM = _program(
     predicted={"zone_2": 1000},
 )
 
+OSTANI_BOMI_PROGRAM = _program(
+    program_id="OSTANI-1",
+    major_id=1,
+    method="با آزمون",
+    course_type="roozaneh",
+    province="تهران",
+    bomi_type="ostani",
+    predicted={"zone_2": 900},
+    historical={"1404": {"zone_2": 950}},
+    bomi={"1404": {"zone_2": 700}},
+)
+
 MAJORS = {"1": {"id": 1, "name": "نمونه", "exam_group": "تجربی"}}
 
 
@@ -139,6 +151,37 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(result["cutoff_dimension"], "isargaran_25")
         self.assertEqual(result["cutoff_used"], 300)
         self.assertIn("dimension سهمیه خاص", result["note"])
+
+    def test_cutoffs_bomi_is_not_preferred_over_predicted_or_historical(self):
+        result = build_exam_results(
+            major_ids=[1], rank_in_quota=800, region_zone=2, special_quota="none",
+            province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
+            course_types=["roozaneh"], programs=[OSTANI_BOMI_PROGRAM], limit=30,
+        )[0]
+        self.assertEqual(result["cutoff_dimension"], "zone_2")
+        self.assertEqual(result["cutoff_used"], 900)
+        self.assertEqual(result["cutoff_year"], 1405)
+        self.assertIn("ظرفیت تفکیکی در داده نیست", result["notes"])
+
+    def test_ghotbi_has_explicit_incomplete_locality_note(self):
+        result = build_exam_results(
+            major_ids=[1], rank_in_quota=900, region_zone=2, special_quota="none",
+            province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
+            course_types=["roozaneh"], programs=[GHOTBI_PROGRAM], limit=30,
+        )[0]
+        self.assertIn("اعمال بومی قطبی/ناحیه‌ای ناقص است", result["notes"])
+        self.assertIn("ظرفیت تفکیکی در داده نیست", result["notes"])
+
+    def test_exam_output_contains_notes_array(self):
+        result = build_exam_results(
+            major_ids=[1], rank_in_quota=450, region_zone=1, special_quota="none",
+            province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
+            course_types=["roozaneh"], programs=[EXAM_PROGRAM], limit=30,
+        )[0]
+        self.assertIsInstance(result["notes"], list)
+        self.assertIn("cutoff_dimension", result)
+        self.assertIn("cutoff_used", result)
+        self.assertIn("cutoff_year", result)
 
     def test_exam_gpa_does_not_change_rank_label(self):
         with_gpa = build_exam_results(
@@ -205,6 +248,17 @@ class AdmissionChanceServiceTests(unittest.TestCase):
                 programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
             )
 
+    def test_record_label_uses_only_three_qualitative_labels(self):
+        labels = set()
+        for gpa in (10.0, 14.0, 20.0):
+            result = build_record_results(
+                major_ids=[1], diploma_type="ensani", gpa_written=gpa, gpa_total=None,
+                province="تهران", target_field_group="ensani", course_types=["savabegh_dolati"],
+                programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+            )[0]
+            labels.add(result["label"])
+        self.assertTrue(labels.issubset({HIGHER_LABEL, BORDERLINE_LABEL, LOWER_LABEL}))
+
     def test_record_effective_gpa_above_cutoff_is_qualitative(self):
         result = build_record_results(
             major_ids=[1], diploma_type="ensani", gpa_written=20.0, gpa_total=None,
@@ -222,7 +276,8 @@ class AdmissionChanceServiceTests(unittest.TestCase):
             course_types=["roozaneh"], programs=[GHOTBI_PROGRAM], limit=30,
         )[0]
         self.assertEqual(result["label"], HIGHER_LABEL)
-        self.assertIn(GHOTBI_NOTE, result["note"])
+        self.assertIn(GHOTBI_NOTE, result["notes"])
+        self.assertIn("ظرفیت تفکیکی در داده نیست", result["notes"])
 
 
 class AdmissionChanceApiTests(unittest.TestCase):
@@ -285,25 +340,42 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertIn("gpa_effective", item)
         self.assertIn("جایگزین دفترچه و اعلام رسمی سنجش نیست", response.json()["disclaimer"])
 
-    def test_record_different_rank_values_have_same_label(self):
-        labels = []
-        for rank in (1, 500000):
-            with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),                  patch("admission_chance_api.load_majors", return_value=MAJORS):
-                response = self.client.post(
-                    "/api/v1/admission/chance",
-                    json={
-                        "admission_path": "record",
-                        "major_ids": [1],
-                        "province": "تهران",
-                        "diploma_type": "ensani",
-                        "gpa_written": 18.0,
-                        "target_field_group": "tajrobi",
-                        "rank_in_quota": rank,
-                    },
-                )
-            self.assertEqual(response.status_code, 200, response.text)
-            labels.append(response.json()["items"][0]["label"])
-        self.assertEqual(labels[0], labels[1])
+    def test_record_request_without_rank_returns_200(self):
+        with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "record",
+                    "major_ids": [1],
+                    "province": "تهران",
+                    "diploma_type": "ensani",
+                    "gpa_written": 18.0,
+                    "target_field_group": "tajrobi",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["admission_path"], "record")
+        self.assertNotIn("rank_in_quota", payload["context"])
+        self.assertIsInstance(payload["items"][0]["notes"], list)
+
+    def test_record_only_exam_major_returns_empty_items_without_500(self):
+        with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "record",
+                    "major_ids": [1],
+                    "province": "تهران",
+                    "diploma_type": "ensani",
+                    "gpa_written": 18.0,
+                    "target_field_group": "tajrobi",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["items"], [])
+        self.assertEqual(payload["count"], 0)
 
     def test_record_theoretical_requires_gpa_written(self):
         response = self.client.post(
