@@ -32,7 +32,7 @@ RECORD_BELOW_LABEL = LOWER_LABEL
 EXAM_METHOD = "با آزمون"
 RECORD_METHOD = "سوابق تحصیلی"
 
-GHOTBI_NOTE = "بومی قطبی: اعمال دقیق قطب نیازمند داده رسمی است"
+GHOTBI_NOTE = "اعمال بومی قطبی/ناحیه‌ای ناقص است"
 OSTANI_MISMATCH_NOTE = "بومی استانی فقط در صورت تطابق استان داوطلب و محل تحصیل اعمال شد."
 SPECIAL_QUOTA_NOTE = (
     "این مقایسه فعلاً روی dimension سهمیه خاص انتخاب‌شده انجام شده است؛ "
@@ -343,7 +343,7 @@ def _locality_notes(program: dict[str, Any], province: str) -> list[str]:
         else:
             notes.append("بومی استانی برای این برنامه با استان داوطلب تطابق ندارد.")
     elif bomi_type in {"ghotbi", "nahieyi"}:
-        notes.append("اعمال بومی قطبی/ناحیه‌ای ناقص است")
+        notes.append(GHOTBI_NOTE)
     elif bomi_type == "keshvari":
         notes.append("بومی کِشوری است؛ تفاوت بومی استانی/قطبی برای این برنامه اعمال نشد.")
 
