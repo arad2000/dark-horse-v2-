@@ -319,16 +319,6 @@ def _latest_historical_cutoff(
     return cutoff, year_num
 
 
-def _is_ostani_bomi(program: dict[str, Any], province: str) -> bool:
-    admission = program.get("admission_info", {}) or {}
-    if _normalize_text(admission.get("bomi_type")) != "ostani":
-        return False
-    university = program.get("university", {}) or {}
-    return (
-        _canonical_province(university.get("province")) == province
-        and bool(program.get("cutoffs_bomi"))
-    )
-
 
 def _locality_notes(program: dict[str, Any], province: str) -> list[str]:
     admission = program.get("admission_info", {}) or {}
