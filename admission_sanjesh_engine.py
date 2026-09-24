@@ -350,6 +350,8 @@ def _exam_cutoff(
     province: str,
 ) -> tuple[int | float | None, int | None, str, list[str]]:
     notes = _locality_notes(program, province)
+    if special_quota != "none":
+        notes.append("dimension سهمیه خاص مستقل از منطقه انتخاب شد؛ رتبه منطقه جایگزین آن نیست.")
     requested_dimension = cutoff_dimension
 
     # Policy: never prefer or use cutoffs_bomi without an independently
