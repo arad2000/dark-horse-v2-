@@ -325,7 +325,7 @@
 
   function recordFormHtml() {
     return (
-      '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-record-form" data-path="record" hidden>' +
+      '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-record-form" data-path="record">' +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-record-diploma">نوع دیپلم *</label>' +
           '<select id="dh-admission-record-diploma" name="diploma_type" required>' +
