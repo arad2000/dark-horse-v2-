@@ -41,6 +41,6 @@ assert.match(css, /\.dh-admission-tab/);
 assert.match(css, /@media/);
 
 assert.match(indexSource, /admission_chance_ui\.css\?v=3/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=3/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=4/);
 
 console.log('admission_chance_ui phase3 regression: PASS');
