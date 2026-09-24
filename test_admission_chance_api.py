@@ -10,6 +10,7 @@ from admission_sanjesh_engine import (
     EXAM_METHOD,
     GHOTBI_NOTE,
     HIGHER_LABEL,
+    LOWER_LABEL,
     RECORD_ABOVE_LABEL,
     RECORD_BELOW_LABEL,
     build_exam_results,
