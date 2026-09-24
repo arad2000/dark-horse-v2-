@@ -14,7 +14,7 @@
   if (window.__dhIsInstalled) document.documentElement.classList.add('dh-installed');
 
   if ('serviceWorker' in navigator) {
-    var SW_URL = './sw.js?v=62';
+    var SW_URL = './sw.js?v=64';
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
         try { reg.update(); } catch (e) {}

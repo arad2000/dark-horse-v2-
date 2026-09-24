@@ -71,12 +71,35 @@
     return message || 'ایجاد درخواست پرداخت ناموفق بود. برای ادامه، «تلاش دوباره» را بزنید.';
   }
 
+  function isEmbeddedAndroid() {
+    var ua = String(global.navigator && global.navigator.userAgent || '');
+    if (!/Android/i.test(ua)) return false;
+    var standalone = false;
+    try {
+      standalone = !!(global.matchMedia && global.matchMedia('(display-mode: standalone)').matches);
+    } catch (_) {}
+    if (global.navigator && global.navigator.standalone) standalone = true;
+    return standalone || /; wv\)/i.test(ua) || /WebView/i.test(ua) || /Version\/4\.0 Chrome/i.test(ua);
+  }
+
+  function chromeIntent(url) {
+    var hostpath = String(url).replace(/^https?:\/\//, '');
+    return 'intent://' + hostpath +
+      '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' +
+      encodeURIComponent(url) + ';end';
+  }
+
   function openPayment(url) {
     if (!url) return false;
     var target = String(url);
-    // Keep the gateway navigation as a normal HTTPS browser navigation.
-    // Do not rewrite to Android intent:// or native bridge URLs: the gateway
-    // can use the original web navigation context when validating the merchant.
+    // APK/PWA WebView is blocked by Shaparak/ZarinPal ("عدم دسترسی به این دامنه").
+    // Hand the official HTTPS gateway URL to Chrome, which already works.
+    if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
+      try { global.AndroidBridge.openExternalUrl(target); return true; } catch (_) {}
+    }
+    if (isEmbeddedAndroid()) {
+      try { global.location.href = chromeIntent(target); return true; } catch (_) {}
+    }
     try { global.location.assign(target); return true; } catch (_) {}
     try { global.location.href = target; return true; } catch (_) {}
     return false;

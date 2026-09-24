@@ -50,11 +50,27 @@
     }
   }
   function paymentErrorText(e){var m=text(e&&e.message?e.message:e);if(/merchant|not configured|credential|authority/i.test(m))return 'درگاه هنوز آماده تراکنش نیست؛ وضعیت Merchant ID و فعال‌سازی زرین‌پال را بررسی کنید.';if(/timeout|network|failed to fetch/i.test(m))return 'ارتباط با درگاه برقرار نشد؛ اتصال شبکه یا وضعیت سرویس زرین‌پال را بررسی کنید.';return m||'ایجاد درخواست پرداخت ناموفق بود.';}
+  function isEmbeddedAndroid(){
+    var ua=String(navigator.userAgent||'');
+    if(!/Android/i.test(ua))return false;
+    var st=false;
+    try{st=!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);}catch(_){}
+    if(navigator.standalone)st=true;
+    return st||/; wv\)/i.test(ua)||/WebView/i.test(ua)||/Version\/4\.0 Chrome/i.test(ua);
+  }
+  function chromeIntent(url){
+    var hostpath=String(url).replace(/^https?:\/\//,'');
+    return 'intent://'+hostpath+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(url)+';end';
+  }
   function openExternalPay(url){
     if(!url)return false;
     var u=String(url);
-    // One canonical gateway handoff: normal HTTPS navigation only.
-    // Do not use Android deep-link intents, popup windows, or native bridges here.
+    if(global.AndroidBridge&&typeof global.AndroidBridge.openExternalUrl==='function'){
+      try{global.AndroidBridge.openExternalUrl(u);return true;}catch(_){}
+    }
+    if(isEmbeddedAndroid()){
+      try{window.location.href=chromeIntent(u);return true;}catch(_){}
+    }
     try{window.location.assign(u);return true;}catch(_){}
     try{window.location.href=u;return true;}catch(_){}
     return false;
