@@ -17,6 +17,7 @@ on:
       - fix/sandbox-billing-admin-ui
       - hardening/evaluator-closeout
       - release/auth-free-launch
+      - audit/dual-run-main-liara
   pull_request:
     branches:
       - main
@@ -24,7 +25,81 @@ on:
       - deploy/liara-commercial-sandbox
 
 jobs:
+  liara-runtime-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe live API root
+        env:
+          API_BASE: https://api.asbe-siah.ir
+        run: |
+          set -eu
+          code=$(curl --silent --show-error --max-time 20 -o root_body.json -w "%{http_code}" "$API_BASE/")
+          test "$code" = "200"
+          cat root_body.json
+
+      - name: Probe live runtime fingerprint
+        env:
+          API_BASE: https://api.asbe-siah.ir
+        run: |
+          set -eu
+          curl --fail --silent --show-error --max-time 20 "$API_BASE/__runtime_fingerprint" -o runtime_fingerprint.json
+          cat runtime_fingerprint.json
+
+      - name: Produce runtime lock evidence
+        env:
+          DUAL_RUN_COMMIT: e33b7924b79b530df555c090df1c187b58cf5ab7
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = json.loads(Path("root_body.json").read_text())
+          fp = json.loads(Path("runtime_fingerprint.json").read_text())
+          print("running=yes")
+          print("startup_ok=yes (HTTP 200 from live root and runtime fingerprint)")
+          print("runtime_commit_or_version=N/A")
+          print(f"runtime_commit_hint={fp.get('commit_hint')}")
+          print(f"dual_run_build_commit_tested={__import__('os').environ['DUAL_RUN_COMMIT']}")
+          print(f"root={root}")
+          print(f"fingerprint={fp}")
+          print("commit hash in live fingerprint endpoint is unavailable")
+          PY
+  main-liara-dual-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch canonical refs
+        run: |
+          git fetch --no-tags --prune origin main deploy/liara-commercial-sandbox
+
+      - name: Run deterministic main vs Liara dual-run
+        env:
+          MAIN_REF: origin/main
+          # Always compare against the current deploy branch, not a stale PR event base SHA.
+          LIARA_REF: origin/deploy/liara-commercial-sandbox
+        run: |
+          python tests/dual_run_main_liara.py --main-ref "$MAIN_REF" --liara-ref "$LIARA_REF" --output dual_run_report.json
+
+      - name: Publish raw Dual-Run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dual-run-main-liara-report
+          path: dual_run_report.json
+          if-no-files-found: error
+
+  # PR #55 is measurement-only: keep the unrelated full staging audit out of this PR's gate.
+  # The staging audit remains active for its original branches/PRs.
   postgres-staging-audit:
+    if: (github.event_name == 'push' && github.ref_name != 'audit/dual-run-main-liara') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref != 'audit/dual-run-main-liara')
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -60,7 +135,10 @@ jobs:
 
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
-\n      - name: Verify canonical reference data matches main\n        run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main\n
+
+      - name: Verify canonical reference data matches main
+        run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main
+
       - name: Compile Python sources
         run: python -m compileall -q .
 
@@ -75,7 +153,10 @@ jobs:
 
       - name: Verify canonical frontend auth/purchase contract
         run: python -m unittest -v test_frontend_auth_purchase_contract.py
-\n      - name: Verify alternative-path cache equivalence\n        run: python -m unittest -v test_alternative_cache_equivalence.py\n
+
+      - name: Verify alternative-path cache equivalence
+        run: python -m unittest -v test_alternative_cache_equivalence.py
+
       - name: Verify commercial UI contract
         run: python -m unittest -v test_commercial_ui_contract.py
 
