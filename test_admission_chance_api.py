@@ -74,6 +74,14 @@ SPECIAL_PROGRAM = _program(
     predicted={"zone_2": 1000, "isargaran_25": 300},
 )
 
+SPECIAL_FALLBACK_PROGRAM = _program(
+    program_id="EXAM-3",
+    major_id=1,
+    method="با آزمون",
+    course_type="nobat_dovom",
+    predicted={"zone_2": 1000},
+)
+
 ACADEMIC_PROGRAM = _program(
     program_id="ACA-1",
     major_id=1,
@@ -142,6 +150,25 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(region_3["cutoff_dimension"], "zone_3")
         self.assertEqual(region_1["cutoff_used"], 500)
         self.assertEqual(region_3["cutoff_used"], 1500)
+
+    def test_exam_special_quota_falls_back_to_region_when_dimension_missing(self):
+        result = build_exam_results(
+            major_ids=[1], rank_in_quota=700, region_zone=2, special_quota="isargaran_25",
+            province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
+            course_types=["nobat_dovom"], programs=[SPECIAL_FALLBACK_PROGRAM], limit=30,
+        )[0]
+        self.assertEqual(result["cutoff_dimension"], "zone_2")
+        self.assertEqual(result["cutoff_used"], 1000)
+        self.assertEqual(result["cutoff_year"], 1405)
+        self.assertIn("برای سهمیه خاص انتخاب‌شده cutoff مستقل در داده موجود نبود؛ cutoff منطقه", result["notes"][-1])
+
+    def test_exam_special_quota_records_threshold_gap_explicitly(self):
+        result = build_exam_results(
+            major_ids=[1], rank_in_quota=250, region_zone=2, special_quota="isargaran_25",
+            province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
+            course_types=["nobat_dovom"], programs=[SPECIAL_PROGRAM], limit=30,
+        )[0]
+        self.assertTrue(any(note.startswith("حدنصاب کامل سهمیه خاص در این نسخه اعمال نشده است") for note in result["notes"]))
 
     def test_exam_special_quota_uses_special_dimension_when_available(self):
         result = build_exam_results(
@@ -248,6 +275,15 @@ class AdmissionChanceServiceTests(unittest.TestCase):
                 province="تهران", target_field_group="tajrobi", course_types=["savabegh_dolati"],
                 programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
             )
+
+    def test_record_exposes_traz_but_discloses_it_is_not_comparable_without_input(self):
+        result = build_record_results(
+            major_ids=[1], diploma_type="ensani", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="ensani", course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+        )[0]
+        self.assertEqual(result["cutoff_used"]["minimum_traz"], 6000)
+        self.assertTrue(any("ورودی تراز داوطلب" in note for note in result["notes"]))
 
     def test_record_label_uses_only_three_qualitative_labels(self):
         labels = set()
