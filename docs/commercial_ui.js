@@ -54,7 +54,7 @@
     if(!url)return false;
     var u=String(url);
     // One canonical gateway handoff: normal HTTPS navigation only.
-    // Do not use Android intent://, popup windows, or native bridges here.
+    // Do not use Android deep-link intents, popup windows, or native bridges here.
     try{window.location.assign(u);return true;}catch(_){}
     try{window.location.href=u;return true;}catch(_){}
     return false;
