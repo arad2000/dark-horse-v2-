@@ -112,6 +112,16 @@ OSTANI_BOMI_PROGRAM = _program(
     bomi={"1404": {"zone_2": 700}},
 )
 
+OSTANI_RECORD_PROGRAM = _program(
+    program_id="OSTANI-RECORD-1",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    province="تهران",
+    bomi_type="ostani",
+    academic={"minimum_gpa": 14, "minimum_traz": 6000},
+)
+
 MAJORS = {"1": {"id": 1, "name": "نمونه", "exam_group": "تجربی"}}
 
 
@@ -179,6 +189,35 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(result["cutoff_dimension"], "isargaran_25")
         self.assertEqual(result["cutoff_used"], 300)
         self.assertIn("dimension سهمیه خاص", result["note"])
+
+    def test_ostani_province_changes_exam_result_for_same_major(self):
+        local = build_exam_results(
+            major_ids=[1], rank_in_quota=800, region_zone=2, special_quota="none",
+            province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
+            course_types=["roozaneh"], programs=[OSTANI_BOMI_PROGRAM], limit=30,
+        )
+        remote = build_exam_results(
+            major_ids=[1], rank_in_quota=800, region_zone=2, special_quota="none",
+            province="اصفهان", diploma_type=None, gpa_written=None, national_rank=None,
+            course_types=["roozaneh"], programs=[OSTANI_BOMI_PROGRAM], limit=30,
+        )
+        self.assertEqual(len(local), 1)
+        self.assertEqual(local[0]["program_id"], "OSTANI-1")
+        self.assertEqual(remote, [])
+
+    def test_ostani_province_filter_also_applies_to_record(self):
+        local = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi", course_types=["savabegh_dolati"],
+            programs=[OSTANI_RECORD_PROGRAM], majors=MAJORS, limit=30,
+        )
+        remote = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="اصفهان", target_field_group="tajrobi", course_types=["savabegh_dolati"],
+            programs=[OSTANI_RECORD_PROGRAM], majors=MAJORS, limit=30,
+        )
+        self.assertEqual(len(local), 1)
+        self.assertEqual(remote, [])
 
     def test_cutoffs_bomi_is_not_preferred_over_predicted_or_historical(self):
         result = build_exam_results(
@@ -336,6 +375,36 @@ class AdmissionChanceApiTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("استان نامعتبر", response.json()["detail"])
+
+    def test_api_ostani_province_changes_result_for_same_major(self):
+        with patch("admission_chance_api.load_programs", return_value=(OSTANI_BOMI_PROGRAM,)):
+            local = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "exam",
+                    "major_ids": [1],
+                    "rank_in_quota": 800,
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "province": "تهران",
+                },
+            )
+            remote = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "exam",
+                    "major_ids": [1],
+                    "rank_in_quota": 800,
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "province": "اصفهان",
+                },
+            )
+        self.assertEqual(local.status_code, 200, local.text)
+        self.assertEqual(remote.status_code, 200, remote.text)
+        self.assertEqual(local.json()["count"], 1)
+        self.assertEqual(local.json()["items"][0]["program_id"], "OSTANI-1")
+        self.assertEqual(remote.json()["items"], [])
 
     def test_exam_request_keeps_region_and_special_quota_separate(self):
         with patch("admission_chance_api.load_programs", return_value=(SPECIAL_PROGRAM,)):
