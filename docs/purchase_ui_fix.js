@@ -82,26 +82,29 @@
     return standalone || /; wv\)/i.test(ua) || /WebView/i.test(ua) || /Version\/4\.0 Chrome/i.test(ua);
   }
 
-  function chromeIntent(url) {
-    var hostpath = String(url).replace(/^https?:\/\//, '');
+  function siteHopPayUrl(paymentUrl) {
+    return 'https://asbe-siah.ir/?dh_pay=' + encodeURIComponent(String(paymentUrl));
+  }
+
+  function chromeIntent(url, fallbackUrl) {
+    var target = String(url);
+    var fallback = String(fallbackUrl || target);
+    var hostpath = target.replace(/^https?:\/\//, '');
     return 'intent://' + hostpath +
-      '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' +
-      encodeURIComponent(url) + ';end';
+      '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' +
+      fallback + ';end';
   }
 
   function openPayment(url) {
     if (!url) return false;
     var target = String(url);
-    // APK/PWA WebView is blocked by Shaparak/ZarinPal ("عدم دسترسی به این دامنه").
-    // Hand the official HTTPS gateway URL to Chrome, which already works.
-    if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
-      try { global.AndroidBridge.openExternalUrl(target); return true; } catch (_) {}
-    }
+    var hop = siteHopPayUrl(target);
     if (isEmbeddedAndroid()) {
-      try { global.location.href = chromeIntent(target); return true; } catch (_) {}
+      var chromeHop = hop + (hop.indexOf('?') >= 0 ? '&' : '?') + 'dh_chrome=1';
+      try { global.location.href = chromeIntent(chromeHop, hop); return true; } catch (_) {}
     }
-    try { global.location.assign(target); return true; } catch (_) {}
-    try { global.location.href = target; return true; } catch (_) {}
+    try { global.location.assign(hop); return true; } catch (_) {}
+    try { global.location.href = hop; return true; } catch (_) {}
     return false;
   }
 
