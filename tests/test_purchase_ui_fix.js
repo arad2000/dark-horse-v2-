@@ -6,6 +6,7 @@ const source = fs.readFileSync('docs/purchase_ui_fix.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const hopBootSource = fs.readFileSync('docs/payment_hop_boot.js', 'utf8');
+const externalLinksSource = fs.readFileSync('docs/external_links_fix_v1.js', 'utf8');
 
 function makeElement(id) {
   return {
@@ -207,7 +208,13 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(hopBootSource, /window\.location\.replace\(decoded\)/);
   assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
   assert.match(indexSource, /commercial_ui\.js\?v=40/);
-  assert.match(indexSource, /purchase_ui_fix\.js\?v=5/);
+  assert.match(indexSource, /purchase_ui_fix\.js\?v=6/);
+  assert.match(indexSource, /external_links_fix_v1\.js\?v=3/);
+  assert.match(source, /var overlay = byId\('dh-commercial-overlay'\)/);
+  assert.match(source, /global\.__dhInJourney = false/);
+  assert.match(externalLinksSource, /eitaa\.com\/asbe_siah/);
+  assert.match(externalLinksSource, /package=com\.android\.chrome/);
+  assert.match(externalLinksSource, /S\.browser_fallback_url/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl/);
 
