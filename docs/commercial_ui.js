@@ -75,26 +75,32 @@
       var decoded;
       try{decoded=decodeURIComponent(raw);}catch(_){return false;}
       if(!isZarinpalPaymentUrl(decoded))return false;
+      var hop=siteHopPayUrl(decoded);
+      if(isEmbeddedAndroid()){
+        var chromeHop=hop+(hop.indexOf('?')>=0?'&':'?')+'dh_chrome=1';
+        try{window.location.href=chromeIntent(chromeHop,hop);return true;}catch(_){}
+      }
       window.location.replace(decoded);
       return true;
     }catch(_){return false;}
   }
-  function chromeIntent(url){
-    var hostpath=String(url).replace(/^https?:\/\//,'');
-    return 'intent://'+hostpath+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(url)+';end';
+  function chromeIntent(url,fallbackUrl){
+    var target=String(url);
+    var fallback=String(fallbackUrl||target);
+    var hostpath=target.replace(/^https?:\/\//,'');
+    return 'intent://'+hostpath+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+fallback+';end';
   }
   function openExternalPay(url){
     if(!url)return false;
     var raw=String(url);
-    var u=isZarinpalPaymentUrl(raw)?siteHopPayUrl(raw):raw;
-    if(global.AndroidBridge&&typeof global.AndroidBridge.openExternalUrl==='function'){
-      try{global.AndroidBridge.openExternalUrl(u);return true;}catch(_){}
-    }
+    if(!isZarinpalPaymentUrl(raw))return false;
+    var hop=siteHopPayUrl(raw);
     if(isEmbeddedAndroid()){
-      try{window.location.href=chromeIntent(u);return true;}catch(_){}
+      var chromeHop=hop+(hop.indexOf('?')>=0?'&':'?')+'dh_chrome=1';
+      try{window.location.href=chromeIntent(chromeHop,hop);return true;}catch(_){}
     }
-    try{window.location.assign(u);return true;}catch(_){}
-    try{window.location.href=u;return true;}catch(_){}
+    try{window.location.assign(hop);return true;}catch(_){}
+    try{window.location.href=hop;return true;}catch(_){}
     return false;
   }
   function showPayFallback(url){
