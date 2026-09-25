@@ -19,6 +19,34 @@ function makeElement(id) {
   };
 }
 
+function assertPaymentHop(query, expectedReplace){
+  const calls = [];
+  const context = {
+    console,
+    URL,
+    URLSearchParams,
+    setTimeout() {},
+    document: {
+      readyState: 'complete',
+      body: {},
+      getElementById() { return null; },
+      querySelectorAll() { return []; },
+      addEventListener() {}
+    },
+    location: {
+      href: 'https://asbe-siah.ir/',
+      search: query,
+      replace(value) { calls.push(value); }
+    },
+    MutationObserver: class { observe() {} },
+    addEventListener() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(commercialSource, context);
+  assert.deepStrictEqual(calls, expectedReplace);
+}
+
 async function run({ delay }) {
   const overlay = makeElement('dh-commercial-overlay');
   const button = makeElement('dh-buy-now');
@@ -74,6 +102,15 @@ async function run({ delay }) {
   assert.strictEqual(success.spin.hidden, true);
   assert.match(success.statusText.textContent, /آماده پرداخت/);
   assert.strictEqual(success.error.textContent, '');
+
+  assertPaymentHop(
+    '?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123',
+    ['https://sandbox.zarinpal.com/pg/StartPay/ABC123']
+  );
+  assertPaymentHop(
+    '?dh_pay=https%3A%2F%2Fevil.example%2Fpay',
+    []
+  );
 
   const timeout = await run({ delay: 2500 });
   assert.strictEqual(timeout.button.disabled, false);
