@@ -1,6 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
+// P0 frontend cache recovery: keep the existing payment contract regression active.
 const source = fs.readFileSync('docs/purchase_ui_fix.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
