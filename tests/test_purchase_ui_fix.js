@@ -134,7 +134,7 @@ async function run({ delay }) {
   assert.doesNotMatch(commercialSource, /window\.open\(u/);
   assert.doesNotMatch(commercialSource, /dh-pay-intent/);
   assert.doesNotMatch(commercialSource, /dh-pay-chrome/);
-  assert.match(commercialSource, /commercial_ui\.js\?v=37/);
+  assert.match(indexSource, /commercial_ui\.js\?v=37/);
 
   console.log('purchase/payment referer-hop regression: PASS');
 })();
