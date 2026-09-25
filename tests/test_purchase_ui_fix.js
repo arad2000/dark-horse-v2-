@@ -201,9 +201,12 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
   assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
   assert.match(hopBootSource, /dh_pay/);
+  assert.match(hopBootSource, /action=android\.intent\.action\.VIEW/);
+  assert.match(hopBootSource, /category=android\.intent\.category\.BROWSABLE/);
+  assert.match(hopBootSource, /package=com\.android\.chrome/);
   assert.match(hopBootSource, /window\.location\.replace\(decoded\)/);
   assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
-  assert.match(indexSource, /payment_hop_boot\.js\?v=2/);
+  assert.match(indexSource, /payment_hop_boot.js\?v=3/);
   assert.match(indexSource, /external_links_fix_v1\.js\?v=6/);
   assert.match(externalLinksSource, /function openExternal\(url\)/);
   assert.match(externalLinksSource, /AndroidBridge &&[\s\S]*openExternalUrl/);
