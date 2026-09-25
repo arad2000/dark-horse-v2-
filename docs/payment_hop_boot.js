@@ -18,6 +18,7 @@
     } catch (_) {}
     try { var o = document.getElementById('dh-commercial-overlay'); if (o) o.remove(); } catch (_) {}
     try { window.__dhInJourney = false; window.__dhJourneyStarting = false; } catch (_) {}
+    try { window.__dhPaymentHandoff = false; } catch (_) {}
   }
 
   try {
