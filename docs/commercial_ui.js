@@ -108,7 +108,7 @@
       try{
         if(global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl==='function'){
           global.__dhPaymentHandoff=true;
-          global.AndroidBridge.openExternalUrl(raw);
+          global.AndroidBridge.openExternalUrl(chromeHopUrl(raw));
           return true;
         }
       }catch(_){}
