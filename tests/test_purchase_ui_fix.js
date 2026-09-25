@@ -194,7 +194,7 @@ async function runPurchase({ delay, userAgent = '' }) {
   assert.match(commercialSource, /payment\.zarinpal\.com/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
   assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
-  assert.match(indexSource, /commercial_ui\.js\?v=39/);
+  assert.match(indexSource, /commercial_ui\.js\?v=40/);
   assert.match(indexSource, /purchase_ui_fix\.js\?v=5/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl/);
