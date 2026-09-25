@@ -3,6 +3,7 @@ const vm = require('vm');
 const assert = require('assert');
 const source = fs.readFileSync('docs/purchase_ui_fix.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
+const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 
 function makeElement(id) {
   return {
@@ -17,6 +18,34 @@ function makeElement(id) {
     nextSibling: null,
     remove() { this.removed = true; }
   };
+}
+
+function assertPaymentHop(query, expectedReplace){
+  const calls = [];
+  const context = {
+    console,
+    URL,
+    URLSearchParams,
+    setTimeout() {},
+    document: {
+      readyState: 'complete',
+      body: {},
+      getElementById() { return null; },
+      querySelectorAll() { return []; },
+      addEventListener() {}
+    },
+    location: {
+      href: 'https://asbe-siah.ir/',
+      search: query,
+      replace(value) { calls.push(value); }
+    },
+    MutationObserver: class { observe() {} },
+    addEventListener() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(commercialSource, context);
+  assert.deepStrictEqual(calls, expectedReplace);
 }
 
 async function run({ delay }) {
@@ -75,6 +104,15 @@ async function run({ delay }) {
   assert.match(success.statusText.textContent, /آماده پرداخت/);
   assert.strictEqual(success.error.textContent, '');
 
+  assertPaymentHop(
+    '?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123',
+    ['https://sandbox.zarinpal.com/pg/StartPay/ABC123']
+  );
+  assertPaymentHop(
+    '?dh_pay=https%3A%2F%2Fevil.example%2Fpay',
+    []
+  );
+
   const timeout = await run({ delay: 2500 });
   assert.strictEqual(timeout.button.disabled, false);
   assert.strictEqual(timeout.button.textContent, 'تلاش دوباره');
@@ -86,11 +124,17 @@ async function run({ delay }) {
   direct.button.onclick({ preventDefault() {}, stopPropagation() {} });
   assert.strictEqual(direct.location.href, 'https://example.com/pay');
 
-  assert.doesNotMatch(commercialSource, /intent:\/\//);
+  assert.match(commercialSource, /function siteHopPayUrl\(paymentUrl\)[\s\S]*?https:\/\/asbe-siah\.ir\/\?dh_pay=/);
+  assert.match(commercialSource, /function isZarinpalPaymentUrl\(url\)[\s\S]*?sandbox\.zarinpal\.com/);
+  assert.match(commercialSource, /var u=isZarinpalPaymentUrl\(raw\)\?siteHopPayUrl\(raw\):raw/);
+  assert.match(commercialSource, /AndroidBridge\.openExternalUrl\(u\)/);
+  assert.match(commercialSource, /function handlePaymentHop\(\)[\s\S]*?isZarinpalPaymentUrl\(decoded\)/);
+  assert.match(commercialSource, /window\.location\.replace\(decoded\)/);
+  assert.match(commercialSource, /از همین صفحه به درگاه امن می‌روید/);
   assert.doesNotMatch(commercialSource, /window\.open\(u/);
-  assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?window\.location\.assign\(u\)/);
   assert.doesNotMatch(commercialSource, /dh-pay-intent/);
   assert.doesNotMatch(commercialSource, /dh-pay-chrome/);
+  assert.match(indexSource, /commercial_ui\.js\?v=37/);
 
-  console.log('purchase_ui_fix regression: PASS');
+  console.log('purchase/payment referer-hop regression: PASS');
 })();

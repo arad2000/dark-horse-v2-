@@ -58,13 +58,35 @@
     if(navigator.standalone)st=true;
     return st||/; wv\)/i.test(ua)||/WebView/i.test(ua)||/Version\/4\.0 Chrome/i.test(ua);
   }
+  function isZarinpalPaymentUrl(url){
+    try{
+      var parsed=new URL(String(url),window.location.href);
+      var host=String(parsed.hostname||'').toLowerCase();
+      return parsed.protocol==='https:' && (host==='zarinpal.com'||host==='www.zarinpal.com'||host==='sandbox.zarinpal.com');
+    }catch(_){return false;}
+  }
+  function siteHopPayUrl(paymentUrl){
+    return 'https://asbe-siah.ir/?dh_pay='+encodeURIComponent(String(paymentUrl));
+  }
+  function handlePaymentHop(){
+    try{
+      var raw=new URLSearchParams(window.location.search||'').get('dh_pay');
+      if(!raw)return false;
+      var decoded;
+      try{decoded=decodeURIComponent(raw);}catch(_){return false;}
+      if(!isZarinpalPaymentUrl(decoded))return false;
+      window.location.replace(decoded);
+      return true;
+    }catch(_){return false;}
+  }
   function chromeIntent(url){
     var hostpath=String(url).replace(/^https?:\/\//,'');
     return 'intent://'+hostpath+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(url)+';end';
   }
   function openExternalPay(url){
     if(!url)return false;
-    var u=String(url);
+    var raw=String(url);
+    var u=isZarinpalPaymentUrl(raw)?siteHopPayUrl(raw):raw;
     if(global.AndroidBridge&&typeof global.AndroidBridge.openExternalUrl==='function'){
       try{global.AndroidBridge.openExternalUrl(u);return true;}catch(_){}
     }
@@ -78,17 +100,18 @@
   function showPayFallback(url){
     var e=el('dh-buy-err');
     if(!e)return;
+    var hop=isZarinpalPaymentUrl(url)?siteHopPayUrl(url):String(url);
     e.style.color='#f0c040';
     e.innerHTML=
       '<div style="text-align:center;line-height:1.7;margin-bottom:6px">انتقال به درگاه انجام نشد؛ دوباره تلاش کنید:</div>'+
       '<button type="button" id="dh-pay-retry" class="btn btn-primary" style="width:100%;margin-top:8px;padding:14px;font-weight:800">باز کردن درگاه</button>'+
       '<button type="button" id="dh-pay-copy" class="btn" style="width:100%;margin-top:8px;padding:12px">کپی لینک پرداخت</button>'+
       '<textarea id="dh-pay-url" readonly style="width:100%;margin-top:10px;min-height:70px;font-size:11px;direction:ltr;text-align:left;padding:8px;border-radius:10px;background:#0d0d14;color:#d7caa9;border:1px solid rgba(212,175,55,.35)"></textarea>'+
-      '<div style="margin-top:6px;font-size:.78rem;color:#b7ad98;text-align:center">لینک بالا مستقیماً به درگاه رسمی زرین‌پال می‌رود.</div>';
+      '<div style="margin-top:6px;font-size:.78rem;color:#b7ad98;text-align:center">از همین صفحه به درگاه امن می‌روید.</div>';
     var ta=el('dh-pay-url');
-    if(ta)ta.value=url;
+    if(ta)ta.value=hop;
     var retry=el('dh-pay-retry');if(retry)retry.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}openExternalPay(url);};
-    var b3=el('dh-pay-copy');if(b3)b3.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}var done=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){alert('لینک کپی شد.');});done=true;}}catch(_){}if(!done){try{var t=el('dh-pay-url');if(t){t.focus();t.select();document.execCommand('copy');alert('لینک کپی شد.');done=true;}}catch(__){}}if(!done)alert('لینک پایین را نگه دارید و Copy کنید.');};
+    var b3=el('dh-pay-copy');if(b3)b3.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}var done=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(hop).then(function(){alert('لینک کپی شد.');});done=true;}}catch(_){}if(!done){try{var t=el('dh-pay-url');if(t){t.focus();t.select();document.execCommand('copy');alert('لینک کپی شد.');done=true;}}catch(__){}}if(!done)alert('لینک پایین را نگه دارید و Copy کنید.');};
   }
 
   function openPurchaseModal(){
@@ -306,6 +329,7 @@
 
   function boot(){
     global.DHCommercialUI={showAuth:showAuthModal,showPurchase:openPurchaseModal,startServerAuthorizedJourney:continueAfterAuth,logout:doLogout,syncQuota:syncServerQuota};
+    try{if(handlePaymentHop())return;}catch(_){}
     try{installButtonHooks();}catch(_){}
     try{handlePaymentReturn();}catch(_){}
     try{syncServerQuota();}catch(_){}
