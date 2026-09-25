@@ -86,11 +86,17 @@ async function run({ delay }) {
   direct.button.onclick({ preventDefault() {}, stopPropagation() {} });
   assert.strictEqual(direct.location.href, 'https://example.com/pay');
 
-  assert.doesNotMatch(commercialSource, /intent:\/\//);
+  assert.match(commercialSource, /function siteHopPayUrl\(paymentUrl\)[\s\S]*?https:\/\/asbe-siah\.ir\/\?dh_pay=/);
+  assert.match(commercialSource, /function isZarinpalPaymentUrl\(url\)[\s\S]*?sandbox\.zarinpal\.com/);
+  assert.match(commercialSource, /var u=isZarinpalPaymentUrl\(raw\)\?siteHopPayUrl\(raw\):raw/);
+  assert.match(commercialSource, /AndroidBridge\.openExternalUrl\(u\)/);
+  assert.match(commercialSource, /function handlePaymentHop\(\)[\s\S]*?isZarinpalPaymentUrl\(decoded\)/);
+  assert.match(commercialSource, /window\.location\.replace\(decoded\)/);
+  assert.match(commercialSource, /از همین صفحه به درگاه امن می‌روید/);
   assert.doesNotMatch(commercialSource, /window\.open\(u/);
-  assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?window\.location\.assign\(u\)/);
   assert.doesNotMatch(commercialSource, /dh-pay-intent/);
   assert.doesNotMatch(commercialSource, /dh-pay-chrome/);
+  assert.match(commercialSource, /commercial_ui\.js\?v=37/);
 
-  console.log('purchase_ui_fix regression: PASS');
+  console.log('purchase/payment referer-hop regression: PASS');
 })();
