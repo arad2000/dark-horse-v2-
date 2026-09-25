@@ -5,6 +5,7 @@ const assert = require('assert');
 const source = fs.readFileSync('docs/purchase_ui_fix.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
+const hopBootSource = fs.readFileSync('docs/payment_hop_boot.js', 'utf8');
 
 function makeElement(id) {
   return {
@@ -198,6 +199,11 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(commercialSource, /payment\.zarinpal\.com/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
   assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
+  assert.match(indexSource, /payment_hop_boot\.js\?v=1/);
+  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=1') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
+  assert.match(hopBootSource, /dh_pay/);
+  assert.match(hopBootSource, /window\.location\.replace\(decoded\)/);
+  assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
   assert.match(indexSource, /commercial_ui\.js\?v=40/);
   assert.match(indexSource, /purchase_ui_fix\.js\?v=5/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
