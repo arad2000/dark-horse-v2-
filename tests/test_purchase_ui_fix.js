@@ -203,10 +203,11 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(hopBootSource, /dh_pay/);
   assert.match(hopBootSource, /window\.location\.replace\(decoded\)/);
   assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
-  assert.match(indexSource, /purchase_ui_fix\.js\?v=6/);
   assert.match(indexSource, /payment_hop_boot\.js\?v=2/);
+  assert.match(indexSource, /external_links_fix_v1\.js\?v=5/);
+  assert.match(indexSource, /commercial_ui\.js\?v=41/);
+  assert.match(indexSource, /purchase_ui_fix\.js\?v=7/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=2') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
-  assert.match(indexSource, /external_links_fix_v1\.js\?v=4/);
   assert.match(hopBootSource, /pageshow/);
   assert.match(hopBootSource, /visibility = ''/);
   assert.match(externalLinksSource, /target', '_blank'/);
