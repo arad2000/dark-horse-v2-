@@ -209,7 +209,12 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
   assert.match(indexSource, /commercial_ui\.js\?v=40/);
   assert.match(indexSource, /purchase_ui_fix\.js\?v=6/);
-  assert.match(indexSource, /external_links_fix_v1\.js\?v=3/);
+  assert.match(indexSource, /payment_hop_boot\.js\?v=2/);
+  assert.match(indexSource, /external_links_fix_v1\.js\?v=4/);
+  assert.match(hopBootSource, /pageshow/);
+  assert.match(hopBootSource, /visibility = ''/);
+  assert.match(externalLinksSource, /target', '_blank'/);
+  assert.doesNotMatch(externalLinksSource, /package=com\.android\.chrome/);
   assert.match(source, /var overlay = byId\('dh-commercial-overlay'\)/);
   assert.match(source, /global\.__dhInJourney = false/);
   assert.match(externalLinksSource, /eitaa\.com\/asbe_siah/);
