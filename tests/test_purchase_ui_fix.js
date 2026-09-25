@@ -108,7 +108,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   vm.runInContext(source, context);
   observerCallback();
   await new Promise((resolve) => setTimeout(resolve, delay >= 2000 ? 2100 : 100));
-  return { button, error, status, spin, statusText, location, bridgeCalls };
+  return { button, error, status, spin, statusText, location, bridgeCalls, journeyCalls };
 }
 
 (async () => {
@@ -127,6 +127,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   desktop.button.onclick({ preventDefault() {}, stopPropagation() {} });
   assert.strictEqual(desktop.location.href, paymentUrl);
   assert.deepStrictEqual(desktop.bridgeCalls, []);
+  assert.deepStrictEqual(desktop.journeyCalls, []);
 
   const webView = await runPurchase({
     delay: 50,
