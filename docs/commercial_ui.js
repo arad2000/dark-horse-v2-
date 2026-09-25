@@ -104,12 +104,23 @@
     if(!url)return false;
     var raw=String(url);
     if(!isZarinpalPaymentUrl(raw))return false;
-    if(!isEmbeddedAndroid()){
-      try{window.location.replace(raw);return true;}catch(_){}
+    if(isEmbeddedAndroid()){
+      try{
+        if(global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl==='function'){
+          global.__dhPaymentHandoff=true;
+          global.AndroidBridge.openExternalUrl(raw);
+          return true;
+        }
+      }catch(_){}
+      var chromeHop=chromeHopUrl(raw);
+      try{
+        global.__dhPaymentHandoff=true;
+        window.location.href=chromeIntent(chromeHop,chromeHop);
+        return true;
+      }catch(_){}
       return false;
     }
-    var chromeHop=chromeHopUrl(raw);
-    try{window.location.href=chromeIntent(chromeHop,chromeHop);return true;}catch(_){}
+    try{window.location.replace(raw);return true;}catch(_){}
     return false;
   }
   function showPayFallback(url){
@@ -334,10 +345,19 @@
       global.__dh_quota_busy=false;
       var r=Number(d&&d.credits_remaining);
       if(!isFinite(r)||r<0)r=0;
-      var prev=null;
-      try{prev=JSON.parse(localStorage.getItem(QUOTA_KEY)||'{}').serverRemaining;}catch(_){}
-      if(prev!==r){try{if(global.DHShell&&typeof global.DHShell.renderProfile==='function')global.DHShell.renderProfile();}catch(_){}
-      }
+      try{
+        var current={};
+        try{current=JSON.parse(localStorage.getItem(QUOTA_KEY)||'{}')||{};}catch(_){}
+        setLocalQuota({
+          used:Number(current.used)||0,
+          premium:!!current.premium,
+          serverRemaining:r,
+          remaining:r
+        });
+      }catch(_){}
+      // Quota synchronization must never repaint the active shell/profile implicitly.
+      // Rendering Profile here caused a visible profile transition during payment handoff.
+      try{global.dispatchEvent(new CustomEvent('dh-quota-updated',{detail:{credits_remaining:r}}));}catch(_){}
       if(done)done(r);
     }).catch(function(){global.__dh_quota_busy=false;if(done)done(null);});
   }
