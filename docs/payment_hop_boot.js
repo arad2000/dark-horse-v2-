@@ -53,6 +53,8 @@
     }
     if (!isZarinpalPaymentUrl(decoded)) return;
 
+    try { document.documentElement.style.visibility = 'hidden'; } catch (_) {}
+
     var dhChrome = params.get('dh_chrome') === '1';
 
     // This script runs before app.js/shell.js. Therefore a payment hop
