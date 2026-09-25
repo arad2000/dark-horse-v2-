@@ -1,4 +1,4 @@
-/* External links — direct browser navigation with guaranteed app return on Back. */
+/* External links v3 — WebView-safe external navigation with app return. */
 (function (global) {
   'use strict';
 
@@ -38,8 +38,21 @@
 
       armReturnEntry();
 
+      var ua = text(global.navigator && global.navigator.userAgent);
+      var embeddedAndroid = /Android/i.test(ua) && (
+        /; wv\)/i.test(ua) || /WebView/i.test(ua) || /Version\/4\.0 Chrome/i.test(ua) ||
+        !!(global.matchMedia && global.matchMedia('(display-mode: standalone)').matches)
+      );
       try {
-        global.location.assign(url);
+        if (embeddedAndroid) {
+          var hostpath = String(url).replace(/^https?:\/\//, '');
+          var intent = 'intent://' + hostpath +
+            '#Intent;scheme=https;package=com.android.chrome;' +
+            'S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+          global.location.href = intent;
+        } else {
+          global.location.assign(url);
+        }
       } catch (_) {
         try { global.location.href = url; } catch (_) {}
       }
