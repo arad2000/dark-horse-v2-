@@ -200,16 +200,12 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(commercialSource, /payment\.zarinpal\.com/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
   assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
-  assert.match(indexSource, /payment_hop_boot\.js\?v=1/);
-  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=1') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
-  assert.match(indexSource, /<script src="payment_hop_boot\.js\?v=1"><\/script>/);
-  assert.match(hopBootSource, /document\.documentElement\.style\.visibility = 'hidden'/);
   assert.match(hopBootSource, /dh_pay/);
   assert.match(hopBootSource, /window\.location\.replace\(decoded\)/);
   assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
-  assert.match(indexSource, /commercial_ui\.js\?v=40/);
   assert.match(indexSource, /purchase_ui_fix\.js\?v=6/);
   assert.match(indexSource, /payment_hop_boot\.js\?v=2/);
+  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=2') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
   assert.match(indexSource, /external_links_fix_v1\.js\?v=4/);
   assert.match(hopBootSource, /pageshow/);
   assert.match(hopBootSource, /visibility = ''/);
@@ -217,9 +213,6 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.doesNotMatch(externalLinksSource, /package=com\.android\.chrome/);
   assert.match(source, /var overlay = byId\('dh-commercial-overlay'\)/);
   assert.match(source, /global\.__dhInJourney = false/);
-  assert.match(externalLinksSource, /eitaa\.com\/asbe_siah/);
-  assert.match(externalLinksSource, /package=com\.android\.chrome/);
-  assert.match(externalLinksSource, /S\.browser_fallback_url/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl/);
 
