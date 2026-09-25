@@ -3,6 +3,7 @@ const vm = require('vm');
 const assert = require('assert');
 const source = fs.readFileSync('docs/purchase_ui_fix.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
+const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 
 function makeElement(id) {
   return {
