@@ -62,23 +62,33 @@
     try{
       var parsed=new URL(String(url),window.location.href);
       var host=String(parsed.hostname||'').toLowerCase();
-      return parsed.protocol==='https:' && (host==='zarinpal.com'||host==='www.zarinpal.com'||host==='sandbox.zarinpal.com');
+      return parsed.protocol==='https:' && (
+        host==='zarinpal.com' ||
+        host==='www.zarinpal.com' ||
+        host==='sandbox.zarinpal.com' ||
+        host==='payment.zarinpal.com' ||
+        host==='www.payment.zarinpal.com'
+      );
     }catch(_){return false;}
   }
   function siteHopPayUrl(paymentUrl){
     return 'https://asbe-siah.ir/?dh_pay='+encodeURIComponent(String(paymentUrl));
   }
+  function chromeHopUrl(paymentUrl){
+    return siteHopPayUrl(paymentUrl)+'&dh_chrome=1';
+  }
   function handlePaymentHop(){
     try{
-      var raw=new URLSearchParams(window.location.search||'').get('dh_pay');
+      var params=new URLSearchParams(window.location.search||'');
+      var raw=params.get('dh_pay');
       if(!raw)return false;
       var decoded;
       try{decoded=decodeURIComponent(raw);}catch(_){return false;}
       if(!isZarinpalPaymentUrl(decoded))return false;
-      var hop=siteHopPayUrl(decoded);
-      if(isEmbeddedAndroid()){
-        var chromeHop=hop+(hop.indexOf('?')>=0?'&':'?')+'dh_chrome=1';
-        try{window.location.href=chromeIntent(chromeHop,hop);return true;}catch(_){}
+      var dhChrome=params.get('dh_chrome')==='1';
+      if(isEmbeddedAndroid()&&!dhChrome){
+        var chromeHop=chromeHopUrl(decoded);
+        try{window.location.href=chromeIntent(chromeHop,chromeHop);return true;}catch(_){}
       }
       window.location.replace(decoded);
       return true;
@@ -88,19 +98,18 @@
     var target=String(url);
     var fallback=String(fallbackUrl||target);
     var hostpath=target.replace(/^https?:\/\//,'');
-    return 'intent://'+hostpath+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+fallback+';end';
+    return 'intent://'+hostpath+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(fallback)+';end';
   }
   function openExternalPay(url){
     if(!url)return false;
     var raw=String(url);
     if(!isZarinpalPaymentUrl(raw))return false;
-    var hop=siteHopPayUrl(raw);
-    if(isEmbeddedAndroid()){
-      var chromeHop=hop+(hop.indexOf('?')>=0?'&':'?')+'dh_chrome=1';
-      try{window.location.href=chromeIntent(chromeHop,hop);return true;}catch(_){}
+    if(!isEmbeddedAndroid()){
+      try{window.location.replace(raw);return true;}catch(_){}
+      return false;
     }
-    try{window.location.assign(hop);return true;}catch(_){}
-    try{window.location.href=hop;return true;}catch(_){}
+    var chromeHop=chromeHopUrl(raw);
+    try{window.location.href=chromeIntent(chromeHop,chromeHop);return true;}catch(_){}
     return false;
   }
   function showPayFallback(url){

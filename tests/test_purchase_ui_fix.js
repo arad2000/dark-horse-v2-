@@ -66,7 +66,7 @@ async function runPurchase({ delay, userAgent = '' }) {
   const close = makeElement('dh-buy-close');
   const elements = [overlay, button, error, status, spin, statusText, close];
   const map = Object.fromEntries(elements.map((element) => [element.id, element]));
-  const location = { href: '', assign(value) { this.href = value; } };
+  const location = { href: '', replace(value) { this.href = value; }, assign(value) { this.href = value; } };
   let observerCallback = null;
   const bridgeCalls = [];
 
@@ -110,16 +110,19 @@ async function runPurchase({ delay, userAgent = '' }) {
 }
 
 (async () => {
+  const paymentUrl = 'https://sandbox.zarinpal.com/pg/StartPay/ABC123';
   const expectedHop = 'https://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123';
+  const expectedChromeHop = expectedHop + '&dh_chrome=1';
+  const expectedFallback = encodeURIComponent(expectedChromeHop);
   const expectedIntent =
     'intent://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123&dh_chrome=1' +
-    '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + expectedHop + ';end';
+    '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
 
   const desktop = await runPurchase({ delay: 50 });
   assert.strictEqual(desktop.button.disabled, false);
   assert.strictEqual(desktop.button.textContent, 'پرداخت');
   desktop.button.onclick({ preventDefault() {}, stopPropagation() {} });
-  assert.strictEqual(desktop.location.href, expectedHop);
+  assert.strictEqual(desktop.location.href, paymentUrl);
   assert.deepStrictEqual(desktop.bridgeCalls, []);
 
   const webView = await runPurchase({
@@ -131,21 +134,35 @@ async function runPurchase({ delay, userAgent = '' }) {
   assert.deepStrictEqual(webView.bridgeCalls, []);
 
   const chrome = commercialHop(
-    '?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123',
+    '?dh_pay=' + encodeURIComponent(paymentUrl),
     'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/140.0 Mobile Safari/537.36'
   );
   assert.deepStrictEqual(chrome.href, []);
-  assert.deepStrictEqual(chrome.replace, ['https://sandbox.zarinpal.com/pg/StartPay/ABC123']);
+  assert.deepStrictEqual(chrome.replace, [paymentUrl]);
 
-  const embeddedHop = commercialHop(
-    '?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123',
+  const embeddedNoFlag = commercialHop(
+    '?dh_pay=' + encodeURIComponent(paymentUrl),
     'Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Mobile Safari/537.36'
   );
-  assert.deepStrictEqual(embeddedHop.href, [expectedIntent]);
-  assert.deepStrictEqual(embeddedHop.replace, []);
+  assert.deepStrictEqual(embeddedNoFlag.href, [expectedIntent]);
+  assert.deepStrictEqual(embeddedNoFlag.replace, []);
+
+  const embeddedFlag = commercialHop(
+    '?dh_pay=' + encodeURIComponent(paymentUrl) + '&dh_chrome=1',
+    'Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Mobile Safari/537.36'
+  );
+  assert.deepStrictEqual(embeddedFlag.href, []);
+  assert.deepStrictEqual(embeddedFlag.replace, [paymentUrl]);
+
+  const extraOfficialHost = commercialHop(
+    '?dh_pay=' + encodeURIComponent('https://payment.zarinpal.com/pg/StartPay/XYZ789') + '&dh_chrome=1',
+    'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/140.0 Mobile Safari/537.36'
+  );
+  assert.deepStrictEqual(extraOfficialHost.href, []);
+  assert.deepStrictEqual(extraOfficialHost.replace, ['https://payment.zarinpal.com/pg/StartPay/XYZ789']);
 
   const evil = commercialHop(
-    '?dh_pay=https%3A%2F%2Fevil.example%2Fpay',
+    '?dh_pay=' + encodeURIComponent('https://evil.example/pay') + '&dh_chrome=1',
     'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/140.0 Mobile Safari/537.36'
   );
   assert.deepStrictEqual(evil.href, []);
@@ -160,19 +177,27 @@ async function runPurchase({ delay, userAgent = '' }) {
 
   const purchaseFunction = (source.match(/function openPayment\([\s\S]*?\n  }\n\n  function waitForPayment/) || [])[0];
   const commercialFunction = (commercialSource.match(/function openExternalPay\([\s\S]*?\n  }\n  function showPayFallback/) || [])[0];
+  const hopFunction = (commercialSource.match(/function handlePaymentHop\([\s\S]*?\n  }\n  function chromeIntent/) || [])[0];
   assert.ok(purchaseFunction, 'purchase payment function not found');
   assert.ok(commercialFunction, 'commercial payment function not found');
+  assert.ok(hopFunction, 'payment hop function not found');
+
   assert.doesNotMatch(purchaseFunction, /AndroidBridge\.openExternalUrl/);
   assert.doesNotMatch(commercialFunction, /AndroidBridge\.openExternalUrl/);
-  assert.match(purchaseFunction, /siteHopPayUrl\(target\)/);
-  assert.match(commercialFunction, /siteHopPayUrl\(raw\)/);
-  assert.match(commercialSource, /function handlePaymentHop\([\s\S]*?isEmbeddedAndroid\(\)[\s\S]*?chromeIntent\(chromeHop,hop\)/);
-  assert.match(commercialSource, /window\.location\.replace\(decoded\)/);
-  assert.match(commercialSource, /از همین صفحه به درگاه امن می‌روید/);
-  assert.match(indexSource, /commercial_ui\.js\?v=38/);
-  assert.match(indexSource, /purchase_ui_fix\.js\?v=4/);
+  assert.match(purchaseFunction, /!isEmbeddedAndroid\(\)/);
+  assert.match(purchaseFunction, /location\.replace\(target\)/);
+  assert.match(commercialFunction, /!isEmbeddedAndroid\(\)/);
+  assert.match(commercialFunction, /location\.replace\(raw\)/);
+  assert.match(commercialFunction, /chromeHopUrl\(raw\)/);
+  assert.match(hopFunction, /dh_chrome.*===.*['"]1['"]/);
+  assert.match(hopFunction, /window\.location\.replace\(decoded\)/);
+  assert.match(commercialSource, /payment\.zarinpal\.com/);
+  assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
+  assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
+  assert.match(indexSource, /commercial_ui\.js\?v=39/);
+  assert.match(indexSource, /purchase_ui_fix\.js\?v=5/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl/);
 
-  console.log('purchase/payment chrome-intent regression: PASS');
+  console.log('payment P0 no-blink/no-loop regression: PASS');
 })();
