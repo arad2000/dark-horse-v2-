@@ -116,7 +116,7 @@
     } catch (_) {}
     try {
       if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
-        global.AndroidBridge.openExternalUrl(target);
+        global.AndroidBridge.openExternalUrl(chromeHopUrl(target));
         return true;
       }
     } catch (_) {}
