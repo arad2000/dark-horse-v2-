@@ -1,4 +1,4 @@
-/* External links v3 — WebView-safe external navigation with app return. */
+/* External links v4 — preserve native external navigation. */
 (function (global) {
   'use strict';
 
@@ -24,40 +24,13 @@
 
   function directNavigate(anchor, url) {
     if (!anchor) return;
+    // Preserve native external-link behavior. This avoids trapping Eitaa/Sanjesh
+    // inside the Android WebView and lets the platform/browser choose the
+    // appropriate external handler.
     anchor.setAttribute('href', url);
-    anchor.setAttribute('target', '_self');
+    anchor.setAttribute('target', '_blank');
     anchor.setAttribute('rel', 'noopener noreferrer');
-    anchor.onclick = function (event) {
-      try {
-        if (event) {
-          event.preventDefault();
-          if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
-          if (typeof event.stopPropagation === 'function') event.stopPropagation();
-        }
-      } catch (_) {}
-
-      armReturnEntry();
-
-      var ua = text(global.navigator && global.navigator.userAgent);
-      var embeddedAndroid = /Android/i.test(ua) && (
-        /; wv\)/i.test(ua) || /WebView/i.test(ua) || /Version\/4\.0 Chrome/i.test(ua) ||
-        !!(global.matchMedia && global.matchMedia('(display-mode: standalone)').matches)
-      );
-      try {
-        if (embeddedAndroid) {
-          var hostpath = String(url).replace(/^https?:\/\//, '');
-          var intent = 'intent://' + hostpath +
-            '#Intent;scheme=https;package=com.android.chrome;' +
-            'S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
-          global.location.href = intent;
-        } else {
-          global.location.assign(url);
-        }
-      } catch (_) {
-        try { global.location.href = url; } catch (_) {}
-      }
-      return false;
-    };
+    anchor.onclick = null;
   }
 
   function repair() {
