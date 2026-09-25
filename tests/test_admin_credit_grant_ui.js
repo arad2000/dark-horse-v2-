@@ -114,13 +114,13 @@ async function loadAuth(fetchImpl) {
   assert.match(shellSource, /dh-commercial-ui-loader/);
   assert.match(shellSource, /capturedError/);
   assert.match(shellSource, /خطای رابط ورود/);
-  assert.match(shellSource, /commercial_ui\.js\?v=35/);
+  assert.match(shellSource, /commercial_ui\.js\?v=38/);
   assert.doesNotMatch(shellSource, /ماژول ورود\/ثبت‌نام هنوز بارگذاری نشده/);
   assert.match(commercialSource, /auth-ui-modal-root-missing/);
   assert.match(commercialSource, /showAuthModal failed/);
   assert.match(commercialSource, /__dhCommercialUIReady/);
   assert.match(indexSource, /shell\.js\?v=79/);
-  assert.match(indexSource, /commercial_ui\.js\?v=35/);
+  assert.match(indexSource, /commercial_ui\.js\?v=38/);
   assert.match(indexSource, /profile_ux_v1\.js\?v=7/);
   assert.match(profileSource, /function adminUserId\(user\)/);
   assert.match(profileSource, /user\.user_id \|\| user\.id \|\| user\.userId/);
@@ -134,8 +134,8 @@ async function loadAuth(fetchImpl) {
   assert.match(adminSource, /class="copy-user-id"/);
   assert.match(adminSource, /api\/v1\/admin\/credits\/grant/);
   assert.match(adminSource, /user_id:userId/);
-  assert.match(indexSource, /pwa-boot\.js\?v=63/);
-  assert.match(swSource, /darkhorse-v63/);
+  assert.match(indexSource, /pwa-boot\.js\?v=64/);
+  assert.match(swSource, /darkhorse-v64/);
 
 
   console.log('admin_credit_grant_ui regression: PASS');
