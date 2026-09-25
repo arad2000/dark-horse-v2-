@@ -86,25 +86,28 @@
     return 'https://asbe-siah.ir/?dh_pay=' + encodeURIComponent(String(paymentUrl));
   }
 
+  function chromeHopUrl(paymentUrl) {
+    return siteHopPayUrl(paymentUrl) + '&dh_chrome=1';
+  }
+
   function chromeIntent(url, fallbackUrl) {
     var target = String(url);
     var fallback = String(fallbackUrl || target);
     var hostpath = target.replace(/^https?:\/\//, '');
     return 'intent://' + hostpath +
       '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' +
-      fallback + ';end';
+      encodeURIComponent(fallback) + ';end';
   }
 
   function openPayment(url) {
     if (!url) return false;
     var target = String(url);
-    var hop = siteHopPayUrl(target);
-    if (isEmbeddedAndroid()) {
-      var chromeHop = hop + (hop.indexOf('?') >= 0 ? '&' : '?') + 'dh_chrome=1';
-      try { global.location.href = chromeIntent(chromeHop, hop); return true; } catch (_) {}
+    if (!isEmbeddedAndroid()) {
+      try { global.location.replace(target); return true; } catch (_) {}
+      return false;
     }
-    try { global.location.assign(hop); return true; } catch (_) {}
-    try { global.location.href = hop; return true; } catch (_) {}
+    var chromeHop = chromeHopUrl(target);
+    try { global.location.href = chromeIntent(chromeHop, chromeHop); return true; } catch (_) {}
     return false;
   }
 
