@@ -1,6 +1,29 @@
-/* payment_hop_boot.js v1 — handle payment return before SPA/Shell boot */
+/* payment_hop_boot.js v2 — handle gateway hop before SPA + recover on bfcache Back */
 (function () {
   'use strict';
+
+  function hasPaymentHop() {
+    try { return !!new URLSearchParams(window.location.search || '').get('dh_pay'); }
+    catch (_) { return false; }
+  }
+
+  function restoreAppAfterExternalReturn() {
+    if (hasPaymentHop()) return;
+    try { document.documentElement.style.visibility = ''; } catch (_) {}
+    try { document.documentElement.style.removeProperty('visibility'); } catch (_) {}
+    try {
+      if (window.__dhCommercialOverlay && window.__dhCommercialOverlay.parentNode) {
+        window.__dhCommercialOverlay.parentNode.removeChild(window.__dhCommercialOverlay);
+      }
+    } catch (_) {}
+    try { var o = document.getElementById('dh-commercial-overlay'); if (o) o.remove(); } catch (_) {}
+    try { window.__dhInJourney = false; window.__dhJourneyStarting = false; } catch (_) {}
+  }
+
+  try {
+    window.addEventListener('pageshow', function () { restoreAppAfterExternalReturn(); });
+    window.addEventListener('pagehide', function () { try { document.documentElement.style.visibility = ''; } catch (_) {} });
+  } catch (_) {}
 
   function isEmbeddedAndroid() {
     var ua = String(navigator.userAgent || '');
