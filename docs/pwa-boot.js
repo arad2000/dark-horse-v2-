@@ -1,4 +1,4 @@
-/* pwa-boot.js v63 — force SW v63 cache drop + one reload */
+/* pwa-boot.js v65 — force SW v63 cache drop + one reload */
 (function () {
   'use strict';
 
@@ -14,7 +14,7 @@
   if (window.__dhIsInstalled) document.documentElement.classList.add('dh-installed');
 
   if ('serviceWorker' in navigator) {
-    var SW_URL = './sw.js?v=64';
+    var SW_URL = './sw.js?v=65';
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
         try { reg.update(); } catch (e) {}
@@ -28,7 +28,7 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v63') === '1') return;
+          if (sessionStorage.getItem('dh_sw_reloaded_v65') === '1') return;
           sessionStorage.setItem('dh_sw_reloaded_v63', '1');
         } catch (e) {}
         refreshing = true;
