@@ -57,7 +57,7 @@ function commercialHop(query, userAgent) {
   return calls;
 }
 
-async function runPurchase({ delay, userAgent = '' }) {
+async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const overlay = makeElement('dh-commercial-overlay');
   const button = makeElement('dh-buy-now');
   const error = makeElement('dh-buy-err');
@@ -88,6 +88,7 @@ async function runPurchase({ delay, userAgent = '' }) {
     navigator: { userAgent, standalone: false },
     matchMedia() { return { matches: false }; },
     AndroidBridge: { openExternalUrl(value) { bridgeCalls.push(value); } },
+    DHShell: { startJourney() { journeyCalls.push('startJourney'); } },
     DHAuth: {
       isLoggedIn() { return true; },
       createPayment() {
@@ -119,7 +120,8 @@ async function runPurchase({ delay, userAgent = '' }) {
     'intent://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123&dh_chrome=1' +
     '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
 
-  const desktop = await runPurchase({ delay: 50 });
+  const journeyCalls = [];
+  const desktop = await runPurchase({ delay: 50, journeyCalls });
   assert.strictEqual(desktop.button.disabled, false);
   assert.strictEqual(desktop.button.textContent, 'پرداخت');
   desktop.button.onclick({ preventDefault() {}, stopPropagation() {} });
