@@ -1,4 +1,4 @@
-/* commercial_ui.js — server-authoritative auth + OTP + credit gate + payment UI + admin feedback */
+/* commercial_ui.js v42 — server-authoritative auth + OTP + credit gate + payment UI + admin feedback */
 (function (global) {
   'use strict';
   if (global.__dhCommercialUIReady) return;
@@ -98,31 +98,22 @@
     var target=String(url);
     var fallback=String(fallbackUrl||target);
     var hostpath=target.replace(/^https?:\/\//,'');
-    return 'intent://'+hostpath+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(fallback)+';end';
+    return 'intent://'+hostpath+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(fallback)+';end';
   }
   function openExternalPay(url){
     if(!url)return false;
     var raw=String(url);
     if(!isZarinpalPaymentUrl(raw))return false;
-    if(isEmbeddedAndroid()){
-      try{
-        if(global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl==='function'){
-          global.__dhPaymentHandoff=true;
-          global.AndroidBridge.openExternalUrl(chromeHopUrl(raw));
-          return true;
-        }
-      }catch(_){}
-      var chromeHop=chromeHopUrl(raw);
-      try{
-        global.__dhPaymentHandoff=true;
-        window.location.href=chromeIntent(chromeHop,chromeHop);
-        return true;
-      }catch(_){}
+    if(!isEmbeddedAndroid()){
+      try{window.location.replace(raw);return true;}catch(_){}
       return false;
     }
-    try{window.location.replace(raw);return true;}catch(_){}
+    // Fallback/retry in Android WebView follows the same one-hop payment contract.
+    var chromeHop=chromeHopUrl(raw);
+    try{window.location.href=chromeIntent(chromeHop,chromeHop);return true;}catch(_){}
     return false;
   }
+
   function showPayFallback(url){
     var e=el('dh-buy-err');
     if(!e)return;

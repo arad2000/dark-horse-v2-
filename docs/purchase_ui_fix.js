@@ -1,4 +1,4 @@
-/* purchase_ui_fix.js — explicit payment readiness UX with bounded preparation */
+/* purchase_ui_fix.js v9 — explicit payment readiness + APK hop contract */
 (function (global) {
   'use strict';
 
@@ -114,14 +114,13 @@
       global.__dhJourneyStarting = false;
       global.__dhPaymentHandoff = true;
     } catch (_) {}
-    try {
-      if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
-        global.AndroidBridge.openExternalUrl(chromeHopUrl(target));
-        return true;
-      }
-    } catch (_) {}
+    // WebView/PWA payment contract: exactly one intent to the Dark Horse
+    // site-hop. The site-hop then redirects once to ZarinPal with dh_chrome=1.
     var chromeHop = chromeHopUrl(target);
-    try { global.location.href = chromeIntent(chromeHop, chromeHop); return true; } catch (_) {}
+    try {
+      global.location.href = chromeIntent(chromeHop, chromeHop);
+      return true;
+    } catch (_) {}
     return false;
   }
 

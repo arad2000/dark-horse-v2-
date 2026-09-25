@@ -1,4 +1,4 @@
-/* External links v5 — native Android bridge with browser fallback. */
+/* External links v6 — shared native/intent/browser external navigation contract. */
 (function (global) {
   'use strict';
 
@@ -22,6 +22,63 @@
     } catch (_) {}
   }
 
+  function isAndroidWebViewOrPwa() {
+    var ua = text(global.navigator && global.navigator.userAgent);
+    if (!/Android/i.test(ua)) return false;
+    var standalone = false;
+    try {
+      standalone = !!(global.matchMedia &&
+        global.matchMedia('(display-mode: standalone)').matches);
+    } catch (_) {}
+    if (global.navigator && global.navigator.standalone) standalone = true;
+    return standalone || /; wv\)/i.test(ua) ||
+      /WebView/i.test(ua) || /Version\/4\.0 Chrome/i.test(ua);
+  }
+
+  function chromeIntent(url) {
+    var target = String(url);
+    var hostpath = target.replace(/^https?:\/\//, '');
+    return 'intent://' + hostpath +
+      '#Intent;scheme=https;action=android.intent.action.VIEW;' +
+      'category=android.intent.category.BROWSABLE;package=com.android.chrome;' +
+      'S.browser_fallback_url=' + encodeURIComponent(target) + ';end';
+  }
+
+  function openExternal(url) {
+    var target = String(url || '');
+    if (!/^https:\/\//i.test(target)) return false;
+
+    // 1) Native APK bridge gets first refusal.
+    try {
+      if (global.AndroidBridge &&
+          typeof global.AndroidBridge.openExternalUrl === 'function') {
+        global.AndroidBridge.openExternalUrl(target);
+        return true;
+      }
+    } catch (_) {}
+
+    // 2) Android WebView/PWA leaves the app through Chrome.
+    if (isAndroidWebViewOrPwa()) {
+      try {
+        global.location.href = chromeIntent(target);
+        return true;
+      } catch (_) {}
+      return false;
+    }
+
+    // 3) Normal browser navigation.
+    try {
+      global.location.assign(target);
+      return true;
+    } catch (_) {
+      try {
+        global.location.href = target;
+        return true;
+      } catch (_) {}
+    }
+    return false;
+  }
+
   function directNavigate(anchor, url) {
     if (!anchor) return;
     anchor.setAttribute('href', url);
@@ -35,17 +92,7 @@
           if (typeof event.stopPropagation === 'function') event.stopPropagation();
         }
       } catch (_) {}
-      try {
-        if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
-          global.AndroidBridge.openExternalUrl(url);
-          return false;
-        }
-      } catch (_) {}
-      try {
-        global.location.assign(url);
-      } catch (_) {
-        try { global.location.href = url; } catch (_) {}
-      }
+      openExternal(url);
       return false;
     };
   }
