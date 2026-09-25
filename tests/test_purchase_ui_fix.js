@@ -1,6 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
+// P0 frontend cache recovery: keep the existing payment contract regression active.
 const source = fs.readFileSync('docs/purchase_ui_fix.js', 'utf8');
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
@@ -194,7 +195,7 @@ async function runPurchase({ delay, userAgent = '' }) {
   assert.match(commercialSource, /payment\.zarinpal\.com/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
   assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
-  assert.match(indexSource, /commercial_ui\.js\?v=39/);
+  assert.match(indexSource, /commercial_ui\.js\?v=40/);
   assert.match(indexSource, /purchase_ui_fix\.js\?v=5/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl/);
