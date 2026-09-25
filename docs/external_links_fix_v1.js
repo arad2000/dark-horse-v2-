@@ -1,4 +1,4 @@
-/* External links v4 — preserve native external navigation. */
+/* External links v5 — native Android bridge with browser fallback. */
 (function (global) {
   'use strict';
 
@@ -24,13 +24,30 @@
 
   function directNavigate(anchor, url) {
     if (!anchor) return;
-    // Preserve native external-link behavior. This avoids trapping Eitaa/Sanjesh
-    // inside the Android WebView and lets the platform/browser choose the
-    // appropriate external handler.
     anchor.setAttribute('href', url);
     anchor.setAttribute('target', '_blank');
     anchor.setAttribute('rel', 'noopener noreferrer');
-    anchor.onclick = null;
+    anchor.onclick = function (event) {
+      try {
+        if (event) {
+          event.preventDefault();
+          if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+          if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        }
+      } catch (_) {}
+      try {
+        if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
+          global.AndroidBridge.openExternalUrl(url);
+          return false;
+        }
+      } catch (_) {}
+      try {
+        global.location.assign(url);
+      } catch (_) {
+        try { global.location.href = url; } catch (_) {}
+      }
+      return false;
+    };
   }
 
   function repair() {
