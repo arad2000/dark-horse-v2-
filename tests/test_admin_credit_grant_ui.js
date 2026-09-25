@@ -135,7 +135,7 @@ async function loadAuth(fetchImpl) {
   assert.match(adminSource, /api\/v1\/admin\/credits\/grant/);
   assert.match(adminSource, /user_id:userId/);
   assert.match(indexSource, /pwa-boot\.js\?v=64/);
-  assert.match(swSource, /darkhorse-v63/);
+  assert.match(swSource, /darkhorse-v64/);
 
 
   console.log('admin_credit_grant_ui regression: PASS');
