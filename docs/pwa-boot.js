@@ -29,7 +29,7 @@
         if (refreshing) return;
         try {
           if (sessionStorage.getItem('dh_sw_reloaded_v65') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v63', '1');
+          sessionStorage.setItem('dh_sw_reloaded_v65', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();
