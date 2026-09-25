@@ -201,6 +201,8 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
   assert.match(indexSource, /payment_hop_boot\.js\?v=1/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=1') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
+  assert.match(indexSource, /<script src="payment_hop_boot\.js\?v=1"><\/script>/);
+  assert.match(hopBootSource, /document\.documentElement\.style\.visibility = 'hidden'/);
   assert.match(hopBootSource, /dh_pay/);
   assert.match(hopBootSource, /window\.location\.replace\(decoded\)/);
   assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
