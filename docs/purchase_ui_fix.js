@@ -106,6 +106,9 @@
       try { global.location.replace(target); return true; } catch (_) {}
       return false;
     }
+    var overlay = byId('dh-commercial-overlay');
+    try { if (overlay) overlay.remove(); } catch (_) {}
+    try { global.__dhInJourney = false; global.__dhJourneyStarting = false; } catch (_) {}
     var chromeHop = chromeHopUrl(target);
     try { global.location.href = chromeIntent(chromeHop, chromeHop); return true; } catch (_) {}
     return false;
