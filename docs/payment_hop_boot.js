@@ -60,7 +60,8 @@
     var fallback = String(fallbackUrl || target);
     var hostpath = target.replace(/^https?:\/\//, '');
     return 'intent://' + hostpath +
-      '#Intent;scheme=https;package=com.android.chrome;' +
+      '#Intent;scheme=https;action=android.intent.action.VIEW;' +
+      'category=android.intent.category.BROWSABLE;package=com.android.chrome;' +
       'S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end';
   }
 
