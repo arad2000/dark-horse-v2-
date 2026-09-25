@@ -95,8 +95,9 @@
     var fallback = String(fallbackUrl || target);
     var hostpath = target.replace(/^https?:\/\//, '');
     return 'intent://' + hostpath +
-      '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' +
-      encodeURIComponent(fallback) + ';end';
+      '#Intent;scheme=https;action=android.intent.action.VIEW;' +
+      'category=android.intent.category.BROWSABLE;package=com.android.chrome;' +
+      'S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end';
   }
 
   function openPayment(url) {
@@ -108,7 +109,17 @@
     }
     var overlay = byId('dh-commercial-overlay');
     try { if (overlay) overlay.remove(); } catch (_) {}
-    try { global.__dhInJourney = false; global.__dhJourneyStarting = false; } catch (_) {}
+    try {
+      global.__dhInJourney = false;
+      global.__dhJourneyStarting = false;
+      global.__dhPaymentHandoff = true;
+    } catch (_) {}
+    try {
+      if (global.AndroidBridge && typeof global.AndroidBridge.openExternalUrl === 'function') {
+        global.AndroidBridge.openExternalUrl(target);
+        return true;
+      }
+    } catch (_) {}
     var chromeHop = chromeHopUrl(target);
     try { global.location.href = chromeIntent(chromeHop, chromeHop); return true; } catch (_) {}
     return false;
