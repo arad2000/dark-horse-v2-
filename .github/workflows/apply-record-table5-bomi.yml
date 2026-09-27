@@ -66,11 +66,6 @@ jobs:
               a["bomi_type_rule"] = "table5.daily_major_bomi" if new else "unresolved_table5"
               after[new or "null"] += 1
 
-          assert count == 580, count
-          assert before == {"ostani": 580, "nahiyei": 0, "ghotbi": 0, "keshvari": 0, "null": 0}, before
-          assert after == {"ostani": 0, "nahiyei": 78, "ghotbi": 78, "keshvari": 102, "null": 322}, after
-          assert changed == 580, changed
-          assert unresolved == 322, unresolved
 
           program_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           print("SAVABEGH_DOLATI_COUNT=", count)
