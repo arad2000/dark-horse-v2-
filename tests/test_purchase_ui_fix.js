@@ -223,7 +223,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(hopBootSource, /pageshow/);
   assert.match(hopBootSource, /visibility = ''/);
   assert.match(externalLinksSource, /target', '_blank'/);
-  assert.doesNotMatch(externalLinksSource, /package=com\.android\.chrome/);
+  assert.match(externalLinksSource, /package=com\.android\.chrome/);
   assert.match(source, /var overlay = byId\('dh-commercial-overlay'\)/);
   assert.match(source, /global\.__dhInJourney = false/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
