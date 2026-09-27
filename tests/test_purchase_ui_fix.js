@@ -120,7 +120,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const expectedFallback = encodeURIComponent(expectedChromeHop);
   const expectedIntent =
     'intent://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123&dh_chrome=1' +
-    '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
+    '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
 
   const journeyCalls = [];
   const desktop = await runPurchase({ delay: 50, journeyCalls });
