@@ -1,235 +1,223 @@
 {
-  "schema_version": 1,
-  "source": {
-    "title_fa": "دفترچه راهنمای ثبت‌نام و انتخاب رشته پذیرش صرفاً بر اساس سوابق تحصیلی سراسری سال ۱۴۰۴",
-    "year": 1404,
-    "pages": [
-      "7"
+  "source": "دفترچه سوابق تحصیلی ۱۴۰۴ سازمان سنجش — صفحه ۷",
+  "nahiye": {
+    "1": [
+      "البرز",
+      "تهران",
+      "زنجان",
+      "سمنان",
+      "قزوین",
+      "قم",
+      "مرکزی"
     ],
-    "provenance_status": "مالک دفترچه توسط ناظر معرفی شده است؛ شناسه فایل مالک در workspace فعلی materialize نشده و هیچ شناسه ساختگی ثبت نشده است."
+    "2": [
+      "آذربایجان شرقی",
+      "آذربایجان غربی",
+      "اردبیل"
+    ],
+    "3": [
+      "اصفهان",
+      "چهارمحال و بختیاری",
+      "یزد"
+    ],
+    "4": [
+      "سیستان و بلوچستان",
+      "کرمان"
+    ],
+    "5": [
+      "بوشهر",
+      "فارس",
+      "کهگیلویه و بویراحمد",
+      "هرمزگان"
+    ],
+    "6": [
+      "کردستان",
+      "کرمانشاه",
+      "همدان"
+    ],
+    "7": [
+      "ایلام",
+      "خوزستان",
+      "لرستان"
+    ],
+    "8": [
+      "خراسان رضوی",
+      "خراسان شمالی",
+      "خراسان جنوبی"
+    ],
+    "9": [
+      "گلستان",
+      "گیلان",
+      "مازندران"
+    ]
   },
-  "provinces": [
-    {
-      "name_fa": "آذربایجان شرقی",
-      "nahiye_id": 2,
-      "ghotb_id": 3,
-      "nahiye_name": "ناحیه 2",
-      "ghotb_name": "قطب 3"
+  "ghotb": {
+    "1": [
+      "البرز",
+      "تهران",
+      "زنجان",
+      "سمنان",
+      "قزوین",
+      "قم",
+      "گلستان",
+      "گیلان",
+      "مازندران",
+      "مرکزی"
+    ],
+    "2": [
+      "خراسان جنوبی",
+      "خراسان رضوی",
+      "خراسان شمالی",
+      "سیستان و بلوچستان",
+      "کرمان"
+    ],
+    "3": [
+      "آذربایجان شرقی",
+      "آذربایجان غربی",
+      "اردبیل",
+      "کردستان",
+      "کرمانشاه",
+      "همدان"
+    ],
+    "4": [
+      "اصفهان",
+      "ایلام",
+      "چهارمحال و بختیاری",
+      "خوزستان",
+      "لرستان",
+      "یزد"
+    ],
+    "5": [
+      "بوشهر",
+      "فارس",
+      "کهگیلویه و بویراحمد",
+      "هرمزگان"
+    ]
+  },
+  "provinces": {
+    "البرز": {
+      "nahiye_id": 1,
+      "ghotb_id": 1
     },
-    {
-      "name_fa": "آذربایجان غربی",
-      "nahiye_id": 2,
-      "ghotb_id": 3,
-      "nahiye_name": "ناحیه 2",
-      "ghotb_name": "قطب 3"
+    "تهران": {
+      "nahiye_id": 1,
+      "ghotb_id": 1
     },
-    {
-      "name_fa": "اردبیل",
-      "nahiye_id": 2,
-      "ghotb_id": 3,
-      "nahiye_name": "ناحیه 2",
-      "ghotb_name": "قطب 3"
+    "زنجان": {
+      "nahiye_id": 1,
+      "ghotb_id": 1
     },
-    {
-      "name_fa": "اصفهان",
+    "سمنان": {
+      "nahiye_id": 1,
+      "ghotb_id": 1
+    },
+    "قزوین": {
+      "nahiye_id": 1,
+      "ghotb_id": 1
+    },
+    "قم": {
+      "nahiye_id": 1,
+      "ghotb_id": 1
+    },
+    "مرکزی": {
+      "nahiye_id": 1,
+      "ghotb_id": 1
+    },
+    "آذربایجان شرقی": {
+      "nahiye_id": 2,
+      "ghotb_id": 3
+    },
+    "آذربایجان غربی": {
+      "nahiye_id": 2,
+      "ghotb_id": 3
+    },
+    "اردبیل": {
+      "nahiye_id": 2,
+      "ghotb_id": 3
+    },
+    "اصفهان": {
       "nahiye_id": 3,
-      "ghotb_id": 4,
-      "nahiye_name": "ناحیه 3",
-      "ghotb_name": "قطب 4"
+      "ghotb_id": 4
     },
-    {
-      "name_fa": "البرز",
-      "nahiye_id": 1,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 1",
-      "ghotb_name": "قطب 1"
-    },
-    {
-      "name_fa": "ایلام",
-      "nahiye_id": 7,
-      "ghotb_id": 4,
-      "nahiye_name": "ناحیه 7",
-      "ghotb_name": "قطب 4"
-    },
-    {
-      "name_fa": "بوشهر",
-      "nahiye_id": 5,
-      "ghotb_id": 5,
-      "nahiye_name": "ناحیه 5",
-      "ghotb_name": "قطب 5"
-    },
-    {
-      "name_fa": "تهران",
-      "nahiye_id": 1,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 1",
-      "ghotb_name": "قطب 1"
-    },
-    {
-      "name_fa": "چهارمحال و بختیاری",
+    "چهارمحال و بختیاری": {
       "nahiye_id": 3,
-      "ghotb_id": 4,
-      "nahiye_name": "ناحیه 3",
-      "ghotb_name": "قطب 4"
+      "ghotb_id": 4
     },
-    {
-      "name_fa": "خراسان جنوبی",
-      "nahiye_id": 8,
-      "ghotb_id": 2,
-      "nahiye_name": "ناحیه 8",
-      "ghotb_name": "قطب 2"
+    "یزد": {
+      "nahiye_id": 3,
+      "ghotb_id": 4
     },
-    {
-      "name_fa": "خراسان رضوی",
-      "nahiye_id": 8,
-      "ghotb_id": 2,
-      "nahiye_name": "ناحیه 8",
-      "ghotb_name": "قطب 2"
-    },
-    {
-      "name_fa": "خراسان شمالی",
-      "nahiye_id": 8,
-      "ghotb_id": 2,
-      "nahiye_name": "ناحیه 8",
-      "ghotb_name": "قطب 2"
-    },
-    {
-      "name_fa": "خوزستان",
-      "nahiye_id": 7,
-      "ghotb_id": 4,
-      "nahiye_name": "ناحیه 7",
-      "ghotb_name": "قطب 4"
-    },
-    {
-      "name_fa": "زنجان",
-      "nahiye_id": 1,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 1",
-      "ghotb_name": "قطب 1"
-    },
-    {
-      "name_fa": "سمنان",
-      "nahiye_id": 1,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 1",
-      "ghotb_name": "قطب 1"
-    },
-    {
-      "name_fa": "سیستان و بلوچستان",
+    "سیستان و بلوچستان": {
       "nahiye_id": 4,
-      "ghotb_id": 2,
-      "nahiye_name": "ناحیه 4",
-      "ghotb_name": "قطب 2"
+      "ghotb_id": 2
     },
-    {
-      "name_fa": "فارس",
-      "nahiye_id": 5,
-      "ghotb_id": 5,
-      "nahiye_name": "ناحیه 5",
-      "ghotb_name": "قطب 5"
-    },
-    {
-      "name_fa": "قزوین",
-      "nahiye_id": 1,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 1",
-      "ghotb_name": "قطب 1"
-    },
-    {
-      "name_fa": "قم",
-      "nahiye_id": 1,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 1",
-      "ghotb_name": "قطب 1"
-    },
-    {
-      "name_fa": "کردستان",
-      "nahiye_id": 6,
-      "ghotb_id": 3,
-      "nahiye_name": "ناحیه 6",
-      "ghotb_name": "قطب 3"
-    },
-    {
-      "name_fa": "کرمان",
+    "کرمان": {
       "nahiye_id": 4,
-      "ghotb_id": 2,
-      "nahiye_name": "ناحیه 4",
-      "ghotb_name": "قطب 2"
+      "ghotb_id": 2
     },
-    {
-      "name_fa": "کرمانشاه",
-      "nahiye_id": 6,
-      "ghotb_id": 3,
-      "nahiye_name": "ناحیه 6",
-      "ghotb_name": "قطب 3"
-    },
-    {
-      "name_fa": "کهگیلویه و بویراحمد",
+    "بوشهر": {
       "nahiye_id": 5,
-      "ghotb_id": 5,
-      "nahiye_name": "ناحیه 5",
-      "ghotb_name": "قطب 5"
+      "ghotb_id": 5
     },
-    {
-      "name_fa": "گلستان",
-      "nahiye_id": 9,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 9",
-      "ghotb_name": "قطب 1"
+    "فارس": {
+      "nahiye_id": 5,
+      "ghotb_id": 5
     },
-    {
-      "name_fa": "گیلان",
-      "nahiye_id": 9,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 9",
-      "ghotb_name": "قطب 1"
+    "کهگیلویه و بویراحمد": {
+      "nahiye_id": 5,
+      "ghotb_id": 5
     },
-    {
-      "name_fa": "لرستان",
+    "هرمزگان": {
+      "nahiye_id": 5,
+      "ghotb_id": 5
+    },
+    "کردستان": {
+      "nahiye_id": 6,
+      "ghotb_id": 3
+    },
+    "کرمانشاه": {
+      "nahiye_id": 6,
+      "ghotb_id": 3
+    },
+    "همدان": {
+      "nahiye_id": 6,
+      "ghotb_id": 3
+    },
+    "ایلام": {
       "nahiye_id": 7,
-      "ghotb_id": 4,
-      "nahiye_name": "ناحیه 7",
-      "ghotb_name": "قطب 4"
+      "ghotb_id": 4
     },
-    {
-      "name_fa": "مازندران",
+    "خوزستان": {
+      "nahiye_id": 7,
+      "ghotb_id": 4
+    },
+    "لرستان": {
+      "nahiye_id": 7,
+      "ghotb_id": 4
+    },
+    "خراسان رضوی": {
+      "nahiye_id": 8,
+      "ghotb_id": 2
+    },
+    "خراسان شمالی": {
+      "nahiye_id": 8,
+      "ghotb_id": 2
+    },
+    "خراسان جنوبی": {
+      "nahiye_id": 8,
+      "ghotb_id": 2
+    },
+    "گلستان": {
       "nahiye_id": 9,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 9",
-      "ghotb_name": "قطب 1"
+      "ghotb_id": 1
     },
-    {
-      "name_fa": "مرکزی",
-      "nahiye_id": 1,
-      "ghotb_id": 1,
-      "nahiye_name": "ناحیه 1",
-      "ghotb_name": "قطب 1"
+    "گیلان": {
+      "nahiye_id": 9,
+      "ghotb_id": 1
     },
-    {
-      "name_fa": "هرمزگان",
-      "nahiye_id": 5,
-      "ghotb_id": 5,
-      "nahiye_name": "ناحیه 5",
-      "ghotb_name": "قطب 5"
-    },
-    {
-      "name_fa": "همدان",
-      "nahiye_id": 6,
-      "ghotb_id": 3,
-      "nahiye_name": "ناحیه 6",
-      "ghotb_name": "قطب 3"
-    },
-    {
-      "name_fa": "یزد",
-      "nahiye_id": 3,
-      "ghotb_id": 4,
-      "nahiye_name": "ناحیه 3",
-      "ghotb_name": "قطب 4"
+    "مازندران": {
+      "nahiye_id": 9,
+      "ghotb_id": 1
     }
-  ],
-  "notes": [
-    "۳۱ استان؛ ناحیه‌ها ۱ تا ۹ و قطب‌ها ۱ تا ۵.",
-    "نگاشت فقط برای مسیر record و بومی‌گزینی داده پذیرش استفاده می‌شود.",
-    "هیچ نگاشت جغرافیایی به موتور فردیت یا majors_database_v2.json اعمال نمی‌شود."
-  ]
+  }
 }
