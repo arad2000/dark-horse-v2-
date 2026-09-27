@@ -25,6 +25,8 @@ assert.match(source, /dh-admission-record-region/);
 assert.match(source, /dh-admission-record-special-quota/);
 assert.match(source, /region_zone: values.region_zone/);
 assert.match(source, /special_quota: values.special_quota/);
+assert.match(source, /region_zone: Number\(form\.region_zone\.value\)/);
+assert.match(source, /special_quota: String\(form\.special_quota\.value \|\| 'none'\)/);
 assert.match(source, /این مسیر رتبه نمی‌گیرد/);
 assert.match(source, /نتایج تخمینی/);
 assert.match(source, /جایگزین دفترچه و اعلام رسمی سنجش نیست/);

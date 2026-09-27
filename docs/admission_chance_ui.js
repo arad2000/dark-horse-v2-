@@ -124,6 +124,8 @@
         province: String(form.province.value || '').trim(),
         diploma_type: diploma,
         target_field_group: target || null,
+        region_zone: Number(form.region_zone.value),
+        special_quota: String(form.special_quota.value || 'none').trim() || 'none',
         gpa_field: gpaField,
         gpa_value: Number(form[gpaField].value)
       };
