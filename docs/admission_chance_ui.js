@@ -151,6 +151,8 @@
         province: values.province || null,
         diploma_type: values.diploma_type || null,
         target_field_group: values.target_field_group || null,
+        region_zone: values.region_zone,
+        special_quota: values.special_quota,
         limit: 30
       };
       if (values.diploma_type === 'other_fani') {
@@ -203,6 +205,12 @@
     }
 
     if (!values.diploma_type) return 'نوع دیپلم را انتخاب کن.';
+    if (![1, 2, 3].includes(values.region_zone)) {
+      return 'منطقه باید ۱، ۲ یا ۳ باشد.';
+    }
+    if (!['none', 'isargaran_25', 'isargaran_5', 'shahid'].includes(values.special_quota)) {
+      return 'سهمیه خاص نامعتبر است.';
+    }
     if (!Number.isFinite(values.gpa_value) || values.gpa_value < 0 || values.gpa_value > 20) {
       return values.gpa_field === 'gpa_total'
         ? 'معدل کل را بین ۰ تا ۲۰ وارد کن.'
@@ -345,13 +353,26 @@
             '<option value="">انتخاب استان</option>' + provinceOptionsHtml() +
           '</select>' +
         '</div>' +
+        '<div class="dh-admission-field">' +
+          '<label for="dh-admission-record-region">منطقه *</label>' +
+          '<select id="dh-admission-record-region" name="region_zone" required>' +
+            '<option value="">انتخاب منطقه</option>' + optionsHtml(REGION_OPTIONS) +
+          '</select>' +
+        '</div>' +
+        '<div class="dh-admission-field">' +
+          '<label for="dh-admission-record-special-quota">سهمیه خاص</label>' +
+          '<select id="dh-admission-record-special-quota" name="special_quota">' +
+            optionsHtml(SPECIAL_QUOTA_OPTIONS) +
+          '</select>' +
+          '<small class="dh-admission-help">در مسیر سوابق برای حفظ قرارداد توزیع ظرفیت نگه‌داری می‌شود؛ رتبه/حدنصاب سهمیه‌ای در این نسخه محاسبه نمی‌شود.</small>' +
+        '</div>' +
         '<div class="dh-admission-field full">' +
           '<label id="dh-admission-record-gpa-label" for="dh-admission-record-gpa">معدل کتبی نهایی *</label>' +
           '<input id="dh-admission-record-gpa" name="gpa_written" type="number" min="0" max="20" step="0.01" inputmode="decimal" placeholder="مثلاً 18.50" required>' +
           '<small class="dh-admission-help" id="dh-admission-record-gpa-help">برای دیپلم‌های نظری، gpa_written استفاده می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-info full">' +
-          'این مسیر رتبه نمی‌گیرد؛ معدل مؤثر از جدول ضریب «نوع دیپلم × گروه رشته هدف» محاسبه و با حداقل معدل برنامه مقایسه می‌شود.' +
+          'این مسیر رتبه نمی‌گیرد؛ معدل مؤثر از جدول ضریب «نوع دیپلم × گروه رشته هدف» محاسبه و با حداقل معدل برنامه مقایسه می‌شود. منطقه و سهمیه خاص فقط برای حفظ قرارداد توزیع ظرفیت دریافت می‌شوند.' +
         '</div>' +
         '<button class="dh-admission-submit full" type="submit">📚 بررسی شانس با سوابق تحصیلی</button>' +
       '</form>'

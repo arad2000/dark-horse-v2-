@@ -21,6 +21,11 @@ assert.match(source, /یزد/);
 assert.match(source, /isargaran_25/);
 assert.match(source, /isargaran_5/);
 assert.match(source, /shahid/);
+assert.match(source, /dh-admission-record-region/);
+assert.match(source, /dh-admission-record-special-quota/);
+assert.match(source, /region_zone: values.region_zone/);
+assert.match(source, /special_quota: values.special_quota/);
+assert.match(source, /این مسیر رتبه نمی‌گیرد/);
 assert.match(source, /نتایج تخمینی/);
 assert.match(source, /جایگزین دفترچه و اعلام رسمی سنجش نیست/);
 assert.match(source, /رتبه در سهمیه/);
@@ -41,6 +46,6 @@ assert.match(css, /\.dh-admission-tab/);
 assert.match(css, /@media/);
 
 assert.match(indexSource, /admission_chance_ui\.css\?v=3/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=4/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=5/);
 
 console.log('admission_chance_ui phase3 regression: PASS');

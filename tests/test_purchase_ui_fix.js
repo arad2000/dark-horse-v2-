@@ -120,7 +120,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const expectedFallback = encodeURIComponent(expectedChromeHop);
   const expectedIntent =
     'intent://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123&dh_chrome=1' +
-    '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
+    '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
 
   const journeyCalls = [];
   const desktop = await runPurchase({ delay: 50, journeyCalls });
@@ -182,7 +182,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(timeout.error.textContent, /بیش از ۲ ثانیه/);
 
   const purchaseFunction = (source.match(/function openPayment\([\s\S]*?\n  }\n\n  function waitForPayment/) || [])[0];
-  const commercialFunction = (commercialSource.match(/function openExternalPay\([\s\S]*?\n  }\n  function showPayFallback/) || [])[0];
+  const commercialFunction = (commercialSource.match(/function openExternalPay\([\s\S]*?\n  }\s*\n\s*function showPayFallback/) || [])[0];
   const hopFunction = (commercialSource.match(/function handlePaymentHop\([\s\S]*?\n  }\n  function chromeIntent/) || [])[0];
   assert.ok(purchaseFunction, 'purchase payment function not found');
   assert.ok(commercialFunction, 'commercial payment function not found');
@@ -216,14 +216,14 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(externalLinksSource, /location\.assign\(target\)/);
   assert.match(source, /function openPayment\(url\)[\s\S]*?chromeIntent\(chromeHop, chromeHop\)/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl\(chromeHopUrl/);
-  assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(chromeHop,chromeHop\)/);
-  assert.match(indexSource, /commercial_ui\.js\?v=41/);
+  assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(chromeHop,\s*chromeHop\)/);
+  assert.match(indexSource, /commercial_ui\.js\?v=42/);
   assert.match(indexSource, /purchase_ui_fix.js\?v=9/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=2') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
   assert.match(hopBootSource, /pageshow/);
   assert.match(hopBootSource, /visibility = ''/);
   assert.match(externalLinksSource, /target', '_blank'/);
-  assert.doesNotMatch(externalLinksSource, /package=com\.android\.chrome/);
+  assert.match(externalLinksSource, /package=com\.android\.chrome/);
   assert.match(source, /var overlay = byId\('dh-commercial-overlay'\)/);
   assert.match(source, /global\.__dhInJourney = false/);
   assert.doesNotMatch(commercialSource, /AndroidBridge\.openExternalUrl/);
