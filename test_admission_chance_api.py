@@ -199,6 +199,46 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(geography["خراسان رضوی"]["ghotb_id"], 2)
         self.assertEqual(geography["فارس"]["ghotb_id"], 5)
 
+    def test_real_program2s_payam_noor_tehran_vs_kerman(self):
+        programs = [item for item in load_programs() if item.get("program_id") == "PROG_03158"]
+        self.assertEqual(len(programs), 1)
+        program = programs[0]
+        self.assertEqual(program["admission_info"]["course_type"], "payam_noor")
+        self.assertEqual(program["admission_info"]["bomi_type"], "nahiyei")
+        self.assertEqual(program["university"]["province"], "تهران")
+
+        local = build_record_results(
+            major_ids=[41],
+            diploma_type="riazi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="تهران",
+            target_field_group="riazi",
+            course_types=["payam_noor"],
+            programs=programs,
+            majors=load_majors(),
+            limit=30,
+            region_zone=1,
+            special_quota="none",
+        )
+        remote = build_record_results(
+            major_ids=[41],
+            diploma_type="riazi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="کرمان",
+            target_field_group="riazi",
+            course_types=["payam_noor"],
+            programs=programs,
+            majors=load_majors(),
+            limit=30,
+            region_zone=2,
+            special_quota="none",
+        )
+        self.assertEqual([item["program_id"] for item in local], ["PROG_03158"])
+        self.assertEqual(remote, [])
+        self.assertIn("بومی ناحیه‌ای", local[0]["note"])
+
     def test_record_nahiyei_filters_same_region_and_rejects_other_region(self):
         same = build_record_results(
             major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
