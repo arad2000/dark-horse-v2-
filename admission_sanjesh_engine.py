@@ -737,8 +737,8 @@ def build_record_results(
     programs: list[dict[str, Any]] | tuple[dict[str, Any], ...],
     majors: dict[str, dict[str, Any]],
     limit: int,
-    region_zone: int,
-    special_quota: str,
+    region_zone: int = 2,
+    special_quota: str = "none",
 ) -> list[dict[str, Any]]:
     gpa_input, gpa_field = _record_input_gpa(diploma_type, gpa_written, gpa_total)
     canonical_province = _canonical_province(province)
