@@ -16,6 +16,7 @@ from admission_sanjesh_engine import (
     build_exam_results,
     build_record_results,
     filter_programs,
+    load_bomi_geography,
     load_programs,
 )
 from main_v2 import app
@@ -124,8 +125,137 @@ OSTANI_RECORD_PROGRAM = _program(
 
 MAJORS = {"1": {"id": 1, "name": "نمونه", "exam_group": "تجربی"}}
 
+Nahiye_RECORD_PROGRAM = _program(
+    program_id="NAHIYE-RECORD-1",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="payam_noor",
+    province="خراسان شمالی",
+    bomi_type="nahiyei",
+    academic={"minimum_gpa": 14, "minimum_traz": 6000},
+)
+
+GHOTBI_RECORD_PROGRAM = _program(
+    program_id="GHOTBI-RECORD-1",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    province="کرمان",
+    bomi_type="ghotbi",
+    academic={"minimum_gpa": 14, "minimum_traz": 6000},
+)
+
+KESHVARI_RECORD_PROGRAM = _program(
+    program_id="KESHVARI-RECORD-1",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="pardis",
+    province="کرمان",
+    bomi_type="keshvari",
+    academic={"minimum_gpa": 14, "minimum_traz": 6000},
+)
+
+EMPTY_BOMI_NOBAT_RECORD = _program(
+    program_id="EMPTY-BOMI-NOBAT",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="nobat_dovom",
+    province="تهران",
+    bomi_type="",
+    academic={"minimum_gpa": 14},
+)
+
+EMPTY_BOMI_ROOZANEH_RECORD = _program(
+    program_id="EMPTY-BOMI-ROOZANEH",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="roozaneh",
+    province="اصفهان",
+    bomi_type="",
+    academic={"minimum_gpa": 14},
+)
+
+
 
 class AdmissionChanceServiceTests(unittest.TestCase):
+
+    def test_bomi_geography_has_31_provinces_and_valid_ids(self):
+        geography = load_bomi_geography()
+        self.assertEqual(len(geography), 31)
+        self.assertTrue(all(1 <= int(item["nahiye_id"]) <= 9 for item in geography.values()))
+        self.assertTrue(all(1 <= int(item["ghotb_id"]) <= 5 for item in geography.values()))
+        self.assertEqual(geography["تهران"]["nahiye_id"], 1)
+        self.assertEqual(geography["گلستان"]["nahiye_id"], 9)
+        self.assertEqual(geography["خراسان رضوی"]["ghotb_id"], 2)
+        self.assertEqual(geography["فارس"]["ghotb_id"], 5)
+
+    def test_record_nahiyei_filters_same_region_and_rejects_other_region(self):
+        same = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="خراسان رضوی", target_field_group="tajrobi",
+            course_types=["payam_noor"], programs=[NAHIYE_RECORD_PROGRAM], majors=MAJORS, limit=30,
+            region_zone=2, special_quota="none",
+        )
+        other = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["payam_noor"], programs=[NAHIYE_RECORD_PROGRAM], majors=MAJORS, limit=30,
+            region_zone=1, special_quota="none",
+        )
+        self.assertEqual(len(same), 1)
+        self.assertEqual(other, [])
+        self.assertIn("بومی ناحیه‌ای", same[0]["note"])
+
+    def test_record_ghotbi_filters_same_pole_and_rejects_other_pole(self):
+        same = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="خراسان رضوی", target_field_group="tajrobi",
+            course_types=["savabegh_dolati"], programs=[GHOTBI_RECORD_PROGRAM], majors=MAJORS, limit=30,
+            region_zone=2, special_quota="none",
+        )
+        other = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["savabegh_dolati"], programs=[GHOTBI_RECORD_PROGRAM], majors=MAJORS, limit=30,
+            region_zone=1, special_quota="none",
+        )
+        self.assertEqual(len(same), 1)
+        self.assertEqual(other, [])
+        self.assertIn("بومی قطبی", same[0]["note"])
+
+    def test_record_keshvari_does_not_filter_by_province(self):
+        results = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["pardis"], programs=[KESHVARI_RECORD_PROGRAM], majors=MAJORS, limit=30,
+            region_zone=1, special_quota="none",
+        )
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["bomi_type"], "keshvari")
+        self.assertIn("بدون فیلتر", results[0]["note"])
+
+    def test_record_blank_bomi_uses_course_defaults(self):
+        result = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["nobat_dovom"], programs=[EMPTY_BOMI_NOBAT_RECORD], majors=MAJORS, limit=30,
+            region_zone=1, special_quota="none",
+        )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["bomi_type"], "ostani")
+        self.assertEqual(result[0]["bomi_source"], "course_type_default")
+
+    def test_record_blank_roozaneh_does_not_invent_locality(self):
+        result = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["roozaneh"], programs=[EMPTY_BOMI_ROOZANEH_RECORD], majors=MAJORS, limit=30,
+            region_zone=1, special_quota="none",
+        )
+        self.assertEqual(len(result), 1)
+        self.assertIsNone(result[0]["bomi_type"])
+        self.assertIn("هیچ نگاشت جغرافیایی حدسی اعمال نشد", result[0]["note"])
+
     def test_filtering_separates_exam_and_record_methods(self):
         kept_exam = filter_programs(
             [EXAM_PROGRAM, ACADEMIC_PROGRAM],
@@ -433,6 +563,8 @@ class AdmissionChanceApiTests(unittest.TestCase):
                     "admission_path": "record",
                     "major_ids": [1],
                     "province": "تهران",
+                    "region_zone": 2,
+                    "special_quota": "none",
                     "diploma_type": "ensani",
                     "gpa_written": 18.0,
                     "target_field_group": "tajrobi",
