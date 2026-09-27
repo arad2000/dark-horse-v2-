@@ -114,7 +114,7 @@ async function loadAuth(fetchImpl) {
   assert.match(shellSource, /dh-commercial-ui-loader/);
   assert.match(shellSource, /capturedError/);
   assert.match(shellSource, /خطای رابط ورود/);
-  assert.match(shellSource, /commercial_ui\.js\?v=42/);
+  assert.match(shellSource, /commercial_ui\.js\?v=40/);
   assert.doesNotMatch(shellSource, /ماژول ورود\/ثبت‌نام هنوز بارگذاری نشده/);
   assert.match(commercialSource, /auth-ui-modal-root-missing/);
   assert.match(commercialSource, /showAuthModal failed/);
