@@ -216,18 +216,20 @@ def load_majors() -> dict[str, dict[str, Any]]:
     return {str(item.get("id")): item for item in payload if isinstance(item, dict)}
 
 
+BOMI_GEOGRAPHY_PATH = ROOT / "docs" / "bomi_geography_v1.json"
+
 @lru_cache(maxsize=1)
 def load_bomi_geography() -> dict[str, dict[str, int | str]]:
-    path = ROOT / "docs" / "data" / "bomi_geography_v1.json"
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(BOMI_GEOGRAPHY_PATH.read_text(encoding="utf-8"))
     provinces = payload.get("provinces") if isinstance(payload, dict) else None
-    if not isinstance(provinces, list):
-        raise RuntimeError("bomi_geography_v1.json structure is unsupported")
+    if not isinstance(provinces, dict):
+        raise RuntimeError("docs/bomi_geography_v1.json structure is unsupported")
+
     mapping: dict[str, dict[str, int | str]] = {}
-    for item in provinces:
+    for raw_name, item in provinces.items():
         if not isinstance(item, dict):
             continue
-        name = _canonical_province(item.get("name_fa"))
+        name = _canonical_province(raw_name)
         if not name:
             continue
         nahiye = item.get("nahiye_id")
@@ -239,9 +241,10 @@ def load_bomi_geography() -> dict[str, dict[str, int | str]]:
         mapping[name] = {
             "nahiye_id": nahiye,
             "ghotb_id": ghotb,
-            "nahiye_name": f"ناحیه {nahiye}",
-            "ghotb_name": f"قطب {ghotb}",
+            "nahiye_name": str(item.get("nahiye_name") or f"ناحیه {nahiye}"),
+            "ghotb_name": str(item.get("ghotb_name") or f"قطب {ghotb}"),
         }
+
     if len(mapping) != 31:
         raise RuntimeError(f"expected 31 provinces, got {len(mapping)}")
     return mapping
