@@ -121,7 +121,7 @@
       var target = String(form.target_field_group.value || '').trim();
       var gpaField = diploma === 'other_fani' ? 'gpa_total' : 'gpa_written';
       return {
-        province: String(form.province.value || '').trim(),
+        school_province_3y: String(form.school_province_3y.value || '').trim(),
         diploma_type: diploma,
         target_field_group: target || null,
         region_zone: Number(form.region_zone.value),
@@ -135,7 +135,7 @@
       rank_in_quota: Number(form.rank_in_quota.value),
       region_zone: Number(form.region_zone.value),
       special_quota: String(form.special_quota.value || 'none').trim() || 'none',
-      province: String(form.province.value || '').trim(),
+      school_province_3y: String(form.school_province_3y.value || '').trim(),
       national_rank: form.national_rank.value ? Number(form.national_rank.value) : null,
       diploma_type: String(form.diploma_type.value || '').trim() || null,
       gpa_written: form.gpa_written.value ? Number(form.gpa_written.value) : null
@@ -150,7 +150,7 @@
       var payload = {
         admission_path: 'record',
         major_ids: majorIds,
-        province: values.province || null,
+        province: values.school_province_3y || null,
         diploma_type: values.diploma_type || null,
         target_field_group: values.target_field_group || null,
         region_zone: values.region_zone,
@@ -171,7 +171,7 @@
       rank_in_quota: values.rank_in_quota,
       region_zone: values.region_zone,
       special_quota: values.special_quota,
-      province: values.province || null,
+      province: values.school_province_3y || null,
       national_rank: values.national_rank,
       diploma_type: values.diploma_type,
       gpa_written: values.gpa_written,
@@ -184,8 +184,8 @@
       return 'رشته‌ای برای بررسی شانس قبولی در نتیجهٔ کشف رشته پیدا نشد.';
     }
 
-    if (!values.province) {
-      return 'استان داوطلب را از فهرست ۳۱ استان انتخاب کن.';
+    if (!values.school_province_3y) {
+      return 'استان محل تحصیل سه سال آخر را از فهرست ۳۱ استان انتخاب کن.';
     }
 
     if (path === 'exam') {
@@ -306,11 +306,11 @@
           '</select>' +
         '</div>' +
         '<div class="dh-admission-field full">' +
-          '<label for="dh-admission-exam-province">استان بومی *</label>' +
-          '<select id="dh-admission-exam-province" name="province" required>' +
+          '<label for="dh-admission-exam-province">استان محل تحصیل سه سال آخر *</label>' +
+          '<select id="dh-admission-exam-province" name="school_province_3y" required>' +
             '<option value="">انتخاب استان</option>' + provinceOptionsHtml() +
           '</select>' +
-          '<small class="dh-admission-help">منطقه و سهمیه خاص عمداً دو انتخاب مستقل هستند.</small>' +
+          '<small class="dh-admission-help">این استان مبنای بومی‌گزینی است؛ استان محل سکونت فعلی را وارد نکن.</small>' +
         '</div>' +
         '<div class="dh-admission-subtitle full">اطلاعات تکمیلی اختیاری</div>' +
         '<div class="dh-admission-field">' +
@@ -350,8 +350,8 @@
           '<small class="dh-admission-help">برای رشته‌های قابل استنتاج، تشخیص خودکار انجام می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field full">' +
-          '<label for="dh-admission-record-province">استان بومی *</label>' +
-          '<select id="dh-admission-record-province" name="province" required>' +
+          '<label for="dh-admission-record-province">استان محل تحصیل سه سال آخر *</label>' +
+          '<select id="dh-admission-record-province" name="school_province_3y" required>' +
             '<option value="">انتخاب استان</option>' + provinceOptionsHtml() +
           '</select>' +
         '</div>' +
@@ -371,7 +371,7 @@
         '<div class="dh-admission-field full">' +
           '<label id="dh-admission-record-gpa-label" for="dh-admission-record-gpa">معدل کتبی نهایی *</label>' +
           '<input id="dh-admission-record-gpa" name="gpa_written" type="number" min="0" max="20" step="0.01" inputmode="decimal" placeholder="مثلاً 18.50" required>' +
-          '<small class="dh-admission-help" id="dh-admission-record-gpa-help">برای دیپلم‌های نظری، gpa_written استفاده می‌شود.</small>' +
+          '<small class="dh-admission-help" id="dh-admission-record-gpa-help">این استان مبنای بومی‌گزینی است؛ استان محل سکونت فعلی را وارد نکن. برای دیپلم‌های نظری، gpa_written استفاده می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-info full">' +
           'این مسیر رتبه نمی‌گیرد؛ معدل مؤثر از جدول ضریب «نوع دیپلم × گروه رشته هدف» محاسبه و با حداقل معدل برنامه مقایسه می‌شود. منطقه و سهمیه خاص فقط برای حفظ قرارداد توزیع ظرفیت دریافت می‌شوند.' +
