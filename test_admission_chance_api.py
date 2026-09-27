@@ -113,6 +113,16 @@ OSTANI_BOMI_PROGRAM = _program(
     bomi={"1404": {"zone_2": 700}},
 )
 
+NAHIYE_RECORD_PROGRAM = _program(
+    program_id="NAHIYE-RECORD-1",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="payam_noor",
+    province="خراسان شمالی",
+    bomi_type="nahiyei",
+    academic={"minimum_gpa": 14, "minimum_traz": 6000},
+)
+
 OSTANI_RECORD_PROGRAM = _program(
     program_id="OSTANI-RECORD-1",
     major_id=1,
@@ -232,7 +242,7 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         )
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["bomi_type"], "keshvari")
-        self.assertIn("بدون فیلتر", results[0]["note"])
+        self.assertIn("بومی کشوری: فیلتر استان/ناحیه/قطب اعمال نشد", results[0]["note"])
 
     def test_record_blank_bomi_uses_course_defaults(self):
         result = build_record_results(
