@@ -135,12 +135,32 @@ def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
             "diploma_type باید یکی از riazi، tajrobi، ensani، maaref یا other_fani باشد."
         )
     _record_input_gpa(diploma, request.gpa_written, request.gpa_total)
+    if request.region_zone not in {1, 2, 3}:
+        raise AdmissionInputError("region_zone در مسیر سوابق باید ۱، ۲ یا ۳ باشد.")
+    special = _normalize_text(request.special_quota or "none")
+    special_aliases = {
+        "none": "none",
+        "هیچکدام": "none",
+        "ندارد": "none",
+        "ایثارگران ۲۵": "isargaran_25",
+        "ایثارگران ۲۵٪": "isargaran_25",
+        "isargaran25": "isargaran_25",
+        "ایثارگران ۵": "isargaran_5",
+        "ایثارگران ۵٪": "isargaran_5",
+        "isargaran5": "isargaran_5",
+        "خانواده شهدا": "shahid",
+    }
+    special = special_aliases.get(special, special)
+    if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
+        raise AdmissionInputError("special_quota نامعتبر است.")
     return {
         "diploma_type": diploma,
         "gpa_written": request.gpa_written,
         "gpa_total": request.gpa_total,
         "province": province,
         "target_field_group": request.target_field_group,
+        "region_zone": int(request.region_zone),
+        "special_quota": special,
     }
 
 
@@ -196,6 +216,8 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 programs=load_programs(),
                 majors=load_majors(),
                 limit=request.limit,
+                region_zone=record["region_zone"],
+                special_quota=record["special_quota"],
             )
             return {
                 "admission_path": "record",
@@ -205,6 +227,8 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     "diploma_type": record["diploma_type"],
                     "province": record["province"],
                     "target_field_group": record["target_field_group"],
+                    "region_zone": record["region_zone"],
+                    "special_quota": record["special_quota"],
                 },
                 "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
             }

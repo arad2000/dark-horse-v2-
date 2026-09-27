@@ -216,6 +216,158 @@ def load_majors() -> dict[str, dict[str, Any]]:
     return {str(item.get("id")): item for item in payload if isinstance(item, dict)}
 
 
+@lru_cache(maxsize=1)
+def load_bomi_geography() -> dict[str, dict[str, int | str]]:
+    path = ROOT / "docs" / "data" / "bomi_geography_v1.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    provinces = payload.get("provinces") if isinstance(payload, dict) else None
+    if not isinstance(provinces, list):
+        raise RuntimeError("bomi_geography_v1.json structure is unsupported")
+    mapping: dict[str, dict[str, int | str]] = {}
+    for item in provinces:
+        if not isinstance(item, dict):
+            continue
+        name = _canonical_province(item.get("name_fa"))
+        if not name:
+            continue
+        nahiye = item.get("nahiye_id")
+        ghotb = item.get("ghotb_id")
+        if not isinstance(nahiye, int) or nahiye not in range(1, 10):
+            raise RuntimeError(f"invalid nahiye_id for {name}")
+        if not isinstance(ghotb, int) or ghotb not in range(1, 6):
+            raise RuntimeError(f"invalid ghotb_id for {name}")
+        mapping[name] = {
+            "nahiye_id": nahiye,
+            "ghotb_id": ghotb,
+            "nahiye_name": f"ناحیه {nahiye}",
+            "ghotb_name": f"قطب {ghotb}",
+        }
+    if len(mapping) != 31:
+        raise RuntimeError(f"expected 31 provinces, got {len(mapping)}")
+    return mapping
+
+
+def _normalize_bomi_type(value: Any) -> str | None:
+    key = _normalize_text(value).replace("ى", "ی")
+    aliases = {
+        "ostani": "ostani",
+        "استانی": "ostani",
+        "nahiyei": "nahiyei",
+        "nahieyi": "nahiyei",
+        "ناحیه ای": "nahiyei",
+        "ناحیه‌ای": "nahiyei",
+        "ghotbi": "ghotbi",
+        "قطبی": "ghotbi",
+        "keshvari": "keshvari",
+        "کشوری": "keshvari",
+    }
+    return aliases.get(key)
+
+
+def _course_type_text(program: dict[str, Any]) -> str:
+    admission = program.get("admission_info", {}) or {}
+    return _normalize_text(admission.get("course_type") or program.get("course_type"))
+
+
+def _bomi_hint_from_major(major: dict[str, Any] | None) -> str | None:
+    if not isinstance(major, dict):
+        return None
+    for key in ("bomi_type", "locality_type", "selection_type", "selection_method"):
+        value = _normalize_bomi_type(major.get(key))
+        if value:
+            return value
+    admission = major.get("admission_info")
+    if isinstance(admission, dict):
+        for key in ("bomi_type", "locality_type", "selection_type", "selection_method"):
+            value = _normalize_bomi_type(admission.get(key))
+            if value:
+                return value
+    return None
+
+
+def _resolve_record_bomi(
+    program: dict[str, Any],
+    majors: dict[str, dict[str, Any]],
+) -> tuple[str | None, str]:
+    admission = program.get("admission_info", {}) or {}
+    explicit = _normalize_bomi_type(admission.get("bomi_type"))
+    if explicit:
+        return explicit, "program.bomi_type"
+
+    course = _course_type_text(program)
+    course_defaults = {
+        "nobat_dovom": "ostani",
+        "payam_noor": "nahiyei",
+        "nonprofit": "nahiyei",
+        "مجازی": "nahiyei",
+        "virtual": "nahiyei",
+        "پردیس": "keshvari",
+        "pardis": "keshvari",
+    }
+    if course in course_defaults:
+        return course_defaults[course], "course_type_default"
+
+    if course == "roozaneh":
+        major_hint = _bomi_hint_from_major(majors.get(str(program.get("major_id"))))
+        if major_hint:
+            return major_hint, "major.selection_type"
+        for key in ("selection_type", "selection_method", "locality_type"):
+            hint = _normalize_bomi_type(admission.get(key))
+            if hint:
+                return hint, f"admission_info.{key}"
+        return None, "roozaneh_selection_type_missing"
+
+    return None, "bomi_type_missing"
+
+
+def _record_locality_match(
+    program: dict[str, Any],
+    candidate_province: str,
+    region_zone: int,
+    bomi_type: str | None,
+    geography: dict[str, dict[str, int | str]],
+) -> tuple[bool, list[str]]:
+    university = program.get("university", {}) or {}
+    university_province = _canonical_province(university.get("province"))
+    candidate = geography.get(candidate_province)
+    target = geography.get(university_province) if university_province else None
+    notes: list[str] = []
+
+    if not candidate or not target:
+        notes.append("نگاشت بومی رسمی برای استان داوطلب یا محل دانشگاه در داده موجود نیست؛ فیلتر بومی برای این برنامه اعمال نشد.")
+        return True, notes
+
+    if bomi_type == "ostani":
+        ok = candidate_province == university_province
+        notes.append(
+            "بومی استانی: استان داوطلب با استان محل دانشگاه تطابق دارد."
+            if ok else
+            "بومی استانی: استان داوطلب با استان محل دانشگاه تطابق ندارد."
+        )
+        return ok, notes
+
+    if bomi_type == "nahiyei":
+        ok = int(candidate["nahiye_id"]) == int(target["nahiye_id"])
+        notes.append(
+            f"بومی ناحیه‌ای: ناحیه داوطلب {candidate['nahiye_id']} و ناحیه دانشگاه {target['nahiye_id']}."
+        )
+        return ok, notes
+
+    if bomi_type == "ghotbi":
+        ok = int(candidate["ghotb_id"]) == int(target["ghotb_id"])
+        notes.append(
+            f"بومی قطبی: قطب داوطلب {candidate['ghotb_id']} و قطب دانشگاه {target['ghotb_id']}."
+        )
+        return ok, notes
+
+    if bomi_type == "keshvari":
+        notes.append("بومی کشوری: فیلتر استان/ناحیه/قطب اعمال نشد.")
+        return True, notes
+
+    notes.append("نوع بومی برنامه از منبع/نگاشت قابل استنتاج نشد؛ فیلتر بومی اعمال نشد.")
+    return True, notes
+
+
 def _major_target_group(major_id: Any, majors: dict[str, dict[str, Any]]) -> str | None:
     major = majors.get(str(major_id))
     if not major:
@@ -585,22 +737,40 @@ def build_record_results(
     programs: list[dict[str, Any]] | tuple[dict[str, Any], ...],
     majors: dict[str, dict[str, Any]],
     limit: int,
+    region_zone: int = 2,
+    special_quota: str = "none",
 ) -> list[dict[str, Any]]:
     gpa_input, gpa_field = _record_input_gpa(diploma_type, gpa_written, gpa_total)
+    canonical_province = _canonical_province(province)
+    if canonical_province is None:
+        raise AdmissionInputError("استان نامعتبر است.")
+    if region_zone not in {1, 2, 3}:
+        raise AdmissionInputError("region_zone در مسیر سوابق باید ۱، ۲ یا ۳ باشد.")
+    special = _normalize_text(special_quota or "none")
+    if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
+        raise AdmissionInputError("special_quota نامعتبر است.")
 
-    filtered = [
-        program
-        for program in filter_programs(
-            programs,
-            major_ids=major_ids,
-            course_types=course_types,
-            admission_method=RECORD_METHOD,
-        )
-        if _program_matches_locality(program, province)
-    ]
+    geography = load_bomi_geography()
+    filtered = filter_programs(
+        programs,
+        major_ids=major_ids,
+        course_types=course_types,
+        admission_method=RECORD_METHOD,
+    )
 
     results: list[dict[str, Any]] = []
     for program in filtered:
+        bomi_type, bomi_source = _resolve_record_bomi(program, majors)
+        matches, locality_notes = _record_locality_match(
+            program,
+            canonical_province,
+            region_zone,
+            bomi_type,
+            geography,
+        )
+        if not matches:
+            continue
+
         target_group = _record_target_group(
             explicit_target=target_field_group,
             major_id=program.get("major_id"),
@@ -611,12 +781,29 @@ def build_record_results(
 
         academic_cutoff = _academic_cutoff(program)
         minimum_gpa = academic_cutoff["minimum_gpa"]
+        course_type = (program.get("admission_info") or {}).get("course_type") or program.get("course_type")
+
+        notes = [
+            RECORD_COEFFICIENT_NOTE,
+            *locality_notes,
+            f"نوع بومی: {bomi_type or 'نامشخص'}؛ منبع نگاشت: {bomi_source}.",
+            "ظرفیت تفکیکی در داده نیست؛ قاعده ظرفیت صفحه ۸ دفترچه در این نسخه فقط به‌عنوان قرارداد/یادداشت حفظ شد.",
+            "حداقل تراز در داده برنامه ثبت شده، اما ورودی تراز داوطلب در قرارداد مسیر سوابق وجود ندارد؛ بنابراین مقایسه تراز انجام نشد.",
+            f"region_zone={region_zone} در قرارداد مسیر سوابق حفظ شد و برای تقسیم ظرفیت نگه‌داری می‌شود؛ رتبه از این مسیر استفاده نمی‌شود.",
+        ]
+        if special != "none":
+            notes.append(
+                f"special_quota={special} در قرارداد حفظ شد و برای توزیع ظرفیت نگه‌داری می‌شود؛ "
+                "به‌دلیل نبود ظرفیت تفکیکی در program2s، فیلتر/حدنصاب سهمیه‌ای اعمال نشد."
+            )
+        if bomi_type is None:
+            notes.append("برای این برنامه نوع گزینش بومی از منبع قابل استنتاج نشد؛ هیچ نگاشت جغرافیایی حدسی اعمال نشد.")
 
         item = {
             "program_id": program.get("program_id"),
             "university_name": (program.get("university") or {}).get("name") or program.get("university_name") or "",
             "major_id": int(program.get("major_id")),
-            "course_type": (program.get("admission_info") or {}).get("course_type") or program.get("course_type"),
+            "course_type": course_type,
             "method": RECORD_METHOD,
             "cutoff_dimension": None,
             "cutoff_used": academic_cutoff,
@@ -626,22 +813,15 @@ def build_record_results(
             "gpa_coefficient": coefficient,
             "gpa_effective": effective,
             "target_field_group": target_group,
-            "province": province,
-            "notes": [
-                RECORD_COEFFICIENT_NOTE,
-                "ظرفیت تفکیکی در داده نیست",
-                "حداقل تراز در داده برنامه ثبت شده، اما ورودی تراز داوطلب در قرارداد مسیر سوابق وجود ندارد؛ بنابراین مقایسه تراز انجام نشد.",
-            ],
-            "note": (
-                RECORD_COEFFICIENT_NOTE
-                + " | ظرفیت تفکیکی در داده نیست"
-                + " | حداقل تراز در داده برنامه ثبت شده، اما ورودی تراز داوطلب در قرارداد مسیر سوابق وجود ندارد؛ بنابراین مقایسه تراز انجام نشد."
-            ),
+            "province": canonical_province,
+            "region_zone": region_zone,
+            "special_quota": special,
+            "bomi_type": bomi_type,
+            "bomi_source": bomi_source,
+            "notes": notes,
+            "note": " | ".join(notes),
         }
         results.append(item)
         if len(results) >= limit:
             break
     return results
-
-
-
