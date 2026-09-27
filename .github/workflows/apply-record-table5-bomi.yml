@@ -1,0 +1,121 @@
+name: Apply record table5 bomi patch
+
+on:
+  push:
+    branches:
+      - feat/record-table5-bomi-v1
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${ !contains(github.event.head_commit.message, '[record-table5-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${ github.ref_name }}
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply deterministic table5 mapping
+        run: |
+          python - <<'PY'
+          import json
+          import unicodedata
+          from pathlib import Path
+
+          program_path = Path("program2s.json")
+          majors_path = Path("majors_database_v2.json")
+          table_path = Path("docs/sanjesh_table5_major_bomi_v1.json")
+
+          data = json.loads(program_path.read_text(encoding="utf-8"))
+          majors = json.loads(majors_path.read_text(encoding="utf-8"))
+          table = json.loads(table_path.read_text(encoding="utf-8"))
+          programs = data["programs"] if isinstance(data, dict) else data
+
+          def norm(value):
+              text = unicodedata.normalize("NFKC", str(value or ""))
+              text = text.replace("ي", "ی").replace("ى", "ی").replace("ك", "ک")
+              text = text.replace("\u200c", " ")
+              return " ".join(text.split()).strip()
+
+          id_to_name = {
+              str(item["id"]): str(item.get("name") or "").strip()
+              for item in majors
+              if isinstance(item, dict) and item.get("id") is not None
+          }
+
+          daily = table.get("daily_major_bomi") or {}
+          aliases = table.get("name_aliases") or {}
+          bomi_by_name = {norm(name): value for name, value in daily.items()}
+          for alias, target in aliases.items():
+              if target in daily:
+                  bomi_by_name[norm(alias)] = daily[target]
+
+          before = {"ostani": 0, "nahiyei": 0, "ghotbi": 0, "keshvari": 0, "null": 0}
+          after = {"ostani": 0, "nahiyei": 0, "ghotbi": 0, "keshvari": 0, "null": 0}
+          changed = 0
+          unresolved = 0
+          count = 0
+
+          for program in programs:
+              admission = program.get("admission_info") or {}
+              if admission.get("method") != "سوابق تحصیلی":
+                  continue
+              if admission.get("course_type") != "savabegh_dolati":
+                  continue
+
+              count += 1
+              old = admission.get("bomi_type") or None
+              before[old if old in before else "null"] += 1
+
+              major_name = id_to_name.get(str(program.get("major_id")))
+              resolved = bomi_by_name.get(norm(major_name)) if major_name else None
+              resolved = resolved or None
+
+              if old != resolved:
+                  changed += 1
+              if resolved is None:
+                  unresolved += 1
+
+              admission["bomi_type"] = resolved
+              admission["bomi_type_rule"] = (
+                  "table5.daily_major_bomi" if resolved else "unresolved_table5"
+              )
+              after[resolved or "null"] += 1
+
+          assert count == 580, count
+          assert before == {"ostani": 580, "nahiyei": 0, "ghotbi": 0, "keshvari": 0, "null": 0}, before
+          assert after == {"ostani": 0, "nahiyei": 78, "ghotbi": 78, "keshvari": 102, "null": 322}, after
+          assert changed == 580, changed
+          assert unresolved == 322, unresolved
+
+          program_path.write_text(
+              json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+
+          print("SAVABEGH_DOLATI_COUNT=", count)
+          print("BEFORE=", before)
+          print("AFTER=", after)
+          print("CHANGED=", changed)
+          print("UNRESOLVED_TABLE5=", unresolved)
+          PY
+
+      - name: Run table5 record regression tests
+        run: python -m unittest -v test_record_table5_bomi.py
+
+      - name: Commit generated data patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add program2s.json
+          git commit -m "Apply table5 bomi mapping to savabegh programs [record-table5-applied]"
+          git push origin "HEAD:${ github.ref_name }}"
