@@ -18,6 +18,7 @@ from admission_sanjesh_engine import (
     filter_programs,
     load_bomi_geography,
     load_programs,
+    load_majors,
 )
 from main_v2 import app
 
