@@ -182,7 +182,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(timeout.error.textContent, /بیش از ۲ ثانیه/);
 
   const purchaseFunction = (source.match(/function openPayment\([\s\S]*?\n  }\n\n  function waitForPayment/) || [])[0];
-  const commercialFunction = (commercialSource.match(/function openExternalPay\([\s\S]*?\n  }\n  function showPayFallback/) || [])[0];
+  const commercialFunction = (commercialSource.match(/function openExternalPay\([\s\S]*?\n  }\s*\n\s*function showPayFallback/) || [])[0];
   const hopFunction = (commercialSource.match(/function handlePaymentHop\([\s\S]*?\n  }\n  function chromeIntent/) || [])[0];
   assert.ok(purchaseFunction, 'purchase payment function not found');
   assert.ok(commercialFunction, 'commercial payment function not found');
@@ -216,8 +216,8 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(externalLinksSource, /location\.assign\(target\)/);
   assert.match(source, /function openPayment\(url\)[\s\S]*?chromeIntent\(chromeHop, chromeHop\)/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl\(chromeHopUrl/);
-  assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(chromeHop,chromeHop\)/);
-  assert.match(indexSource, /commercial_ui\.js\?v=41/);
+  assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(chromeHop,\s*chromeHop\)/);
+  assert.match(indexSource, /commercial_ui\.js\?v=42/);
   assert.match(indexSource, /purchase_ui_fix.js\?v=9/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=2') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
   assert.match(hopBootSource, /pageshow/);
