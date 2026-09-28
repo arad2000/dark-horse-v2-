@@ -167,9 +167,6 @@ HUMANITIES_EXCEPTION_100_NAMES = {
 }
 
 GPA_COEFFICIENT_SOURCE = "sanjesh_1404_table_base_plus_humanities_exception"
-HUMANITIES_EXCEPTION_100_NAMES_NORMALIZED = {
-    _normalize_text(name) for name in HUMANITIES_EXCEPTION_100_NAMES
-}
 
 GROUP_MAP = {
     "ریاضی": "riazi",
@@ -198,6 +195,11 @@ def _normalize_text(value: Any) -> str:
     text = text.replace("ي", "ی").replace("ى", "ی").replace("ك", "ک")
     text = text.replace("\u200c", " ").replace("\u200f", " ")
     return re.sub(r"\s+", " ", text).strip().lower()
+
+
+HUMANITIES_EXCEPTION_100_NAMES_NORMALIZED = {
+    _normalize_text(name) for name in HUMANITIES_EXCEPTION_100_NAMES
+}
 
 
 def _canonical_province(value: Any) -> str | None:
