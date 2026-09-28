@@ -25,14 +25,14 @@ class RecordTable5BomiTests(unittest.TestCase):
         self.assertEqual(len(rows), 580)
         self.assertEqual(
             counts,
-            {"ostani": 0, "nahiyei": 78, "ghotbi": 78, "keshvari": 102, "null": 322},
+            {"ostani": 0, "nahiyei": 78, "ghotbi": 108, "keshvari": 102, "null": 292},
         )
 
         unresolved = [
             p for p in rows
             if (p.get("admission_info") or {}).get("bomi_type") is None
         ]
-        self.assertEqual(len(unresolved), 322)
+        self.assertEqual(len(unresolved), 292)
         self.assertTrue(
             all(
                 (p.get("admission_info") or {}).get("bomi_type_rule")
@@ -46,6 +46,8 @@ class RecordTable5BomiTests(unittest.TestCase):
         self.assertEqual(programs["PROG_01000"]["admission_info"]["bomi_type"], "nahiyei")
         self.assertEqual(programs["PROG_01000"]["admission_info"]["bomi_type_rule"], "table5.daily_major_bomi")
         self.assertEqual(programs["PROG_01029"]["admission_info"]["bomi_type"], "ghotbi")
+        self.assertEqual(programs["PROG_00992"]["admission_info"]["bomi_type"], "ghotbi")
+        self.assertEqual(programs["PROG_00998"]["admission_info"]["bomi_type"], "ghotbi")
         self.assertEqual(programs["PROG_00985"]["admission_info"]["bomi_type"], None)
         self.assertEqual(programs["PROG_00985"]["admission_info"]["bomi_type_rule"], "unresolved_table5")
 

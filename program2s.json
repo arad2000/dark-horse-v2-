@@ -117002,7 +117002,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -117014,7 +117014,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -117497,7 +117497,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -117509,7 +117509,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -127823,7 +127823,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -127835,7 +127835,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -128318,7 +128318,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -128330,7 +128330,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -138644,7 +138644,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -138656,7 +138656,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -139139,7 +139139,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -139151,7 +139151,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -149465,7 +149465,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -149477,7 +149477,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -149960,7 +149960,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -149972,7 +149972,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -160286,7 +160286,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -160298,7 +160298,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -160781,7 +160781,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -160793,7 +160793,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -166498,7 +166498,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -166510,7 +166510,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -166993,7 +166993,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -167005,7 +167005,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -172710,7 +172710,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -172722,7 +172722,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -173205,7 +173205,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -173217,7 +173217,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -178922,7 +178922,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -178934,7 +178934,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -179417,7 +179417,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -179429,7 +179429,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -185134,7 +185134,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -185146,7 +185146,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -185629,7 +185629,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -185641,7 +185641,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -191346,7 +191346,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -191358,7 +191358,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -191841,7 +191841,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -191853,7 +191853,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -197558,7 +197558,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -197570,7 +197570,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -198053,7 +198053,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -198065,7 +198065,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -203770,7 +203770,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -203782,7 +203782,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -204265,7 +204265,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -204277,7 +204277,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -209982,7 +209982,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -209994,7 +209994,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -210477,7 +210477,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -210489,7 +210489,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -216194,7 +216194,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -216206,7 +216206,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -216689,7 +216689,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -216701,7 +216701,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -290855,7 +290855,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -290867,7 +290867,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
@@ -292340,7 +292340,7 @@
       "admission_info": {
         "method": "سوابق تحصیلی",
         "course_type": "savabegh_dolati",
-        "bomi_type": null,
+        "bomi_type": "ghotbi",
         "diploma_requirements": {
           "accepts_diploma_types": [
             "ریاضی",
@@ -292352,7 +292352,7 @@
           "has_interview": false,
           "has_practical_exam": false
         },
-        "bomi_type_rule": "unresolved_table5"
+        "bomi_type_rule": "table5.daily_major_bomi"
       },
       "cutoffs_savabegh": {
         "minimum_gpa": 14.0,
