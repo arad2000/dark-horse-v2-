@@ -167,6 +167,9 @@ HUMANITIES_EXCEPTION_100_NAMES = {
 }
 
 GPA_COEFFICIENT_SOURCE = "sanjesh_1404_table_base_plus_humanities_exception"
+HUMANITIES_EXCEPTION_100_NAMES_NORMALIZED = {
+    _normalize_text(name) for name in HUMANITIES_EXCEPTION_100_NAMES
+}
 
 GROUP_MAP = {
     "ریاضی": "riazi",
@@ -723,10 +726,7 @@ def _coefficient_for_record(
         major_name = major.get("name") if isinstance(major, dict) else None
         if major_name:
             normalized_name = _normalize_text(major_name)
-            normalized_exceptions = {
-                _normalize_text(name) for name in HUMANITIES_EXCEPTION_100_NAMES
-            }
-            if normalized_name in normalized_exceptions:
+            if normalized_name in HUMANITIES_EXCEPTION_100_NAMES_NORMALIZED:
                 return 100.0, "استثنای رسمی دفترچه ۱۴۰۴ برای رشته علوم انسانی اعمال شد."
             return base, None
 
