@@ -254,11 +254,11 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(remote, [])
         self.assertIn("بومی ناحیه‌ای", local[0]["note"])
 
-    def test_real_program2s_ostani_locks_to_university_province(self):
+    def test_real_program2s_nahiyei_locks_to_same_region(self):
         programs = [item for item in load_programs() if item.get("program_id") == "PROG_01000"]
         self.assertEqual(len(programs), 1)
         program = programs[0]
-        self.assertEqual(program["admission_info"]["bomi_type"], "ostani")
+        self.assertEqual(program["admission_info"]["bomi_type"], "nahiyei")
         self.assertEqual(program["university"]["province"], "گیلان")
 
         local = build_record_results(
