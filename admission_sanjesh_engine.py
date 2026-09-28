@@ -432,7 +432,7 @@ def _diploma_matches(program: dict[str, Any], diploma_type: str | None) -> bool:
 
     normalized_allowed = {_normalize_text(str(item)) for item in accepts if isinstance(item, str)}
     return bool(
-        any(marker in value for value in ("همه", "تمام", "کلیه") for value in normalized_allowed)
+        any(marker in value for marker in ("همه", "تمام", "کلیه") for value in normalized_allowed)
     )
 
 
