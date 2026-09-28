@@ -786,6 +786,27 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(above.status_code, 200, above.text)
         self.assertEqual(above.json()["items"][0]["traz_input"], 6000)
 
+    def test_record_request_applies_1404_humanities_exception(self):
+        with patch("admission_chance_api.load_programs", return_value=(HUMANITIES_EXCEPTION_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=HUMANITIES_MAJORS):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "record",
+                    "major_ids": [106],
+                    "province": "تهران",
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "diploma_type": "riazi",
+                    "gpa_written": 18.0,
+                    "target_field_group": "ensani",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        item = response.json()["items"][0]
+        self.assertEqual(item["gpa_coefficient"], 100.0)
+        self.assertAlmostEqual(item["gpa_effective"], 18.0, places=4)
+        self.assertIn("gpa_coefficient_source", item)
+
     def test_record_request_uses_gpa_coefficient(self):
         with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
             response = self.client.post(
