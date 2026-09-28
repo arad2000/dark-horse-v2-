@@ -41,6 +41,37 @@ class RecordTable5BomiTests(unittest.TestCase):
             )
         )
 
+    def test_record_diploma_filter_accepts_and_rejects(self):
+        programs = {p["program_id"]: p for p in load_programs()}
+        majors = load_majors()
+
+        allowed = build_record_results(
+            major_ids=[44],
+            diploma_type="riazi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="گیلان",
+            target_field_group="riazi",
+            course_types=["savabegh_dolati"],
+            programs=[programs["PROG_00985"]],
+            majors=majors,
+            limit=30,
+        )
+        rejected = build_record_results(
+            major_ids=[44],
+            diploma_type="tajrobi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="گیلان",
+            target_field_group="riazi",
+            course_types=["savabegh_dolati"],
+            programs=[programs["PROG_00985"]],
+            majors=majors,
+            limit=30,
+        )
+        self.assertEqual([x["program_id"] for x in allowed], ["PROG_00985"])
+        self.assertEqual(rejected, [])
+
     def test_table5_samples(self):
         programs = {p["program_id"]: p for p in load_programs()}
         self.assertEqual(programs["PROG_01000"]["admission_info"]["bomi_type"], "nahiyei")
