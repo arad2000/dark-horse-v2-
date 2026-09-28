@@ -137,6 +137,29 @@ OSTANI_RECORD_PROGRAM = _program(
 
 MAJORS = {"1": {"id": 1, "name": "نمونه", "exam_group": "تجربی"}}
 
+G3_PSYCHOLOGY_PROGRAM = _program(
+    program_id="G3-PSY-1",
+    major_id=106,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    diploma="ریاضی",
+    academic={"minimum_gpa": 10},
+)
+
+G3_EDUCATION_PROGRAM = _program(
+    program_id="G3-EDU-1",
+    major_id=108,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    diploma="ریاضی",
+    academic={"minimum_gpa": 10},
+)
+
+G3_MAJORS = {
+    "106": {"id": 106, "name": "روانشناسی", "exam_group": "انسانی"},
+    "108": {"id": 108, "name": "علوم تربیتی", "exam_group": "انسانی"},
+}
+
 Nahiye_RECORD_PROGRAM = _program(
     program_id="NAHIYE-RECORD-1",
     major_id=1,
@@ -541,6 +564,64 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(result["target_field_group"], "tajrobi")
         self.assertEqual(result["gpa_coefficient"], 57.1)
 
+    def test_g3_humanities_exception_math_diploma_uses_100_for_psychology(self):
+        result = build_record_results(
+            major_ids=[106],
+            diploma_type="riazi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="تهران",
+            target_field_group="ensani",
+            course_types=["savabegh_dolati"],
+            programs=[G3_PSYCHOLOGY_PROGRAM],
+            majors=G3_MAJORS,
+            limit=30,
+        )[0]
+        self.assertEqual(result["gpa_coefficient"], 100.0)
+        self.assertEqual(result["gpa_effective"], 18.0)
+        self.assertIn("استثنای دفترچه ۱۴۰۴", " ".join(result["notes"]))
+
+    def test_g3_humanities_exception_experimental_diploma_uses_100_for_accounting_like_rule(self):
+        program = _program(
+            program_id="G3-ACC-1",
+            major_id=120,
+            method="سوابق تحصیلی",
+            course_type="savabegh_dolati",
+            diploma="تجربی",
+            academic={"minimum_gpa": 10},
+        )
+        majors = {"120": {"id": 120, "name": "حسابداری", "exam_group": "انسانی"}}
+        result = build_record_results(
+            major_ids=[120],
+            diploma_type="tajrobi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="تهران",
+            target_field_group="ensani",
+            course_types=["savabegh_dolati"],
+            programs=[program],
+            majors=majors,
+            limit=30,
+        )[0]
+        self.assertEqual(result["gpa_coefficient"], 100.0)
+        self.assertEqual(result["gpa_effective"], 18.0)
+
+    def test_g3_non_exception_humanities_major_keeps_base_57_1(self):
+        result = build_record_results(
+            major_ids=[108],
+            diploma_type="riazi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="تهران",
+            target_field_group="ensani",
+            course_types=["savabegh_dolati"],
+            programs=[G3_EDUCATION_PROGRAM],
+            majors=G3_MAJORS,
+            limit=30,
+        )[0]
+        self.assertEqual(result["gpa_coefficient"], 57.1)
+        self.assertAlmostEqual(result["gpa_effective"], 10.278, places=4)
+
     def test_record_other_fani_requires_gpa_total(self):
         with self.assertRaises(ValueError):
             build_record_results(
@@ -736,6 +817,26 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(below.json()["items"], [])
         self.assertEqual(above.status_code, 200, above.text)
         self.assertEqual(above.json()["items"][0]["traz_input"], 6000)
+
+    def test_api_g3_humanities_exception_returns_100_coefficient(self):
+        with patch("admission_chance_api.load_programs", return_value=(G3_PSYCHOLOGY_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=G3_MAJORS):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "record",
+                    "major_ids": [106],
+                    "province": "تهران",
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "diploma_type": "riazi",
+                    "gpa_written": 18.0,
+                    "target_field_group": "ensani",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        item = response.json()["items"][0]
+        self.assertEqual(item["gpa_coefficient"], 100.0)
+        self.assertAlmostEqual(item["gpa_effective"], 18.0, places=4)
 
     def test_record_request_uses_gpa_coefficient(self):
         with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
