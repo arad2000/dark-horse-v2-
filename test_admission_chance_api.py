@@ -606,6 +606,43 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(result["gpa_coefficient"], 100.0)
         self.assertEqual(result["gpa_effective"], 18.0)
 
+    def test_g3_all_exactly_mapped_humanities_exceptions_use_100_for_math_or_experimental(self):
+        exception_names = [
+            (106, "روانشناسی"),
+            (113, "اقتصاد"),
+            (116, "مدیریت بازرگانی"),
+            (117, "مدیریت صنعتی"),
+            (118, "مدیریت دولتی"),
+            (119, "مدیریت مالی"),
+            (120, "حسابداری"),
+            (122, "مدیریت بیمه"),
+            (123, "مدیریت امور بانکی"),
+        ]
+        for diploma_type, diploma_label in [("riazi", "ریاضی"), ("tajrobi", "تجربی")]:
+            for index, (major_id, name) in enumerate(exception_names):
+                program = _program(
+                    program_id=f"G3-EX-{diploma_type}-{index}",
+                    major_id=major_id,
+                    method="سوابق تحصیلی",
+                    course_type="savabegh_dolati",
+                    diploma=diploma_label,
+                    academic={"minimum_gpa": 10},
+                )
+                result = build_record_results(
+                    major_ids=[major_id],
+                    diploma_type=diploma_type,
+                    gpa_written=18.0,
+                    gpa_total=None,
+                    province="تهران",
+                    target_field_group="ensani",
+                    course_types=["savabegh_dolati"],
+                    programs=[program],
+                    majors={str(major_id): {"id": major_id, "name": name, "exam_group": "انسانی"}},
+                    limit=30,
+                )[0]
+                self.assertEqual(result["gpa_coefficient"], 100.0, (diploma_type, name))
+                self.assertEqual(result["gpa_effective"], 18.0, (diploma_type, name))
+
     def test_g3_non_exception_humanities_major_keeps_base_57_1(self):
         result = build_record_results(
             major_ids=[108],
