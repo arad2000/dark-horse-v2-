@@ -20,6 +20,7 @@ from admission_sanjesh_engine import (
     load_bomi_geography,
     load_programs,
     load_majors,
+    _coefficient,
 )
 from main_v2 import app
 
@@ -497,6 +498,42 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         )[0]
         self.assertEqual(with_gpa["label"], without_gpa["label"])
         self.assertEqual(with_gpa["cutoff_used"], without_gpa["cutoff_used"])
+
+    def test_g3_humanities_exception_riazi_and_tajrobi_are_100(self):
+        majors = {
+            "10": {"id": 10, "name": "روانشناسی", "exam_group": "انسانی"},
+            "11": {"id": 11, "name": "مدیریت کسب‌وکار", "exam_group": "انسانی"},
+        }
+        self.assertEqual(
+            _coefficient("riazi", "ensani", major_id=10, majors=majors),
+            100.0,
+        )
+        self.assertEqual(
+            _coefficient("tajrobi", "ensani", major_id=11, majors=majors),
+            100.0,
+        )
+
+    def test_g3_humanities_exception_does_not_expand_to_unlisted_major(self):
+        majors = {
+            "12": {"id": 12, "name": "حقوق", "exam_group": "انسانی"},
+        }
+        self.assertEqual(
+            _coefficient("riazi", "ensani", major_id=12, majors=majors),
+            57.1,
+        )
+
+    def test_g3_base_coefficients_remain_unchanged(self):
+        majors = {
+            "13": {"id": 13, "name": "مهندسی کامپیوتر", "exam_group": "انسانی"},
+        }
+        self.assertEqual(
+            _coefficient("riazi", "ensani", major_id=13, majors=majors),
+            57.1,
+        )
+        self.assertEqual(
+            _coefficient("other_fani", "ensani", major_id=13, majors=majors),
+            51.4,
+        )
 
     def test_record_human_diploma_for_tajrobi_group_uses_57_1(self):
         result = build_record_results(
