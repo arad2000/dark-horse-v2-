@@ -746,7 +746,6 @@ def build_record_results(
     diploma_type: str,
     gpa_written: float | None,
     gpa_total: float | None,
-    traz: float | None = None,
     province: str,
     target_field_group: str | None,
     course_types: list[str],
@@ -755,6 +754,7 @@ def build_record_results(
     limit: int,
     region_zone: int = 2,
     special_quota: str = "none",
+    traz: float | None = None,
 ) -> list[dict[str, Any]]:
     gpa_input, gpa_field = _record_input_gpa(diploma_type, gpa_written, gpa_total)
     canonical_province = _canonical_province(province)
