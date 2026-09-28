@@ -137,6 +137,34 @@ OSTANI_RECORD_PROGRAM = _program(
 
 MAJORS = {"1": {"id": 1, "name": "نمونه", "exam_group": "تجربی"}}
 
+
+HUMANITIES_EXCEPTION_PROGRAM = _program(
+    program_id="HUMANITIES-EXCEPTION-1",
+    major_id=106,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    diploma="ریاضی",
+    province="تهران",
+    bomi_type="keshvari",
+    academic={"minimum_gpa": 14},
+)
+
+HUMANITIES_NON_EXCEPTION_PROGRAM = _program(
+    program_id="HUMANITIES-NONEXCEPTION-1",
+    major_id=125,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    diploma="ریاضی",
+    province="تهران",
+    bomi_type="keshvari",
+    academic={"minimum_gpa": 14},
+)
+
+HUMANITIES_MAJORS = {
+    "106": {"id": 106, "name": "روانشناسی", "exam_group": "انسانی"},
+    "125": {"id": 125, "name": "جامعه‌شناسی", "exam_group": "انسانی"},
+}
+
 Nahiye_RECORD_PROGRAM = _program(
     program_id="NAHIYE-RECORD-1",
     major_id=1,
@@ -557,6 +585,27 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         )[0]
         self.assertEqual(result["cutoff_used"]["minimum_traz"], 6000)
         self.assertTrue(any("ورودی تراز داوطلب" in note for note in result["notes"]))
+
+    def test_g3_humanities_exception_sets_math_diploma_to_100(self):
+        result = build_record_results(
+            major_ids=[106], diploma_type="riazi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="ensani", course_types=["savabegh_dolati"],
+            programs=[HUMANITIES_EXCEPTION_PROGRAM], majors=HUMANITIES_MAJORS, limit=30,
+        )[0]
+        self.assertEqual(result["gpa_coefficient"], 100.0)
+        self.assertAlmostEqual(result["gpa_effective"], 18.0, places=4)
+        self.assertEqual(result["gpa_coefficient_source"], "sanjesh_1404_table_base_plus_humanities_exception")
+        self.assertTrue(any("استثنای رسمی دفترچه ۱۴۰۴" in note for note in result["notes"]))
+
+    def test_g3_humanities_non_exception_keeps_base_57_1(self):
+        result = build_record_results(
+            major_ids=[125], diploma_type="riazi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="ensani", course_types=["savabegh_dolati"],
+            programs=[HUMANITIES_NON_EXCEPTION_PROGRAM], majors=HUMANITIES_MAJORS, limit=30,
+        )[0]
+        self.assertEqual(result["gpa_coefficient"], 57.1)
+        self.assertAlmostEqual(result["gpa_effective"], 10.278, places=4)
+        self.assertEqual(result["gpa_coefficient_source"], "sanjesh_1404_table_base_plus_humanities_exception")
 
     def test_record_minimum_gpa_filters_below_and_keeps_above(self):
         below = build_record_results(
