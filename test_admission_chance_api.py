@@ -544,6 +544,42 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(result["cutoff_used"]["minimum_traz"], 6000)
         self.assertTrue(any("ورودی تراز داوطلب" in note for note in result["notes"]))
 
+    def test_record_minimum_gpa_filters_below_and_keeps_above(self):
+        below = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=13.99, gpa_total=None,
+            province="تهران", target_field_group="tajrobi", course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+        )
+        above = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=14.01, gpa_total=None,
+            province="تهران", target_field_group="tajrobi", course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+        )
+        self.assertEqual(below, [])
+        self.assertEqual([item["program_id"] for item in above], ["ACA-1"])
+
+    def test_record_minimum_traz_filters_only_when_traz_is_supplied(self):
+        missing = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None, traz=None,
+            province="تهران", target_field_group="tajrobi", course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+        )
+        below = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None, traz=5999,
+            province="تهران", target_field_group="tajrobi", course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+        )
+        above = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None, traz=6000,
+            province="تهران", target_field_group="tajrobi", course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+        )
+        self.assertEqual([item["program_id"] for item in missing], ["ACA-1"])
+        self.assertTrue(any("تراز اعلام نشده" in note for note in missing[0]["notes"]))
+        self.assertEqual(below, [])
+        self.assertEqual([item["program_id"] for item in above], ["ACA-1"])
+        self.assertEqual(above[0]["traz_input"], 6000)
+
     def test_record_label_uses_only_three_qualitative_labels(self):
         labels = set()
         for gpa in (10.0, 14.0, 20.0):
@@ -644,6 +680,41 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(payload["context"]["region_zone"], 2)
         self.assertEqual(payload["context"]["special_quota"], "isargaran_25")
         self.assertEqual(payload["items"][0]["cutoff_dimension"], "isargaran_25")
+
+    def test_record_request_applies_optional_traz_cutoff(self):
+        with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
+            below = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "record",
+                    "major_ids": [1],
+                    "province": "تهران",
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "diploma_type": "tajrobi",
+                    "gpa_written": 18.0,
+                    "traz": 5999,
+                    "target_field_group": "tajrobi",
+                },
+            )
+            above = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "record",
+                    "major_ids": [1],
+                    "province": "تهران",
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "diploma_type": "tajrobi",
+                    "gpa_written": 18.0,
+                    "traz": 6000,
+                    "target_field_group": "tajrobi",
+                },
+            )
+        self.assertEqual(below.status_code, 200, below.text)
+        self.assertEqual(below.json()["items"], [])
+        self.assertEqual(above.status_code, 200, above.text)
+        self.assertEqual(above.json()["items"][0]["traz_input"], 6000)
 
     def test_record_request_uses_gpa_coefficient(self):
         with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
