@@ -401,14 +401,26 @@ def _flatten_text(value: Any) -> list[str]:
 def _diploma_matches(program: dict[str, Any], diploma_type: str | None) -> bool:
     if not diploma_type:
         return True
-    required = program.get("admission_info", {}).get("diploma_requirements")
-    if not required:
+    required = (program.get("admission_info") or {}).get("diploma_requirements") or {}
+    accepts = required.get("accepts_diploma_types")
+    if not isinstance(accepts, list):
         return True
-    wanted = _normalize_text(diploma_type)
-    values = [_normalize_text(item) for item in _flatten_text(required)]
-    if any(any(marker in value for marker in ("همه", "تمام", "کلیه")) for value in values):
+
+    wanted = _canonical_diploma(diploma_type)
+    allowed = {
+        _canonical_diploma(str(item))
+        for item in accepts
+        if isinstance(item, str)
+    }
+    if not allowed:
         return True
-    return any(wanted in value or value in wanted for value in values)
+    if wanted in allowed:
+        return True
+
+    normalized_allowed = {_normalize_text(str(item)) for item in accepts if isinstance(item, str)}
+    return bool(
+        any(marker in value for value in ("همه", "تمام", "کلیه") for value in normalized_allowed)
+    )
 
 
 def filter_programs(
@@ -757,6 +769,7 @@ def build_record_results(
     filtered = filter_programs(
         programs,
         major_ids=major_ids,
+        diploma_type=diploma_type,
         course_types=course_types,
         admission_method=RECORD_METHOD,
     )
