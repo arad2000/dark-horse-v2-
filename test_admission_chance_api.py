@@ -16,6 +16,7 @@ from admission_sanjesh_engine import (
     build_exam_results,
     build_record_results,
     filter_programs,
+    normalize_diploma_requirements,
     load_bomi_geography,
     load_programs,
     load_majors,
@@ -41,7 +42,7 @@ def _program(
         "method": method,
         "course_type": course_type,
         "bomi_type": bomi_type,
-        "diploma_requirements": [diploma],
+        "diploma_requirements": {"accepts_diploma_types": [diploma], "is_floating": False},
     }
     return {
         "program_id": program_id,
@@ -189,6 +190,19 @@ EMPTY_BOMI_ROOZANEH_RECORD = _program(
 
 
 class AdmissionChanceServiceTests(unittest.TestCase):
+
+    def test_diploma_requirements_normalizer_supports_production_and_legacy_shapes(self):
+        production = normalize_diploma_requirements({
+            "accepts_diploma_types": ["ریاضی", "تجربی"],
+            "is_floating": True,
+        })
+        legacy = normalize_diploma_requirements(["riazi", "تجربی"])
+        empty = normalize_diploma_requirements(None)
+        self.assertEqual(production["accepts_diploma_types"], ["ریاضی", "تجربی"])
+        self.assertIs(production["is_floating"], True)
+        self.assertEqual(legacy["accepts_diploma_types"], ["riazi", "تجربی"])
+        self.assertIs(legacy["is_floating"], False)
+        self.assertEqual(empty, {"accepts_diploma_types": [], "is_floating": False})
 
     def test_bomi_geography_has_31_provinces_and_valid_ids(self):
         geography = load_bomi_geography()
