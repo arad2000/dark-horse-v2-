@@ -42,7 +42,7 @@ def _program(
         "method": method,
         "course_type": course_type,
         "bomi_type": bomi_type,
-        "diploma_requirements": {"accepts_diploma_types": [diploma], "is_floating": False},
+        "diploma_requirements": {"accepts_diploma_types": [diploma, "انسانی"], "is_floating": False},
     }
     return {
         "program_id": program_id,
