@@ -138,6 +138,27 @@ class RecordTable5BomiTests(unittest.TestCase):
         self.assertEqual([x["program_id"] for x in same], ["PROG_01029"])
         self.assertEqual(other, [])
 
+    def test_null_table5_mapping_has_runtime_note(self):
+        programs = {p["program_id"]: p for p in load_programs()}
+        majors = load_majors()
+        result = build_record_results(
+            major_ids=[44],
+            diploma_type="riazi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="گیلان",
+            target_field_group="riazi",
+            course_types=["savabegh_dolati"],
+            programs=[programs["PROG_00985"]],
+            majors=majors,
+            limit=30,
+        )
+        self.assertEqual(len(result), 1)
+        self.assertIsNone(result[0]["bomi_type"])
+        self.assertTrue(
+            any("نوع بومی: نامشخص" in note for note in result[0]["notes"])
+        )
+
     def test_null_table5_mapping_is_explicitly_unresolved_in_data(self):
         programs = {p["program_id"]: p for p in load_programs()}
         row = programs["PROG_00985"]
