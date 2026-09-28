@@ -240,11 +240,11 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(remote, [])
         self.assertIn("بومی ناحیه‌ای", local[0]["note"])
 
-    def test_real_program2s_table5_nahiyei_locks_to_same_region(self):
+    def test_real_program2s_ostani_locks_to_university_province(self):
         programs = [item for item in load_programs() if item.get("program_id") == "PROG_01000"]
         self.assertEqual(len(programs), 1)
         program = programs[0]
-        self.assertEqual(program["admission_info"]["bomi_type"], "nahiyei")
+        self.assertEqual(program["admission_info"]["bomi_type"], "ostani")
         self.assertEqual(program["university"]["province"], "گیلان")
 
         local = build_record_results(
@@ -277,7 +277,7 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         )
         self.assertEqual([item["program_id"] for item in local], ["PROG_01000"])
         self.assertEqual(remote, [])
-        self.assertIn("بومی ناحیه‌ای", local[0]["note"])
+        self.assertIn("بومی استانی", local[0]["note"])
 
     def test_record_nahiyei_filters_same_region_and_rejects_other_region(self):
         same = build_record_results(
