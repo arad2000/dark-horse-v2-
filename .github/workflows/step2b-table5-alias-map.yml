@@ -1,0 +1,104 @@
+name: step2b-table5-alias-map
+
+on:
+  push:
+    branches:
+      - feat/table5-aliases-step2b
+
+permissions:
+  contents: write
+
+jobs:
+  remap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/table5-aliases-step2b
+          fetch-depth: 1
+
+      - name: Re-run Table 5 alias mapping
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path(".")
+          programs_path = root / "program2s.json"
+          majors_path = root / "majors_database_v2.json"
+          table5_path = root / "docs" / "sanjesh_table5_major_bomi_v1.json"
+
+          programs_payload = json.loads(programs_path.read_text(encoding="utf-8"))
+          programs = programs_payload["programs"]
+          majors = {str(x["id"]): x for x in json.loads(majors_path.read_text(encoding="utf-8"))}
+          table5 = json.loads(table5_path.read_text(encoding="utf-8"))
+          aliases = table5.get("name_aliases", {})
+          daily = table5.get("daily_major_bomi", {})
+
+          before = {"ostani": 0, "nahiyei": 0, "ghotbi": 0, "keshvari": 0, "null": 0}
+          changed = []
+          for p in programs:
+              a = p.get("admission_info") or {}
+              if a.get("method") != "سوابق تحصیلی" or a.get("course_type") != "savabegh_dolati":
+                  continue
+              v = a.get("bomi_type")
+              before[v if v in before and v != "null" else "null"] += 1
+              if v is not None:
+                  continue
+              major = majors.get(str(p.get("major_id")), {})
+              major_name = major.get("name")
+              canonical = aliases.get(major_name, major_name)
+              mapped = daily.get(canonical)
+              if mapped:
+                  a["bomi_type"] = mapped
+                  a["bomi_type_rule"] = "table5.daily_major_bomi"
+                  changed.append((p["program_id"], major_name, canonical, mapped))
+
+          after = {"ostani": 0, "nahiyei": 0, "ghotbi": 0, "keshvari": 0, "null": 0}
+          for p in programs:
+              a = p.get("admission_info") or {}
+              if a.get("method") != "سوابق تحصیلی" or a.get("course_type") != "savabegh_dolati":
+                  continue
+              v = a.get("bomi_type")
+              after[v if v in after and v != "null" else "null"] += 1
+
+          assert before == {"ostani": 0, "nahiyei": 78, "ghotbi": 78, "keshvari": 102, "null": 322}, before
+          assert after == {"ostani": 0, "nahiyei": 78, "ghotbi": 108, "keshvari": 102, "null": 292}, after
+          assert len(changed) == 30, len(changed)
+          assert sum(1 for x in changed if x[1] == "مهندسی صنایع" and x[3] == "ghotbi") == 15
+          assert sum(1 for x in changed if x[1] == "مهندسی مواد و متالورژی" and x[3] == "ghotbi") == 15
+
+          by_id = {p["program_id"]: p for p in programs}
+          assert by_id["PROG_00985"]["admission_info"]["bomi_type"] is None
+          assert by_id["PROG_00985"]["admission_info"]["bomi_type_rule"] == "unresolved_table5"
+          assert by_id["PROG_00992"]["admission_info"]["bomi_type"] == "ghotbi"
+          assert by_id["PROG_00998"]["admission_info"]["bomi_type"] == "ghotbi"
+          assert by_id["PROG_01000"]["admission_info"]["bomi_type"] == "nahiyei"
+          assert by_id["PROG_01029"]["admission_info"]["bomi_type"] == "ghotbi"
+          assert by_id["PROG_03158"]["admission_info"]["bomi_type"] == "nahiyei"
+
+          programs_path.write_text(
+              json.dumps(programs_payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print("BEFORE", before)
+          print("AFTER", after)
+          print("CHANGED", len(changed))
+          for item in changed[:5]:
+              print("SAMPLE", item)
+
+          PY
+
+      - name: Commit generated mapping
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add program2s.json
+          if git diff --cached --quiet; then
+            echo "No program2s changes needed."
+            exit 0
+          fi
+          git commit -m "data: rerun Table 5 mapping for sanctioned aliases"
+          git push origin HEAD:feat/table5-aliases-step2b
