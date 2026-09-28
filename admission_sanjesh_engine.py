@@ -138,6 +138,26 @@ GPA_COEFFICIENTS = {
 
 TARGET_GROUP_VALUES = {"riazi", "tajrobi", "ensani", "honar", "zaban"}
 DIPLOMA_VALUES = set(GPA_COEFFICIENTS)
+HUMANITIES_GPA_100_EXCEPTION_NAMES = frozenset({
+    "روانشناسی",
+    "اقتصاد",
+    "مدیریت بازرگانی",
+    "مدیریت صنعتی",
+    "مدیریت مالی",
+    "مدیریت بیمه",
+    "مدیریت دولتی",
+    "مدیریت امور بانکی",
+    "حسابداری",
+})
+GPA_EXCEPTION_NOTE = (
+    "استثنای دفترچه ۱۴۰۴ برای این رشته علوم انسانی اعمال شد: "
+    "ضریب دیپلم ریاضی/تجربی = 100."
+)
+GPA_BASE_NOTE = "ضریب پایه جدول دفترچه ۱۴۰۴ برای ترکیب دیپلم × گروه هدف اعمال شد."
+GPA_COMBINATION_MISSING_NOTE = (
+    "برای ترکیب نوع دیپلم و گروه هدف، ضریب رسمی در داده/قرارداد موجود نیست؛ "
+    "معدل مؤثر محاسبه نشد."
+)
 
 GROUP_MAP = {
     "ریاضی": "riazi",
@@ -680,8 +700,23 @@ def _record_target_group(
     return inferred
 
 
-def _coefficient(diploma_type: str, target_group: str) -> float:
-    return GPA_COEFFICIENTS[diploma_type][target_group]
+def _coefficient(
+    diploma_type: str,
+    target_group: str,
+    major_name: str | None = None,
+) -> tuple[float | None, str]:
+    base = GPA_COEFFICIENTS.get(diploma_type, {}).get(target_group)
+    if base is None:
+        return None, GPA_COMBINATION_MISSING_NOTE
+
+    if (
+        target_group == "ensani"
+        and diploma_type in {"riazi", "tajrobi"}
+        and major_name in HUMANITIES_GPA_100_EXCEPTION_NAMES
+    ):
+        return 100.0, GPA_EXCEPTION_NOTE
+
+    return base, GPA_BASE_NOTE
 
 
 def build_exam_results(
@@ -806,8 +841,18 @@ def build_record_results(
             major_id=program.get("major_id"),
             majors=majors,
         )
-        coefficient = _coefficient(diploma_type, target_group)
-        effective = round(gpa_input * coefficient / 100.0, 4)
+        major_meta = majors.get(str(program.get("major_id"))) or {}
+        major_name = str(major_meta.get("name") or "").strip() or None
+        coefficient, coefficient_note = _coefficient(
+            diploma_type,
+            target_group,
+            major_name=major_name,
+        )
+        effective = (
+            round(gpa_input * coefficient / 100.0, 4)
+            if coefficient is not None
+            else None
+        )
 
         academic_cutoff = _academic_cutoff(program)
         minimum_gpa = academic_cutoff["minimum_gpa"]
@@ -827,6 +872,7 @@ def build_record_results(
 
         notes = [
             RECORD_COEFFICIENT_NOTE,
+            coefficient_note,
             *locality_notes,
             f"نوع بومی: {bomi_type or 'نامشخص'}؛ منبع نگاشت: {bomi_source}.",
             "ظرفیت تفکیکی در داده نیست؛ قاعده ظرفیت صفحه ۸ دفترچه در این نسخه فقط به‌عنوان قرارداد/یادداشت حفظ شد.",
