@@ -398,11 +398,24 @@ def _flatten_text(value: Any) -> list[str]:
     return []
 
 
+def normalize_diploma_requirements(raw: Any) -> dict[str, Any]:
+    """Normalize production and legacy diploma requirement shapes."""
+    if isinstance(raw, dict):
+        return {
+            "accepts_diploma_types": raw.get("accepts_diploma_types") or raw.get("types") or [],
+            "is_floating": bool(raw.get("is_floating", False)),
+        }
+    if isinstance(raw, list):
+        return {"accepts_diploma_types": raw, "is_floating": False}
+    return {"accepts_diploma_types": [], "is_floating": False}
+
+
 def _diploma_matches(program: dict[str, Any], diploma_type: str | None) -> bool:
     if not diploma_type:
         return True
-    required = (program.get("admission_info") or {}).get("diploma_requirements") or {}
-    accepts = required.get("accepts_diploma_types")
+    raw = (program.get("admission_info") or {}).get("diploma_requirements")
+    required = normalize_diploma_requirements(raw)
+    accepts = required["accepts_diploma_types"]
     if not isinstance(accepts, list):
         return True
 
@@ -419,7 +432,7 @@ def _diploma_matches(program: dict[str, Any], diploma_type: str | None) -> bool:
 
     normalized_allowed = {_normalize_text(str(item)) for item in accepts if isinstance(item, str)}
     return bool(
-        any(marker in value for value in ("همه", "تمام", "کلیه") for value in normalized_allowed)
+        any(marker in value for marker in ("همه", "تمام", "کلیه") for value in normalized_allowed)
     )
 
 
@@ -754,6 +767,7 @@ def build_record_results(
     limit: int,
     region_zone: int = 2,
     special_quota: str = "none",
+    traz: float | None = None,
 ) -> list[dict[str, Any]]:
     gpa_input, gpa_field = _record_input_gpa(diploma_type, gpa_written, gpa_total)
     canonical_province = _canonical_province(province)
@@ -797,6 +811,18 @@ def build_record_results(
 
         academic_cutoff = _academic_cutoff(program)
         minimum_gpa = academic_cutoff["minimum_gpa"]
+        minimum_traz = academic_cutoff["minimum_traz"]
+
+        # G2 policy: compare the program minimum GPA against the raw GPA
+        # selected by diploma type. GPA coefficients are a separate G3 rule.
+        if minimum_gpa is not None and gpa_input < minimum_gpa:
+            continue
+
+        # G2 policy: no traz means no minimum_traz filter; when traz is
+        # supplied, values below the program threshold are excluded.
+        if minimum_traz is not None and traz is not None and traz < minimum_traz:
+            continue
+
         course_type = (program.get("admission_info") or {}).get("course_type") or program.get("course_type")
 
         notes = [
@@ -814,6 +840,8 @@ def build_record_results(
             )
         if bomi_type is None:
             notes.append("برای این برنامه نوع گزینش بومی از منبع قابل استنتاج نشد؛ هیچ نگاشت جغرافیایی حدسی اعمال نشد.")
+        if minimum_traz is not None and traz is None:
+            notes.append("تراز اعلام نشده؛ فیلتر حداقل تراز برای این برنامه اعمال نشد.")
 
         item = {
             "program_id": program.get("program_id"),
@@ -826,8 +854,11 @@ def build_record_results(
             "label": _record_label(effective, minimum_gpa),
             "gpa_input": gpa_input,
             "gpa_input_field": gpa_field,
+            "traz_input": traz,
             "gpa_coefficient": coefficient,
             "gpa_effective": effective,
+            "minimum_gpa": minimum_gpa,
+            "minimum_traz": minimum_traz,
             "target_field_group": target_group,
             "province": canonical_province,
             "region_zone": region_zone,
