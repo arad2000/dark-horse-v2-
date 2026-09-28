@@ -56,6 +56,7 @@ class AdmissionChanceRequest(BaseModel):
     # Record path
     diploma_type: str | None = Field(default=None, max_length=64)
     gpa_total: float | None = Field(default=None, ge=0, le=20)
+    traz: float | None = Field(default=None, ge=0)
     target_field_group: str | None = Field(default=None, max_length=32)
 
     course_types: list[str] = Field(default_factory=list)
@@ -157,6 +158,7 @@ def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
         "diploma_type": diploma,
         "gpa_written": request.gpa_written,
         "gpa_total": request.gpa_total,
+        "traz": request.traz,
         "province": province,
         "target_field_group": request.target_field_group,
         "region_zone": int(request.region_zone),
@@ -210,6 +212,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 diploma_type=record["diploma_type"],
                 gpa_written=record["gpa_written"],
                 gpa_total=record["gpa_total"],
+                traz=record["traz"],
                 province=record["province"],
                 target_field_group=record["target_field_group"],
                 course_types=request.course_types,
