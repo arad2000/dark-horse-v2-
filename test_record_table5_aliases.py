@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 import unittest
 from pathlib import Path
 
@@ -14,7 +15,7 @@ ALIASES = {
 
 
 def _norm(value: object) -> str:
-    text = str(value or "").normalize("NFKC")
+    text = unicodedata.normalize("NFKC", str(value or ""))
     text = text.replace("ي", "ی").replace("ى", "ی").replace("ك", "ک").replace("‌", " ")
     return re.sub(r"\s+", " ", text).strip()
 
