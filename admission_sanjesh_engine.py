@@ -398,11 +398,24 @@ def _flatten_text(value: Any) -> list[str]:
     return []
 
 
+def normalize_diploma_requirements(raw: Any) -> dict[str, Any]:
+    """Normalize production and legacy diploma requirement shapes."""
+    if isinstance(raw, dict):
+        return {
+            "accepts_diploma_types": raw.get("accepts_diploma_types") or raw.get("types") or [],
+            "is_floating": bool(raw.get("is_floating", False)),
+        }
+    if isinstance(raw, list):
+        return {"accepts_diploma_types": raw, "is_floating": False}
+    return {"accepts_diploma_types": [], "is_floating": False}
+
+
 def _diploma_matches(program: dict[str, Any], diploma_type: str | None) -> bool:
     if not diploma_type:
         return True
-    required = (program.get("admission_info") or {}).get("diploma_requirements") or {}
-    accepts = required.get("accepts_diploma_types")
+    raw = (program.get("admission_info") or {}).get("diploma_requirements")
+    required = normalize_diploma_requirements(raw)
+    accepts = required["accepts_diploma_types"]
     if not isinstance(accepts, list):
         return True
 
