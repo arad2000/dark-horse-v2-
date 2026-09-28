@@ -746,6 +746,7 @@ def build_record_results(
     diploma_type: str,
     gpa_written: float | None,
     gpa_total: float | None,
+    traz: float | None = None,
     province: str,
     target_field_group: str | None,
     course_types: list[str],
@@ -797,6 +798,18 @@ def build_record_results(
 
         academic_cutoff = _academic_cutoff(program)
         minimum_gpa = academic_cutoff["minimum_gpa"]
+        minimum_traz = academic_cutoff["minimum_traz"]
+
+        # G2 policy: compare the program minimum GPA against the raw GPA
+        # selected by diploma type. GPA coefficients are a separate G3 rule.
+        if minimum_gpa is not None and gpa_input < minimum_gpa:
+            continue
+
+        # G2 policy: no traz means no minimum_traz filter; when traz is
+        # supplied, values below the program threshold are excluded.
+        if minimum_traz is not None and traz is not None and traz < minimum_traz:
+            continue
+
         course_type = (program.get("admission_info") or {}).get("course_type") or program.get("course_type")
 
         notes = [
@@ -814,6 +827,8 @@ def build_record_results(
             )
         if bomi_type is None:
             notes.append("برای این برنامه نوع گزینش بومی از منبع قابل استنتاج نشد؛ هیچ نگاشت جغرافیایی حدسی اعمال نشد.")
+        if minimum_traz is not None and traz is None:
+            notes.append("تراز اعلام نشده؛ فیلتر حداقل تراز برای این برنامه اعمال نشد.")
 
         item = {
             "program_id": program.get("program_id"),
@@ -826,8 +841,11 @@ def build_record_results(
             "label": _record_label(effective, minimum_gpa),
             "gpa_input": gpa_input,
             "gpa_input_field": gpa_field,
+            "traz_input": traz,
             "gpa_coefficient": coefficient,
             "gpa_effective": effective,
+            "minimum_gpa": minimum_gpa,
+            "minimum_traz": minimum_traz,
             "target_field_group": target_group,
             "province": canonical_province,
             "region_zone": region_zone,
