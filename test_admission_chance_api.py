@@ -291,7 +291,7 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         )
         self.assertEqual([item["program_id"] for item in local], ["PROG_01000"])
         self.assertEqual(remote, [])
-        self.assertIn("بومی استانی", local[0]["note"])
+        self.assertIn("بومی ناحیه‌ای", local[0]["note"])
 
     def test_record_nahiyei_filters_same_region_and_rejects_other_region(self):
         same = build_record_results(
@@ -595,8 +595,15 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(above[0]["traz_input"], 6000)
 
     def test_record_label_uses_only_three_qualitative_labels(self):
+        below = build_record_results(
+            major_ids=[1], diploma_type="ensani", gpa_written=10.0, gpa_total=None,
+            province="تهران", target_field_group="ensani", course_types=["savabegh_dolati"],
+            programs=[ACADEMIC_PROGRAM], majors=MAJORS, limit=30,
+        )
+        self.assertEqual(below, [])
+
         labels = set()
-        for gpa in (10.0, 14.0, 20.0):
+        for gpa in (14.0, 20.0):
             result = build_record_results(
                 major_ids=[1], diploma_type="ensani", gpa_written=gpa, gpa_total=None,
                 province="تهران", target_field_group="ensani", course_types=["savabegh_dolati"],
