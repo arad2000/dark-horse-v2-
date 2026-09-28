@@ -139,6 +139,35 @@ GPA_COEFFICIENTS = {
 TARGET_GROUP_VALUES = {"riazi", "tajrobi", "ensani", "honar", "zaban"}
 DIPLOMA_VALUES = set(GPA_COEFFICIENTS)
 
+# G3: official 1404 humanities exceptions for applicants with math/experimental
+# diplomas. Names are kept as explicit source-backed strings; no fuzzy aliasing.
+HUMANITIES_EXCEPTION_100_NAMES = {
+    "حسابداری",
+    "اقتصاد",
+    "روانشناسی",
+    "علوم ورزشی",
+    "مدیریت امور بانکی",
+    "مدیریت صنعتی",
+    "مدیریت مالی",
+    "مدیریت بازرگانی",
+    "مدیریت و بازرگانی دریایی",
+    "مدیریت بیمه",
+    "مدیریت دولتی",
+    "مدیریت امور گمرکی",
+    "مدیریت فرهنگی هنری",
+    "مدیریت کسب و کار",
+    "هتلداری",
+    "علم اطلاعات و دانش شناسی",
+    "گردشگری",
+    "کاردانی مدیریت صنعتی کاربردی",
+    "کاردانی امور بانکی",
+    "کاردانی بیمه",
+    "کاردانی امور دولتی",
+    "کاردانی امور مالی و مالیاتی",
+}
+
+GPA_COEFFICIENT_SOURCE = "sanjesh_1404_table_base_plus_humanities_exception"
+
 GROUP_MAP = {
     "ریاضی": "riazi",
     "ریاضی فیزیک": "riazi",
@@ -680,8 +709,33 @@ def _record_target_group(
     return inferred
 
 
-def _coefficient(diploma_type: str, target_group: str) -> float:
-    return GPA_COEFFICIENTS[diploma_type][target_group]
+def _coefficient_for_record(
+    *,
+    diploma_type: str,
+    target_group: str,
+    major: dict[str, Any] | None,
+) -> tuple[float, str | None]:
+    base = GPA_COEFFICIENTS[diploma_type][target_group]
+
+    # Official 1404 exception: for the explicitly listed humanities majors,
+    # math/experimental diplomas use coefficient 100 instead of the base 57.1.
+    if diploma_type in {"riazi", "tajrobi"} and target_group == "ensani":
+        major_name = major.get("name") if isinstance(major, dict) else None
+        if major_name:
+            normalized_name = _normalize_text(major_name)
+            normalized_exceptions = {
+                _normalize_text(name) for name in HUMANITIES_EXCEPTION_100_NAMES
+            }
+            if normalized_name in normalized_exceptions:
+                return 100.0, "استثنای رسمی دفترچه ۱۴۰۴ برای رشته علوم انسانی اعمال شد."
+            return base, None
+
+        return base, (
+            "نام رشته برای بررسی استثنای رسمی علوم انسانی در داده در دسترس نبود؛ "
+            "ضریب پایه اعمال شد و هیچ تطبیق حدسی انجام نشد."
+        )
+
+    return base, None
 
 
 def build_exam_results(
@@ -806,7 +860,12 @@ def build_record_results(
             major_id=program.get("major_id"),
             majors=majors,
         )
-        coefficient = _coefficient(diploma_type, target_group)
+        major = majors.get(str(program.get("major_id")))
+        coefficient, coefficient_note = _coefficient_for_record(
+            diploma_type=diploma_type,
+            target_group=target_group,
+            major=major,
+        )
         effective = round(gpa_input * coefficient / 100.0, 4)
 
         academic_cutoff = _academic_cutoff(program)
@@ -838,6 +897,8 @@ def build_record_results(
                 f"special_quota={special} در قرارداد حفظ شد و برای توزیع ظرفیت نگه‌داری می‌شود؛ "
                 "به‌دلیل نبود ظرفیت تفکیکی در program2s، فیلتر/حدنصاب سهمیه‌ای اعمال نشد."
             )
+        if coefficient_note:
+            notes.append(coefficient_note)
         if bomi_type is None:
             notes.append("برای این برنامه نوع گزینش بومی از منبع قابل استنتاج نشد؛ هیچ نگاشت جغرافیایی حدسی اعمال نشد.")
         if minimum_traz is not None and traz is None:
@@ -856,6 +917,7 @@ def build_record_results(
             "gpa_input_field": gpa_field,
             "traz_input": traz,
             "gpa_coefficient": coefficient,
+            "gpa_coefficient_source": GPA_COEFFICIENT_SOURCE,
             "gpa_effective": effective,
             "minimum_gpa": minimum_gpa,
             "minimum_traz": minimum_traz,
