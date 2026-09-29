@@ -58,6 +58,26 @@ When target_field_group is omitted, it is inferred from majors_database_v2.exam_
 
 The record path filters to method = سوابق تحصیلی only.
 
+### Direct capacity source
+
+The record path supports two explicit sources:
+- `source: "program"` — the existing `program2s` path, including its current Section 2 / G1–G4 behavior.
+- `source: "capacity"` — a new read-only direct path backed by `docs/data/sanjesh_record_capacity_full.json`.
+
+For `source: "capacity"`:
+- `periods` is required and each requested value must be an exact observed capacity period (Persian-safe text normalization only; no semantic period mapping).
+- `major_ids` resolve through `majors_database_v2.json`; the resulting major name is matched exactly against capacity `major_name` after normalization.
+- `province` matches only populated capacity `province` values. Blank province never matches a named province.
+- `special_quota` is note-only; it does not synthesize a new capacity value or split.
+- `diploma_type` and GPA remain request/context fields but do not alter capacity rows because those fields are absent from the capacity source.
+- `azad` is not a capacity period and must not be invented.
+- No `sanjesh_code` or capacity is written to `program2s`.
+
+Direct-capacity response items contain at minimum:
+`sanjesh_code, major_name, campus, province, period, capacity_total, notes[]`, plus `quota_shares_mvp` when the source row contains it.
+
+When no capacity row remains, the response returns `items=[]` and an explicit note explaining that no source row matched the selected major/period/province combination.
+
 ### Base GPA coefficient matrix
 
 | diploma | ریاضی | تجربی | انسانی | هنر | زبان |
