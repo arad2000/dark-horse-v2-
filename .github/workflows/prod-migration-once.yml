@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: "Type MIGRATE_0010 to run the one-off production migration"
+        description: "Type MIGRATE_0011 to run the one-off production migration"
         required: true
         type: string
 
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   migrate:
-    if: github.ref == 'refs/heads/deploy/liara-commercial-sandbox' && inputs.confirm == 'MIGRATE_0010'
+    if: github.ref == 'refs/heads/deploy/liara-commercial-sandbox' && inputs.confirm == 'MIGRATE_0011'
     runs-on: ubuntu-latest
     environment: production-migration
     env:
@@ -35,8 +35,8 @@ jobs:
       - name: Require production database URL
         run: test -n "$DATABASE_URL"
 
-      - name: Apply only journey credit ledger migration
-        run: alembic upgrade 0010_journey_credit_consumptions
+      - name: Apply only OTP request IP migration
+        run: alembic upgrade 0011_otp_request_ip
 
       - name: Verify production migration state
         run: |
@@ -51,6 +51,8 @@ jobs:
               ledger = inspect(conn).has_table("journey_credit_consumptions")
           print(f"alembic_revisions={revisions}")
           print(f"journey_credit_consumptions_exists={ledger}")
-          assert "0010_journey_credit_consumptions" in revisions
-          assert ledger
+          assert "0011_otp_request_ip" in revisions
+              assert "request_ip" in {c["name"] for c in inspect(conn).get_columns("phone_verifications")}
+              indexes = {i["name"] for i in inspect(conn).get_indexes("phone_verifications")}
+              assert "idx_phone_verification_ip_created" in indexes
           PY
