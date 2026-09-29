@@ -10,6 +10,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from admission_capacity_record import build_record_capacity_results
 from admission_sanjesh_engine import (
     AdmissionInputError,
     DIPLOMA_VALUES,
@@ -19,7 +20,6 @@ from admission_sanjesh_engine import (
     _canonical_province,
     _normalize_text,
     _record_input_gpa,
-    build_record_capacity_results,
     build_exam_results,
     build_record_results,
     load_majors,
