@@ -502,7 +502,7 @@ class AdmissionChanceServiceTests(unittest.TestCase):
     def test_g3_humanities_exception_riazi_and_tajrobi_are_100(self):
         majors = {
             "10": {"id": 10, "name": "روانشناسی", "exam_group": "انسانی"},
-            "11": {"id": 11, "name": "مدیریت کسب‌وکار", "exam_group": "انسانی"},
+            "11": {"id": 11, "name": "مدیریت کسب و کار", "exam_group": "انسانی"},
         }
         self.assertEqual(
             _coefficient("riazi", "ensani", major_id=10, majors=majors),
