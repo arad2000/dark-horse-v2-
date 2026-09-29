@@ -53,6 +53,8 @@ RECORD_COEFFICIENT_NOTE = (
     "فقط در صورت وجود نگاشت رسمی در داده منبع قابل اعمال هستند."
 )
 
+AZAD_RECORD_NOTE = "سامانه آزاد؛ بومی‌گزینی سراسری کامل نیست"
+
 QUOTA_DIMENSIONS = {
     "region_1": "zone_1",
     "region_2": "zone_2",
@@ -314,6 +316,29 @@ def _normalize_bomi_type(value: Any) -> str | None:
 def _course_type_text(program: dict[str, Any]) -> str:
     admission = program.get("admission_info", {}) or {}
     return _normalize_text(admission.get("course_type") or program.get("course_type"))
+
+def _is_azad_program(program: dict[str, Any]) -> bool:
+    """Detect an explicitly named Azad institution/course without changing eligibility."""
+    admission = program.get("admission_info", {}) or {}
+    university = program.get("university", {}) or {}
+    candidates = [
+        university.get("name"),
+        program.get("university_name"),
+        admission.get("institution_name"),
+        admission.get("institution"),
+        admission.get("provider_name"),
+        admission.get("course_type"),
+        program.get("course_type"),
+    ]
+    for value in candidates:
+        text = _normalize_text(value)
+        if not text:
+            continue
+        if "دانشگاه آزاد" in text or "آزاد اسلامی" in text:
+            return True
+        if re.search(r"(?<![a-z0-9])azad(?![a-z0-9])", text):
+            return True
+    return False
 
 
 def _bomi_hint_from_major(major: dict[str, Any] | None) -> str | None:
@@ -895,6 +920,8 @@ def build_record_results(
                 "سهمیه خاص در داده سوابق این رشته‌محل ثبت نشده و در این نسخه فقط به‌عنوان context نگه‌داری شد؛ "
                 "فیلتر/حدنصاب سهمیه‌ای در مسیر record اعمال نشد."
             )
+        if _is_azad_program(program):
+            notes.append(AZAD_RECORD_NOTE)
         if bomi_type is None:
             notes.append("برای این برنامه نوع گزینش بومی از منبع قابل استنتاج نشد؛ هیچ نگاشت جغرافیایی حدسی اعمال نشد.")
         if minimum_traz is not None and traz is None:

@@ -38,6 +38,7 @@ def _program(
     historical=None,
     bomi=None,
     academic=None,
+    university_name: str = "دانشگاه آزمون",
 ):
     admission = {
         "method": method,
@@ -49,7 +50,7 @@ def _program(
         "program_id": program_id,
         "major_id": major_id,
         "university": {
-            "name": "دانشگاه آزمون",
+            "name": university_name,
             "province": province,
             "prestige_level": 3,
         },
@@ -156,6 +157,17 @@ GHOTBI_RECORD_PROGRAM = _program(
     province="کرمان",
     bomi_type="ghotbi",
     academic={"minimum_gpa": 14, "minimum_traz": 6000},
+)
+
+AZAD_RECORD_PROGRAM = _program(
+    program_id="AZAD-RECORD-1",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    province="تهران",
+    bomi_type="keshvari",
+    academic={"minimum_gpa": 14},
+    university_name="دانشگاه آزاد اسلامی واحد نمونه",
 )
 
 KESHVARI_RECORD_PROGRAM = _program(
@@ -327,6 +339,16 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(len(same), 1)
         self.assertEqual(other, [])
         self.assertIn("بومی قطبی", same[0]["note"])
+
+    def test_record_azad_adds_fixed_note_without_filtering(self):
+        result = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["savabegh_dolati"], programs=[AZAD_RECORD_PROGRAM], majors=MAJORS, limit=30,
+            region_zone=1, special_quota="none",
+        )
+        self.assertEqual([item["program_id"] for item in result], ["AZAD-RECORD-1"])
+        self.assertTrue(any(note == "سامانه آزاد؛ بومی‌گزینی سراسری کامل نیست" for note in result[0]["notes"]))
 
     def test_record_keshvari_does_not_filter_by_province(self):
         results = build_record_results(
