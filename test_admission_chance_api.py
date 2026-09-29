@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from admission_capacity_loader import build_record_capacity_results, load_record_capacity
 from admission_sanjesh_engine import (
     BORDERLINE_LABEL,
     EXAM_METHOD,
@@ -1050,6 +1051,108 @@ class AdmissionChanceApiTests(unittest.TestCase):
             )
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["admission_path"], "exam")
+
+    def test_capacity_source_real_major_period_province_returns_sanjesh_rows(self):
+        items, notes = build_record_capacity_results(
+            major_ids=[81],
+            province="آذربایجان غربی",
+            periods=["روزانه"],
+            special_quota="none",
+            limit=30,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(items[0]["sanjesh_code"])
+        self.assertEqual(items[0]["major_name"], "ریاضیات و کاربردها")
+        self.assertEqual(items[0]["period"], "روزانه")
+        self.assertTrue(items[0]["province"])
+        self.assertIn("capacity_total", items[0])
+        self.assertIsInstance(items[0]["notes"], list)
+        self.assertEqual(notes, [])
+
+    def test_capacity_source_wrong_province_reduces_results(self):
+        correct, _ = build_record_capacity_results(
+            major_ids=[81], province="آذربایجان غربی", periods=["روزانه"],
+            special_quota="none", limit=100,
+        )
+        wrong, _ = build_record_capacity_results(
+            major_ids=[81], province="تهران", periods=["روزانه"],
+            special_quota="none", limit=100,
+        )
+        self.assertLess(len(wrong), len(correct))
+
+    def test_capacity_source_unknown_period_returns_no_items(self):
+        items, notes = build_record_capacity_results(
+            major_ids=[81], province="آذربایجان غربی",
+            periods=["دوره‌ای که در دفترچه نیست"], special_quota="none", limit=30,
+        )
+        self.assertEqual(items, [])
+        self.assertTrue(any("یافت نشد" in note for note in notes))
+
+    def test_capacity_source_blank_province_does_not_match_named_province(self):
+        rows = load_record_capacity()
+        blank = [
+            row for row in rows
+            if row.get("major_name") == "علوم کامپیوتر"
+            and row.get("period") == "پیام نور"
+            and not str(row.get("province") or "").strip()
+        ]
+        self.assertGreater(len(blank), 0)
+        items, _ = build_record_capacity_results(
+            major_ids=[45], province="تهران", periods=["پیام نور"],
+            special_quota="none", limit=100,
+        )
+        self.assertTrue(all(str(item.get("province") or "").strip() == "تهران" for item in items))
+
+    def test_capacity_source_special_quota_is_note_only(self):
+        items, notes = build_record_capacity_results(
+            major_ids=[81], province="آذربایجان غربی", periods=["روزانه"],
+            special_quota="isargaran_5", limit=1,
+        )
+        self.assertEqual(len(items), 1)
+        self.assertTrue(any("special_quota" in note for note in items[0]["notes"]))
+        self.assertTrue(any("special_quota" in note for note in notes))
+
+    def test_record_capacity_api_uses_explicit_source_without_region_zone(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [81],
+                "province": "آذربایجان غربی",
+                "diploma_type": "tajrobi",
+                "gpa_written": 18.0,
+                "periods": ["روزانه"],
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["admission_path"], "record")
+        self.assertEqual(payload["source"], "capacity")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(payload["items"][0]["sanjesh_code"])
+        self.assertNotIn("program_id", payload["items"][0])
+
+    def test_record_program_source_remains_region_based(self):
+        with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "record",
+                    "source": "program",
+                    "major_ids": [1],
+                    "province": "تهران",
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "diploma_type": "ensani",
+                    "gpa_written": 18.0,
+                    "target_field_group": "tajrobi",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["source"], "program")
+        self.assertEqual(response.json()["items"][0]["program_id"], "ACA-1")
 
 
 if __name__ == "__main__":
