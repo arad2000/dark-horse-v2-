@@ -180,6 +180,17 @@ KESHVARI_RECORD_PROGRAM = _program(
     academic={"minimum_gpa": 14, "minimum_traz": 6000},
 )
 
+UNRESOLVED_TABLE5_RECORD = _program(
+    program_id="UNRESOLVED-TABLE5-RECORD",
+    major_id=1,
+    method="سوابق تحصیلی",
+    course_type="savabegh_dolati",
+    province="تهران",
+    bomi_type="",
+    academic={"minimum_gpa": 14},
+)
+UNRESOLVED_TABLE5_RECORD["admission_info"]["bomi_type_rule"] = "unresolved_table5"
+
 EMPTY_BOMI_NOBAT_RECORD = _program(
     program_id="EMPTY-BOMI-NOBAT",
     major_id=1,
@@ -371,6 +382,15 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["bomi_type"], "ostani")
         self.assertEqual(result[0]["bomi_source"], "course_type_default")
+
+    def test_record_unresolved_table5_is_excluded_from_main_results(self):
+        result = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["savabegh_dolati"], programs=[UNRESOLVED_TABLE5_RECORD], majors=MAJORS, limit=30,
+            region_zone=1, special_quota="none",
+        )
+        self.assertEqual(result, [])
 
     def test_record_blank_roozaneh_does_not_invent_locality(self):
         result = build_record_results(
