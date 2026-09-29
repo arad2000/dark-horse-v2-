@@ -1,0 +1,223 @@
+{
+  "version": "v1",
+  "generated_from": {
+    "program2s_sha": "0c2747057a35f3fdf4aa70c178ed68580e7c4537",
+    "capacity_sha": "8a5efdb3c19576ed3557107f13ebb74d2681eebd",
+    "majors_sha": "c573c494e7c40bc9920b03734bd62698de455779"
+  },
+  "scope": "proposal only; no program2s enrichment",
+  "normalization": "Unicode NFKC; remove ZWJ/ZWNJ/BOM; normalize ي/ى→ی and ك→ک; remove Arabic diacritics; collapse whitespace; trim; lowercase for comparison only.",
+  "selection_rule": "A capacity.campus pattern is retained only when it is an observed raw value whose normalized text contains the normalized program2s university.name, the prefix before that occurrence is empty, 'دانشگاه', or an observed استان/ادامه استان prefix, and the capacity province equals the program2s university province after normalization.",
+  "stats": {
+    "university_ids_total": 66,
+    "university_ids_with_at_least_one_pattern": 19,
+    "total_observed_patterns": 34
+  },
+  "aliases": [
+    {
+      "university_id": "KUMS",
+      "canonical_name": "دانشگاه علوم پزشکی کرمان",
+      "campus_patterns": [
+        "استان کرمان - دانشگاه علوم پزشكي کرمان"
+      ],
+      "provinces": [
+        "کرمان"
+      ]
+    },
+    {
+      "university_id": "ZAHEDAN_MS",
+      "canonical_name": "دانشگاه علوم پزشکی زاهدان",
+      "campus_patterns": [
+        "استان سيستان و بلوچستان - دانشگاه علوم پزشكي زاهدان"
+      ],
+      "provinces": [
+        "سیستان و بلوچستان"
+      ]
+    },
+    {
+      "university_id": "UT",
+      "canonical_name": "دانشگاه تهران",
+      "campus_patterns": [
+        "استان تهران - دانشگاه تهران",
+        "استان تهران - دانشگاه تهران (محل تحصيل دانشكده فناوري کشاورزي پرديس کشاورزي و منابع طبيعي در پاکدشت)"
+      ],
+      "provinces": [
+        "تهران"
+      ]
+    },
+    {
+      "university_id": "IUT",
+      "canonical_name": "دانشگاه صنعتی اصفهان",
+      "campus_patterns": [
+        "استان اصفهان - دانشگاه صنعتي اصفهان"
+      ],
+      "provinces": [
+        "اصفهان"
+      ]
+    },
+    {
+      "university_id": "SBU",
+      "canonical_name": "دانشگاه شهید بهشتی",
+      "campus_patterns": [
+        "استان تهران - دانشگاه شهيد بهشتي - تهران"
+      ],
+      "provinces": [
+        "تهران"
+      ]
+    },
+    {
+      "university_id": "UI",
+      "canonical_name": "دانشگاه اصفهان",
+      "campus_patterns": [
+        "استان اصفهان - دانشگاه اصفهان",
+        "استان اصفهان - دانشگاه اصفهان (محل تحصيل دانشكده رياضي و کامپيوتر خوانسار)"
+      ],
+      "provinces": [
+        "اصفهان"
+      ]
+    },
+    {
+      "university_id": "UM",
+      "canonical_name": "دانشگاه فردوسی مشهد",
+      "campus_patterns": [
+        "استان خراسان رضوي - دانشگاه فردوسي مشهد"
+      ],
+      "provinces": [
+        "خراسان رضوی"
+      ]
+    },
+    {
+      "university_id": "SU",
+      "canonical_name": "دانشگاه شیراز",
+      "campus_patterns": [
+        "استان فارس - دانشگاه شيراز",
+        "استان فارس - دانشگاه شيراز (محل تحصيل دانشكده کشاورزي و منابع طبيعي داراب)",
+        "استان فارس - دانشگاه شيراز (محل تحصيل مرکز آموزش عالي آباده)"
+      ],
+      "provinces": [
+        "فارس"
+      ]
+    },
+    {
+      "university_id": "TABRIZU",
+      "canonical_name": "دانشگاه تبریز",
+      "campus_patterns": [
+        "استان آذربايجان شرقي - دانشگاه تبريز",
+        "استان آذربايجان شرقي - دانشگاه تبريز (محل تحصيل دانشكده کشاورزي اهر)"
+      ],
+      "provinces": [
+        "آذربایجان شرقی"
+      ]
+    },
+    {
+      "university_id": "SCU",
+      "canonical_name": "دانشگاه شهید چمران اهواز",
+      "campus_patterns": [
+        "استان خوزستان - دانشگاه شهيد چمران اهواز"
+      ],
+      "provinces": [
+        "خوزستان"
+      ]
+    },
+    {
+      "university_id": "UMZ",
+      "canonical_name": "دانشگاه مازندران",
+      "campus_patterns": [
+        "استان مازندران - دانشگاه مازندران - بابلسر"
+      ],
+      "provinces": [
+        "مازندران"
+      ]
+    },
+    {
+      "university_id": "UK",
+      "canonical_name": "دانشگاه شهید باهنر کرمان",
+      "campus_patterns": [
+        "ادامه استان کرمان - دانشگاه شهيد باهنر کرمان",
+        "استان کرمان - دانشگاه شهيد باهنر کرمان",
+        "استان کرمان - دانشگاه شهيد باهنر کرمان (محل تحصيل مجتمع آموزش عالي معدن زرند)"
+      ],
+      "provinces": [
+        "کرمان"
+      ]
+    },
+    {
+      "university_id": "KASHAN",
+      "canonical_name": "دانشگاه کاشان",
+      "campus_patterns": [
+        "استان اصفهان - دانشگاه کاشان"
+      ],
+      "provinces": [
+        "اصفهان"
+      ]
+    },
+    {
+      "university_id": "YAZD",
+      "canonical_name": "دانشگاه یزد",
+      "campus_patterns": [
+        "استان يزد - دانشگاه يزد",
+        "استان يزد - دانشگاه يزد (محل تحصيل شهرستان مهريز)"
+      ],
+      "provinces": [
+        "یزد"
+      ]
+    },
+    {
+      "university_id": "BIRJAND",
+      "canonical_name": "دانشگاه بیرجند",
+      "campus_patterns": [
+        "ادامه استان خراسان جنوبي - دانشگاه بيرجند",
+        "استان خراسان جنوبي - دانشگاه بيرجند",
+        "استان خراسان جنوبي - دانشگاه بيرجند (محل تحصيل آموزشكده کشاورزي سرايان)",
+        "استان خراسان جنوبي - دانشگاه بيرجند (محل تحصيل دانشكده فني فردوس واقع در شهرستان فردوس)"
+      ],
+      "provinces": [
+        "خراسان جنوبی"
+      ]
+    },
+    {
+      "university_id": "ZABOL",
+      "canonical_name": "دانشگاه زابل",
+      "campus_patterns": [
+        "ادامه استان سيستان و بلوچستان - دانشگاه زابل",
+        "استان سيستان و بلوچستان - دانشگاه زابل"
+      ],
+      "provinces": [
+        "سیستان و بلوچستان"
+      ]
+    },
+    {
+      "university_id": "ARAK",
+      "canonical_name": "دانشگاه اراک",
+      "campus_patterns": [
+        "استان مرکزي - دانشگاه اراك"
+      ],
+      "provinces": [
+        "مرکزی"
+      ]
+    },
+    {
+      "university_id": "ZANJAN",
+      "canonical_name": "دانشگاه زنجان",
+      "campus_patterns": [
+        "استان زنجان - دانشگاه زنجان"
+      ],
+      "provinces": [
+        "زنجان"
+      ]
+    },
+    {
+      "university_id": "KURDISTAN",
+      "canonical_name": "دانشگاه کردستان",
+      "campus_patterns": [
+        "ادامه استان کردستان - دانشگاه کردستان - سنندج",
+        "استان کردستان - دانشگاه کردستان (محل تحصيل دانشكده صنعت و معدن قروه)",
+        "استان کردستان - دانشگاه کردستان (محل تحصيل دانشكده فني و مهندسي و علوم پايه بيجار)",
+        "استان کردستان - دانشگاه کردستان - سنندج"
+      ],
+      "provinces": [
+        "کردستان"
+      ]
+    }
+  ]
+}
