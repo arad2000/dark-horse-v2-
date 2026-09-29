@@ -131,7 +131,8 @@ def build_record_capacity_results(
             continue
 
         capacity_value = row.get("capacity")
-        if capacity_value is None:
+        sanjesh_code = str(row.get("sanjesh_code") or "").strip()
+        if not sanjesh_code or capacity_value is None:
             continue
 
         item_notes = [
@@ -143,13 +144,13 @@ def build_record_capacity_results(
             )
 
         item = {
-            "sanjesh_code": str(row.get("sanjesh_code") or ""),
+            "sanjesh_code": sanjesh_code,
             "major_name": major_name,
             "campus": str(row.get("campus") or ""),
             "province": row.get("province"),
             "period": row_period,
             "capacity_total": capacity_value,
-            "notes": item_notes + list(row.get("notes") or [])
+            "notes": item_notes + (row.get("notes") if isinstance(row.get("notes"), list) else [])
         }
         if isinstance(row.get("quota_shares_mvp"), dict):
             item["quota_shares_mvp"] = row["quota_shares_mvp"]
