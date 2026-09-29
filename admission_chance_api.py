@@ -10,6 +10,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from admission_capacity_loader import build_record_capacity_results
 from admission_sanjesh_engine import (
     AdmissionInputError,
     DIPLOMA_VALUES,
@@ -59,6 +60,9 @@ class AdmissionChanceRequest(BaseModel):
     traz: float | None = Field(default=None, ge=0)
     target_field_group: str | None = Field(default=None, max_length=32)
 
+    # Record source: program is the existing program2s path; capacity is the direct Sanjesh source.
+    source: Literal["program", "capacity"] = Field(default="program")
+    periods: list[str] = Field(default_factory=list)
     course_types: list[str] = Field(default_factory=list)
     limit: int = Field(default=30, ge=1, le=100)
 
@@ -136,8 +140,10 @@ def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
             "diploma_type باید یکی از riazi، tajrobi، ensani، maaref یا other_fani باشد."
         )
     _record_input_gpa(diploma, request.gpa_written, request.gpa_total)
-    if request.region_zone not in {1, 2, 3}:
-        raise AdmissionInputError("region_zone در مسیر سوابق باید ۱، ۲ یا ۳ باشد.")
+
+    if request.source == "program" and request.region_zone not in {1, 2, 3}:
+        raise AdmissionInputError("region_zone در مسیر سوابق برنامه‌محور باید ۱، ۲ یا ۳ باشد.")
+
     special = _normalize_text(request.special_quota or "none")
     special_aliases = {
         "none": "none",
@@ -154,15 +160,21 @@ def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
     special = special_aliases.get(special, special)
     if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
         raise AdmissionInputError("special_quota نامعتبر است.")
+
+    if request.source == "capacity" and not request.periods:
+        raise AdmissionInputError("periods در مسیر source=capacity الزامی است.")
+
     return {
+        "source": request.source,
         "diploma_type": diploma,
         "gpa_written": request.gpa_written,
         "gpa_total": request.gpa_total,
         "traz": request.traz,
         "province": province,
         "target_field_group": request.target_field_group,
-        "region_zone": int(request.region_zone),
+        "region_zone": int(request.region_zone) if request.region_zone in {1, 2, 3} else None,
         "special_quota": special,
+        "periods": request.periods,
     }
 
 
@@ -207,6 +219,30 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
 
         if path == "record":
             record = _resolve_record_request(request)
+            if record["source"] == "capacity":
+                items, source_notes = build_record_capacity_results(
+                    major_ids=request.major_ids,
+                    province=record["province"],
+                    periods=record["periods"],
+                    special_quota=record["special_quota"],
+                    limit=request.limit,
+                )
+                return {
+                    "admission_path": "record",
+                    "source": "capacity",
+                    "items": items,
+                    "count": len(items),
+                    "context": {
+                        "major_ids": request.major_ids,
+                        "diploma_type": record["diploma_type"],
+                        "province": record["province"],
+                        "periods": record["periods"],
+                        "special_quota": record["special_quota"],
+                    },
+                    "notes": source_notes,
+                    "disclaimer": "این مسیر فقط ردیف‌های ظرفیت منبع سنجش را فیلتر می‌کند و جایگزین اعلام رسمی سنجش نیست.",
+                }
+
             items = build_record_results(
                 major_ids=request.major_ids,
                 diploma_type=record["diploma_type"],
@@ -224,6 +260,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
             )
             return {
                 "admission_path": "record",
+                "source": "program",
                 "items": items,
                 "count": len(items),
                 "context": {
@@ -233,7 +270,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     "region_zone": record["region_zone"],
                     "special_quota": record["special_quota"],
                 },
-                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                "disclaimer": "نتایج تخمینی و جایگزین اعلام رسمی سنجش نیست.",
             }
 
         raise AdmissionInputError("admission_path نامعتبر است.")
