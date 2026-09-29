@@ -262,7 +262,25 @@ def load_majors() -> dict[str, dict[str, Any]]:
     return {str(item.get("id")): item for item in payload if isinstance(item, dict)}
 
 
+BOMI_TABLE5_PATH = ROOT / "docs" / "sanjesh_table5_major_bomi_v1.json"
 BOMI_GEOGRAPHY_PATH = ROOT / "docs" / "bomi_geography_v1.json"
+
+@lru_cache(maxsize=1)
+def load_bomi_table5() -> dict[str, Any]:
+    payload = json.loads(BOMI_TABLE5_PATH.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError("docs/sanjesh_table5_major_bomi_v1.json structure is unsupported")
+    period_defaults = payload.get("period_defaults")
+    daily_major_bomi = payload.get("daily_major_bomi")
+    name_aliases = payload.get("name_aliases")
+    if not isinstance(period_defaults, dict) or not isinstance(daily_major_bomi, dict) or not isinstance(name_aliases, dict):
+        raise RuntimeError("Table 5 bomi mapping sections are missing or invalid")
+    return {
+        "period_defaults": period_defaults,
+        "daily_major_bomi": daily_major_bomi,
+        "name_aliases": name_aliases,
+    }
+
 
 @lru_cache(maxsize=1)
 def load_bomi_geography() -> dict[str, dict[str, int | str]]:
@@ -341,56 +359,51 @@ def _is_azad_program(program: dict[str, Any]) -> bool:
     return False
 
 
-def _bomi_hint_from_major(major: dict[str, Any] | None) -> str | None:
-    if not isinstance(major, dict):
-        return None
-    for key in ("bomi_type", "locality_type", "selection_type", "selection_method"):
-        value = _normalize_bomi_type(major.get(key))
-        if value:
-            return value
-    admission = major.get("admission_info")
-    if isinstance(admission, dict):
-        for key in ("bomi_type", "locality_type", "selection_type", "selection_method"):
-            value = _normalize_bomi_type(admission.get(key))
-            if value:
-                return value
-    return None
+def _bomi_lookup_key(value: Any) -> str:
+    return re.sub(r"[\s_\-]+", "", _normalize_text(value))
 
 
 def _resolve_record_bomi(
     program: dict[str, Any],
     majors: dict[str, dict[str, Any]],
 ) -> tuple[str | None, str]:
-    admission = program.get("admission_info", {}) or {}
-    explicit = _normalize_bomi_type(admission.get("bomi_type"))
-    if explicit:
-        return explicit, "program.bomi_type"
+    table5 = load_bomi_table5()
+    course_key = _bomi_lookup_key(_course_type_text(program))
+    is_azad = _is_azad_program(program)
 
-    course = _course_type_text(program)
-    course_defaults = {
-        "nobat_dovom": "ostani",
-        "payam_noor": "nahiyei",
-        "nonprofit": "nahiyei",
-        "مجازی": "nahiyei",
-        "virtual": "nahiyei",
-        "پردیس": "keshvari",
-        "pardis": "keshvari",
+    period_defaults = {
+        _bomi_lookup_key(key): _normalize_bomi_type(value)
+        for key, value in table5["period_defaults"].items()
+        if _normalize_bomi_type(value)
     }
-    if course in course_defaults:
-        return course_defaults[course], "course_type_default"
+    if course_key in period_defaults:
+        return period_defaults[course_key], "period_defaults"
 
-    if course == "roozaneh":
-        major_hint = _bomi_hint_from_major(majors.get(str(program.get("major_id"))))
-        if major_hint:
-            return major_hint, "major.selection_type"
-        for key in ("selection_type", "selection_method", "locality_type"):
-            hint = _normalize_bomi_type(admission.get(key))
-            if hint:
-                return hint, f"admission_info.{key}"
-        return None, "roozaneh_selection_type_missing"
+    if not is_azad and course_key in {
+        _bomi_lookup_key("savabegh_dolati"),
+        _bomi_lookup_key("roozaneh"),
+    }:
+        major = majors.get(str(program.get("major_id")))
+        major_name = _normalize_text(major.get("name")) if isinstance(major, dict) else ""
+        aliases = {
+            _normalize_text(alias): _normalize_text(target)
+            for alias, target in table5["name_aliases"].items()
+        }
+        canonical_name = aliases.get(major_name, major_name)
+        daily_map = {
+            _normalize_text(name): _normalize_bomi_type(value)
+            for name, value in table5["daily_major_bomi"].items()
+            if _normalize_bomi_type(value)
+        }
+        bomi_type = daily_map.get(canonical_name)
+        if bomi_type:
+            return bomi_type, "table5_daily"
+        return None, "unresolved_table5"
 
-    return None, "bomi_type_missing"
+    if is_azad:
+        return None, "azad_unresolved"
 
+    return None, "unresolved_bomi"
 
 def _record_locality_match(
     program: dict[str, Any],
@@ -872,10 +885,9 @@ def build_record_results(
 
     results: list[dict[str, Any]] = []
     for program in filtered:
-        admission = program.get("admission_info", {}) or {}
-        if _normalize_text(admission.get("bomi_type_rule")) == "unresolved_table5":
-            continue
         bomi_type, bomi_source = _resolve_record_bomi(program, majors)
+        if bomi_source == "unresolved_table5":
+            continue
         matches, locality_notes = _record_locality_match(
             program,
             canonical_province,
