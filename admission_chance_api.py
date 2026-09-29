@@ -19,7 +19,7 @@ from admission_sanjesh_engine import (
     _canonical_province,
     _normalize_text,
     _record_input_gpa,
-    build_capacity_record_results,
+    build_record_capacity_results,
     build_exam_results,
     build_record_results,
     load_majors,
@@ -230,7 +230,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 special = _normalize_text(request.special_quota or "none")
                 if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
                     raise AdmissionInputError("special_quota نامعتبر است.")
-                items = build_capacity_record_results(
+                items = build_record_capacity_results(
                     major_ids=request.major_ids,
                     province=province,
                     periods=request.periods,
