@@ -872,6 +872,9 @@ def build_record_results(
 
     results: list[dict[str, Any]] = []
     for program in filtered:
+        admission = program.get("admission_info", {}) or {}
+        if _normalize_text(admission.get("bomi_type_rule")) == "unresolved_table5":
+            continue
         bomi_type, bomi_source = _resolve_record_bomi(program, majors)
         matches, locality_notes = _record_locality_match(
             program,
