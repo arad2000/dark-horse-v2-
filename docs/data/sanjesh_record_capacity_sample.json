@@ -1,0 +1,142 @@
+{
+  "source": "استخراج نمونه از دفترچه سوابق ۱۴۰۴ (صفحات ۲۳-۲۴ و ۶۲)",
+  "status": "SAMPLE_ONLY — full catalog requires full table extract pages ~23-211",
+  "rows": [
+    {
+      "sanjesh_code": "10128",
+      "major_name": "مهندسی صنایع و سیستم ها",
+      "capacity": 30,
+      "period": "پیام نور",
+      "gender": "مختلط",
+      "campus": "پیام نور آذربایجان غربی — مرکز خوی",
+      "province": "آذربایجان غربی",
+      "quota_shares_mvp": {
+        "capacity_total": 30,
+        "isargaran_25": 7,
+        "isargaran_5": 1,
+        "remainder": 22,
+        "free_seats": 4,
+        "bomi_pool": 18,
+        "free_share_rule": "20% after isargaran",
+        "note": "تقسیم داخلی bomi_pool بین مناطق ۱/۲/۳ بدون آمار ملی محاسبه نمی‌شود"
+      }
+    },
+    {
+      "sanjesh_code": "10129",
+      "major_name": "مهندسی کامپیوتر",
+      "capacity": 40,
+      "period": "پیام نور",
+      "gender": "مختلط",
+      "campus": "پیام نور آذربایجان غربی — مرکز خوی",
+      "province": "آذربایجان غربی",
+      "quota_shares_mvp": {
+        "capacity_total": 40,
+        "isargaran_25": 10,
+        "isargaran_5": 2,
+        "remainder": 28,
+        "free_seats": 5,
+        "bomi_pool": 23,
+        "free_share_rule": "20% after isargaran",
+        "note": "تقسیم داخلی bomi_pool بین مناطق ۱/۲/۳ بدون آمار ملی محاسبه نمی‌شود"
+      }
+    },
+    {
+      "sanjesh_code": "10137",
+      "major_name": "حسابداری",
+      "capacity": 50,
+      "period": "پیام نور",
+      "gender": "مختلط",
+      "campus": "پیام نور آذربایجان غربی — مرکز خوی",
+      "province": "آذربایجان غربی",
+      "quota_shares_mvp": {
+        "capacity_total": 50,
+        "isargaran_25": 12,
+        "isargaran_5": 2,
+        "remainder": 36,
+        "free_seats": 7,
+        "bomi_pool": 29,
+        "free_share_rule": "20% after isargaran",
+        "note": "تقسیم داخلی bomi_pool بین مناطق ۱/۲/۳ بدون آمار ملی محاسبه نمی‌شود"
+      }
+    },
+    {
+      "sanjesh_code": "10138",
+      "major_name": "حقوق",
+      "capacity": 50,
+      "period": "پیام نور",
+      "gender": "مختلط",
+      "campus": "پیام نور آذربایجان غربی — مرکز خوی",
+      "province": "آذربایجان غربی",
+      "quota_shares_mvp": {
+        "capacity_total": 50,
+        "isargaran_25": 12,
+        "isargaran_5": 2,
+        "remainder": 36,
+        "free_seats": 7,
+        "bomi_pool": 29,
+        "free_share_rule": "20% after isargaran",
+        "note": "تقسیم داخلی bomi_pool بین مناطق ۱/۲/۳ بدون آمار ملی محاسبه نمی‌شود"
+      }
+    },
+    {
+      "sanjesh_code": "10139",
+      "major_name": "روانشناسی",
+      "capacity": 60,
+      "period": "پیام نور",
+      "gender": "مختلط",
+      "campus": "پیام نور آذربایجان غربی — مرکز خوی",
+      "province": "آذربایجان غربی",
+      "quota_shares_mvp": {
+        "capacity_total": 60,
+        "isargaran_25": 15,
+        "isargaran_5": 3,
+        "remainder": 42,
+        "free_seats": 8,
+        "bomi_pool": 34,
+        "free_share_rule": "20% after isargaran",
+        "note": "تقسیم داخلی bomi_pool بین مناطق ۱/۲/۳ بدون آمار ملی محاسبه نمی‌شود"
+      }
+    },
+    {
+      "sanjesh_code": "11918",
+      "major_name": "مهندسی صنایع مبلمان",
+      "capacity": 20,
+      "period": "روزانه",
+      "gender": "مختلط",
+      "campus": "دانشگاه شهید بهشتی — تهران",
+      "province": "تهران",
+      "notes": "محدودیت خوابگاه",
+      "quota_shares_mvp": {
+        "capacity_total": 20,
+        "isargaran_25": 5,
+        "isargaran_5": 1,
+        "remainder": 14,
+        "free_seats": 5,
+        "bomi_pool": 9,
+        "free_share_rule": "40% after isargaran",
+        "note": "تقسیم داخلی bomi_pool بین مناطق ۱/۲/۳ بدون آمار ملی محاسبه نمی‌شود"
+      }
+    },
+    {
+      "sanjesh_code": "11919",
+      "major_name": "کاردانی نقشه برداری - ژئودزی",
+      "capacity": 100,
+      "period": "نوبت دوم",
+      "gender": "مختلط",
+      "campus": "آموزشکده فنی نقشه‌برداری — سازمان جغرافیایی نیروهای مسلح",
+      "province": "تهران",
+      "notes": "مصاحبه — فاقد خوابگاه",
+      "quota_shares_mvp": {
+        "capacity_total": 100,
+        "isargaran_25": 25,
+        "isargaran_5": 5,
+        "remainder": 70,
+        "free_seats": 14,
+        "bomi_pool": 56,
+        "free_share_rule": "20% after isargaran",
+        "note": "تقسیم داخلی bomi_pool بین مناطق ۱/۲/۳ بدون آمار ملی محاسبه نمی‌شود"
+      }
+    }
+  ],
+  "count": 7
+}
