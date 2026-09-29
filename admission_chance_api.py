@@ -270,7 +270,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     "region_zone": record["region_zone"],
                     "special_quota": record["special_quota"],
                 },
-                "disclaimer": "نتایج تخمینی و جایگزین اعلام رسمی سنجش نیست.",
+                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
             }
 
         raise AdmissionInputError("admission_path نامعتبر است.")
