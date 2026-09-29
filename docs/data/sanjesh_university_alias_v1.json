@@ -41,16 +41,6 @@
       ]
     },
     {
-      "university_id": "BASU",
-      "canonical_name": "دانشگاه بوعلی سینا همدان",
-      "campus_patterns": [
-        "استان همدان - دانشگاه بوعلي سينا - همدان"
-      ],
-      "provinces": [
-        "همدان"
-      ]
-    },
-    {
       "university_id": "BIRJAND",
       "canonical_name": "دانشگاه بیرجند",
       "campus_patterns": [
@@ -175,13 +165,14 @@
       ]
     },
     {
-      "university_id": "RAZI",
-      "canonical_name": "دانشگاه رازی کرمانشاه",
+      "university_id": "SAJAD_NONPROFIT",
+      "canonical_name": "مؤسسه آموزش عالی سجاد",
       "campus_patterns": [
-        "استان کرمانشاه - دانشگاه رازي - کرمانشاه"
+        "استان خراسان رضوي - دانشگاه غيرانتفاعي سجاد - مشهد",
+        "ادامه استان خراسان رضوي - دانشگاه غيرانتفاعي سجاد - مشهد"
       ],
       "provinces": [
-        "کرمانشاه"
+        "خراسان رضوی"
       ]
     },
     {
