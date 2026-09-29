@@ -20,7 +20,7 @@ def _normalize_text(value: Any) -> str:
     text = str(value or "")
     text = text.replace("ي", "ی").replace("ى", "ی").replace("ك", "ک")
     text = text.replace("‌", " ").replace("‏", " ")
-    return re.sub(r"s+", " ", text).strip().lower()
+    return re.sub(r"\\s+", " ", text).strip().lower()
 
 
 def _extract_rows(payload: Any) -> list[dict[str, Any]]:
