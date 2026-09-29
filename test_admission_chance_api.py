@@ -18,9 +18,11 @@ from admission_sanjesh_engine import (
     filter_programs,
     normalize_diploma_requirements,
     load_bomi_geography,
+    load_bomi_table5,
     load_programs,
     load_majors,
     _coefficient,
+    _resolve_record_bomi,
 )
 from main_v2 import app
 
@@ -137,7 +139,7 @@ OSTANI_RECORD_PROGRAM = _program(
     academic={"minimum_gpa": 14, "minimum_traz": 6000},
 )
 
-MAJORS = {"1": {"id": 1, "name": "نمونه", "exam_group": "تجربی"}}
+MAJORS = {"1": {"id": 1, "name": "اقتصاد", "exam_group": "تجربی"}}
 
 Nahiye_RECORD_PROGRAM = _program(
     program_id="NAHIYE-RECORD-1",
@@ -182,7 +184,7 @@ KESHVARI_RECORD_PROGRAM = _program(
 
 UNRESOLVED_TABLE5_RECORD = _program(
     program_id="UNRESOLVED-TABLE5-RECORD",
-    major_id=1,
+    major_id=999,
     method="سوابق تحصیلی",
     course_type="savabegh_dolati",
     province="تهران",
@@ -203,13 +205,17 @@ EMPTY_BOMI_NOBAT_RECORD = _program(
 
 EMPTY_BOMI_ROOZANEH_RECORD = _program(
     program_id="EMPTY-BOMI-ROOZANEH",
-    major_id=1,
+    major_id=999,
     method="سوابق تحصیلی",
     course_type="roozaneh",
     province="اصفهان",
     bomi_type="",
     academic={"minimum_gpa": 14},
 )
+
+UNRESOLVED_ROOZANEH_MAJORS = {
+    "999": {"id": 999, "name": "رشته بدون جدول ۵", "exam_group": "تجربی"}
+}
 
 
 
@@ -245,6 +251,7 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(program["admission_info"]["course_type"], "payam_noor")
         self.assertEqual(program["admission_info"]["bomi_type"], "nahiyei")
         self.assertEqual(program["university"]["province"], "تهران")
+        self.assertEqual(_resolve_record_bomi(program, load_majors()), ("nahiyei", "period_defaults"))
 
         local = build_record_results(
             major_ids=[41],
@@ -284,6 +291,7 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         program = programs[0]
         self.assertEqual(program["admission_info"]["bomi_type"], "nahiyei")
         self.assertEqual(program["university"]["province"], "گیلان")
+        self.assertEqual(_resolve_record_bomi(program, load_majors()), ("nahiyei", "table5_daily"))
 
         local = build_record_results(
             major_ids=[81],
@@ -381,27 +389,105 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         )
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["bomi_type"], "ostani")
-        self.assertEqual(result[0]["bomi_source"], "course_type_default")
+        self.assertEqual(result[0]["bomi_source"], "period_defaults")
 
     def test_record_unresolved_table5_is_excluded_from_main_results(self):
         result = build_record_results(
-            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            major_ids=[999], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
             province="تهران", target_field_group="tajrobi",
-            course_types=["savabegh_dolati"], programs=[UNRESOLVED_TABLE5_RECORD], majors=MAJORS, limit=30,
+            course_types=["savabegh_dolati"], programs=[UNRESOLVED_TABLE5_RECORD], majors=UNRESOLVED_ROOZANEH_MAJORS, limit=30,
             region_zone=1, special_quota="none",
         )
         self.assertEqual(result, [])
 
-    def test_record_blank_roozaneh_does_not_invent_locality(self):
+    def test_record_blank_roozaneh_resolves_unresolved_table5_and_is_excluded(self):
+        self.assertEqual(
+            _resolve_record_bomi(EMPTY_BOMI_ROOZANEH_RECORD, UNRESOLVED_ROOZANEH_MAJORS),
+            (None, "unresolved_table5"),
+        )
         result = build_record_results(
-            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            major_ids=[999], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
             province="تهران", target_field_group="tajrobi",
-            course_types=["roozaneh"], programs=[EMPTY_BOMI_ROOZANEH_RECORD], majors=MAJORS, limit=30,
+            course_types=["roozaneh"], programs=[EMPTY_BOMI_ROOZANEH_RECORD], majors=UNRESOLVED_ROOZANEH_MAJORS, limit=30,
             region_zone=1, special_quota="none",
         )
-        self.assertEqual(len(result), 1)
-        self.assertIsNone(result[0]["bomi_type"])
-        self.assertIn("هیچ نگاشت جغرافیایی حدسی اعمال نشد", result[0]["note"])
+        self.assertEqual(result, [])
+
+    def test_record_table5_period_defaults_are_loaded_from_source(self):
+        table5 = load_bomi_table5()
+        self.assertEqual(len(table5["period_defaults"]), 14)
+        cases = {
+            "payam_noor": "nahiyei",
+            "nobat_dovom": "ostani",
+            "nonprofit": "nahiyei",
+            "virtual": "keshvari",
+            "pardis": "keshvari",
+            "shabane": "ostani",
+            "majazi": "keshvari",
+        }
+        for course_type, expected in cases.items():
+            program = _program(
+                program_id=f"PERIOD-{course_type}",
+                major_id=1,
+                method="سوابق تحصیلی",
+                course_type=course_type,
+                bomi_type="",
+            )
+            self.assertEqual(
+                _resolve_record_bomi(program, MAJORS),
+                (expected, "period_defaults"),
+            )
+
+    def test_record_table5_daily_bomi_uses_aliases_and_direct_names(self):
+        majors = {
+            "53": {"id": 53, "name": "مهندسی صنایع", "exam_group": "ریاضی"},
+            "62": {"id": 62, "name": "مهندسی مواد و متالورژی", "exam_group": "ریاضی"},
+            "81": {"id": 81, "name": "ریاضیات و کاربردها", "exam_group": "ریاضی"},
+        }
+        expected = {53: "ghotbi", 62: "ghotbi", 81: "nahiyei"}
+        for major_id, bomi_type in expected.items():
+            program = _program(
+                program_id=f"TABLE5-{major_id}",
+                major_id=major_id,
+                method="سوابق تحصیلی",
+                course_type="savabegh_dolati",
+                bomi_type="ostani",
+            )
+            self.assertEqual(
+                _resolve_record_bomi(program, majors),
+                (bomi_type, "table5_daily"),
+            )
+
+    def test_record_table5_daily_type_is_not_taken_from_program_bomi_type(self):
+        majors = {"81": {"id": 81, "name": "ریاضیات و کاربردها", "exam_group": "ریاضی"}}
+        program = _program(
+            program_id="TABLE5-PRECEDENCE",
+            major_id=81,
+            method="سوابق تحصیلی",
+            course_type="savabegh_dolati",
+            bomi_type="ostani",
+        )
+        self.assertEqual(_resolve_record_bomi(program, majors), ("nahiyei", "table5_daily"))
+
+    def test_record_azad_without_table5_resolution_keeps_null_bomi(self):
+        majors = {"999": {"id": 999, "name": "رشته بدون جدول ۵", "exam_group": "تجربی"}}
+        program = _program(
+            program_id="AZAD-UNRESOLVED-RECORD",
+            major_id=999,
+            method="سوابق تحصیلی",
+            course_type="savabegh_dolati",
+            bomi_type="ghotbi",
+            university_name="دانشگاه آزاد اسلامی واحد نمونه",
+        )
+        self.assertEqual(_resolve_record_bomi(program, majors), (None, "azad_unresolved"))
+
+    def test_record_resolver_source_rules_are_exposed_on_real_programs(self):
+        programs = {
+            "PROG_03158": next(item for item in load_programs() if item.get("program_id") == "PROG_03158"),
+            "PROG_01000": next(item for item in load_programs() if item.get("program_id") == "PROG_01000"),
+        }
+        self.assertEqual(_resolve_record_bomi(programs["PROG_03158"], load_majors()), ("nahiyei", "period_defaults"))
+        self.assertEqual(_resolve_record_bomi(programs["PROG_01000"], load_majors()), ("nahiyei", "table5_daily"))
 
     def test_filtering_separates_exam_and_record_methods(self):
         kept_exam = filter_programs(
