@@ -139,6 +139,50 @@ GPA_COEFFICIENTS = {
 TARGET_GROUP_VALUES = {"riazi", "tajrobi", "ensani", "honar", "zaban"}
 DIPLOMA_VALUES = set(GPA_COEFFICIENTS)
 
+# Official 1404 record-admission exception: for the explicitly listed
+# humanities programs, a Math/Experimental diploma uses coefficient 100
+# instead of the base humanities-group coefficient 57.1.
+GPA_HUMANITIES_RIAZI_TAJROBI_100 = {
+    "حسابداری",
+    "اقتصاد",
+    "روانشناسی",
+    "علوم ورزشی",
+    "مدیریت امور بانکی",
+    "مدیریت صنعتی",
+    "مدیریت مالی",
+    "مدیریت بازرگانی",
+    "مدیریت و بازرگانی دریایی",
+    "مدیریت بیمه",
+    "مدیریت دولتی",
+    "مدیریت امور گمرکی",
+    "مدیریت فرهنگی هنری",
+    "مدیریت کسب و کار",
+    "هتلداری",
+    "علم اطلاعات و دانش شناسی",
+    "گردشگری",
+    "کاردانی مدیریت صنعتی کاربردی",
+    "کاردانی امور بانکی",
+    "کاردانی بیمه",
+    "کاردانی امور دولتی",
+    "کاردانی امور مالی و مالیاتی",
+}
+
+
+def _major_name_matches_gpa_exception(
+    major_id: Any,
+    majors: dict[str, dict[str, Any]] | None,
+) -> bool:
+    if not majors:
+        return False
+    major = majors.get(str(major_id))
+    if not isinstance(major, dict):
+        return False
+    name = _normalize_text(major.get("name"))
+    if not name:
+        return False
+    name = " ".join(name.replace("\u200c", " ").split())
+    return name in GPA_HUMANITIES_RIAZI_TAJROBI_100
+
 GROUP_MAP = {
     "ریاضی": "riazi",
     "ریاضی فیزیک": "riazi",
@@ -680,8 +724,21 @@ def _record_target_group(
     return inferred
 
 
-def _coefficient(diploma_type: str, target_group: str) -> float:
-    return GPA_COEFFICIENTS[diploma_type][target_group]
+def _coefficient(
+    diploma_type: str,
+    target_group: str,
+    *,
+    major_id: Any = None,
+    majors: dict[str, dict[str, Any]] | None = None,
+) -> float:
+    base = GPA_COEFFICIENTS[diploma_type][target_group]
+    if (
+        diploma_type in {"riazi", "tajrobi"}
+        and target_group == "ensani"
+        and _major_name_matches_gpa_exception(major_id, majors)
+    ):
+        return 100.0
+    return base
 
 
 def build_exam_results(
@@ -806,7 +863,7 @@ def build_record_results(
             major_id=program.get("major_id"),
             majors=majors,
         )
-        coefficient = _coefficient(diploma_type, target_group)
+        coefficient = _coefficient(diploma_type, target_group, major_id=program.get("major_id"), majors=majors)
         effective = round(gpa_input * coefficient / 100.0, 4)
 
         academic_cutoff = _academic_cutoff(program)
