@@ -774,6 +774,18 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(above.status_code, 200, above.text)
         self.assertEqual(above.json()["items"][0]["traz_input"], 6000)
 
+    def test_record_special_quota_is_note_only(self):
+        result = build_record_results(
+            major_ids=[1], diploma_type="tajrobi", gpa_written=18.0, gpa_total=None,
+            province="تهران", target_field_group="tajrobi",
+            course_types=["savabegh_dolati"], programs=[ACADEMIC_PROGRAM],
+            majors=MAJORS, limit=30, region_zone=2, special_quota="isargaran_25",
+        )
+        self.assertEqual([item["program_id"] for item in result], ["ACA-1"])
+        self.assertEqual(result[0]["special_quota"], "isargaran_25")
+        self.assertTrue(any("سهمیه خاص در داده سوابق" in note for note in result[0]["notes"]))
+        self.assertTrue(any("فیلتر/حدنصاب سهمیه‌ای در مسیر record اعمال نشد" in note for note in result[0]["notes"]))
+
     def test_record_request_uses_gpa_coefficient(self):
         with patch("admission_chance_api.load_programs", return_value=(ACADEMIC_PROGRAM,)),              patch("admission_chance_api.load_majors", return_value=MAJORS):
             response = self.client.post(
