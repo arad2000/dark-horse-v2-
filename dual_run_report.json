@@ -1,0 +1,183 @@
+{
+  "schema": "dual-run-main-liara-v1",
+  "status": "FAIL",
+  "contract": {
+    "comparison": "main engine build vs Liara/deploy engine build",
+    "scoring_formulas_changed": false,
+    "reference_data_must_be_byte_identical": true,
+    "cutover_required_off": true,
+    "top_n": 5,
+    "primary_score_tolerance": 1e-09,
+    "production_input_contract": {
+      "strategy_keys": "sjt_1..sjt_25",
+      "conjoint_keys": "conj_1..conj_15"
+    }
+  },
+  "main": {
+    "ref": "origin/main",
+    "commit": "ce94f573de58c90bdf45ec87473d6bd84e9b228b",
+    "engine_blob_sha": "a299174478e30dea5baa82434eb0ea1c7ea67e34",
+    "engine_sha256": "59d56311191978b3c90677ae333f40fa4fcd9d88283e1aa895f1335346a687af",
+    "engine_bytes": 38066,
+    "function_fingerprints": {
+      "_compute_m_score": "8587e50e490b4bfb6caa273882dc357665ed5c6b63cda595aa0377de26d683fe",
+      "_compute_branch_m_score": "c3c5a4f6c0354d067575ca94edfcdb420d8a51aba8353b0f5967c375ab6a638e",
+      "_compute_s_score": "09163fec0d0e1c009c88fddc67a18f810cfdcfa7a8235c6630a7d09ff999814b",
+      "_compute_v_score": "ec938d3cee25c2e15c3a41ba7c80caa9a3eabe3c4d21c832952af5b331690d1b",
+      "_find_alternative_paths": "735881c0e109769c0e92f828ae99acbd7b73db9efc7bc362b22c1417b2121dbd",
+      "_find_branch_alternative_paths": "6da0d47f5bbf21500968647760c5139511a09e897f36cdb4553aadd72aa45842",
+      "discover_individuality": "a170f67ad1d67795ffc2875fabe43a572133559330684f15bf1ac4cdb91433ff",
+      "recommend_school_branch": "e91baa5528e6796e727ab617ea0f9b82b3f9a3ae22a16e9d8283a004e9c6a91f"
+    }
+  },
+  "liara": {
+    "ref": "origin/deploy/liara-commercial-sandbox",
+    "commit": "e33b7924b79b530df555c090df1c187b58cf5ab7",
+    "engine_blob_sha": "a738481d38fc370531cca8d26b8a31cba40e9b80",
+    "engine_sha256": "7e9dd9c861e9b17378b5c866238dea0d2a941186b268b78aad09923fdf988e4c",
+    "engine_bytes": 39721,
+    "function_fingerprints": {
+      "_compute_m_score": "8587e50e490b4bfb6caa273882dc357665ed5c6b63cda595aa0377de26d683fe",
+      "_compute_branch_m_score": "c3c5a4f6c0354d067575ca94edfcdb420d8a51aba8353b0f5967c375ab6a638e",
+      "_compute_s_score": "09163fec0d0e1c009c88fddc67a18f810cfdcfa7a8235c6630a7d09ff999814b",
+      "_compute_v_score": "ec938d3cee25c2e15c3a41ba7c80caa9a3eabe3c4d21c832952af5b331690d1b",
+      "_precompute_alternative_paths": "f0c4082c54d014247f556f8be89373089bb3ff716b21abc9d5f1ce9e48272426",
+      "_find_alternative_paths": "8e62ae33f6645f1be0cdec7fe961a12892fd0608ce94fd65c31de9f71002ca5b",
+      "_find_branch_alternative_paths": "3ecab3159ac6300cd56370e70cdf15f01494ee71dc5e38e6d8e100af4c9a512f",
+      "_compute_alternative_paths": "bb9cc9f50687aca60011068c148de8c0e99f4d31d1e9bf3421c0aea0f8de953b",
+      "_compute_branch_alternative_paths": "1ae5dbf56cb63bbaad9561247a3780e88f53819cb0362c64b4ecac1edd31e769",
+      "discover_individuality": "a170f67ad1d67795ffc2875fabe43a572133559330684f15bf1ac4cdb91433ff",
+      "recommend_school_branch": "e91baa5528e6796e727ab617ea0f9b82b3f9a3ae22a16e9d8283a004e9c6a91f"
+    }
+  },
+  "reference_data": {
+    "docs/data/micro_motives.json": {
+      "main": {
+        "git_blob_sha": "2d06662cee13bb89cc28d22f7b92d2395cdb8721",
+        "sha256": "49a8f293d509cd3940dc21ed1d6370f1e80542bd753bba28d3c7bfd974ee11b9",
+        "bytes": 180989
+      },
+      "liara": {
+        "git_blob_sha": "2d06662cee13bb89cc28d22f7b92d2395cdb8721",
+        "sha256": "49a8f293d509cd3940dc21ed1d6370f1e80542bd753bba28d3c7bfd974ee11b9",
+        "bytes": 180989
+      },
+      "byte_identical": true
+    },
+    "majors_database_v2.json": {
+      "main": {
+        "git_blob_sha": "95c9bdf7c91de00fee3acd7ccafa8b0a41628912",
+        "sha256": "a6faeea52c789ee387538765f371aa877aff4db1323ad3bfd941e4ef48bd829b",
+        "bytes": 570119
+      },
+      "liara": {
+        "git_blob_sha": "95c9bdf7c91de00fee3acd7ccafa8b0a41628912",
+        "sha256": "a6faeea52c789ee387538765f371aa877aff4db1323ad3bfd941e4ef48bd829b",
+        "bytes": 570119
+      },
+      "byte_identical": true
+    },
+    "school_branches_v2.json": {
+      "main": {
+        "git_blob_sha": "6a7f1a04d04d95ff8d2cca4fb01d3537235555b5",
+        "sha256": "173021e7acec21c24d10003dc0ea5cfbe697809596826eed640262e8e0f572a9",
+        "bytes": 32583
+      },
+      "liara": {
+        "git_blob_sha": "6a7f1a04d04d95ff8d2cca4fb01d3537235555b5",
+        "sha256": "173021e7acec21c24d10003dc0ea5cfbe697809596826eed640262e8e0f572a9",
+        "bytes": 32583
+      },
+      "byte_identical": true
+    },
+    "trait_map_v3.json": {
+      "main": {
+        "git_blob_sha": "466280fe517b7e6ba68e54dbe8535de7444c7f4a",
+        "sha256": "6d11d19b8ac565f84a6e44a6cc8e91832891a557cce694650852b02bfc6a4bc1",
+        "bytes": 9212
+      },
+      "liara": {
+        "git_blob_sha": "466280fe517b7e6ba68e54dbe8535de7444c7f4a",
+        "sha256": "6d11d19b8ac565f84a6e44a6cc8e91832891a557cce694650852b02bfc6a4bc1",
+        "bytes": 9212
+      },
+      "byte_identical": true
+    },
+    "value_poles_v2.json": {
+      "main": {
+        "git_blob_sha": "251d435d57b90e325ff671a4f8c69c530de61494",
+        "sha256": "84390b1d3c00b08f86492e48c8b301d3d3fc61a1f24a5d6727f0f08bbc68c82b",
+        "bytes": 991
+      },
+      "liara": {
+        "git_blob_sha": "251d435d57b90e325ff671a4f8c69c530de61494",
+        "sha256": "84390b1d3c00b08f86492e48c8b301d3d3fc61a1f24a5d6727f0f08bbc68c82b",
+        "bytes": 991
+      },
+      "byte_identical": true
+    }
+  },
+  "fixtures": [
+    {
+      "fixture_id": "fixture_branch_01",
+      "target": "school_branch",
+      "status": "FAIL",
+      "comparison": {
+        "error": "NameError: name 'enough_ranking' is not defined"
+      },
+      "main": null,
+      "liara": null
+    },
+    {
+      "fixture_id": "fixture_branch_02",
+      "target": "school_branch",
+      "status": "FAIL",
+      "comparison": {
+        "error": "NameError: name 'enough_ranking' is not defined"
+      },
+      "main": null,
+      "liara": null
+    },
+    {
+      "fixture_id": "fixture_branch_03",
+      "target": "school_branch",
+      "status": "FAIL",
+      "comparison": {
+        "error": "NameError: name 'enough_ranking' is not defined"
+      },
+      "main": null,
+      "liara": null
+    },
+    {
+      "fixture_id": "fixture_major_01",
+      "target": "major",
+      "status": "FAIL",
+      "comparison": {
+        "error": "NameError: name 'enough_ranking' is not defined"
+      },
+      "main": null,
+      "liara": null
+    },
+    {
+      "fixture_id": "fixture_major_02",
+      "target": "major",
+      "status": "FAIL",
+      "comparison": {
+        "error": "NameError: name 'enough_ranking' is not defined"
+      },
+      "main": null,
+      "liara": null
+    },
+    {
+      "fixture_id": "fixture_major_03",
+      "target": "major",
+      "status": "FAIL",
+      "comparison": {
+        "error": "NameError: name 'enough_ranking' is not defined"
+      },
+      "main": null,
+      "liara": null
+    }
+  ],
+  "verdict": "اختلاف وجود دارد؛ ریشه اختلاف باید قبل از هر پچ بررسی شود."
+}
