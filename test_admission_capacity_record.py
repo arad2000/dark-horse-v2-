@@ -38,7 +38,7 @@ class RecordCapacityDirectTests(unittest.TestCase):
         self.fail("No usable real capacity/major sample found")
 
     def _approved_real_case(self):
-        from admission_sanjesh_engine import load_majors
+        from admission_sanjesh_engine import _canonical_province, _normalize_text, load_majors
 
         major_id = 81
         province = "آذربایجان غربی"
@@ -48,12 +48,13 @@ class RecordCapacityDirectTests(unittest.TestCase):
         self.assertIsInstance(major, dict)
         major_name = str(major.get("name") or "").strip()
         self.assertTrue(major_name)
+        normalized_major = _normalize_text(major_name)
         source_rows = [
             row
             for row in self.rows
-            if str(row.get("major_name") or "").strip() == major_name
-            and str(row.get("province") or "").strip() == province
-            and str(row.get("period") or "").strip() == period
+            if _normalize_text(str(row.get("major_name") or "")) == normalized_major
+            and _canonical_province(str(row.get("province") or "").strip()) == province
+            and _normalize_text(str(row.get("period") or "")) == _normalize_text(period)
             and str(row.get("sanjesh_code") or "").strip()
         ]
         self.assertGreater(
