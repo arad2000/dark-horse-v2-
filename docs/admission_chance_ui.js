@@ -233,7 +233,7 @@
       return 'سهمیه خاص نامعتبر است.';
     }
     if (values.source === 'capacity' && !values.periods.length) {
-      return 'برای نمایش ظرفیت دفترچه، انتخاب دوره الزامی است.';
+      return 'برای نمایش ظرفیت دفترچه، انتخاب دوره الزامی است؛ درخواست ارسال نشد.';
     }
     if (values.source === 'program' && ![1, 2, 3].includes(values.region_zone)) {
       return 'منطقه در مسیر برنامه‌های سوابق باید ۱، ۲ یا ۳ باشد.';
@@ -261,10 +261,15 @@
     return 'cutoff: ' + cutoff + dimension + year;
   }
 
-  function renderCapacityItems(items) {
+  function renderCapacityItems(items, context) {
     if (!Array.isArray(items) || !items.length) {
+      var majorText = context && Array.isArray(context.majorNames) && context.majorNames.length
+        ? context.majorNames.join('، ')
+        : 'رشته‌های انتخاب‌شده';
+      var provinceText = context && context.province ? context.province : 'استان انتخاب‌شده';
+      var periodText = context && context.period ? context.period : 'دوره انتخاب‌شده';
       return '<div class="dh-admission-card dh-admission-empty">' +
-        '<p>برای این رشته/استان/دوره ردیفی در داده ظرفیت دفترچه پیدا نشد.</p>' +
+        '<p>برای رشته «' + escapeHtml(majorText) + '»، استان «' + escapeHtml(provinceText) + '» و دوره «' + escapeHtml(periodText) + '» ردیف ظرفیت منطبق در داده دفترچه سنجش پیدا نشد. این وضعیت به معنی رد شدن داوطلب نیست.</p>' +
       '</div>';
     }
 
@@ -313,9 +318,9 @@
     }).join('');
   }
 
-  function renderItems(items, majorMap, path, source) {
+  function renderItems(items, majorMap, path, source, context) {
     if (path === 'record' && source === 'capacity') {
-      return renderCapacityItems(items);
+      return renderCapacityItems(items, context);
     }
 
     if (!Array.isArray(items) || !items.length) {
@@ -421,10 +426,10 @@
         '<div class="dh-admission-field full">' +
           '<label for="dh-admission-record-source">منبع نمایش *</label>' +
           '<select id="dh-admission-record-source" name="source" required>' +
-            '<option value="capacity" selected>بر اساس ظرفیت دفترچه سنجش</option>' +
-            '<option value="program">بر اساس برنامه‌های پذیرش</option>' +
+            '<option value="capacity" selected>ظرفیت و کد رشته‌محل دفترچه سنجش</option>' +
+            '<option value="program">برآورد بر اساس پرونده‌های پذیرش (معدل/بومی)</option>' +
           '</select>' +
-          '<small class="dh-admission-help">پیش‌فرض، ظرفیت مستقیم دفترچه نمایش داده می‌شود؛ مسیر برنامه‌های پذیرش برای regression حفظ شده است.</small>' +
+          '<small class="dh-admission-help">این دو منبع مستقل‌اند: ظرفیت مستقیم دفترچه فقط ردیف‌های ظرفیت را نشان می‌دهد؛ منبع برنامه بر اساس داده‌های پذیرش، معدل و بومی‌گزینی کار می‌کند.</small>' +
         '</div>' +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-record-diploma">نوع دیپلم *</label>' +
@@ -452,11 +457,12 @@
             '<option value="">انتخاب دوره</option>' + optionsHtml(RECORD_CAPACITY_PERIOD_OPTIONS) +
           '</select>' +
         '</div>' +
-        '<div class="dh-admission-field dh-record-program-only" id="dh-admission-record-region-wrap">' +
-          '<label for="dh-admission-record-region">منطقه *</label>' +
+        '<div class="dh-admission-field" id="dh-admission-record-region-wrap">' +
+          '<label for="dh-admission-record-region" id="dh-admission-record-region-label">منطقه *</label>' +
           '<select id="dh-admission-record-region" name="region_zone" required>' +
             '<option value="">انتخاب منطقه</option>' + optionsHtml(REGION_OPTIONS) +
           '</select>' +
+          '<small class="dh-admission-help" id="dh-admission-record-region-help">در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-record-special-quota">سهمیه خاص</label>' +
@@ -531,10 +537,21 @@
       region.required = !isCapacity;
       region.disabled = isCapacity;
     }
+    var regionLabel = document.getElementById('dh-admission-record-region-label');
+    var regionHelp = document.getElementById('dh-admission-record-region-help');
+    if (regionWrap) regionWrap.hidden = false;
+    if (regionLabel) {
+      regionLabel.textContent = isCapacity ? 'منطقه (در منبع ظرفیت استفاده نمی‌شود)' : 'منطقه *';
+    }
+    if (regionHelp) {
+      regionHelp.textContent = isCapacity
+        ? 'در داده ظرفیت دفترچه سوابق، سهمیه مناطق ۱/۲/۳ برای فیلتر ظرفیت تعریف نشده است.'
+        : 'در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.';
+    }
     if (info) {
       info.textContent = isCapacity
-        ? 'در منبع ظرفیت، فقط ردیف‌های مستقیم داده دفترچه با رشته/استان/دوره دقیق نمایش داده می‌شوند؛ درصد یا احتمال قبولی محاسبه نمی‌شود.'
-        : 'در مسیر برنامه‌های پذیرش، منطقه برای حفظ قرارداد قبلی لازم است و نتایج مسیر program2s نمایش داده می‌شوند.';
+        ? 'این منبع «ظرفیت و کد رشته‌محل دفترچه سنجش» است؛ فقط ردیف‌های مستقیم دفترچه با رشته/استان/دوره دقیق نمایش داده می‌شوند و احتمال قبولی محاسبه نمی‌شود.'
+        : 'این منبع «برآورد بر اساس پرونده‌های پذیرش (معدل/بومی)» است؛ منطقه برای حفظ قرارداد قبلی استفاده می‌شود.';
     }
     if (submit) {
       submit.textContent = isCapacity
@@ -607,12 +624,21 @@
       var resultPath = payload && payload.admission_path ? payload.admission_path : path;
       if (results) {
         var majorMap = buildMajorMap(recommendations);
+        var capacityContext = values.source === 'capacity'
+          ? {
+              majorNames: majorIds.map(function (id) {
+                return majorMap[String(id)] || ('رشته ' + String(id));
+              }),
+              province: values.school_province_3y,
+              period: values.periods[0] || ''
+            }
+          : null;
         results.innerHTML =
           '<p class="dh-admission-summary">' +
             'مسیر: <strong>' + escapeHtml(resultPath === 'record' ? 'سوابق تحصیلی' : 'با آزمون') + '</strong> · ' +
             'تعداد نتایج: <strong>' + escapeHtml(payload.count || 0) + '</strong> مورد' +
           '</p>' +
-          renderItems(payload.items || [], majorMap, resultPath, payload.source || values.source) +
+          renderItems(payload.items || [], majorMap, resultPath, payload.source || values.source, capacityContext) +
           '<div class="dh-admission-disclaimer">' +
             escapeHtml(payload.disclaimer || 'نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیستند.') +
           '</div>';
