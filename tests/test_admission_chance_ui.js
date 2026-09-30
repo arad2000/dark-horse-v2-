@@ -39,6 +39,12 @@ assert.match(source, /معدل کل/);
 assert.match(source, /ضریب معدل/);
 assert.match(source, /معدل مؤثر/);
 assert.match(source, /DHAdmissionChanceUI/);
+assert.match(source, /RECORD_CAPACITY_PERIOD_OPTIONS/);
+assert.match(source, /source: values.source/);
+assert.match(source, /payload.periods = values.periods/);
+assert.match(source, /sanjesh_code/);
+assert.match(source, /capacity_total/);
+assert.match(source, /برای این رشته\/استان\/دوره ردیفی در داده ظرفیت دفترچه پیدا نشد/);
 assert.doesNotMatch(source, /quota_type/);
 assert.doesNotMatch(source, /darkhorse\/discover/);
 assert.doesNotMatch(source, /individuality_fit\s*=|individuality_fit\s*=/);
@@ -50,7 +56,7 @@ assert.match(css, /\.dh-admission-tabs/);
 assert.match(css, /\.dh-admission-tab/);
 assert.match(css, /@media/);
 
-assert.match(indexSource, /admission_chance_ui\.css\?v=3/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=5/);
+assert.match(indexSource, /admission_chance_ui\.css\?v=4/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=6/);
 
 console.log('admission_chance_ui phase3 regression: PASS');

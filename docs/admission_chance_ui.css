@@ -230,3 +230,32 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.dh-admission-capacity-quota {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border-right: 3px solid rgba(240, 192, 64, 0.45);
+  border-radius: 8px;
+  background: rgba(240, 192, 64, 0.05);
+  color: #d8caa8;
+  font-size: 0.76rem;
+  line-height: 1.8;
+}
+.dh-admission-capacity-notes {
+  margin: 10px 0 0;
+  padding: 9px 22px 0 0;
+  border-top: 1px solid #2c2c36;
+  color: #bfb49c;
+  font-size: 0.74rem;
+  line-height: 1.8;
+}
+.dh-admission-capacity-notes li {
+  margin: 2px 0;
+}
+.dh-admission-capacity-card .dh-admission-major strong {
+  color: #f0c040;
+}
+.dh-admission-capacity-card .dh-admission-meta {
+  grid-template-columns: 1fr;
+}
