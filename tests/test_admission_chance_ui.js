@@ -44,7 +44,7 @@ assert.match(source, /source: values.source/);
 assert.match(source, /payload.periods = values.periods/);
 assert.match(source, /sanjesh_code/);
 assert.match(source, /capacity_total/);
-assert.match(source, /برای این رشته\/استان\/دوره ردیفی در داده ظرفیت دفترچه پیدا نشد/);
+assert.match(source, /برای رشته «.*»، استان «.*» و دوره «.*» ردیف ظرفیت منطبق در داده دفترچه سنجش پیدا نشد/);
 assert.doesNotMatch(source, /quota_type/);
 assert.doesNotMatch(source, /darkhorse\/discover/);
 assert.doesNotMatch(source, /individuality_fit\s*=|individuality_fit\s*=/);
