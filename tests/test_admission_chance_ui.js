@@ -10,6 +10,8 @@ assert.match(source, /state\.majorsResult/);
 assert.match(source, /major_ids/);
 assert.match(source, /admission_path:\s*'exam'/);
 assert.match(source, /admission_path:\s*'record'/);
+assert.match(source, /specialQuota\.disabled = isCapacity/);
+assert.match(source, /ظرفیت کل دفترچه نمایش داده می‌شود؛ سهمیه روی فیلتر صندلی اثر ندارد/);
 assert.match(source, /rank_in_quota/);
 assert.match(source, /region_zone/);
 assert.match(source, /special_quota/);
@@ -25,7 +27,7 @@ assert.match(source, /isargaran_25/);
 assert.match(source, /isargaran_5/);
 assert.match(source, /shahid/);
 assert.match(source, /dh-admission-record-region/);
-assert.match(source, /dh-admission-record-special-quota/);
+assert.match(source, /dh-admission-record-special-quota-wrap/);
 assert.match(source, /region_zone: values.region_zone/);
 assert.match(source, /special_quota: values.special_quota/);
 assert.match(source, /region_zone: Number\(form\.region_zone\.value\)/);
@@ -41,11 +43,16 @@ assert.match(source, /معدل مؤثر/);
 assert.match(source, /DHAdmissionChanceUI/);
 assert.match(source, /RECORD_CAPACITY_PERIOD_OPTIONS/);
 assert.match(source, /source: values.source/);
-assert.match(source, /payload.periods = values.periods/);
+assert.match(source, /payload\.periods = values\.periods/);
 assert.match(source, /sanjesh_code/);
 assert.match(source, /capacity_total/);
 assert.match(source, /برای رشته «.*»، استان «.*» و دوره «.*» ردیف ظرفیت منطبق در داده دفترچه سنجش پیدا نشد/);
 assert.doesNotMatch(source, /quota_type/);
+const recordCapacityPayloadBlock = source.slice(
+  source.indexOf("var payload = {"),
+  source.indexOf("      return payload;", source.indexOf("var payload = {"))
+);
+assert.doesNotMatch(recordCapacityPayloadBlock, /special_quota:\s*values\.special_quota/);
 assert.doesNotMatch(source, /darkhorse\/discover/);
 assert.doesNotMatch(source, /individuality_fit\s*=|individuality_fit\s*=/);
 
@@ -57,6 +64,6 @@ assert.match(css, /\.dh-admission-tab/);
 assert.match(css, /@media/);
 
 assert.match(indexSource, /admission_chance_ui\.css\?v=4/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=7/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=8/);
 
 console.log('admission_chance_ui phase3 regression: PASS');
