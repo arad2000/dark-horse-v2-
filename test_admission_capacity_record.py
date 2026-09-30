@@ -37,6 +37,40 @@ class RecordCapacityDirectTests(unittest.TestCase):
                 return ids[0], province, period
         self.fail("No usable real capacity/major sample found")
 
+    def _approved_real_case(self):
+        from admission_sanjesh_engine import load_majors
+
+        major_id = 81
+        province = "آذربایجان غربی"
+        period = "روزانه"
+        majors = load_majors()
+        major = majors.get(str(major_id))
+        self.assertIsInstance(major, dict)
+        major_name = str(major.get("name") or "").strip()
+        self.assertTrue(major_name)
+        source_rows = [
+            row
+            for row in self.rows
+            if str(row.get("major_name") or "").strip() == major_name
+            and str(row.get("province") or "").strip() == province
+            and str(row.get("period") or "").strip() == period
+            and str(row.get("sanjesh_code") or "").strip()
+        ]
+        self.assertGreater(
+            len(source_rows),
+            0,
+            "Approved capacity smoke sample major_id=81 / آذربایجان غربی / روزانه is missing from source",
+        )
+        return major_id, province, period, major_name
+
+    def test_approved_major_81_west_azerbaijan_daily_returns_capacity(self):
+        major_id, province, period, _ = self._approved_real_case()
+        items = build_record_capacity_results(
+            major_ids=[major_id], province=province, periods=[period]
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(items[0]["sanjesh_code"])
+
     def test_real_major_period_province_returns_capacity_and_sanjesh_code(self):
         major_id, province, period = self._real_case()
         items = build_record_capacity_results(
@@ -49,27 +83,16 @@ class RecordCapacityDirectTests(unittest.TestCase):
         self.assertIn("capacity_total", items[0])
         self.assertIsInstance(items[0]["notes"], list)
 
-    def test_wrong_province_removes_or_reduces_rows(self):
-        major_id, province, period = self._real_case()
+    def test_other_province_reduces_or_removes_rows_for_approved_case(self):
+        major_id, province, period, _ = self._approved_real_case()
         baseline = build_record_capacity_results(
             major_ids=[major_id], province=province, periods=[period]
         )
-        provinces_for_period = sorted(
-            {
-                str(row.get("province") or "").strip()
-                for row in self.rows
-                if str(row.get("province") or "").strip()
-                and str(row.get("period") or "").strip() == period
-            }
-        )
-        wrong = next((candidate for candidate in provinces_for_period if candidate != province), None)
-        if wrong is None:
-            self.skipTest("Source has no alternate province for selected sample")
         changed = build_record_capacity_results(
-            major_ids=[major_id], province=wrong, periods=[period]
+            major_ids=[major_id], province="تهران", periods=[period]
         )
         self.assertLessEqual(len(changed), len(baseline))
-        self.assertTrue(all(item["province"] == wrong for item in changed))
+        self.assertTrue(all(item["province"] == "تهران" for item in changed))
 
     def test_unknown_period_returns_no_items(self):
         major_id, province, _ = self._real_case()
@@ -79,6 +102,26 @@ class RecordCapacityDirectTests(unittest.TestCase):
             periods=["__period_not_in_sanjesh_source__"],
         )
         self.assertEqual(items, [])
+
+    def test_blank_source_province_never_matches_named_province(self):
+        major_id, province, period, major_name = self._approved_real_case()
+        blank_row = {
+            "sanjesh_code": "__blank-province-test__",
+            "major_name": major_name,
+            "period": period,
+            "province": "",
+            "campus": "blank-province-test",
+            "capacity": 99,
+        }
+        with patch(
+            "admission_capacity_record.load_record_capacity_rows",
+            return_value=tuple(self.rows) + (blank_row,),
+        ):
+            items = build_record_capacity_results(
+                major_ids=[major_id], province=province, periods=[period]
+            )
+        self.assertTrue(all(item["sanjesh_code"] != blank_row["sanjesh_code"] for item in items))
+        self.assertTrue(all(str(item["province"]).strip() == province for item in items))
 
     def test_named_province_never_returns_blank_province(self):
         major_id, province, period = self._real_case()
