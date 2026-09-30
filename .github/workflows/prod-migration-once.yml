@@ -1,0 +1,63 @@
+name: Production DB Migration Once
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type MIGRATE_0011 to run the one-off production migration"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    if: github.ref == 'refs/heads/deploy/liara-commercial-sandbox' && inputs.confirm == 'MIGRATE_0011'
+    runs-on: ubuntu-latest
+    environment: production-migration
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+    steps:
+      - name: Checkout production branch
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/liara-commercial-sandbox
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Require production database URL
+        run: test -n "$DATABASE_URL"
+
+      - name: Apply only OTP request IP migration
+        run: alembic upgrade 0011_otp_request_ip
+
+      - name: Verify production migration state
+        run: |
+          alembic current
+          python - <<'PY'
+          import os
+          from sqlalchemy import create_engine, inspect, text
+
+          engine = create_engine(os.environ["DATABASE_URL"])
+          with engine.connect() as conn:
+              revisions = [str(v) for v in conn.execute(
+                  text("SELECT version_num FROM alembic_version ORDER BY version_num")
+              ).scalars().all()]
+              inspector = inspect(conn)
+              columns = {c["name"] for c in inspector.get_columns("phone_verifications")}
+              indexes = {i["name"] for i in inspector.get_indexes("phone_verifications")}
+
+          print(f"alembic_revisions={revisions}")
+          print(f"phone_verifications_columns={sorted(columns)}")
+          print(f"phone_verification_indexes={sorted(indexes)}")
+          assert "0011_otp_request_ip" in revisions
+          assert "request_ip" in columns
+          assert "idx_phone_verification_ip_created" in indexes
+          PY
