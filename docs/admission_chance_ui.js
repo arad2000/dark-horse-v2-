@@ -39,6 +39,16 @@
     { value: 'shahid', label: 'خانواده شهدا' }
   ];
 
+  var RECORD_CAPACITY_PERIOD_OPTIONS = [
+    { value: 'روزانه', label: 'روزانه' },
+    { value: 'نوبت دوم', label: 'نوبت دوم' },
+    { value: 'پیام نور', label: 'پیام نور' },
+    { value: 'غیرانتفاعی', label: 'غیرانتفاعی' },
+    { value: 'مجازی', label: 'مجازی' },
+    { value: 'پردیس خودگردان', label: 'پردیس خودگردان' },
+    { value: 'روزانه – غیردولتی', label: 'روزانه – غیردولتی' }
+  ];
+
   var DIPLOMA_OPTIONS = [
     { value: 'riazi', label: 'ریاضی‌فیزیک' },
     { value: 'tajrobi', label: 'علوم تجربی' },
@@ -119,12 +129,16 @@
     if (path === 'record') {
       var diploma = String(form.diploma_type.value || '').trim();
       var target = String(form.target_field_group.value || '').trim();
+      var source = String(form.source.value || 'capacity').trim() || 'capacity';
+      var period = String(form.periods.value || '').trim();
       var gpaField = diploma === 'other_fani' ? 'gpa_total' : 'gpa_written';
       return {
         school_province_3y: String(form.school_province_3y.value || '').trim(),
         diploma_type: diploma,
         target_field_group: target || null,
-        region_zone: Number(form.region_zone.value),
+        source: source,
+        periods: period ? [period] : [],
+        region_zone: form.region_zone.value ? Number(form.region_zone.value) : null,
         special_quota: String(form.special_quota.value || 'none').trim() || 'none',
         gpa_field: gpaField,
         gpa_value: Number(form[gpaField].value)
@@ -149,14 +163,19 @@
     if (path === 'record') {
       var payload = {
         admission_path: 'record',
+        source: values.source || 'capacity',
         major_ids: majorIds,
         province: values.school_province_3y || null,
         diploma_type: values.diploma_type || null,
-        target_field_group: values.target_field_group || null,
-        region_zone: values.region_zone,
         special_quota: values.special_quota,
         limit: 30
       };
+      if (values.source === 'capacity') {
+        payload.periods = values.periods;
+      } else {
+        payload.target_field_group = values.target_field_group || null;
+        payload.region_zone = values.region_zone;
+      }
       if (values.diploma_type === 'other_fani') {
         payload.gpa_total = values.gpa_value;
       } else {
@@ -207,11 +226,17 @@
     }
 
     if (!values.diploma_type) return 'نوع دیپلم را انتخاب کن.';
-    if (![1, 2, 3].includes(values.region_zone)) {
-      return 'منطقه باید ۱، ۲ یا ۳ باشد.';
+    if (!['capacity', 'program'].includes(values.source)) {
+      return 'منبع سوابق نامعتبر است.';
     }
     if (!['none', 'isargaran_25', 'isargaran_5', 'shahid'].includes(values.special_quota)) {
       return 'سهمیه خاص نامعتبر است.';
+    }
+    if (values.source === 'capacity' && !values.periods.length) {
+      return 'برای نمایش ظرفیت دفترچه، انتخاب دوره الزامی است.';
+    }
+    if (values.source === 'program' && ![1, 2, 3].includes(values.region_zone)) {
+      return 'منطقه در مسیر برنامه‌های سوابق باید ۱، ۲ یا ۳ باشد.';
     }
     if (!Number.isFinite(values.gpa_value) || values.gpa_value < 0 || values.gpa_value > 20) {
       return values.gpa_field === 'gpa_total'
