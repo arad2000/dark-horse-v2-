@@ -10,6 +10,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from admission_capacity_record import build_record_capacity_results
 from admission_sanjesh_engine import (
     AdmissionInputError,
     DIPLOMA_VALUES,
@@ -60,6 +61,14 @@ class AdmissionChanceRequest(BaseModel):
     target_field_group: str | None = Field(default=None, max_length=32)
 
     course_types: list[str] = Field(default_factory=list)
+    periods: list[str] = Field(
+        default_factory=list,
+        description="دوره‌های دقیق منبع ظرفیت برای source=capacity.",
+    )
+    source: Literal["program", "capacity"] = Field(
+        default="program",
+        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش.",
+    )
     limit: int = Field(default=30, ge=1, le=100)
 
     # Legacy fields accepted only as a compatibility envelope.
@@ -206,6 +215,47 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
             }
 
         if path == "record":
+            if request.source == "capacity":
+                if not request.periods:
+                    raise AdmissionInputError("برای source=capacity انتخاب حداقل یک period اجباری است.")
+                province = _canonical_province(request.province)
+                if province is None:
+                    raise AdmissionInputError("استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید.")
+                diploma = _canonical_diploma(request.diploma_type or "")
+                if diploma not in DIPLOMA_VALUES:
+                    raise AdmissionInputError(
+                        "diploma_type باید یکی از riazi، tajrobi، ensani، maaref یا other_fani باشد."
+                    )
+                _record_input_gpa(diploma, request.gpa_written, request.gpa_total)
+                special = _normalize_text(request.special_quota or "none")
+                if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
+                    raise AdmissionInputError("special_quota نامعتبر است.")
+                items = build_record_capacity_results(
+                    major_ids=request.major_ids,
+                    province=province,
+                    periods=request.periods,
+                    special_quota=special,
+                    limit=request.limit,
+                )
+                notes: list[str] = []
+                if not items:
+                    notes.append("برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت منطبق در منبع سنجش یافت نشد.")
+                return {
+                    "admission_path": "record",
+                    "source": "capacity",
+                    "items": items,
+                    "count": len(items),
+                    "context": {
+                        "major_ids": request.major_ids,
+                        "diploma_type": diploma,
+                        "province": province,
+                        "periods": request.periods,
+                        "special_quota": special,
+                    },
+                    "notes": notes,
+                    "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ این خروجی احتمال قبولی نیست و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                }
+
             record = _resolve_record_request(request)
             items = build_record_results(
                 major_ids=request.major_ids,
@@ -224,6 +274,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
             )
             return {
                 "admission_path": "record",
+                "source": "program",
                 "items": items,
                 "count": len(items),
                 "context": {
