@@ -385,7 +385,6 @@
           '<select id="dh-admission-region" name="region_zone" required>' +
             '<option value="">انتخاب منطقه</option>' + optionsHtml(REGION_OPTIONS) +
           '</select>' +
-          '<small class="dh-admission-help" id="dh-admission-record-region-help">در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-special-quota">سهمیه خاص</label>' +
@@ -463,6 +462,7 @@
           '<select id="dh-admission-record-region" name="region_zone" required>' +
             '<option value="">انتخاب منطقه</option>' + optionsHtml(REGION_OPTIONS) +
           '</select>' +
+          '<small class="dh-admission-help" id="dh-admission-record-region-help">در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-record-special-quota">سهمیه خاص</label>' +
