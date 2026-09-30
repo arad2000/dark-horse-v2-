@@ -138,7 +138,7 @@
         target_field_group: target || null,
         source: source,
         periods: period ? [period] : [],
-        region_zone: form.region_zone.value ? Number(form.region_zone.value) : null,
+        region_zone: Number(form.region_zone.value),
         special_quota: String(form.special_quota.value || 'none').trim() || 'none',
         gpa_field: gpaField,
         gpa_value: Number(form[gpaField].value)
@@ -444,7 +444,7 @@
           '<select id="dh-admission-record-province" name="school_province_3y" required>' +
             '<option value="">انتخاب استان</option>' + provinceOptionsHtml() +
           '</select>' +
-          '<small class="dh-admission-help">استان همچنان فقط از فهرست ۳۱ استان انتخاب می‌شود.</small>' +
+          '<small class="dh-admission-help">استان همچنان فقط از فهرست ۳۱ استان انتخاب می‌شود؛ استان محل سکونت فعلی را وارد نکن.</small>' +
         '</div>' +
         '<div class="dh-admission-field dh-record-capacity-only" id="dh-admission-record-period-wrap">' +
           '<label for="dh-admission-record-period">دوره دفترچه *</label>' +
@@ -471,7 +471,7 @@
           '<small class="dh-admission-help" id="dh-admission-record-gpa-help">برای دیپلم‌های نظری، gpa_written و برای دیپلم فنی/کاردانش، gpa_total ارسال می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-info full" id="dh-admission-record-info">' +
-          'در منبع ظرفیت، فقط ردیف‌های مستقیم داده دفترچه با رشته/استان/دوره دقیق نمایش داده می‌شوند؛ درصد یا احتمال قبولی محاسبه نمی‌شود.' +
+          'این مسیر رتبه نمی‌گیرد؛ در منبع ظرفیت فقط ردیف‌های مستقیم داده دفترچه با رشته/استان/دوره دقیق نمایش داده می‌شوند؛ درصد یا احتمال قبولی محاسبه نمی‌شود.' +
         '</div>' +
         '<button class="dh-admission-submit full" id="dh-admission-record-submit" type="submit">📘 مشاهده ظرفیت دفترچه</button>' +
       '</form>'
