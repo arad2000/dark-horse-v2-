@@ -167,7 +167,6 @@
         major_ids: majorIds,
         province: values.school_province_3y || null,
         diploma_type: values.diploma_type || null,
-        special_quota: values.special_quota,
         limit: 30
       };
       if (values.source === 'capacity') {
@@ -175,6 +174,7 @@
       } else {
         payload.target_field_group = values.target_field_group || null;
         payload.region_zone = values.region_zone;
+        payload.special_quota = values.special_quota;
       }
       if (values.diploma_type === 'other_fani') {
         payload.gpa_total = values.gpa_value;
@@ -464,12 +464,12 @@
           '</select>' +
           '<small class="dh-admission-help" id="dh-admission-record-region-help">در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.</small>' +
         '</div>' +
-        '<div class="dh-admission-field">' +
+        '<div class="dh-admission-field" id="dh-admission-record-special-quota-wrap">' +
           '<label for="dh-admission-record-special-quota">سهمیه خاص</label>' +
           '<select id="dh-admission-record-special-quota" name="special_quota">' +
             optionsHtml(SPECIAL_QUOTA_OPTIONS) +
           '</select>' +
-          '<small class="dh-admission-help">در مسیر ظرفیت، فقط به‌عنوان یادداشت نگه‌داری می‌شود.</small>' +
+          '<small class="dh-admission-help" id="dh-admission-record-special-quota-help">در مسیر برنامه‌های پذیرش، سهمیه خاص برای فیلتر نتایج استفاده می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field full">' +
           '<label id="dh-admission-record-gpa-label" for="dh-admission-record-gpa">معدل کتبی نهایی *</label>' +
@@ -525,8 +525,11 @@
     var isCapacity = source === 'capacity';
     var periodWrap = document.getElementById('dh-admission-record-period-wrap');
     var regionWrap = document.getElementById('dh-admission-record-region-wrap');
+    var specialQuotaWrap = document.getElementById('dh-admission-record-special-quota-wrap');
     var period = form.periods;
     var region = form.region_zone;
+    var specialQuota = form.special_quota;
+    var specialQuotaHelp = document.getElementById('dh-admission-record-special-quota-help');
     var info = document.getElementById('dh-admission-record-info');
     var submit = document.getElementById('dh-admission-record-submit');
 
@@ -536,6 +539,12 @@
     if (region) {
       region.required = !isCapacity;
       region.disabled = isCapacity;
+    }
+    if (specialQuota) {
+      specialQuota.disabled = isCapacity;
+    }
+    if (specialQuotaWrap) {
+      specialQuotaWrap.classList.toggle('dh-admission-capacity-disabled', isCapacity);
     }
     var regionLabel = document.getElementById('dh-admission-record-region-label');
     var regionHelp = document.getElementById('dh-admission-record-region-help');
@@ -547,6 +556,11 @@
       regionHelp.textContent = isCapacity
         ? 'در داده ظرفیت دفترچه سوابق، سهمیه مناطق ۱/۲/۳ برای فیلتر ظرفیت تعریف نشده است.'
         : 'در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.';
+    }
+    if (specialQuotaHelp) {
+      specialQuotaHelp.textContent = isCapacity
+        ? 'در منبع ظرفیت، ظرفیت کل دفترچه نمایش داده می‌شود؛ سهمیه روی فیلتر صندلی اثر ندارد و در درخواست ظرفیت ارسال نمی‌شود.'
+        : 'در مسیر برنامه‌های پذیرش، سهمیه خاص برای فیلتر نتایج استفاده می‌شود.';
     }
     if (info) {
       info.textContent = isCapacity
