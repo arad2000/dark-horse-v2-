@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent
 CAPACITY_PATHS = {
     "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1404_programs.json",
     "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1404_programs.json",
+    "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1404_programs.json",
 }
 EXAM_METHOD = "با آزمون"
 UNKNOWN_PERIOD = "نامشخص"
@@ -52,7 +53,7 @@ def load_exam_capacity_rows(group: str = "riazi") -> tuple[dict[str, Any], ...]:
         path = CAPACITY_PATHS[str(group)]
     except KeyError as exc:
         raise AdmissionInputError(
-            "group باید یکی از riazi یا tajrobi باشد."
+            "group باید یکی از riazi، tajrobi یا ensani باشد."
         ) from exc
 
     payload = json.loads(path.read_text(encoding="utf-8"))
