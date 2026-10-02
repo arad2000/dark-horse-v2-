@@ -68,7 +68,11 @@ class AdmissionChanceRequest(BaseModel):
     )
     source: Literal["program", "capacity"] = Field(
         default="program",
-        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه ریاضی ۱۴۰۴ متصل است.",
+        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه گروه انتخاب‌شده ۱۴۰۴ متصل است.",
+    )
+    group: Literal["riazi", "tajrobi"] = Field(
+        default="riazi",
+        description="گروه منبع exam+capacity: riazi یا tajrobi.",
     )
     include_unknown: bool = Field(
         default=False,
@@ -209,6 +213,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     periods=request.periods,
                     include_unknown=request.include_unknown,
                     limit=request.limit,
+                    group=request.group,
                 )
                 notes = [
                     "منبع مستقیم ظرفیت دفترچه علوم ریاضی و فنی ۱۴۰۴ است؛ خروجی احتمال قبولی نیست.",
@@ -222,6 +227,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 return {
                     "admission_path": "exam",
                     "source": "capacity",
+                    "group": request.group,
                     "items": items,
                     "count": len(items),
                     "context": {
