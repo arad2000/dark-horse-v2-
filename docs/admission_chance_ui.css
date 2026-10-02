@@ -1,0 +1,50 @@
+/* Admission chance UI — capacity-tab additions only. */
+.dh-admission-field select:disabled,
+.dh-admission-field input:disabled {
+  opacity: .62;
+  cursor: not-allowed;
+  background: rgba(255,255,255,.04);
+}
+
+.dh-admission-disabled-group {
+  grid-column: 1 / -1;
+}
+
+.dh-admission-info {
+  background: rgba(240,192,64,.06);
+  border: 1px solid rgba(240,192,64,.24);
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.9;
+  font-size: .82rem;
+  color: #c8b98d;
+}
+
+.dh-admission-capacity-card .dh-admission-card-head {
+  align-items: flex-start;
+}
+
+.dh-admission-code {
+  white-space: nowrap;
+  font-size: .78rem;
+  color: #f0c040;
+  border: 1px solid rgba(240,192,64,.3);
+  border-radius: 999px;
+  padding: 5px 9px;
+}
+
+.dh-admission-capacity-card .dh-admission-meta {
+  gap: 7px 12px;
+}
+
+.dh-admission-capacity-card .dh-admission-note {
+  margin: 7px 0 0;
+  color: #d2c8af;
+}
+
+@media (max-width: 420px) {
+  .dh-admission-card-head {
+    gap: 8px;
+    flex-direction: column;
+  }
+}
