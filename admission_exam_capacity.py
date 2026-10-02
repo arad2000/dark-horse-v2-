@@ -23,6 +23,15 @@ CAPACITY_PATHS = {
     "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1404_programs.json",
     "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1404_programs.json",
     "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1404_programs.json",
+    "honar": ROOT / "docs" / "data" / "sanjesh_honar_1404_programs.json",
+}
+
+GROUP_MAJOR_ALIASES = {
+    # majors_database_v2 uses "طراحی گرافیک", while the 1404 Honar booklet
+    # extraction records the exam major as "گرافيک".
+    "honar": {
+        140: {"گرافيک"},
+    },
 }
 EXAM_METHOD = "با آزمون"
 UNKNOWN_PERIOD = "نامشخص"
@@ -46,14 +55,14 @@ def _extract_rows(payload: Any, source_name: str) -> list[dict[str, Any]]:
     return [row for row in rows if isinstance(row, dict)]
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=4)
 def load_exam_capacity_rows(group: str = "riazi") -> tuple[dict[str, Any], ...]:
     """Load one group-specific 1404 extraction read-only."""
     try:
         path = CAPACITY_PATHS[str(group)]
     except KeyError as exc:
         raise AdmissionInputError(
-            "group باید یکی از riazi، tajrobi یا ensani باشد."
+            "group باید یکی از riazi، tajrobi، ensani یا honar باشد."
         ) from exc
 
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -63,9 +72,13 @@ def load_exam_capacity_rows(group: str = "riazi") -> tuple[dict[str, Any], ...]:
     return tuple(rows)
 
 
-def _resolved_major_names(major_ids: list[int]) -> set[str]:
+def _resolved_major_names(
+    major_ids: list[int],
+    group: str,
+) -> set[str]:
     majors = load_majors()
     names: set[str] = set()
+    aliases = GROUP_MAJOR_ALIASES.get(str(group), {})
     for major_id in major_ids:
         major = majors.get(str(int(major_id)))
         if not isinstance(major, dict) or not str(major.get("name") or "").strip():
@@ -73,6 +86,8 @@ def _resolved_major_names(major_ids: list[int]) -> set[str]:
                 f"major_id={major_id} در majors_database_v2.json پیدا نشد."
             )
         names.add(_normalize_text(major.get("name")))
+        for alias in aliases.get(int(major_id), set()):
+            names.add(_normalize_text(alias))
     return names
 
 
@@ -103,7 +118,7 @@ def build_exam_capacity_results(
             "استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید."
         )
 
-    major_names = _resolved_major_names(major_ids)
+    major_names = _resolved_major_names(major_ids, group)
     requested_periods: list[str] = []
     for raw in periods:
         value = str(raw or "").strip()
