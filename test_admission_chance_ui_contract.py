@@ -14,7 +14,7 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         cls.index = INDEX.read_text(encoding="utf-8")
 
     def test_exam_tab_uses_capacity_contract(self):
-        self.assertIn("data-source="capacity"", self.ui)
+        self.assertIn('data-source="capacity"', self.ui)
         self.assertIn("source: 'capacity'", self.ui)
         self.assertIn("admission_path: 'exam'", self.ui)
         self.assertIn("periods: values.period ? [values.period] : []", self.ui)
