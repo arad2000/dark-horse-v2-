@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from admission_capacity_record import build_record_capacity_results
+from admission_exam_capacity import build_exam_capacity_results
 from admission_sanjesh_engine import (
     AdmissionInputError,
     DIPLOMA_VALUES,
@@ -67,7 +68,11 @@ class AdmissionChanceRequest(BaseModel):
     )
     source: Literal["program", "capacity"] = Field(
         default="program",
-        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش.",
+        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه ریاضی ۱۴۰۴ متصل است.",
+    )
+    include_unknown: bool = Field(
+        default=False,
+        description="در مسیر exam+capacity فقط برای period=نامشخص؛ پیش‌فرض false. province خالی هرگز استنباط نمی‌شود.",
     )
     limit: int = Field(default=30, ge=1, le=100)
 
@@ -185,6 +190,52 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
         path = _resolve_legacy_path(request)
         if not request.major_ids:
             raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
+
+        if path == "exam":
+            if request.source == "capacity":
+                if not request.periods:
+                    raise AdmissionInputError(
+                        "برای exam با source=capacity انتخاب حداقل یک period اجباری است."
+                    )
+                province = _canonical_province(request.province)
+                if province is None:
+                    raise AdmissionInputError(
+                        "استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید."
+                    )
+
+                items = build_exam_capacity_results(
+                    major_ids=request.major_ids,
+                    province=province,
+                    periods=request.periods,
+                    include_unknown=request.include_unknown,
+                    limit=request.limit,
+                )
+                notes = [
+                    "منبع مستقیم ظرفیت دفترچه علوم ریاضی و فنی ۱۴۰۴ است؛ خروجی احتمال قبولی نیست.",
+                    "rank_in_quota در این مسیر فقط اطلاعاتی است و هیچ cutoff رتبه‌ای اعمال نمی‌شود.",
+                    "region_zone و special_quota روی capacity کل فیلتر نمی‌شوند؛ در این موج فقط یادداشت/اطلاعات قراردادی هستند.",
+                ]
+                if not items:
+                    notes.append(
+                        "برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت با آزمون یافت نشد."
+                    )
+                return {
+                    "admission_path": "exam",
+                    "source": "capacity",
+                    "items": items,
+                    "count": len(items),
+                    "context": {
+                        "major_ids": request.major_ids,
+                        "rank_in_quota": request.rank_in_quota,
+                        "region_zone": request.region_zone,
+                        "special_quota": _normalize_text(request.special_quota or "none"),
+                        "province": province,
+                        "periods": request.periods,
+                        "include_unknown": request.include_unknown,
+                    },
+                    "notes": notes,
+                    "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ جایگزین دفترچه و اعلام رسمی سنجش نیستند و هیچ درصد شانس عددی ارائه نمی‌کنند.",
+                }
 
         if path == "exam":
             exam = _resolve_exam_request(request)
