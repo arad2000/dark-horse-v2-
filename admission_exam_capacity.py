@@ -1,7 +1,7 @@
-"""Direct read-only selector for 1404 Riazi exam-capacity rows.
+"""Direct read-only selector for 1404 exam-capacity rows.
 
 This module is isolated from the existing exam cutoff/ranking path.
-It reads only the owner-provided Sanjesh Riazi 1404 extraction and never
+It reads only the owner-provided group-specific Sanjesh extraction and never
 writes program2s, scores, ranks, or performs quota-based capacity allocation.
 """
 from __future__ import annotations
@@ -19,12 +19,15 @@ from admission_sanjesh_engine import (
 )
 
 ROOT = Path(__file__).resolve().parent
-RIAZI_CAPACITY_PATH = ROOT / "docs" / "data" / "sanjesh_riazi_1404_programs.json"
+CAPACITY_PATHS = {
+    "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1404_programs.json",
+    "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1404_programs.json",
+}
 EXAM_METHOD = "با آزمون"
 UNKNOWN_PERIOD = "نامشخص"
 
 
-def _extract_rows(payload: Any) -> list[dict[str, Any]]:
+def _extract_rows(payload: Any, source_name: str) -> list[dict[str, Any]]:
     if isinstance(payload, list):
         rows = payload
     elif isinstance(payload, dict):
@@ -35,26 +38,27 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]]:
                 rows = value
                 break
         if rows is None:
-            raise RuntimeError(
-                "sanjesh_riazi_1404_programs.json structure is unsupported"
-            )
+            raise RuntimeError(f"{source_name} structure is unsupported")
     else:
-        raise RuntimeError(
-            "sanjesh_riazi_1404_programs.json structure is unsupported"
-        )
+        raise RuntimeError(f"{source_name} structure is unsupported")
 
     return [row for row in rows if isinstance(row, dict)]
 
 
-@lru_cache(maxsize=1)
-def load_exam_capacity_rows() -> tuple[dict[str, Any], ...]:
-    """Load the Riazi 1404 extraction read-only."""
-    payload = json.loads(RIAZI_CAPACITY_PATH.read_text(encoding="utf-8"))
-    rows = _extract_rows(payload)
+@lru_cache(maxsize=2)
+def load_exam_capacity_rows(group: str = "riazi") -> tuple[dict[str, Any], ...]:
+    """Load one group-specific 1404 extraction read-only."""
+    try:
+        path = CAPACITY_PATHS[str(group)]
+    except KeyError as exc:
+        raise AdmissionInputError(
+            "group باید یکی از riazi یا tajrobi باشد."
+        ) from exc
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows = _extract_rows(payload, path.name)
     if not rows:
-        raise RuntimeError(
-            "sanjesh_riazi_1404_programs.json contains no rows"
-        )
+        raise RuntimeError(f"{path.name} contains no rows")
     return tuple(rows)
 
 
@@ -78,6 +82,7 @@ def build_exam_capacity_results(
     periods: list[str],
     include_unknown: bool = False,
     limit: int = 100,
+    group: str = "riazi",
 ) -> list[dict[str, Any]]:
     """Select exact exam-capacity rows by major, province, and period.
 
@@ -87,7 +92,9 @@ def build_exam_capacity_results(
     if not major_ids:
         raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
     if not periods:
-        raise AdmissionInputError("برای مسیر exam با source=capacity انتخاب period اجباری است.")
+        raise AdmissionInputError(
+            "برای مسیر exam با source=capacity انتخاب period اجباری است."
+        )
 
     canonical_province = _canonical_province(province)
     if canonical_province is None:
@@ -105,7 +112,7 @@ def build_exam_capacity_results(
     results: list[dict[str, Any]] = []
     seen_codes: set[str] = set()
 
-    for row in load_exam_capacity_rows():
+    for row in load_exam_capacity_rows(group):
         if str(row.get("admission_type") or "").strip() != EXAM_METHOD:
             continue
 
