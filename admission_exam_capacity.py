@@ -24,7 +24,7 @@ EXAM_METHOD = "با آزمون"
 UNKNOWN_PERIOD = "نامشخص"
 
 
-def _extract_rows(payload: Any) -> list[dict[str, Any]]:
+def _extract_rows(payload: Any, source_name: str) -> list[dict[str, Any]]:
     if isinstance(payload, list):
         rows = payload
     elif isinstance(payload, dict):
@@ -36,11 +36,11 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]]:
                 break
         if rows is None:
             raise RuntimeError(
-                "sanjesh_riazi_1404_programs.json structure is unsupported"
+                f"{source_name} structure is unsupported"
             )
     else:
         raise RuntimeError(
-            "sanjesh_riazi_1404_programs.json structure is unsupported"
+            f"{source_name} structure is unsupported"
         )
 
     return [row for row in rows if isinstance(row, dict)]
@@ -105,7 +105,7 @@ def build_exam_capacity_results(
     results: list[dict[str, Any]] = []
     seen_codes: set[str] = set()
 
-    for row in load_exam_capacity_rows():
+    for row in load_exam_capacity_rows(group):
         if str(row.get("admission_type") or "").strip() != EXAM_METHOD:
             continue
 
