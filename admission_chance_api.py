@@ -216,7 +216,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     group=request.group,
                 )
                 notes = [
-                    "منبع مستقیم ظرفیت دفترچه علوم ریاضی و فنی ۱۴۰۴ است؛ خروجی احتمال قبولی نیست.",
+                    "منبع مستقیم ظرفیت دفترچه گروه انتخاب‌شده ۱۴۰۴ است؛ خروجی احتمال قبولی نیست.",
                     "rank_in_quota در این مسیر فقط اطلاعاتی است و هیچ cutoff رتبه‌ای اعمال نمی‌شود.",
                     "region_zone و special_quota روی capacity کل فیلتر نمی‌شوند؛ در این موج فقط یادداشت/اطلاعات قراردادی هستند.",
                 ]
@@ -238,6 +238,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                         "province": province,
                         "periods": request.periods,
                         "include_unknown": request.include_unknown,
+                        "group": request.group,
                     },
                     "notes": notes,
                     "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ جایگزین دفترچه و اعلام رسمی سنجش نیستند و هیچ درصد شانس عددی ارائه نمی‌کنند.",
