@@ -1080,7 +1080,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(item["cutoff_used"], 1100)
         self.assertEqual(item["cutoff_year"], 1404)
         self.assertEqual(item["cutoff_source"], "program2s historical cutoff data")
-        self.assertNotIn("درصد شانس قبولی", payload["disclaimer"])
+        self.assertIn("هیچ احتمال عددی محاسبه نمی‌شود", payload["disclaimer"])
 
     def test_exam_program_rank_missing_returns_400(self):
         with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):
