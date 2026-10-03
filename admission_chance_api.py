@@ -70,9 +70,9 @@ class AdmissionChanceRequest(BaseModel):
         default="program",
         description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه گروه انتخاب‌شده ۱۴۰۴ متصل است.",
     )
-    group: Literal["riazi", "tajrobi", "ensani"] = Field(
+    group: Literal["riazi", "tajrobi", "ensani", "honar"] = Field(
         default="riazi",
-        description="گروه منبع exam+capacity: riazi، tajrobi یا ensani.",
+        description="گروه منبع exam+capacity: riazi، tajrobi، ensani یا honar.",
     )
     include_unknown: bool = Field(
         default=False,
