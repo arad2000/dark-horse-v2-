@@ -48,12 +48,14 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertIn('form.period.disabled = isProgram', self.ui)
 
     def test_exam_capacity_and_rank_compare_payloads(self):
-        capacity_block = re.search(
-            r"return \\{\\n      admission_path: 'exam',\\n      source: 'capacity'[\\s\\S]*?\\n    \\};",
-            self.ui,
+        capacity_start = self.ui.index(
+            "    return {\\n      admission_path: 'exam',\\n      source: 'capacity'"
         )
-        self.assertIsNotNone(capacity_block)
-        payload = capacity_block.group(0)
+        capacity_end = self.ui.index(
+            "    };",
+            capacity_start,
+        ) + len("    };")
+        payload = self.ui[capacity_start:capacity_end]
         self.assertIn("source: 'capacity'", payload)
         self.assertIn("group:", payload)
         self.assertIn("major_ids:", payload)
@@ -63,12 +65,14 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertNotIn("rank_in_quota", payload)
         self.assertNotIn("region_zone", payload)
 
-        program_block = re.search(
-            r"if \(values\.source === 'program'\) \{[\s\S]*?return \{[\s\S]*?\n      \};",
-            self.ui,
+        program_start = self.ui.index(
+            "    if (values.source === 'program')"
         )
-        self.assertIsNotNone(program_block)
-        program_payload = program_block.group(0)
+        program_end = self.ui.index(
+            "\\n    }\\n\\n    return {",
+            program_start,
+        )
+        program_payload = self.ui[program_start:program_end]
         self.assertIn("source: 'program'", program_payload)
         self.assertIn("major_ids:", program_payload)
         self.assertIn("rank_in_quota:", program_payload)
