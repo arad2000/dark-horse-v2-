@@ -10,49 +10,71 @@ assert.match(source, /state\.majorsResult/);
 assert.match(source, /major_ids/);
 assert.match(source, /admission_path:\s*'exam'/);
 assert.match(source, /admission_path:\s*'record'/);
-assert.match(source, /specialQuota\.disabled = isCapacity/);
-assert.match(source, /ظرفیت کل دفترچه نمایش داده می‌شود؛ سهمیه روی فیلتر صندلی اثر ندارد/);
-assert.match(source, /rank_in_quota/);
-assert.match(source, /region_zone/);
-assert.match(source, /special_quota/);
+
+/* Exam + capacity contract: group, major, province, period only. */
+assert.match(source, /data-path="exam" data-source="capacity"/);
+assert.match(source, /id="dh-admission-exam-group" name="group" required/);
+assert.match(source, /id="dh-admission-exam-major" name="major_id" required/);
+assert.match(source, /id="dh-admission-exam-province" name="school_province_3y" required/);
+assert.match(source, /id="dh-admission-exam-period" name="period" required/);
+for (const group of ['riazi', 'tajrobi', 'ensani', 'honar', 'zaban']) {
+  assert.match(source, new RegExp("value: '" + group + "'"));
+}
+assert.match(source, /source:\s*'capacity'/);
+assert.match(source, /group:\s*EXAM_GROUP_LABELS\[values\.group\]\s*\?\s*values\.group\s*:\s*'riazi'/);
+assert.match(source, /periods:\s*values\.period\s*\?\s*\[values\.period\]\s*:\s*\[\]/);
+assert.match(source, /include_unknown:\s*false/);
+
+/* Rank / region / special quota remain visible as disabled information only. */
+assert.match(source, /id="dh-admission-exam-rank"[^>]*disabled/);
+assert.match(source, /id="dh-admission-exam-region" disabled/);
+assert.match(source, /id="dh-admission-exam-special-quota" disabled/);
+assert.match(source, /منطقه، سهمیه خاص و رتبه در این مسیر اطلاعاتی‌اند و در ظرفیت کل دفترچه فیلتر نمی‌شوند/);
+
+const examCapacityPayloadBlock = source.slice(
+  source.indexOf("    return {\n      admission_path: 'exam'"),
+  source.indexOf("    };", source.indexOf("    return {\n      admission_path: 'exam'")) + 5
+);
+assert.match(examCapacityPayloadBlock, /admission_path:\s*'exam'/);
+assert.match(examCapacityPayloadBlock, /source:\s*'capacity'/);
+assert.match(examCapacityPayloadBlock, /group:/);
+assert.match(examCapacityPayloadBlock, /major_ids:/);
+assert.match(examCapacityPayloadBlock, /province:/);
+assert.match(examCapacityPayloadBlock, /periods:/);
+assert.match(examCapacityPayloadBlock, /include_unknown:\s*false/);
+assert.doesNotMatch(examCapacityPayloadBlock, /rank_in_quota/);
+assert.doesNotMatch(examCapacityPayloadBlock, /region_zone/);
+assert.doesNotMatch(examCapacityPayloadBlock, /special_quota/);
+
+/* Existing record path contract remains intact. */
+assert.match(source, /diploma_type/);
 assert.match(source, /gpa_written/);
 assert.match(source, /gpa_total/);
+assert.match(source, /target_field_group/);
+assert.match(source, /region_zone:\s*values\.region_zone/);
+assert.match(source, /special_quota:\s*values\.special_quota/);
+assert.match(source, /dh-admission-record-region/);
+assert.match(source, /dh-admission-record-special-quota/);
+
+/* Shared province / admission copy and capacity result fields remain covered. */
 assert.match(source, /PROVINCES/);
 assert.match(source, /school_province_3y/);
 assert.match(source, /استان محل تحصیل سه سال آخر/);
-assert.match(source, /استان محل سکونت فعلی را وارد نکن/);
 assert.match(source, /آذربایجان شرقی/);
 assert.match(source, /یزد/);
 assert.match(source, /isargaran_25/);
 assert.match(source, /isargaran_5/);
 assert.match(source, /shahid/);
-assert.match(source, /dh-admission-record-region/);
-assert.match(source, /dh-admission-record-special-quota-wrap/);
-assert.match(source, /region_zone: values.region_zone/);
-assert.match(source, /special_quota: values.special_quota/);
-assert.match(source, /region_zone: Number\(form\.region_zone\.value\)/);
-assert.match(source, /special_quota: String\(form\.special_quota\.value \|\| 'none'\)/);
-assert.match(source, /این مسیر رتبه نمی‌گیرد/);
+assert.match(source, /DHAdmissionChanceUI/);
+assert.match(source, /sanjesh_code/);
+assert.match(source, /ظرفیت کل:/);
+assert.match(source, /کد رشته‌محل:/);
+assert.match(source, /برای ترکیب گروه آزمایشی، رشته، استان و دوره انتخاب‌شده/);
+assert.match(source, /این پیام به معنی رد شدن داوطلب نیست/);
 assert.match(source, /نتایج تخمینی/);
 assert.match(source, /جایگزین دفترچه و اعلام رسمی سنجش نیست/);
-assert.match(source, /رتبه در سهمیه/);
-assert.match(source, /معدل کتبی نهایی/);
-assert.match(source, /معدل کل/);
-assert.match(source, /ضریب معدل/);
-assert.match(source, /معدل مؤثر/);
-assert.match(source, /DHAdmissionChanceUI/);
-assert.match(source, /RECORD_CAPACITY_PERIOD_OPTIONS/);
-assert.match(source, /source: values.source/);
-assert.match(source, /payload\.periods = values\.periods/);
-assert.match(source, /sanjesh_code/);
-assert.match(source, /capacity_total/);
-assert.match(source, /برای رشته «.*»، استان «.*» و دوره «.*» ردیف ظرفیت منطبق در داده دفترچه سنجش پیدا نشد/);
+
 assert.doesNotMatch(source, /quota_type/);
-const recordCapacityPayloadBlock = source.slice(
-  source.indexOf("var payload = {"),
-  source.indexOf("      return payload;", source.indexOf("var payload = {"))
-);
-assert.doesNotMatch(recordCapacityPayloadBlock, /special_quota:\s*values\.special_quota/);
 assert.doesNotMatch(source, /darkhorse\/discover/);
 assert.doesNotMatch(source, /individuality_fit\s*=|individuality_fit\s*=/);
 
@@ -61,9 +83,10 @@ assert.match(css, /\.dh-admission-card/);
 assert.match(css, /\.dh-admission-help/);
 assert.match(css, /\.dh-admission-tabs/);
 assert.match(css, /\.dh-admission-tab/);
+assert.match(css, /\.dh-admission-field select:disabled/);
 assert.match(css, /@media/);
 
-assert.match(indexSource, /admission_chance_ui\.css\?v=4/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=8/);
+assert.match(indexSource, /admission_chance_ui\.css\?v=3/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=9/);
 
 console.log('admission_chance_ui phase3 regression: PASS');
