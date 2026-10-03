@@ -28,10 +28,45 @@ CAPACITY_PATHS = {
 }
 
 GROUP_MAJOR_ALIASES = {
-    # majors_database_v2 uses "طراحی گرافیک", while the 1404 Honar booklet
-    # extraction records the exam major as "گرافيک".
+    # The booklet names below are alternate normalized labels for the same
+    # owner-defined major_id. Keep aliases major_id-scoped to avoid false
+    # positives such as "پزشکی" matching "مهندسی پزشکی".
+    "tajrobi": {
+        1: {
+            "دکتری عمومی پزشکی",
+            "دکتری حرفه‌ای پزشکی",
+            "پزشکی عمومی",
+        },
+        2: {
+            "دکتری عمومی دندانپزشکی",
+            "دندانپزشکی عمومی",
+        },
+        3: {
+            "دکتری عمومی داروسازی",
+            "داروسازی عمومی",
+        },
+        5: {
+            "کارشناسی پرستاری",
+        },
+        6: {
+            "کارشناسی مامایی",
+        },
+    },
+    "ensani": {
+        101: {
+            "کارشناسی حقوق",
+        },
+        106: {
+            "کارشناسی روانشناسی",
+        },
+        120: {
+            "کارشناسی حسابداری",
+        },
+    },
     "honar": {
-        140: {"گرافيک"},
+        140: {
+            "گرافيک",
+        },
     },
 }
 EXAM_METHOD = "با آزمون"
