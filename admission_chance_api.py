@@ -336,7 +336,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     "special_quota": exam["special_quota"],
                     "province": exam["province"],
                 },
-                "disclaimer": "این مقایسه صرفاً نمایشی و بر پایه آخرین cutoff تاریخی موجود در داده برنامه است؛ احتمال یا درصد شانس قبولی محاسبه نمی‌شود و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                "disclaimer": "این مقایسه صرفاً نمایشی و بر پایه آخرین cutoff تاریخی موجود در داده برنامه است؛ هیچ احتمال عددی محاسبه نمی‌شود و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
             }
 
         if path == "record":
