@@ -1,0 +1,167 @@
+{
+  "source": "دفترچه انتخاب رشته گروه زبان‌های خارجی کنکور سراسری ۱۴۰۴ (zaban.pdf)",
+  "status": "BULK_EXTRACT_v1",
+  "total_rows": 9072,
+  "unique_sanjesh_codes": 9072,
+  "pages_covered": "32-247",
+  "admission_type_counts": {
+    "صرفا بر اساس سوابق تحصیلی": 8897,
+    "با آزمون": 175
+  },
+  "period_counts": {
+    "روزانه": 8318,
+    "نوبت دوم": 686,
+    "نامشخص": 38,
+    "پردیس خودگردان": 23,
+    "مجازی": 7
+  },
+  "gender_counts": {
+    "مرد": 180,
+    "زن": 290,
+    "مختلط": 8602
+  },
+  "notes": [
+    "استخراج pdfplumber + RTL",
+    "layout 8/9 ستونی",
+    "ظرفیت کل"
+  ],
+  "sample_exam": {
+    "sanjesh_code": "35701",
+    "major_name": "زبان و ادبيات انگلیسی",
+    "capacity": 43,
+    "period": "روزانه",
+    "admission_type": "با آزمون",
+    "gender": "مختلط",
+    "campus": "محل دانشگاه واقع در آذرشهر - داراي",
+    "province": "",
+    "note": "",
+    "page": 32
+  },
+  "sample_record": {
+    "sanjesh_code": "13068",
+    "major_name": "مدیریت مالي",
+    "capacity": 60,
+    "period": "روزانه",
+    "admission_type": "صرفا بر اساس سوابق تحصیلی",
+    "gender": "مرد",
+    "campus": "استان خراسان رضوي - دانشگاه غيرانتفاعي خيام - مشهد",
+    "province": "خراسان رضوي",
+    "note": "فاقد خوابگاه",
+    "page": 106
+  },
+  "sample_language_exam": [
+    {
+      "sanjesh_code": "35701",
+      "major_name": "زبان و ادبيات انگلیسی",
+      "capacity": 43,
+      "period": "روزانه",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر - داراي",
+      "province": "",
+      "note": "",
+      "page": 32
+    },
+    {
+      "sanjesh_code": "35702",
+      "major_name": "زبان و ادبيات فرانسه",
+      "capacity": 35,
+      "period": "روزانه",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر - داراي",
+      "province": "",
+      "note": "",
+      "page": 32
+    },
+    {
+      "sanjesh_code": "35703",
+      "major_name": "زبان و ادبيات انگلیسی",
+      "capacity": 5,
+      "period": "نوبت دوم",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر - داراي",
+      "province": "",
+      "note": "فاقد خوابگاه",
+      "page": 32
+    },
+    {
+      "sanjesh_code": "35704",
+      "major_name": "زبان و ادبيات فرانسه",
+      "capacity": 3,
+      "period": "نوبت دوم",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر - داراي",
+      "province": "",
+      "note": "فاقد خوابگاه",
+      "page": 32
+    },
+    {
+      "sanjesh_code": "35705",
+      "major_name": "آموزش زبان انگلیسی",
+      "capacity": 35,
+      "period": "روزانه",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر - داراي",
+      "province": "",
+      "note": "",
+      "page": 32
+    },
+    {
+      "sanjesh_code": "35706",
+      "major_name": "زبان و ادبيات انگلیسی",
+      "capacity": 35,
+      "period": "روزانه",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر - داراي",
+      "province": "",
+      "note": "",
+      "page": 32
+    },
+    {
+      "sanjesh_code": "35707",
+      "major_name": "آموزش زبان انگلیسی",
+      "capacity": 10,
+      "period": "نوبت دوم",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر",
+      "province": "",
+      "note": "",
+      "page": 32
+    },
+    {
+      "sanjesh_code": "35708",
+      "major_name": "زبان و ادبيات انگلیسی",
+      "capacity": 10,
+      "period": "نوبت دوم",
+      "admission_type": "با آزمون",
+      "gender": "مختلط",
+      "campus": "محل دانشگاه واقع در آذرشهر",
+      "province": "",
+      "note": "",
+      "page": 32
+    }
+  ],
+  "province_top15": {
+    "خراسان رضوي": 727,
+    "مازندران": 697,
+    "اصفهان": 582,
+    "فارس": 553,
+    "تهران": 446,
+    "خوزستان": 412,
+    "سيستان و بلوچستان": 353,
+    "کرمان": 324,
+    "آذربايجان غربي": 313,
+    "آذربايجان شرقي": 305,
+    "يزد": 261,
+    "گلستان": 260,
+    "گيالن": 251,
+    "کرمانشاه": 236,
+    "لرستان": 227
+  }
+}
