@@ -29,6 +29,15 @@ class TajrobiExamCapacityLoaderTests(unittest.TestCase):
         )
         self.assertEqual(items, [])
 
+    def test_unrelated_major_stays_empty(self):
+        items = build_exam_capacity_results(
+            group="tajrobi",
+            major_ids=[41],  # مهندسی برق؛ بی‌ربط به دفترچه تجربی
+            province="تهران",
+            periods=["روزانه"],
+        )
+        self.assertEqual(items, [])
+
     def test_unknown_period_is_excluded_by_default(self):
         items = build_exam_capacity_results(
             group="tajrobi",
