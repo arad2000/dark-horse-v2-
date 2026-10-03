@@ -24,6 +24,7 @@ from admission_sanjesh_engine import (
     _coefficient,
     _resolve_record_bomi,
 )
+from admission_exam_capacity import build_exam_capacity_results
 from main_v2 import app
 
 
@@ -1050,6 +1051,105 @@ class AdmissionChanceApiTests(unittest.TestCase):
             )
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["admission_path"], "exam")
+
+
+
+    def test_exam_capacity_tajrobi_medical_still_returns_rows(self):
+        items = build_exam_capacity_results(
+            group="tajrobi",
+            major_ids=[1],
+            province="تهران",
+            periods=["روزانه"],
+            limit=5,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+
+    def test_exam_capacity_ensani_law_still_returns_rows(self):
+        items = build_exam_capacity_results(
+            group="ensani",
+            major_ids=[101],
+            province="تهران",
+            periods=["روزانه"],
+            limit=5,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+
+    def test_exam_program_rank_comparison_returns_status_and_reference(self):
+        with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "exam",
+                    "source": "program",
+                    "major_ids": [1],
+                    "rank_in_quota": 900,
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "province": "تهران",
+                    "course_types": ["roozaneh"],
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["source"], "program")
+        self.assertGreater(payload["count"], 0)
+        item = payload["items"][0]
+        self.assertEqual(item["status"], "above")
+        self.assertEqual(item["status_label"], "بالاتر از محدودهٔ قبولی تاریخی")
+        self.assertEqual(item["cutoff_reference"]["value"], 1100)
+        self.assertEqual(item["cutoff_reference"]["year"], 1404)
+        self.assertEqual(item["cutoff_used"], 1100)
+        self.assertEqual(item["cutoff_year"], 1404)
+        self.assertEqual(item["cutoff_source"], "program2s historical cutoff data")
+        self.assertIn("هیچ احتمال عددی محاسبه نمی‌شود", payload["disclaimer"])
+
+    def test_exam_program_rank_missing_returns_400(self):
+        with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "exam",
+                    "source": "program",
+                    "major_ids": [1],
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "province": "تهران",
+                    "course_types": ["roozaneh"],
+                },
+            )
+        self.assertEqual(response.status_code, 400, response.text)
+        self.assertIn("rank_in_quota الزامی", response.json()["detail"])
+
+    def test_exam_program_without_cutoff_returns_unknown(self):
+        no_cutoff = _program(
+            program_id="EXAM-UNKNOWN",
+            major_id=1,
+            method="با آزمون",
+            course_type="roozaneh",
+            predicted={},
+            historical={},
+        )
+        with patch("admission_chance_api.load_programs", return_value=(no_cutoff,)):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "exam",
+                    "source": "program",
+                    "major_ids": [1],
+                    "rank_in_quota": 1000,
+                    "region_zone": 2,
+                    "special_quota": "none",
+                    "province": "تهران",
+                    "course_types": ["roozaneh"],
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        item = response.json()["items"][0]
+        self.assertEqual(item["status"], "unknown")
+        self.assertIsNone(item["cutoff_reference"])
+
 
 
 if __name__ == "__main__":
