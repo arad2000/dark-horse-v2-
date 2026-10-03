@@ -15,7 +15,9 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         cls.index = INDEX.read_text(encoding="utf-8")
 
     def test_exam_tab_uses_capacity_contract(self):
-        self.assertIn('data-source="capacity"', self.ui)
+        self.assertIn('id="dh-admission-exam-source" name="source" required', self.ui)
+        self.assertIn('<option value="capacity">ظرفیت دفترچه</option>', self.ui)
+        self.assertIn('<option value="program">مقایسه با آخرین رتبه</option>', self.ui)
         self.assertIn("source: 'capacity'", self.ui)
         self.assertIn("admission_path: 'exam'", self.ui)
         self.assertIn("periods: values.period ? [values.period] : []", self.ui)
@@ -33,32 +35,60 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertIn("group: EXAM_GROUP_LABELS[values.group] ? values.group : 'riazi'", self.ui)
         self.assertIn("String(form.group.value || 'riazi').trim() || 'riazi'", self.ui)
 
-    def test_exam_capacity_active_fields_are_group_major_province_period(self):
+    def test_exam_modes_keep_capacity_contract_and_add_rank_compare(self):
         self.assertIn('name="group"', self.ui)
         self.assertIn('name="major_id"', self.ui)
         self.assertIn('name="school_province_3y"', self.ui)
         self.assertIn('name="period"', self.ui)
-        self.assertIn('id="dh-admission-exam-rank" type="text" value="در این فاز استفاده نمی‌شود" disabled', self.ui)
-        self.assertIn('id="dh-admission-exam-region" disabled', self.ui)
-        self.assertIn('id="dh-admission-exam-special-quota" disabled', self.ui)
+        self.assertIn('name="rank_in_quota"', self.ui)
+        self.assertIn('name="region_zone"', self.ui)
+        self.assertIn('form.rank_in_quota.disabled = !isProgram', self.ui)
+        self.assertIn('form.region_zone.disabled = !isProgram', self.ui)
+        self.assertIn('form.group.disabled = isProgram', self.ui)
+        self.assertIn('form.period.disabled = isProgram', self.ui)
 
-    def test_exam_capacity_payload_excludes_rank_region_quota(self):
-        match = re.search(
-            r"return \{\n      admission_path: 'exam',[\s\S]*?\n    \};",
+    def test_exam_capacity_and_rank_compare_payloads(self):
+        capacity_block = re.search(
+            r"return \\{\\n      admission_path: 'exam',\\n      source: 'capacity'[\\s\\S]*?\\n    \\};",
             self.ui,
         )
-        self.assertIsNotNone(match)
-        payload_block = match.group(0)
-        self.assertIn("admission_path: 'exam'", payload_block)
-        self.assertIn("source: 'capacity'", payload_block)
-        self.assertIn("group: EXAM_GROUP_LABELS[values.group] ? values.group : 'riazi'", payload_block)
-        self.assertIn("major_ids:", payload_block)
-        self.assertIn("province:", payload_block)
-        self.assertIn("periods:", payload_block)
-        self.assertIn("include_unknown: false", payload_block)
-        self.assertNotIn("rank_in_quota", payload_block)
-        self.assertNotIn("region_zone", payload_block)
-        self.assertNotIn("special_quota", payload_block)
+        self.assertIsNotNone(capacity_block)
+        payload = capacity_block.group(0)
+        self.assertIn("source: 'capacity'", payload)
+        self.assertIn("group:", payload)
+        self.assertIn("major_ids:", payload)
+        self.assertIn("province:", payload)
+        self.assertIn("periods:", payload)
+        self.assertIn("include_unknown: false", payload)
+        self.assertNotIn("rank_in_quota", payload)
+        self.assertNotIn("region_zone", payload)
+
+        program_block = re.search(
+            r"if \(values\.source === 'program'\) \{[\s\S]*?return \{[\s\S]*?\n      \};",
+            self.ui,
+        )
+        self.assertIsNotNone(program_block)
+        program_payload = program_block.group(0)
+        self.assertIn("source: 'program'", program_payload)
+        self.assertIn("major_ids:", program_payload)
+        self.assertIn("rank_in_quota:", program_payload)
+        self.assertIn("region_zone:", program_payload)
+        self.assertIn("province:", program_payload)
+        self.assertNotIn("periods:", program_payload)
+        self.assertNotIn("group:", program_payload)
+
+    def test_rank_comparison_render_contract(self):
+        for token in (
+            "renderRankComparisonItems",
+            "status_label",
+            "cutoff_reference",
+            "above",
+            "near",
+            "below",
+            "unknown",
+        ):
+            self.assertIn(token, self.ui)
+        self.assertIn("این مقایسه فقط با دادهٔ cutoff تاریخی موجود انجام شده", self.ui)
 
     def test_capacity_card_contains_required_fields(self):
         for token in (

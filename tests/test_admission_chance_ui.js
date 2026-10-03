@@ -12,7 +12,10 @@ assert.match(source, /admission_path:\s*'exam'/);
 assert.match(source, /admission_path:\s*'record'/);
 
 /* Exam + capacity contract: group, major, province, period only. */
-assert.match(source, /data-path="exam" data-source="capacity"/);
+assert.match(source, /data-path="exam"/);
+assert.match(source, /id="dh-admission-exam-source" name="source" required/);
+assert.match(source, /option value="capacity">ظرفیت دفترچه/);
+assert.match(source, /option value="program">مقایسه با آخرین رتبه/);
 assert.match(source, /id="dh-admission-exam-group" name="group" required/);
 assert.match(source, /id="dh-admission-exam-major" name="major_id" required/);
 assert.match(source, /id="dh-admission-exam-province" name="school_province_3y" required/);
@@ -25,17 +28,29 @@ assert.match(source, /group:\s*EXAM_GROUP_LABELS\[values\.group\]\s*\?\s*values\
 assert.match(source, /periods:\s*values\.period\s*\?\s*\[values\.period\]\s*:\s*\[\]/);
 assert.match(source, /include_unknown:\s*false/);
 
-/* Rank / region / special quota remain visible as disabled information only. */
-assert.match(source, /id="dh-admission-exam-rank"[^>]*disabled/);
-assert.match(source, /id="dh-admission-exam-region" disabled/);
-assert.match(source, /id="dh-admission-exam-special-quota" disabled/);
-assert.match(source, /منطقه، سهمیه خاص و رتبه در این مسیر اطلاعاتی‌اند و در ظرفیت کل دفترچه فیلتر نمی‌شوند/);
+/* Capacity mode keeps rank/region inactive; comparison mode enables rank/region. */
+assert.match(source, /class="dh-admission-field dh-admission-exam-program-only" hidden/);
+assert.match(source, /form\.rank_in_quota\.disabled = !isProgram/);
+assert.match(source, /form\.region_zone\.disabled = !isProgram/);
+assert.match(source, /form\.group\.disabled = isProgram/);
+assert.match(source, /form\.period\.disabled = isProgram/);
+
+const examProgramPayloadBlock = source.slice(
+  source.indexOf("    if (values.source === 'program')"),
+  source.indexOf("    return {", source.indexOf("    if (values.source === 'program')"))
+);
+assert.match(examProgramPayloadBlock, /source:\s*'program'/);
+assert.match(examProgramPayloadBlock, /major_ids:/);
+assert.match(examProgramPayloadBlock, /rank_in_quota:/);
+assert.match(examProgramPayloadBlock, /region_zone:/);
+assert.match(examProgramPayloadBlock, /province:/);
+assert.doesNotMatch(examProgramPayloadBlock, /group:/);
+assert.doesNotMatch(examProgramPayloadBlock, /periods:/);
 
 const examCapacityPayloadBlock = source.slice(
-  source.indexOf("    return {\n      admission_path: 'exam'"),
-  source.indexOf("    };", source.indexOf("    return {\n      admission_path: 'exam'")) + 5
+  source.indexOf("    return {\n      admission_path: 'exam',\n      source: 'capacity'"),
+  source.indexOf("    };", source.indexOf("    return {\n      admission_path: 'exam',\n      source: 'capacity'")) + 5
 );
-assert.match(examCapacityPayloadBlock, /admission_path:\s*'exam'/);
 assert.match(examCapacityPayloadBlock, /source:\s*'capacity'/);
 assert.match(examCapacityPayloadBlock, /group:/);
 assert.match(examCapacityPayloadBlock, /major_ids:/);
@@ -44,7 +59,6 @@ assert.match(examCapacityPayloadBlock, /periods:/);
 assert.match(examCapacityPayloadBlock, /include_unknown:\s*false/);
 assert.doesNotMatch(examCapacityPayloadBlock, /rank_in_quota/);
 assert.doesNotMatch(examCapacityPayloadBlock, /region_zone/);
-assert.doesNotMatch(examCapacityPayloadBlock, /special_quota/);
 
 /* Existing record path contract remains intact. */
 assert.match(source, /diploma_type/);
@@ -72,6 +86,11 @@ assert.match(source, /کد رشته‌محل:/);
 assert.match(source, /برای ترکیب گروه آزمایشی، رشته، استان و دوره انتخاب‌شده/);
 assert.match(source, /این پیام به معنی رد شدن داوطلب نیست/);
 assert.match(source, /نتایج تخمینی/);
+assert.match(source, /renderRankComparisonItems/);
+assert.match(source, /status_label/);
+assert.match(source, /cutoff_reference/);
+assert.match(source, /above|near|below|unknown/);
+assert.match(source, /این مقایسه فقط با دادهٔ cutoff تاریخی موجود انجام شده/);
 assert.match(source, /جایگزین دفترچه و اعلام رسمی سنجش نیست/);
 
 assert.doesNotMatch(source, /quota_type/);
