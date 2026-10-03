@@ -24,6 +24,7 @@ from admission_sanjesh_engine import (
     _coefficient,
     _resolve_record_bomi,
 )
+from admission_exam_capacity import build_exam_capacity_results
 from main_v2 import app
 
 
@@ -1052,6 +1053,28 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(response.json()["admission_path"], "exam")
 
 
+
+    def test_exam_capacity_tajrobi_medical_still_returns_rows(self):
+        items = build_exam_capacity_results(
+            group="tajrobi",
+            major_ids=[1],
+            province="تهران",
+            periods=["روزانه"],
+            limit=5,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+
+    def test_exam_capacity_ensani_law_still_returns_rows(self):
+        items = build_exam_capacity_results(
+            group="ensani",
+            major_ids=[101],
+            province="تهران",
+            periods=["روزانه"],
+            limit=5,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
 
     def test_exam_program_rank_comparison_returns_status_and_reference(self):
         with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):
