@@ -188,6 +188,24 @@ def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
 router = APIRouter()
 
 
+RANK_COMPARISON_NEAR_RATIO = 0.10
+
+
+def _rank_comparison(rank_in_quota: int, cutoff: int | float | None) -> tuple[str, str]:
+    """Classify a rank against an existing cutoff; never estimate probability."""
+    if cutoff is None or cutoff <= 0:
+        return "unknown", "دادهٔ آخرین رتبه در دسترس نیست"
+
+    rank = float(rank_in_quota)
+    reference = float(cutoff)
+    relative_distance = abs(rank - reference) / reference
+    if relative_distance <= RANK_COMPARISON_NEAR_RATIO:
+        return "near", "نزدیک به مرز قبولی تاریخی"
+    if rank < reference:
+        return "above", "بالاتر از محدودهٔ قبولی تاریخی"
+    return "below", "پایین‌تر از محدودهٔ قبولی تاریخی"
+
+
 @router.post("/admission/chance")
 def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
     try:
@@ -246,6 +264,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
 
         if path == "exam":
             exam = _resolve_exam_request(request)
+            programs = load_programs()
             items = build_exam_results(
                 major_ids=request.major_ids,
                 rank_in_quota=exam["rank_in_quota"],
@@ -256,11 +275,59 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 gpa_written=exam["gpa_written"],
                 national_rank=exam["national_rank"],
                 course_types=request.course_types,
-                programs=load_programs(),
+                programs=programs,
                 limit=request.limit,
             )
+            if request.source == "program":
+                programs_by_id = {
+                    str(program.get("program_id")): program
+                    for program in programs
+                    if program.get("program_id") is not None
+                }
+                comparison_items = []
+                for item in items:
+                    program = programs_by_id.get(str(item.get("program_id")), {})
+                    historical = program.get("cutoffs_historical")
+                    reference = None
+                    dimension = item.get("cutoff_dimension")
+                    if isinstance(historical, dict) and dimension:
+                        candidates = []
+                        for year, values in historical.items():
+                            if not isinstance(values, dict):
+                                continue
+                            cutoff = values.get(dimension)
+                            if isinstance(cutoff, (int, float)) and not isinstance(cutoff, bool):
+                                try:
+                                    year_num = int(str(year).strip())
+                                except (TypeError, ValueError):
+                                    continue
+                                candidates.append((year_num, cutoff))
+                        if candidates:
+                            year_num, cutoff = max(candidates, key=lambda pair: pair[0])
+                            reference = {
+                                "value": cutoff,
+                                "year": year_num,
+                                "dimension": dimension,
+                                "source": "program2s historical cutoff data",
+                            }
+
+                    status, status_label = _rank_comparison(
+                        exam["rank_in_quota"],
+                        reference["value"] if reference else None,
+                    )
+                    enriched = dict(item)
+                    enriched["status"] = status
+                    enriched["status_label"] = status_label
+                    enriched["cutoff_reference"] = reference
+                    enriched["cutoff_used"] = reference["value"] if reference else None
+                    enriched["cutoff_year"] = reference["year"] if reference else None
+                    enriched["cutoff_source"] = reference["source"] if reference else None
+                    enriched["label"] = status_label
+                    comparison_items.append(enriched)
+                items = comparison_items
             return {
                 "admission_path": "exam",
+                "source": "program",
                 "items": items,
                 "count": len(items),
                 "context": {
@@ -269,7 +336,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     "special_quota": exam["special_quota"],
                     "province": exam["province"],
                 },
-                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                "disclaimer": "این مقایسه صرفاً نمایشی و بر پایه آخرین cutoff تاریخی موجود در داده برنامه است؛ احتمال یا درصد شانس قبولی محاسبه نمی‌شود و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
             }
 
         if path == "record":
