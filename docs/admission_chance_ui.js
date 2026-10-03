@@ -35,6 +35,22 @@
     { value: 'مشترک', label: 'مشترک' }
   ];
 
+  var EXAM_GROUP_OPTIONS = [
+    { value: 'riazi', label: 'ریاضی' },
+    { value: 'tajrobi', label: 'تجربی' },
+    { value: 'ensani', label: 'انسانی' },
+    { value: 'honar', label: 'هنر' },
+    { value: 'zaban', label: 'زبان' }
+  ];
+
+  var EXAM_GROUP_LABELS = {
+    riazi: 'ریاضی',
+    tajrobi: 'تجربی',
+    ensani: 'انسانی',
+    honar: 'هنر',
+    zaban: 'زبان'
+  };
+
   var REGION_OPTIONS = [
     { value: '1', label: 'منطقه ۱' },
     { value: '2', label: 'منطقه ۲' },
@@ -151,6 +167,7 @@
     }
 
     return {
+      group: String(form.group.value || 'riazi').trim() || 'riazi',
       major_id: Number(form.major_id.value),
       school_province_3y: String(form.school_province_3y.value || '').trim(),
       period: String(form.period.value || '').trim()
@@ -183,6 +200,7 @@
     return {
       admission_path: 'exam',
       source: 'capacity',
+      group: EXAM_GROUP_LABELS[values.group] ? values.group : 'riazi',
       major_ids: Number.isInteger(values.major_id) && values.major_id > 0 ? [values.major_id] : [],
       province: values.school_province_3y || null,
       periods: values.period ? [values.period] : [],
@@ -201,6 +219,9 @@
     }
 
     if (path === 'exam') {
+      if (!Object.prototype.hasOwnProperty.call(EXAM_GROUP_LABELS, values.group)) {
+        return 'گروه آزمایشی را انتخاب کن.';
+      }
       if (!Number.isInteger(values.major_id) || values.major_id < 1) {
         return 'رشته را انتخاب کن.';
       }
@@ -244,7 +265,7 @@
     if (!Array.isArray(items) || !items.length) {
       var emptyText = path === 'record'
         ? 'برای رشته‌های فعلی، برنامه‌ای با پذیرش «صرفاً سوابق تحصیلی» و دادهٔ قابل استفاده پیدا نشد. این وضعیت به معنی رد شدن داوطلب نیست.'
-        : 'برای ترکیب رشته، استان و دوره انتخاب‌شده، ردیف ظرفیت با آزمون در دفترچه ریاضی ۱۴۰۴ پیدا نشد. این پیام به معنی رد شدن داوطلب نیست.';
+        : 'برای ترکیب گروه آزمایشی، رشته، استان و دوره انتخاب‌شده، ردیف ظرفیت با آزمون در دفترچه ۱۴۰۴ پیدا نشد. این پیام به معنی رد شدن داوطلب نیست.';
       return '<div class="dh-admission-card dh-admission-empty"><p>' +
         escapeHtml(emptyText) + '</p></div>';
     }
@@ -326,6 +347,13 @@
   function examFormHtml(recommendations) {
     return (
       '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-exam-form" data-path="exam" data-source="capacity">' +
+        '<div class="dh-admission-field full">' +
+          '<label for="dh-admission-exam-group">گروه آزمایشی *</label>' +
+          '<select id="dh-admission-exam-group" name="group" required>' +
+            optionsHtml(EXAM_GROUP_OPTIONS) +
+          '</select>' +
+          '<small class="dh-admission-help">پیش‌فرض ریاضی است؛ این انتخاب تعیین می‌کند ظرفیت از کدام دفترچه گروهی ۱۴۰۴ خوانده شود.</small>' +
+        '</div>' +
         '<div class="dh-admission-field full">' +
           '<label for="dh-admission-exam-major">رشته *</label>' +
           '<select id="dh-admission-exam-major" name="major_id" required>' +
@@ -483,7 +511,7 @@
     }
     setStatus(path === 'record'
       ? 'در حال محاسبهٔ معدل مؤثر و مقایسه با برنامه‌های سوابق تحصیلی…'
-      : 'در حال خواندن ظرفیت دفترچه ریاضی ۱۴۰۴ بر اساس رشته، استان و دوره…', false);
+      : 'در حال خواندن ظرفیت دفترچه گروه انتخاب‌شده ۱۴۰۴ بر اساس رشته، استان و دوره…', false);
     if (results) results.innerHTML = '';
 
     try {
