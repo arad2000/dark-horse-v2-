@@ -35,11 +35,9 @@ assert.match(source, /form\.region_zone\.disabled = !isProgram/);
 assert.match(source, /form\.group\.disabled = isProgram/);
 assert.match(source, /form\.period\.disabled = isProgram/);
 
-const examProgramPayloadMatch = source.match(
-  /if \(values\.source === 'program'\) \{\s*return \{[\s\S]*?\n    \};/
-);
-assert.ok(examProgramPayloadMatch);
-const examProgramPayloadBlock = examProgramPayloadMatch[0];
+const programStart = source.indexOf("    if (values.source === 'program')");
+const programEnd = source.indexOf("\n    }\n\n    return {", programStart);
+const examProgramPayloadBlock = source.slice(programStart, programEnd);
 assert.match(examProgramPayloadBlock, /source:\s*'program'/);
 assert.match(examProgramPayloadBlock, /major_ids:/);
 assert.match(examProgramPayloadBlock, /rank_in_quota:/);
