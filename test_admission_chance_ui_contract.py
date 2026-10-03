@@ -49,7 +49,7 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
 
     def test_exam_capacity_and_rank_compare_payloads(self):
         capacity_start = self.ui.index(
-            "    return {\\n      admission_path: 'exam',\\n      source: 'capacity'"
+            "    return {\n      admission_path: 'exam',\n      source: 'capacity'"
         )
         capacity_end = self.ui.index(
             "    };",
@@ -69,7 +69,7 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
             "    if (values.source === 'program')"
         )
         program_end = self.ui.index(
-            "\\n    }\\n\\n    return {",
+            "\n    }\n\n    return {",
             program_start,
         )
         program_payload = self.ui[program_start:program_end]
