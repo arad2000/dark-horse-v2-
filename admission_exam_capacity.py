@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from admission_sanjesh_engine import (
     AdmissionInputError,
@@ -24,6 +24,7 @@ CAPACITY_PATHS = {
     "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1404_programs.json",
     "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1404_programs.json",
     "honar": ROOT / "docs" / "data" / "sanjesh_honar_1404_programs.json",
+    "zaban": ROOT / "docs" / "data" / "sanjesh_zaban_1404_programs.json",
 }
 
 GROUP_MAJOR_ALIASES = {
@@ -56,13 +57,13 @@ def _extract_rows(payload: Any, source_name: str) -> list[dict[str, Any]]:
 
 
 @lru_cache(maxsize=4)
-def load_exam_capacity_rows(group: str = "riazi") -> tuple[dict[str, Any], ...]:
+def load_exam_capacity_rows(group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = "riazi") -> tuple[dict[str, Any], ...]:
     """Load one group-specific 1404 extraction read-only."""
     try:
         path = CAPACITY_PATHS[str(group)]
     except KeyError as exc:
         raise AdmissionInputError(
-            "group باید یکی از riazi، tajrobi، ensani یا honar باشد."
+            "group باید یکی از riazi، tajrobi، ensani، honar یا zaban باشد."
         ) from exc
 
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -98,7 +99,7 @@ def build_exam_capacity_results(
     periods: list[str],
     include_unknown: bool = False,
     limit: int = 100,
-    group: str = "riazi",
+    group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = "riazi",
 ) -> list[dict[str, Any]]:
     """Select exact exam-capacity rows by major, province, and period.
 
