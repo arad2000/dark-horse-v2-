@@ -1,0 +1,359 @@
+"""Phase 2 admission chance API facade.
+
+The Sanjesh-like selection logic lives in admission_sanjesh_engine.py.
+This API layer only validates/normalizes the HTTP contract and mounts the route.
+"""
+from __future__ import annotations
+
+from typing import Any, Literal
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from admission_capacity_record import build_record_capacity_results
+from admission_exam_capacity import build_exam_capacity_results
+from admission_sanjesh_engine import (
+    AdmissionInputError,
+    DIPLOMA_VALUES,
+    PROVINCE_OPTIONS,
+    QUOTA_DIMENSIONS,
+    _canonical_diploma,
+    _canonical_province,
+    _normalize_text,
+    _record_input_gpa,
+    build_exam_results,
+    build_record_results,
+    load_majors,
+    load_programs,
+)
+
+class AdmissionChanceRequest(BaseModel):
+    admission_path: Literal["exam", "record"] | None = Field(
+        default=None,
+        description="مسیر پذیرش: exam=با آزمون، record=صرفاً سوابق تحصیلی.",
+    )
+    major_ids: list[int] = Field(default_factory=list)
+
+    # Exam path
+    rank_in_quota: int | None = Field(
+        default=None,
+        ge=1,
+        description="رتبه در سهمیه — کارنامه ملاک عمل انتخاب رشته.",
+    )
+    region_zone: int | None = Field(default=None, ge=1, le=3)
+    special_quota: str = Field(
+        default="none",
+        description="سهمیه خاص؛ از سهمیه منطقه جداست.",
+        json_schema_extra={"enum": ["none", "isargaran_25", "isargaran_5", "shahid"]},
+    )
+    province: str | None = Field(
+        default=None,
+        max_length=64,
+        description="استان بومی؛ یکی از ۳۱ استان استاندارد.",
+        json_schema_extra={"enum": list(PROVINCE_OPTIONS)},
+    )
+    national_rank: int | None = Field(default=None, ge=1)
+    gpa_written: float | None = Field(default=None, ge=0, le=20)
+
+    # Record path
+    diploma_type: str | None = Field(default=None, max_length=64)
+    gpa_total: float | None = Field(default=None, ge=0, le=20)
+    traz: float | None = Field(default=None, ge=0)
+    target_field_group: str | None = Field(default=None, max_length=32)
+
+    course_types: list[str] = Field(default_factory=list)
+    periods: list[str] = Field(
+        default_factory=list,
+        description="دوره‌های دقیق منبع ظرفیت برای source=capacity.",
+    )
+    source: Literal["program", "capacity"] = Field(
+        default="program",
+        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه گروه انتخاب‌شده ۱۴۰۴ متصل است.",
+    )
+    group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = Field(
+        default="riazi",
+        description="گروه منبع exam+capacity: riazi، tajrobi، ensani، honar یا zaban.",
+    )
+    include_unknown: bool = Field(
+        default=False,
+        description="در مسیر exam+capacity فقط برای period=نامشخص؛ پیش‌فرض false. province خالی هرگز استنباط نمی‌شود.",
+    )
+    limit: int = Field(default=30, ge=1, le=100)
+
+    # Legacy fields accepted only as a compatibility envelope.
+    rank: int | None = Field(default=None, ge=1, deprecated=True)
+    quota: str | None = Field(default=None, max_length=64, deprecated=True)
+    gpa: float | None = Field(default=None, ge=0, le=20, deprecated=True)
+
+
+def _resolve_legacy_path(request: AdmissionChanceRequest) -> str:
+    if request.admission_path:
+        return request.admission_path
+    # Legacy payloads were exam-oriented. Preserve that contract only when
+    # legacy rank/region/quota fields identify an exam request.
+    if request.rank_in_quota is not None or request.rank is not None or request.region_zone is not None or request.quota:
+        return "exam"
+    raise AdmissionInputError("admission_path باید یکی از exam یا record باشد.")
+
+
+def _resolve_exam_request(request: AdmissionChanceRequest) -> dict[str, Any]:
+    rank = request.rank_in_quota if request.rank_in_quota is not None else request.rank
+    if rank is None:
+        raise AdmissionInputError("برای مسیر با آزمون rank_in_quota الزامی است.")
+    region = request.region_zone
+    special = _normalize_text(request.special_quota or "none")
+    if special == "":
+        special = "none"
+    special_aliases = {
+        "none": "none",
+        "هیچکدام": "none",
+        "ندارد": "none",
+        "ایثارگران ۲۵": "isargaran_25",
+        "ایثارگران ۲۵٪": "isargaran_25",
+        "isargaran25": "isargaran_25",
+        "ایثارگران ۵": "isargaran_5",
+        "ایثارگران ۵٪": "isargaran_5",
+        "isargaran5": "isargaran_5",
+        "خانواده شهدا": "shahid",
+    }
+    if special == "none" and request.quota in {"isargaran_25", "isargaran_5", "shahid"}:
+        special = str(request.quota)
+
+    special = special_aliases.get(special, special)
+    if special not in {"none", *QUOTA_DIMENSIONS.keys()}:
+        raise AdmissionInputError("special_quota نامعتبر است.")
+    if region not in {1, 2, 3}:
+        if request.quota in {"region_1", "region_2", "region_3"}:
+            region = int(request.quota[-1])
+        elif request.quota == "azad" and request.region_zone in {1, 2, 3}:
+            region = int(request.region_zone)
+    if region not in {1, 2, 3}:
+        raise AdmissionInputError("region_zone در مسیر با آزمون باید ۱، ۲ یا ۳ باشد.")
+    province = _canonical_province(request.province)
+    if province is None:
+        raise AdmissionInputError("استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید.")
+    return {
+        "rank_in_quota": int(rank),
+        "region_zone": int(region),
+        "special_quota": special,
+        "province": province,
+        "diploma_type": request.diploma_type,
+        "gpa_written": request.gpa_written if request.gpa_written is not None else request.gpa,
+        "national_rank": request.national_rank,
+    }
+
+
+def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
+    province = _canonical_province(request.province)
+    if province is None:
+        raise AdmissionInputError("استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید.")
+
+    diploma = _canonical_diploma(request.diploma_type or "")
+    if diploma not in DIPLOMA_VALUES:
+        raise AdmissionInputError(
+            "diploma_type باید یکی از riazi، tajrobi، ensani، maaref یا other_fani باشد."
+        )
+    _record_input_gpa(diploma, request.gpa_written, request.gpa_total)
+    if request.region_zone not in {1, 2, 3}:
+        raise AdmissionInputError("region_zone در مسیر سوابق باید ۱، ۲ یا ۳ باشد.")
+    special = _normalize_text(request.special_quota or "none")
+    special_aliases = {
+        "none": "none",
+        "هیچکدام": "none",
+        "ندارد": "none",
+        "ایثارگران ۲۵": "isargaran_25",
+        "ایثارگران ۲۵٪": "isargaran_25",
+        "isargaran25": "isargaran_25",
+        "ایثارگران ۵": "isargaran_5",
+        "ایثارگران ۵٪": "isargaran_5",
+        "isargaran5": "isargaran_5",
+        "خانواده شهدا": "shahid",
+    }
+    special = special_aliases.get(special, special)
+    if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
+        raise AdmissionInputError("special_quota نامعتبر است.")
+    return {
+        "diploma_type": diploma,
+        "gpa_written": request.gpa_written,
+        "gpa_total": request.gpa_total,
+        "traz": request.traz,
+        "province": province,
+        "target_field_group": request.target_field_group,
+        "region_zone": int(request.region_zone),
+        "special_quota": special,
+    }
+
+
+
+router = APIRouter()
+
+
+@router.post("/admission/chance")
+def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
+    try:
+        path = _resolve_legacy_path(request)
+        if not request.major_ids:
+            raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
+
+        if path == "exam":
+            if request.source == "capacity":
+                if not request.periods:
+                    raise AdmissionInputError(
+                        "برای exam با source=capacity انتخاب حداقل یک period اجباری است."
+                    )
+                province = _canonical_province(request.province)
+                if province is None:
+                    raise AdmissionInputError(
+                        "استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید."
+                    )
+
+                items = build_exam_capacity_results(
+                    major_ids=request.major_ids,
+                    province=province,
+                    periods=request.periods,
+                    include_unknown=request.include_unknown,
+                    limit=request.limit,
+                    group=request.group,
+                )
+                notes = [
+                    "منبع مستقیم ظرفیت دفترچه گروه انتخاب‌شده ۱۴۰۴ است؛ خروجی احتمال قبولی نیست.",
+                    "rank_in_quota در این مسیر فقط اطلاعاتی است و هیچ cutoff رتبه‌ای اعمال نمی‌شود.",
+                    "region_zone و special_quota روی capacity کل فیلتر نمی‌شوند؛ در این موج فقط یادداشت/اطلاعات قراردادی هستند.",
+                ]
+                if not items:
+                    notes.append(
+                        "برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت با آزمون یافت نشد."
+                    )
+                return {
+                    "admission_path": "exam",
+                    "source": "capacity",
+                    "group": request.group,
+                    "items": items,
+                    "count": len(items),
+                    "context": {
+                        "major_ids": request.major_ids,
+                        "rank_in_quota": request.rank_in_quota,
+                        "region_zone": request.region_zone,
+                        "special_quota": _normalize_text(request.special_quota or "none"),
+                        "province": province,
+                        "periods": request.periods,
+                        "include_unknown": request.include_unknown,
+                        "group": request.group,
+                    },
+                    "notes": notes,
+                    "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ جایگزین دفترچه و اعلام رسمی سنجش نیستند و هیچ درصد شانس عددی ارائه نمی‌کنند.",
+                }
+
+        if path == "exam":
+            exam = _resolve_exam_request(request)
+            items = build_exam_results(
+                major_ids=request.major_ids,
+                rank_in_quota=exam["rank_in_quota"],
+                region_zone=exam["region_zone"],
+                special_quota=exam["special_quota"],
+                province=exam["province"],
+                diploma_type=exam["diploma_type"],
+                gpa_written=exam["gpa_written"],
+                national_rank=exam["national_rank"],
+                course_types=request.course_types,
+                programs=load_programs(),
+                limit=request.limit,
+            )
+            return {
+                "admission_path": "exam",
+                "items": items,
+                "count": len(items),
+                "context": {
+                    "rank_in_quota": exam["rank_in_quota"],
+                    "region_zone": exam["region_zone"],
+                    "special_quota": exam["special_quota"],
+                    "province": exam["province"],
+                },
+                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+            }
+
+        if path == "record":
+            if request.source == "capacity":
+                if not request.periods:
+                    raise AdmissionInputError("برای source=capacity انتخاب حداقل یک period اجباری است.")
+                province = _canonical_province(request.province)
+                if province is None:
+                    raise AdmissionInputError("استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید.")
+                diploma = _canonical_diploma(request.diploma_type or "")
+                if diploma not in DIPLOMA_VALUES:
+                    raise AdmissionInputError(
+                        "diploma_type باید یکی از riazi، tajrobi، ensani، maaref یا other_fani باشد."
+                    )
+                _record_input_gpa(diploma, request.gpa_written, request.gpa_total)
+                special = _normalize_text(request.special_quota or "none")
+                if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
+                    raise AdmissionInputError("special_quota نامعتبر است.")
+                items = build_record_capacity_results(
+                    major_ids=request.major_ids,
+                    province=province,
+                    periods=request.periods,
+                    special_quota=special,
+                    limit=request.limit,
+                )
+                notes: list[str] = []
+                if not items:
+                    notes.append("برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت منطبق در منبع سنجش یافت نشد.")
+                return {
+                    "admission_path": "record",
+                    "source": "capacity",
+                    "items": items,
+                    "count": len(items),
+                    "context": {
+                        "major_ids": request.major_ids,
+                        "diploma_type": diploma,
+                        "province": province,
+                        "periods": request.periods,
+                        "special_quota": special,
+                    },
+                    "notes": notes,
+                    "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ این خروجی احتمال قبولی نیست و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                }
+
+            record = _resolve_record_request(request)
+            items = build_record_results(
+                major_ids=request.major_ids,
+                diploma_type=record["diploma_type"],
+                gpa_written=record["gpa_written"],
+                gpa_total=record["gpa_total"],
+                traz=record["traz"],
+                province=record["province"],
+                target_field_group=record["target_field_group"],
+                course_types=request.course_types,
+                programs=load_programs(),
+                majors=load_majors(),
+                limit=request.limit,
+                region_zone=record["region_zone"],
+                special_quota=record["special_quota"],
+            )
+            return {
+                "admission_path": "record",
+                "source": "program",
+                "items": items,
+                "count": len(items),
+                "context": {
+                    "diploma_type": record["diploma_type"],
+                    "province": record["province"],
+                    "target_field_group": record["target_field_group"],
+                    "region_zone": record["region_zone"],
+                    "special_quota": record["special_quota"],
+                },
+                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+            }
+
+        raise AdmissionInputError("admission_path نامعتبر است.")
+
+    except AdmissionInputError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail="داده پذیرش دانشگاه در دسترس نیست") from exc
+    except (OSError, RuntimeError) as exc:
+        raise HTTPException(status_code=503, detail="داده پذیرش دانشگاه قابل استفاده نیست") from exc
+
+
+def attach_router(target_router: APIRouter) -> None:
+    target_router.include_router(router)

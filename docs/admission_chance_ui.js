@@ -26,6 +26,31 @@
     'گلستان', 'گیلان', 'لرستان', 'مازندران', 'مرکزی', 'هرمزگان', 'همدان', 'یزد'
   ];
 
+  var PERIOD_OPTIONS = [
+    { value: 'روزانه', label: 'روزانه' },
+    { value: 'نوبت دوم', label: 'نوبت دوم' },
+    { value: 'پردیس خودگردان', label: 'پردیس خودگردان' },
+    { value: 'شهريه پرداز', label: 'شهریه‌پرداز' },
+    { value: 'مجازی', label: 'مجازی' },
+    { value: 'مشترک', label: 'مشترک' }
+  ];
+
+  var EXAM_GROUP_OPTIONS = [
+    { value: 'riazi', label: 'ریاضی' },
+    { value: 'tajrobi', label: 'تجربی' },
+    { value: 'ensani', label: 'انسانی' },
+    { value: 'honar', label: 'هنر' },
+    { value: 'zaban', label: 'زبان' }
+  ];
+
+  var EXAM_GROUP_LABELS = {
+    riazi: 'ریاضی',
+    tajrobi: 'تجربی',
+    ensani: 'انسانی',
+    honar: 'هنر',
+    zaban: 'زبان'
+  };
+
   var REGION_OPTIONS = [
     { value: '1', label: 'منطقه ۱' },
     { value: '2', label: 'منطقه ۲' },
@@ -37,16 +62,6 @@
     { value: 'isargaran_25', label: 'ایثارگران ۲۵٪' },
     { value: 'isargaran_5', label: 'ایثارگران ۵٪' },
     { value: 'shahid', label: 'خانواده شهدا' }
-  ];
-
-  var RECORD_CAPACITY_PERIOD_OPTIONS = [
-    { value: 'روزانه', label: 'روزانه' },
-    { value: 'نوبت دوم', label: 'نوبت دوم' },
-    { value: 'پیام نور', label: 'پیام نور' },
-    { value: 'غیرانتفاعی', label: 'غیرانتفاعی' },
-    { value: 'مجازی', label: 'مجازی' },
-    { value: 'پردیس خودگردان', label: 'پردیس خودگردان' },
-    { value: 'روزانه – غیردولتی', label: 'روزانه – غیردولتی' }
   ];
 
   var DIPLOMA_OPTIONS = [
@@ -125,19 +140,25 @@
     }).join('');
   }
 
+  function majorOptionsHtml(recommendations) {
+    return recommendations.map(function (item) {
+      var id = Number(item && item.major_id);
+      if (!Number.isInteger(id) || id <= 0) return '';
+      var name = item.major_name_fa || item.major_name || ('رشته ' + id);
+      return '<option value="' + escapeHtml(id) + '">' +
+        escapeHtml(name) + '</option>';
+    }).join('');
+  }
+
   function selectedFormValues(form, path) {
     if (path === 'record') {
       var diploma = String(form.diploma_type.value || '').trim();
       var target = String(form.target_field_group.value || '').trim();
-      var source = String(form.source.value || 'capacity').trim() || 'capacity';
-      var period = String(form.periods.value || '').trim();
       var gpaField = diploma === 'other_fani' ? 'gpa_total' : 'gpa_written';
       return {
         school_province_3y: String(form.school_province_3y.value || '').trim(),
         diploma_type: diploma,
         target_field_group: target || null,
-        source: source,
-        periods: period ? [period] : [],
         region_zone: Number(form.region_zone.value),
         special_quota: String(form.special_quota.value || 'none').trim() || 'none',
         gpa_field: gpaField,
@@ -146,13 +167,10 @@
     }
 
     return {
-      rank_in_quota: Number(form.rank_in_quota.value),
-      region_zone: Number(form.region_zone.value),
-      special_quota: String(form.special_quota.value || 'none').trim() || 'none',
+      group: String(form.group.value || 'riazi').trim() || 'riazi',
+      major_id: Number(form.major_id.value),
       school_province_3y: String(form.school_province_3y.value || '').trim(),
-      national_rank: form.national_rank.value ? Number(form.national_rank.value) : null,
-      diploma_type: String(form.diploma_type.value || '').trim() || null,
-      gpa_written: form.gpa_written.value ? Number(form.gpa_written.value) : null
+      period: String(form.period.value || '').trim()
     };
   }
 
@@ -163,19 +181,14 @@
     if (path === 'record') {
       var payload = {
         admission_path: 'record',
-        source: values.source || 'capacity',
         major_ids: majorIds,
         province: values.school_province_3y || null,
         diploma_type: values.diploma_type || null,
+        target_field_group: values.target_field_group || null,
+        region_zone: values.region_zone,
+        special_quota: values.special_quota,
         limit: 30
       };
-      if (values.source === 'capacity') {
-        payload.periods = values.periods;
-      } else {
-        payload.target_field_group = values.target_field_group || null;
-        payload.region_zone = values.region_zone;
-        payload.special_quota = values.special_quota;
-      }
       if (values.diploma_type === 'other_fani') {
         payload.gpa_total = values.gpa_value;
       } else {
@@ -186,14 +199,12 @@
 
     return {
       admission_path: 'exam',
-      major_ids: majorIds,
-      rank_in_quota: values.rank_in_quota,
-      region_zone: values.region_zone,
-      special_quota: values.special_quota,
+      source: 'capacity',
+      group: EXAM_GROUP_LABELS[values.group] ? values.group : 'riazi',
+      major_ids: Number.isInteger(values.major_id) && values.major_id > 0 ? [values.major_id] : [],
       province: values.school_province_3y || null,
-      national_rank: values.national_rank,
-      diploma_type: values.diploma_type,
-      gpa_written: values.gpa_written,
+      periods: values.period ? [values.period] : [],
+      include_unknown: false,
       limit: 30
     };
   }
@@ -208,35 +219,24 @@
     }
 
     if (path === 'exam') {
-      if (!Number.isInteger(values.rank_in_quota) || values.rank_in_quota < 1) {
-        return 'رتبه در سهمیه را به صورت یک عدد صحیح بزرگ‌تر از صفر وارد کن.';
+      if (!Object.prototype.hasOwnProperty.call(EXAM_GROUP_LABELS, values.group)) {
+        return 'گروه آزمایشی را انتخاب کن.';
       }
-      if (![1, 2, 3].includes(values.region_zone)) {
-        return 'منطقه باید ۱، ۲ یا ۳ باشد.';
+      if (!Number.isInteger(values.major_id) || values.major_id < 1) {
+        return 'رشته را انتخاب کن.';
       }
-      if (values.national_rank != null &&
-          (!Number.isInteger(values.national_rank) || values.national_rank < 1)) {
-        return 'رتبه کشوری اختیاری باید عددی بزرگ‌تر از صفر باشد.';
-      }
-      if (values.gpa_written != null &&
-          (!Number.isFinite(values.gpa_written) || values.gpa_written < 0 || values.gpa_written > 20)) {
-        return 'معدل کتبی اختیاری را بین ۰ تا ۲۰ وارد کن.';
+      if (!values.period) {
+        return 'دوره پذیرش را انتخاب کن.';
       }
       return '';
     }
 
     if (!values.diploma_type) return 'نوع دیپلم را انتخاب کن.';
-    if (!['capacity', 'program'].includes(values.source)) {
-      return 'منبع سوابق نامعتبر است.';
+    if (![1, 2, 3].includes(values.region_zone)) {
+      return 'منطقه باید ۱، ۲ یا ۳ باشد.';
     }
     if (!['none', 'isargaran_25', 'isargaran_5', 'shahid'].includes(values.special_quota)) {
       return 'سهمیه خاص نامعتبر است.';
-    }
-    if (values.source === 'capacity' && !values.periods.length) {
-      return 'برای نمایش ظرفیت دفترچه، انتخاب دوره الزامی است؛ درخواست ارسال نشد.';
-    }
-    if (values.source === 'program' && ![1, 2, 3].includes(values.region_zone)) {
-      return 'منطقه در مسیر برنامه‌های سوابق باید ۱، ۲ یا ۳ باشد.';
     }
     if (!Number.isFinite(values.gpa_value) || values.gpa_value < 0 || values.gpa_value > 20) {
       return values.gpa_field === 'gpa_total'
@@ -261,74 +261,41 @@
     return 'cutoff: ' + cutoff + dimension + year;
   }
 
-  function renderCapacityItems(items, context) {
-    if (!Array.isArray(items) || !items.length) {
-      var majorText = context && Array.isArray(context.majorNames) && context.majorNames.length
-        ? context.majorNames.join('، ')
-        : 'رشته‌های انتخاب‌شده';
-      var provinceText = context && context.province ? context.province : 'استان انتخاب‌شده';
-      var periodText = context && context.period ? context.period : 'دوره انتخاب‌شده';
-      return '<div class="dh-admission-card dh-admission-empty">' +
-        '<p>برای رشته «' + escapeHtml(majorText) + '»، استان «' + escapeHtml(provinceText) + '» و دوره «' + escapeHtml(periodText) + '» ردیف ظرفیت منطبق در داده دفترچه سنجش پیدا نشد. این وضعیت به معنی رد شدن داوطلب نیست.</p>' +
-      '</div>';
-    }
-
-    return items.map(function (item) {
-      var quota = item.quota_shares_mvp;
-      var quotaText = '';
-      if (quota && typeof quota === 'object') {
-        var quotaParts = [];
-        if (quota.isargaran_25 != null) quotaParts.push('ایثارگران ۲۵٪: ' + quota.isargaran_25);
-        if (quota.isargaran_5 != null) quotaParts.push('ایثارگران ۵٪: ' + quota.isargaran_5);
-        if (quota.free_seats != null) quotaParts.push('آزاد: ' + quota.free_seats);
-        if (quota.bomi_pool != null) quotaParts.push('استخر بومی: ' + quota.bomi_pool);
-        if (quotaParts.length) {
-          quotaText = '<div class="dh-admission-capacity-quota"><strong>تقسیم ظرفیت:</strong> ' +
-            escapeHtml(quotaParts.join(' · ')) +
-          '</div>';
-        }
-      }
-
-      var notes = Array.isArray(item.notes) ? item.notes : [];
-      var notesHtml = notes.length
-        ? '<ul class="dh-admission-capacity-notes">' +
-            notes.map(function (note) { return '<li>' + escapeHtml(note) + '</li>'; }).join('') +
-          '</ul>'
-        : '';
-
-      return (
-        '<article class="dh-admission-card dh-admission-capacity-card">' +
-          '<div class="dh-admission-card-head">' +
-            '<div>' +
-              '<h4 class="dh-admission-university">' + escapeHtml(item.major_name || 'رشته نامشخص') + '</h4>' +
-              '<p class="dh-admission-major">کد رشته‌محل: <strong>' + escapeHtml(item.sanjesh_code || '—') + '</strong></p>' +
-            '</div>' +
-            '<span class="dh-admission-label">ظرفیت دفترچه</span>' +
-          '</div>' +
-          '<div class="dh-admission-meta">' +
-            '<span>🏫 محل/دانشگاه: ' + escapeHtml(item.campus || '—') + '</span>' +
-            '<span>🗺️ استان: ' + escapeHtml(item.province || '—') + '</span>' +
-            '<span>📚 دوره: ' + escapeHtml(item.period || '—') + '</span>' +
-            '<span>🔢 ظرفیت: <strong>' + escapeHtml(item.capacity_total == null ? '—' : item.capacity_total) + '</strong></span>' +
-          '</div>' +
-          quotaText +
-          notesHtml +
-        '</article>'
-      );
-    }).join('');
-  }
-
-  function renderItems(items, majorMap, path, source, context) {
-    if (path === 'record' && source === 'capacity') {
-      return renderCapacityItems(items, context);
-    }
-
+  function renderItems(items, majorMap, path, source) {
     if (!Array.isArray(items) || !items.length) {
       var emptyText = path === 'record'
         ? 'برای رشته‌های فعلی، برنامه‌ای با پذیرش «صرفاً سوابق تحصیلی» و دادهٔ قابل استفاده پیدا نشد. این وضعیت به معنی رد شدن داوطلب نیست.'
-        : 'برای ورودی فعلی، برنامه‌ای با دادهٔ cutoff قابل استفاده پیدا نشد.';
+        : 'برای ترکیب گروه آزمایشی، رشته، استان و دوره انتخاب‌شده، ردیف ظرفیت با آزمون در دفترچه ۱۴۰۴ پیدا نشد. این پیام به معنی رد شدن داوطلب نیست.';
       return '<div class="dh-admission-card dh-admission-empty"><p>' +
         escapeHtml(emptyText) + '</p></div>';
+    }
+
+    if (path === 'exam' && source === 'capacity') {
+      return items.map(function (item) {
+        var majorName = item.major_name || majorMap[String(item.major_id)] || 'رشته نامشخص';
+        var note = item.note
+          ? '<p class="dh-admission-note">' + escapeHtml(item.note) + '</p>'
+          : '';
+        return (
+          '<article class="dh-admission-card dh-admission-capacity-card">' +
+            '<div class="dh-admission-card-head">' +
+              '<div>' +
+                '<h4 class="dh-admission-university">' + escapeHtml(item.campus || 'محل دانشگاه نامشخص') + '</h4>' +
+                '<p class="dh-admission-major">' + escapeHtml(majorName) + '</p>' +
+              '</div>' +
+              '<span class="dh-admission-code">کد رشته‌محل: ' + escapeHtml(item.sanjesh_code || '—') + '</span>' +
+            '</div>' +
+            '<div class="dh-admission-meta">' +
+              '<span>🧭 استان: ' + escapeHtml(item.province || '—') + '</span>' +
+              '<span>📚 دوره: ' + escapeHtml(item.period || '—') + '</span>' +
+              '<span>👥 ظرفیت کل: ' + escapeHtml(item.capacity == null ? '—' : item.capacity) + '</span>' +
+              '<span>🚻 جنسیت: ' + escapeHtml(item.gender || '—') + '</span>' +
+              '<span>📄 صفحه: ' + escapeHtml(item.page == null ? '—' : item.page) + '</span>' +
+            '</div>' +
+            note +
+          '</article>'
+        );
+      }).join('');
     }
 
     return items.map(function (item) {
@@ -336,8 +303,14 @@
         ('رشته ' + String(item.major_id || 'نامشخص'));
       var course = COURSE_LABELS[item.course_type] || item.course_type || 'نوع دوره نامشخص';
       var method = item.method || (path === 'record' ? 'سوابق تحصیلی' : 'با آزمون');
-      var note = item.note
-        ? '<p class="dh-admission-note">' + escapeHtml(item.note) + '</p>'
+      var notes = Array.isArray(item.notes) ? item.notes : [];
+      if (!notes.length && item.note) notes = [item.note];
+      var note = notes.length
+        ? '<div class="dh-admission-notes">' +
+            notes.map(function (entry) {
+              return '<p class="dh-admission-note">' + escapeHtml(entry) + '</p>';
+            }).join('') +
+          '</div>'
         : '';
 
       var pathMeta = path === 'record'
@@ -371,51 +344,54 @@
     }).join('');
   }
 
-
-  function examFormHtml() {
+  function examFormHtml(recommendations) {
     return (
-      '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-exam-form" data-path="exam">' +
+      '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-exam-form" data-path="exam" data-source="capacity">' +
         '<div class="dh-admission-field full">' +
-          '<label for="dh-admission-rank">رتبه در سهمیه *</label>' +
-          '<input id="dh-admission-rank" name="rank_in_quota" type="number" min="1" step="1" inputmode="numeric" placeholder="مثلاً 2500" required>' +
-          '<small class="dh-admission-help">رتبه در سهمیه از کارنامه ملاک عمل انتخاب رشته سنجش؛ این فیلد در مسیر با آزمون اصلی است.</small>' +
-        '</div>' +
-        '<div class="dh-admission-field">' +
-          '<label for="dh-admission-region">منطقه *</label>' +
-          '<select id="dh-admission-region" name="region_zone" required>' +
-            '<option value="">انتخاب منطقه</option>' + optionsHtml(REGION_OPTIONS) +
+          '<label for="dh-admission-exam-group">گروه آزمایشی *</label>' +
+          '<select id="dh-admission-exam-group" name="group" required>' +
+            optionsHtml(EXAM_GROUP_OPTIONS) +
           '</select>' +
-        '</div>' +
-        '<div class="dh-admission-field">' +
-          '<label for="dh-admission-special-quota">سهمیه خاص</label>' +
-          '<select id="dh-admission-special-quota" name="special_quota">' +
-            optionsHtml(SPECIAL_QUOTA_OPTIONS) +
-          '</select>' +
+          '<small class="dh-admission-help">پیش‌فرض ریاضی است؛ این انتخاب تعیین می‌کند ظرفیت از کدام دفترچه گروهی ۱۴۰۴ خوانده شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field full">' +
-          '<label for="dh-admission-exam-province">استان محل تحصیل سه سال آخر *</label>' +
+          '<label for="dh-admission-exam-major">رشته *</label>' +
+          '<select id="dh-admission-exam-major" name="major_id" required>' +
+            '<option value="">انتخاب رشته</option>' + majorOptionsHtml(recommendations) +
+          '</select>' +
+          '<small class="dh-admission-help">این انتخاب از رشته‌های کشف‌شده در مرحله قبل می‌آید؛ نتیجه از دفترچه ظرفیت ریاضی ۱۴۰۴ خوانده می‌شود.</small>' +
+        '</div>' +
+        '<div class="dh-admission-field">' +
+          '<label for="dh-admission-exam-province">استان *</label>' +
           '<select id="dh-admission-exam-province" name="school_province_3y" required>' +
             '<option value="">انتخاب استان</option>' + provinceOptionsHtml() +
           '</select>' +
-          '<small class="dh-admission-help">این استان مبنای بومی‌گزینی است؛ استان محل سکونت فعلی را وارد نکن.</small>' +
-        '</div>' +
-        '<div class="dh-admission-subtitle full">اطلاعات تکمیلی اختیاری</div>' +
-        '<div class="dh-admission-field">' +
-          '<label for="dh-admission-national-rank">رتبه کشوری</label>' +
-          '<input id="dh-admission-national-rank" name="national_rank" type="number" min="1" step="1" inputmode="numeric" placeholder="اختیاری">' +
         '</div>' +
         '<div class="dh-admission-field">' +
-          '<label for="dh-admission-exam-diploma">نوع دیپلم</label>' +
-          '<select id="dh-admission-exam-diploma" name="diploma_type">' +
-            '<option value="">ثبت نشود</option>' + optionsHtml(DIPLOMA_OPTIONS) +
+          '<label for="dh-admission-exam-period">دوره *</label>' +
+          '<select id="dh-admission-exam-period" name="period" required>' +
+            '<option value="">انتخاب دوره</option>' + optionsHtml(PERIOD_OPTIONS) +
           '</select>' +
         '</div>' +
-        '<div class="dh-admission-field full">' +
-          '<label for="dh-admission-exam-gpa">معدل کتبی نهایی (اطلاعاتی)</label>' +
-          '<input id="dh-admission-exam-gpa" name="gpa_written" type="number" min="0" max="20" step="0.01" inputmode="decimal" placeholder="اختیاری؛ مثلاً 18.75">' +
-          '<small class="dh-admission-help">در مسیر با آزمون، رتبه در سهمیه معیار اصلی این سرویس است؛ این معدل جایگزین رتبه نمی‌شود.</small>' +
+        '<div class="dh-admission-field full dh-admission-disabled-group">' +
+          '<label for="dh-admission-exam-rank">رتبه در سهمیه</label>' +
+          '<input id="dh-admission-exam-rank" type="text" value="در این فاز استفاده نمی‌شود" disabled>' +
+          '<small class="dh-admission-help">در مسیر ظرفیت دفترچه، رتبه در سهمیه فقط اطلاعاتی است و روی فیلتر ظرفیت اثر ندارد.</small>' +
         '</div>' +
-        '<button class="dh-admission-submit full" type="submit">🎯 بررسی شانس با آزمون</button>' +
+        '<div class="dh-admission-field">' +
+          '<label for="dh-admission-exam-region">منطقه</label>' +
+          '<select id="dh-admission-exam-region" disabled>' +
+            '<option>غیرفعال در مسیر ظرفیت</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="dh-admission-field">' +
+          '<label for="dh-admission-exam-special-quota">سهمیه خاص</label>' +
+          '<select id="dh-admission-exam-special-quota" disabled>' +
+            '<option>غیرفعال در مسیر ظرفیت</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="dh-admission-info full">منطقه، سهمیه خاص و رتبه در این مسیر اطلاعاتی‌اند و در ظرفیت کل دفترچه فیلتر نمی‌شوند.</div>' +
+        '<button class="dh-admission-submit full" type="submit">📘 نمایش ظرفیت‌های با آزمون</button>' +
       '</form>'
     );
   }
@@ -423,14 +399,6 @@
   function recordFormHtml() {
     return (
       '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-record-form" data-path="record">' +
-        '<div class="dh-admission-field full">' +
-          '<label for="dh-admission-record-source">منبع نمایش *</label>' +
-          '<select id="dh-admission-record-source" name="source" required>' +
-            '<option value="capacity" selected>ظرفیت و کد رشته‌محل دفترچه سنجش</option>' +
-            '<option value="program">برآورد بر اساس پرونده‌های پذیرش (معدل/بومی)</option>' +
-          '</select>' +
-          '<small class="dh-admission-help">این دو منبع مستقل‌اند: ظرفیت مستقیم دفترچه فقط ردیف‌های ظرفیت را نشان می‌دهد؛ منبع برنامه بر اساس داده‌های پذیرش، معدل و بومی‌گزینی کار می‌کند.</small>' +
-        '</div>' +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-record-diploma">نوع دیپلم *</label>' +
           '<select id="dh-admission-record-diploma" name="diploma_type" required>' +
@@ -442,48 +410,39 @@
           '<select id="dh-admission-target-group" name="target_field_group">' +
             optionsHtml(TARGET_GROUP_OPTIONS) +
           '</select>' +
-          '<small class="dh-admission-help">فقط در مسیر برنامه‌های پذیرش استفاده می‌شود.</small>' +
+          '<small class="dh-admission-help">برای رشته‌های قابل استنتاج، تشخیص خودکار انجام می‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field full">' +
           '<label for="dh-admission-record-province">استان محل تحصیل سه سال آخر *</label>' +
           '<select id="dh-admission-record-province" name="school_province_3y" required>' +
             '<option value="">انتخاب استان</option>' + provinceOptionsHtml() +
           '</select>' +
-          '<small class="dh-admission-help">استان همچنان فقط از فهرست ۳۱ استان انتخاب می‌شود؛ استان محل سکونت فعلی را وارد نکن.</small>' +
         '</div>' +
-        '<div class="dh-admission-field dh-record-capacity-only" id="dh-admission-record-period-wrap">' +
-          '<label for="dh-admission-record-period">دوره دفترچه *</label>' +
-          '<select id="dh-admission-record-period" name="periods" required>' +
-            '<option value="">انتخاب دوره</option>' + optionsHtml(RECORD_CAPACITY_PERIOD_OPTIONS) +
-          '</select>' +
-        '</div>' +
-        '<div class="dh-admission-field" id="dh-admission-record-region-wrap">' +
-          '<label for="dh-admission-record-region" id="dh-admission-record-region-label">منطقه *</label>' +
+        '<div class="dh-admission-field">' +
+          '<label for="dh-admission-record-region">منطقه *</label>' +
           '<select id="dh-admission-record-region" name="region_zone" required>' +
             '<option value="">انتخاب منطقه</option>' + optionsHtml(REGION_OPTIONS) +
           '</select>' +
-          '<small class="dh-admission-help" id="dh-admission-record-region-help">در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.</small>' +
         '</div>' +
-        '<div class="dh-admission-field" id="dh-admission-record-special-quota-wrap">' +
+        '<div class="dh-admission-field">' +
           '<label for="dh-admission-record-special-quota">سهمیه خاص</label>' +
           '<select id="dh-admission-record-special-quota" name="special_quota">' +
             optionsHtml(SPECIAL_QUOTA_OPTIONS) +
           '</select>' +
-          '<small class="dh-admission-help" id="dh-admission-record-special-quota-help">در مسیر برنامه‌های پذیرش، سهمیه خاص برای فیلتر نتایج استفاده می‌شود.</small>' +
+          '<small class="dh-admission-help">در مسیر سوابق برای حفظ قرارداد توزیع ظرفیت نگه‌داری می‌شود؛ رتبه/حدنصاب سهمیه‌ای در این نسخه محاسبه نمی‌شود.</small>' +
         '</div>' +
         '<div class="dh-admission-field full">' +
           '<label id="dh-admission-record-gpa-label" for="dh-admission-record-gpa">معدل کتبی نهایی *</label>' +
           '<input id="dh-admission-record-gpa" name="gpa_written" type="number" min="0" max="20" step="0.01" inputmode="decimal" placeholder="مثلاً 18.50" required>' +
-          '<small class="dh-admission-help" id="dh-admission-record-gpa-help">برای دیپلم‌های نظری، gpa_written و برای دیپلم فنی/کاردانش، gpa_total ارسال می‌شود.</small>' +
+          '<small class="dh-admission-help" id="dh-admission-record-gpa-help">این استان مبنای بومی‌گزینی است؛ استان محل سکونت فعلی را وارد نکن. برای دیپلم‌های نظری، gpa_written استفاده می‌شود.</small>' +
         '</div>' +
-        '<div class="dh-admission-info full" id="dh-admission-record-info">' +
-          'این مسیر رتبه نمی‌گیرد؛ در منبع ظرفیت فقط ردیف‌های مستقیم داده دفترچه با رشته/استان/دوره دقیق نمایش داده می‌شوند؛ درصد یا احتمال قبولی محاسبه نمی‌شود.' +
+        '<div class="dh-admission-info full">' +
+          'این مسیر رتبه نمی‌گیرد؛ معدل مؤثر از جدول ضریب «نوع دیپلم × گروه رشته هدف» محاسبه و با حداقل معدل برنامه مقایسه می‌شود. منطقه و سهمیه خاص فقط برای حفظ قرارداد توزیع ظرفیت دریافت می‌شوند.' +
         '</div>' +
-        '<button class="dh-admission-submit full" id="dh-admission-record-submit" type="submit">📘 مشاهده ظرفیت دفترچه</button>' +
+        '<button class="dh-admission-submit full" type="submit">📚 بررسی شانس با سوابق تحصیلی</button>' +
       '</form>'
     );
   }
-
 
   function widgetHtml() {
     return (
@@ -491,7 +450,7 @@
         '<div class="dh-admission-heading-row">' +
           '<div>' +
             '<h3>🎓 تخمین شانس قبولی دانشگاه</h3>' +
-            '<p class="dh-admission-chance-lead">مسیر پذیرش را جدا انتخاب کن؛ در «سوابق تحصیلی» پیش‌فرض، ظرفیت مستقیم دفترچه سنجش نمایش داده می‌شود.</p>' +
+            '<p class="dh-admission-chance-lead">مسیر پذیرش را جدا انتخاب کن؛ «با آزمون» و «سوابق تحصیلی» منطق و ورودی مستقل دارند.</p>' +
           '</div>' +
         '</div>' +
         '<div class="dh-admission-tabs" role="tablist" aria-label="مسیر پذیرش">' +
@@ -499,14 +458,14 @@
           '<button type="button" class="dh-admission-tab" role="tab" aria-selected="false" aria-controls="dh-admission-record-panel" id="dh-admission-tab-record" data-admission-tab="record">سوابق تحصیلی</button>' +
         '</div>' +
         '<div class="dh-admission-panel" id="dh-admission-exam-panel" role="tabpanel" aria-labelledby="dh-admission-tab-exam">' +
-          examFormHtml() +
+          examFormHtml(getMajorRecommendations()) +
         '</div>' +
         '<div class="dh-admission-panel" id="dh-admission-record-panel" role="tabpanel" aria-labelledby="dh-admission-tab-record" hidden>' +
           recordFormHtml() +
         '</div>' +
         '<div class="dh-admission-status" id="dh-admission-status" aria-live="polite"></div>' +
         '<div class="dh-admission-results" id="dh-admission-results"></div>' +
-        '<div class="dh-admission-disclaimer">این بخش مستقل از امتیاز فردیت و رتبه‌بندی اسب سیاه است. نتایج دفترچه‌ای/تخمینی هستند و جایگزین اعلام رسمی سنجش نیستند.</div>' +
+        '<div class="dh-admission-disclaimer">این بخش مستقل از امتیاز فردیت و رتبه‌بندی اسب سیاه است. نتایج فقط تخمینی و بر اساس داده‌های cutoff/سوابق موجود هستند و جایگزین دفترچه و اعلام رسمی سنجش نیستند.</div>' +
       '</section>'
     );
   }
@@ -516,62 +475,6 @@
     if (!el) return;
     el.textContent = text || '';
     el.classList.toggle('error', !!isError);
-  }
-
-  function updateRecordSourceFields() {
-    var form = document.getElementById('dh-admission-record-form');
-    if (!form) return;
-    var source = String(form.source.value || 'capacity');
-    var isCapacity = source === 'capacity';
-    var periodWrap = document.getElementById('dh-admission-record-period-wrap');
-    var regionWrap = document.getElementById('dh-admission-record-region-wrap');
-    var specialQuotaWrap = document.getElementById('dh-admission-record-special-quota-wrap');
-    var period = form.periods;
-    var region = form.region_zone;
-    var specialQuota = form.special_quota;
-    var specialQuotaHelp = document.getElementById('dh-admission-record-special-quota-help');
-    var info = document.getElementById('dh-admission-record-info');
-    var submit = document.getElementById('dh-admission-record-submit');
-
-    if (periodWrap) periodWrap.hidden = !isCapacity;
-    if (regionWrap) regionWrap.hidden = isCapacity;
-    if (period) period.required = isCapacity;
-    if (region) {
-      region.required = !isCapacity;
-      region.disabled = isCapacity;
-    }
-    if (specialQuota) {
-      specialQuota.disabled = isCapacity;
-    }
-    if (specialQuotaWrap) {
-      specialQuotaWrap.classList.toggle('dh-admission-capacity-disabled', isCapacity);
-    }
-    var regionLabel = document.getElementById('dh-admission-record-region-label');
-    var regionHelp = document.getElementById('dh-admission-record-region-help');
-    if (regionWrap) regionWrap.hidden = false;
-    if (regionLabel) {
-      regionLabel.textContent = isCapacity ? 'منطقه (در منبع ظرفیت استفاده نمی‌شود)' : 'منطقه *';
-    }
-    if (regionHelp) {
-      regionHelp.textContent = isCapacity
-        ? 'در داده ظرفیت دفترچه سوابق، سهمیه مناطق ۱/۲/۳ برای فیلتر ظرفیت تعریف نشده است.'
-        : 'در مسیر برنامه‌های پذیرش، منطقه برای فیلتر نتایج استفاده می‌شود.';
-    }
-    if (specialQuotaHelp) {
-      specialQuotaHelp.textContent = isCapacity
-        ? 'در منبع ظرفیت، ظرفیت کل دفترچه نمایش داده می‌شود؛ سهمیه روی فیلتر صندلی اثر ندارد و در درخواست ظرفیت ارسال نمی‌شود.'
-        : 'در مسیر برنامه‌های پذیرش، سهمیه خاص برای فیلتر نتایج استفاده می‌شود.';
-    }
-    if (info) {
-      info.textContent = isCapacity
-        ? 'این منبع «ظرفیت و کد رشته‌محل دفترچه سنجش» است؛ فقط ردیف‌های مستقیم دفترچه با رشته/استان/دوره دقیق نمایش داده می‌شوند و احتمال قبولی محاسبه نمی‌شود.'
-        : 'این منبع «برآورد بر اساس پرونده‌های پذیرش (معدل/بومی)» است؛ منطقه برای حفظ قرارداد قبلی استفاده می‌شود.';
-    }
-    if (submit) {
-      submit.textContent = isCapacity
-        ? '📘 مشاهده ظرفیت دفترچه'
-        : '📚 بررسی سوابق تحصیلی';
-    }
   }
 
   function updateRecordGpaField() {
@@ -607,10 +510,8 @@
       submit.textContent = path === 'record' ? 'در حال بررسی سوابق…' : 'در حال بررسی رتبه…';
     }
     setStatus(path === 'record'
-      ? (values.source === 'capacity'
-        ? 'در حال خواندن ظرفیت مستقیم دفترچه سنجش…'
-        : 'در حال محاسبهٔ نتایج برنامه‌های سوابق تحصیلی…')
-      : 'در حال محاسبهٔ نتایج دانشگاهی بر اساس رتبه در سهمیه…', false);
+      ? 'در حال محاسبهٔ معدل مؤثر و مقایسه با برنامه‌های سوابق تحصیلی…'
+      : 'در حال خواندن ظرفیت دفترچه گروه انتخاب‌شده ۱۴۰۴ بر اساس رشته، استان و دوره…', false);
     if (results) results.innerHTML = '';
 
     try {
@@ -638,21 +539,12 @@
       var resultPath = payload && payload.admission_path ? payload.admission_path : path;
       if (results) {
         var majorMap = buildMajorMap(recommendations);
-        var capacityContext = values.source === 'capacity'
-          ? {
-              majorNames: majorIds.map(function (id) {
-                return majorMap[String(id)] || ('رشته ' + String(id));
-              }),
-              province: values.school_province_3y,
-              period: values.periods[0] || ''
-            }
-          : null;
         results.innerHTML =
           '<p class="dh-admission-summary">' +
             'مسیر: <strong>' + escapeHtml(resultPath === 'record' ? 'سوابق تحصیلی' : 'با آزمون') + '</strong> · ' +
             'تعداد نتایج: <strong>' + escapeHtml(payload.count || 0) + '</strong> مورد' +
           '</p>' +
-          renderItems(payload.items || [], majorMap, resultPath, payload.source || values.source, capacityContext) +
+          renderItems(payload.items || [], majorMap, resultPath, payload.source || null) +
           '<div class="dh-admission-disclaimer">' +
             escapeHtml(payload.disclaimer || 'نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیستند.') +
           '</div>';
@@ -664,10 +556,8 @@
       if (submit) {
         submit.disabled = false;
         submit.textContent = path === 'record'
-          ? ((String(form.source.value || 'capacity') === 'capacity')
-            ? '📘 مشاهده ظرفیت دفترچه'
-            : '📚 بررسی سوابق تحصیلی')
-          : '🎯 بررسی شانس با آزمون';
+          ? '📚 بررسی شانس با سوابق تحصیلی'
+          : '📘 نمایش ظرفیت‌های با آزمون';
       }
     }
   }
@@ -691,10 +581,7 @@
     if (results) results.innerHTML = '';
     setStatus('', false);
 
-    if (!isExam) {
-      updateRecordSourceFields();
-      updateRecordGpaField();
-    }
+    if (!isExam) updateRecordGpaField();
   }
 
   function bindWidget(recommendations) {
@@ -709,10 +596,7 @@
 
     var recordForm = document.getElementById('dh-admission-record-form');
     if (recordForm) {
-      recordForm.source.addEventListener('change', updateRecordSourceFields);
       recordForm.diploma_type.addEventListener('change', updateRecordGpaField);
-      updateRecordSourceFields();
-      updateRecordGpaField();
       recordForm.addEventListener('submit', function (event) {
         event.preventDefault();
         requestAdmissionChance(recommendations, recordForm, 'record');
