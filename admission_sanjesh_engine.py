@@ -586,37 +586,76 @@ def _latest_historical_cutoff(
 
 
 def _program_matches_locality(program: dict[str, Any], province: str) -> bool:
-    """Apply only locality rules directly represented in program2s."""
+    """Apply official province/region/pole locality rules available in repo data.
+
+    Policy: if a required geography mapping is missing, exclude the program rather
+    than infer eligibility, avoiding false-positive locality matches.
+    """
     admission = program.get("admission_info", {}) or {}
-    bomi_type = _normalize_text(admission.get("bomi_type"))
-    if bomi_type != "ostani":
-        # ghotbi/nahieyi have no official province mapping here; keep them
-        # eligible and disclose the limitation in notes instead.
+    bomi_type = _normalize_bomi_type(admission.get("bomi_type"))
+    if bomi_type == "keshvari":
+        return True
+
+    if bomi_type not in {"ostani", "nahiyei", "ghotbi"}:
         return True
 
     university = program.get("university", {}) or {}
-    program_province = _canonical_province(university.get("province"))
+    university_province = _canonical_province(university.get("province"))
     candidate_province = _canonical_province(province)
-    # Never infer locality when either side is missing/unknown.
-    return bool(program_province and candidate_province and program_province == candidate_province)
+    if not university_province or not candidate_province:
+        return False
+
+    geography = load_bomi_geography()
+    candidate = geography.get(candidate_province)
+    target = geography.get(university_province)
+    if not candidate or not target:
+        return False
+
+    if bomi_type == "ostani":
+        return candidate_province == university_province
+    if bomi_type == "nahiyei":
+        return int(candidate["nahiye_id"]) == int(target["nahiye_id"])
+    if bomi_type == "ghotbi":
+        return int(candidate["ghotb_id"]) == int(target["ghotb_id"])
+    return True
 
 
 def _locality_notes(program: dict[str, Any], province: str) -> list[str]:
     admission = program.get("admission_info", {}) or {}
-    bomi_type = _normalize_text(admission.get("bomi_type"))
+    bomi_type = _normalize_bomi_type(admission.get("bomi_type"))
     university = program.get("university", {}) or {}
-    notes: list[str] = []
+    notes: list[str] = [
+        "استان school_province_3y ورودی برای بومی‌گزینی این برنامه استفاده شد."
+    ]
+
+    university_province = _canonical_province(university.get("province"))
+    geography = load_bomi_geography()
 
     if bomi_type == "ostani":
-        university_province = _canonical_province(university.get("province"))
-        if university_province == province:
+        if university_province == _canonical_province(province):
             notes.append("بومی استانی مطابق استان محل دانشگاه و استان داوطلب در داده اعمال شد.")
+    elif bomi_type == "nahiyei":
+        candidate = geography.get(_canonical_province(province))
+        target = geography.get(university_province)
+        if candidate and target:
+            notes.append(
+                f"بومی ناحیه‌ای: ناحیه داوطلب {candidate['nahiye_id']} و ناحیه دانشگاه {target['nahiye_id']}."
+            )
         else:
-            notes.append("بومی استانی برای این برنامه با استان داوطلب تطابق ندارد.")
-    elif bomi_type in {"ghotbi", "nahieyi"}:
-        notes.append(GHOTBI_NOTE)
+            notes.append("نگاشت ناحیه‌ای برای برنامه کامل نیست؛ برنامه از نظر بومی‌گزینی resolve نشد.")
+    elif bomi_type == "ghotbi":
+        candidate = geography.get(_canonical_province(province))
+        target = geography.get(university_province)
+        if candidate and target:
+            notes.append(
+                f"بومی قطبی: قطب داوطلب {candidate['ghotb_id']} و قطب دانشگاه {target['ghotb_id']}."
+            )
+        else:
+            notes.append("نگاشت قطبی برای برنامه کامل نیست؛ برنامه از نظر بومی‌گزینی resolve نشد.")
     elif bomi_type == "keshvari":
-        notes.append("بومی کِشوری است؛ تفاوت بومی استانی/قطبی برای این برنامه اعمال نشد.")
+        notes.append("بومی کشوری: فیلتر استان/ناحیه/قطب اعمال نشد.")
+    else:
+        notes.append("نوع بومی برنامه ناشناخته است؛ فیلتر بومی برای این برنامه اعمال نشد.")
 
     notes.append("ظرفیت تفکیکی در داده نیست")
     return notes
