@@ -90,6 +90,15 @@ SPECIAL_FALLBACK_PROGRAM = _program(
     predicted={"zone_2": 1000},
 )
 
+SPECIAL_HISTORICAL_PROGRAM = _program(
+    program_id="EXAM-4",
+    major_id=1,
+    method="با آزمون",
+    course_type="nobat_dovom",
+    predicted={"zone_2": 1000, "isargaran_25": 300},
+    historical={"1403": {"isargaran_25": 190}, "1404": {"isargaran_25": 200}},
+)
+
 ACADEMIC_PROGRAM = _program(
     program_id="ACA-1",
     major_id=1,
@@ -1104,6 +1113,54 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(item["cutoff_year"], 1404)
         self.assertEqual(item["cutoff_source"], "program2s historical cutoff data")
         self.assertIn("هیچ احتمال عددی محاسبه نمی‌شود", payload["disclaimer"])
+
+    def test_exam_program_special_quota_uses_historical_special_cutoff(self):
+        with patch("admission_chance_api.load_programs", return_value=(SPECIAL_HISTORICAL_PROGRAM,)):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "exam",
+                    "source": "program",
+                    "major_ids": [1],
+                    "rank_in_quota": 210,
+                    "region_zone": 2,
+                    "special_quota": "isargaran_25",
+                    "province": "تهران",
+                    "course_types": ["nobat_dovom"],
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        item = response.json()["items"][0]
+        self.assertEqual(item["status"], "near")
+        self.assertEqual(item["cutoff_dimension"], "isargaran_25")
+        self.assertEqual(item["cutoff_reference"]["value"], 200)
+        self.assertEqual(item["cutoff_reference"]["year"], 1404)
+        self.assertEqual(item["cutoff_source"], "program2s historical cutoff data")
+
+    def test_exam_program_special_quota_without_historical_cutoff_returns_unknown(self):
+        with patch("admission_chance_api.load_programs", return_value=(SPECIAL_FALLBACK_PROGRAM,)):
+            response = self.client.post(
+                "/api/v1/admission/chance",
+                json={
+                    "admission_path": "exam",
+                    "source": "program",
+                    "major_ids": [1],
+                    "rank_in_quota": 700,
+                    "region_zone": 2,
+                    "special_quota": "isargaran_25",
+                    "province": "تهران",
+                    "course_types": ["nobat_dovom"],
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        item = response.json()["items"][0]
+        self.assertEqual(item["status"], "unknown")
+        self.assertEqual(item["status_label"], "دادهٔ آخرین رتبه در دسترس نیست")
+        self.assertIsNone(item["cutoff_used"])
+        self.assertIsNone(item["cutoff_reference"])
+        self.assertEqual(item["cutoff_dimension"], "isargaran_25")
+        self.assertIn("برای این سهمیه دادهٔ آخرین رتبه در دسترس نیست", item["note"])
+        self.assertNotIn("fallback مستند", item["note"])
 
     def test_exam_program_rank_missing_returns_400(self):
         with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):

@@ -288,14 +288,17 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 for item in items:
                     program = programs_by_id.get(str(item.get("program_id")), {})
                     historical = program.get("cutoffs_historical")
-                    reference = None
                     dimension = item.get("cutoff_dimension")
-                    if isinstance(historical, dict) and dimension:
+                    requested_dimension = dimension
+                    if exam["special_quota"] != "none":
+                        requested_dimension = QUOTA_DIMENSIONS.get(exam["special_quota"])
+                    reference = None
+                    if isinstance(historical, dict) and requested_dimension:
                         candidates = []
                         for year, values in historical.items():
                             if not isinstance(values, dict):
                                 continue
-                            cutoff = values.get(dimension)
+                            cutoff = values.get(requested_dimension)
                             if isinstance(cutoff, (int, float)) and not isinstance(cutoff, bool):
                                 try:
                                     year_num = int(str(year).strip())
@@ -307,7 +310,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                             reference = {
                                 "value": cutoff,
                                 "year": year_num,
-                                "dimension": dimension,
+                                "dimension": requested_dimension,
                                 "source": "program2s historical cutoff data",
                             }
 
@@ -322,7 +325,16 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     enriched["cutoff_used"] = reference["value"] if reference else None
                     enriched["cutoff_year"] = reference["year"] if reference else None
                     enriched["cutoff_source"] = reference["source"] if reference else None
+                    enriched["cutoff_dimension"] = requested_dimension or dimension
                     enriched["label"] = status_label
+                    if exam["special_quota"] != "none" and reference is None:
+                        notes = [
+                            note for note in (enriched.get("notes") or [])
+                            if "fallback مستند" not in str(note)
+                        ]
+                        notes.append("برای این سهمیه دادهٔ آخرین رتبه در دسترس نیست")
+                        enriched["notes"] = notes
+                        enriched["note"] = " | ".join(notes)
                     comparison_items.append(enriched)
                 items = comparison_items
             return {
