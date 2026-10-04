@@ -20,6 +20,15 @@ assert.match(source, /id="dh-admission-exam-group" name="group" required/);
 assert.match(source, /id="dh-admission-exam-major" name="major_id" required/);
 assert.match(source, /id="dh-admission-exam-province" name="school_province_3y" required/);
 assert.match(source, /id="dh-admission-exam-period" name="period" required/);
+assert.match(source, /id="dh-admission-exam-source-help" class="dh-admission-help"/);
+assert.match(source, /در حالت ظرفیت دفترچه فقط تعداد ظرفیت و کد رشته‌محل از دفترچه خوانده می‌شود/);
+assert.match(source, /برای مقایسه رتبه با آخرین قبولی تاریخی/);
+assert.match(source, /رتبه در سهمیه و منطقه برای انتخاب cutoff تاریخی لازم‌اند/);
+assert.match(source, /نتیجه فقط مقایسه نمایشی است و درصد شانس نیست/);
+assert.match(source, /id="dh-admission-exam-special-quota" name="special_quota"/);
+assert.match(source, /optionsHtml\(SPECIAL_QUOTA_OPTIONS\)/);
+assert.match(source, /form\.special_quota\.disabled = !isProgram/);
+assert.match(source, /special_quota:\s*values\.special_quota/);
 for (const group of ['riazi', 'tajrobi', 'ensani', 'honar', 'zaban']) {
   assert.match(source, new RegExp("value: '" + group + "'"));
 }
@@ -58,6 +67,7 @@ assert.match(examCapacityPayloadBlock, /periods:/);
 assert.match(examCapacityPayloadBlock, /include_unknown:\s*false/);
 assert.doesNotMatch(examCapacityPayloadBlock, /rank_in_quota/);
 assert.doesNotMatch(examCapacityPayloadBlock, /region_zone/);
+assert.doesNotMatch(examCapacityPayloadBlock, /special_quota/);
 
 /* Existing record path contract remains intact. */
 assert.match(source, /diploma_type/);
@@ -105,6 +115,6 @@ assert.match(css, /\.dh-admission-field select:disabled/);
 assert.match(css, /@media/);
 
 assert.match(indexSource, /admission_chance_ui\.css\?v=3/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=9/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=10/);
 
 console.log('admission_chance_ui phase3 regression: PASS');

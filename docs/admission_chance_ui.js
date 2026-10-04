@@ -177,7 +177,10 @@
         : null,
       region_zone: form.region_zone && form.region_zone.value
         ? Number(form.region_zone.value)
-        : null
+        : null,
+      special_quota: form.special_quota
+        ? String(form.special_quota.value || 'none').trim() || 'none'
+        : 'none'
     };
   }
 
@@ -211,7 +214,7 @@
         major_ids: Number.isInteger(values.major_id) && values.major_id > 0 ? [values.major_id] : [],
         rank_in_quota: values.rank_in_quota,
         region_zone: values.region_zone,
-        special_quota: 'none',
+        special_quota: values.special_quota,
         province: values.school_province_3y || null,
         limit: 30
       };
@@ -248,6 +251,9 @@
         }
         if (![1, 2, 3].includes(values.region_zone)) {
           return 'منطقه باید ۱، ۲ یا ۳ باشد.';
+        }
+        if (!['none', 'isargaran_25', 'isargaran_5', 'shahid'].includes(values.special_quota)) {
+          return 'سهمیه خاص نامعتبر است.';
         }
         return '';
       }
@@ -422,7 +428,7 @@
             '<option value="capacity">ظرفیت دفترچه</option>' +
             '<option value="program">مقایسه با آخرین رتبه</option>' +
           '</select>' +
-          '<small class="dh-admission-help">در مقایسه رتبه، هیچ درصد شانس یا calibration محاسبه نمی‌شود؛ فقط cutoff تاریخی موجود با رتبه مقایسه می‌شود.</small>' +
+          '<small id="dh-admission-exam-source-help" class="dh-admission-help">در حالت ظرفیت دفترچه فقط تعداد ظرفیت و کد رشته‌محل از دفترچه خوانده می‌شود؛ رتبه در سهمیه و منطقه روی این لیست اثر ندارند. برای مقایسه رتبه با آخرین قبولی تاریخی، منبع را روی «مقایسه با آخرین رتبه» بگذارید. ظرفیت کل دفترچه سهمیه‌بندی صندلی را فیلتر نمی‌کند.</small>' +
         '</div>' +
         '<div class="dh-admission-field dh-admission-exam-capacity-only">' +
           '<label for="dh-admission-exam-group">گروه آزمایشی *</label>' +
@@ -460,6 +466,13 @@
             '<option value="">انتخاب منطقه</option>' + optionsHtml(REGION_OPTIONS) +
           '</select>' +
         '</div>' +
+        '<div class="dh-admission-field dh-admission-exam-program-only" hidden>' +
+          '<label for="dh-admission-exam-special-quota">سهمیه خاص</label>' +
+          '<select id="dh-admission-exam-special-quota" name="special_quota">' +
+            optionsHtml(SPECIAL_QUOTA_OPTIONS) +
+          '</select>' +
+          '<small class="dh-admission-help">در مقایسه رتبه، cutoff همان سهمیه خاص فقط در صورت وجود داده صریح آن سهمیه استفاده می‌شود؛ در غیر این صورت نتیجه unknown است.</small>' +
+        '</div>' +
         '<div class="dh-admission-info full">ظرفیت دفترچه مستقیماً از داده سنجش خوانده می‌شود. در مقایسه رتبه، فقط وضعیت نسبت به آخرین cutoff تاریخی موجود نمایش داده می‌شود؛ رد شدن قطعی نتیجه‌گیری نمی‌شود.</div>' +
         '<button class="dh-admission-submit full" type="submit">📘 نمایش ظرفیت‌های با آزمون</button>' +
       '</form>'
@@ -480,6 +493,13 @@
     if (form.period) form.period.disabled = isProgram;
     if (form.rank_in_quota) form.rank_in_quota.disabled = !isProgram;
     if (form.region_zone) form.region_zone.disabled = !isProgram;
+    if (form.special_quota) form.special_quota.disabled = !isProgram;
+    var sourceHelp = document.getElementById('dh-admission-exam-source-help');
+    if (sourceHelp) {
+      sourceHelp.textContent = isProgram
+        ? 'رتبه در سهمیه و منطقه برای انتخاب cutoff تاریخی لازم‌اند. نتیجه فقط مقایسه نمایشی است و درصد شانس نیست.'
+        : 'در حالت ظرفیت دفترچه فقط تعداد ظرفیت و کد رشته‌محل از دفترچه خوانده می‌شود؛ رتبه در سهمیه و منطقه روی این لیست اثر ندارند. برای مقایسه رتبه با آخرین قبولی تاریخی، منبع را روی «مقایسه با آخرین رتبه» بگذارید. ظرفیت کل دفترچه سهمیه‌بندی صندلی را فیلتر نمی‌کند.';
+    }
     var submit = form.querySelector('.dh-admission-submit');
     if (submit) {
       submit.textContent = isProgram
