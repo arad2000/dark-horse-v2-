@@ -661,14 +661,13 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertEqual(result["cutoff_year"], 1405)
         self.assertIn("ظرفیت تفکیکی در داده نیست", result["notes"])
 
-    def test_ghotbi_has_explicit_incomplete_locality_note(self):
+    def test_ghotbi_nonmatching_province_is_excluded_by_official_mapping(self):
         result = build_exam_results(
             major_ids=[1], rank_in_quota=900, region_zone=2, special_quota="none",
             province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
             course_types=["roozaneh"], programs=[GHOTBI_PROGRAM], limit=30,
-        )[0]
-        self.assertIn("اعمال بومی قطبی/ناحیه‌ای ناقص است", result["notes"])
-        self.assertIn("ظرفیت تفکیکی در داده نیست", result["notes"])
+        )
+        self.assertEqual(result, [])
 
     def test_exam_output_contains_notes_array(self):
         result = build_exam_results(
@@ -855,15 +854,13 @@ class AdmissionChanceServiceTests(unittest.TestCase):
         self.assertAlmostEqual(result["gpa_effective"], 20.0, places=4)
         self.assertEqual(result["label"], RECORD_ABOVE_LABEL)
 
-    def test_ghotbi_keeps_caution(self):
+    def test_ghotbi_nonmatching_province_has_no_implicit_pass_through(self):
         result = build_exam_results(
             major_ids=[1], rank_in_quota=900, region_zone=2, special_quota="none",
             province="تهران", diploma_type=None, gpa_written=None, national_rank=None,
             course_types=["roozaneh"], programs=[GHOTBI_PROGRAM], limit=30,
-        )[0]
-        self.assertEqual(result["label"], HIGHER_LABEL)
-        self.assertIn(GHOTBI_NOTE, result["notes"])
-        self.assertIn("ظرفیت تفکیکی در داده نیست", result["notes"])
+        )
+        self.assertEqual(result, [])
 
 
 class AdmissionChanceApiTests(unittest.TestCase):
