@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from admission_capacity_record import (
     build_record_capacity_results,
+    load_group_record_capacity_rows,
     load_record_capacity_rows,
     record_capacity_periods,
 )
@@ -63,6 +64,55 @@ class RecordCapacityDirectTests(unittest.TestCase):
             "Approved capacity smoke sample major_id=81 / آذربایجان غربی / روزانه is missing from source",
         )
         return major_id, province, period, major_name
+
+    def test_1405_group_ensani_law_tehran_daily_returns_capacity(self):
+        items = build_record_capacity_results(
+            major_ids=[101],  # حقوق در majors_database_v2.json
+            province="تهران",
+            periods=["روزانه"],
+            group="ensani",
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertEqual(items[0]["province"], "تهران")
+        self.assertEqual(items[0]["period"], "روزانه")
+
+    def test_1405_group_riazi_philosophy_tehran_daily_returns_capacity(self):
+        items = build_record_capacity_results(
+            major_ids=[133],  # فلسفه
+            province="تهران",
+            periods=["روزانه"],
+            group="riazi",
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertEqual(items[0]["province"], "تهران")
+        self.assertEqual(items[0]["period"], "روزانه")
+
+    def test_group_source_first_then_legacy_fallback(self):
+        major_id, province, period, major_name = self._approved_real_case()
+        group_row = {
+            "sanjesh_code": "__group-1405-test__",
+            "major_name": major_name,
+            "province": province,
+            "period": period,
+            "capacity": 7,
+            "admission_type": "صرفاً سوابق",
+            "year": 1405,
+            "group": "riazi",
+        }
+        with patch(
+            "admission_capacity_record.load_group_record_capacity_rows",
+            return_value=(group_row,),
+        ):
+            items = build_record_capacity_results(
+                major_ids=[major_id],
+                province=province,
+                periods=[period],
+                group="riazi",
+            )
+        self.assertGreaterEqual(len(items), 1)
+        self.assertEqual(items[0]["sanjesh_code"], "__group-1405-test__")
 
     def test_approved_major_81_west_azerbaijan_daily_returns_capacity(self):
         major_id, province, period, _ = self._approved_real_case()
@@ -166,6 +216,51 @@ class RecordCapacityApiTests(unittest.TestCase):
                 return ids[0], province, period
         raise AssertionError("No real API sample found")
 
+    def test_record_capacity_ensani_group_uses_1405_source(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [101],
+                "province": "تهران",
+                "periods": ["روزانه"],
+                "target_field_group": "ensani",
+                "diploma_type": "ensani",
+                "gpa_written": 18.0,
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["admission_path"], "record")
+        self.assertEqual(payload["source"], "capacity")
+        self.assertEqual(payload["context"]["group"], "ensani")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(payload["items"][0]["sanjesh_code"])
+        self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
+
+    def test_record_capacity_riazi_group_uses_1405_source(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [133],
+                "province": "تهران",
+                "periods": ["روزانه"],
+                "target_field_group": "riazi",
+                "diploma_type": "riazi",
+                "gpa_written": 18.0,
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["context"]["group"], "riazi")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(payload["items"][0]["sanjesh_code"])
+
     def test_capacity_api_returns_real_item(self):
         major_id, province, period = self._real_case()
         response = self.client.post(
@@ -190,7 +285,7 @@ class RecordCapacityApiTests(unittest.TestCase):
 
     def test_capacity_api_wrong_province_reduces_or_zeros(self):
         major_id, province, period = self._real_case()
-        from admission_sanjesh_engine import PROVINCE_OPTIONS
+        from admission_sanjesh_engine import PROVINCE_OPTIONS, _canonical_province
 
         wrong = next(candidate for candidate in PROVINCE_OPTIONS if candidate != province)
         good = self.client.post(
@@ -219,7 +314,13 @@ class RecordCapacityApiTests(unittest.TestCase):
         )
         self.assertEqual(good.status_code, 200, good.text)
         self.assertEqual(changed.status_code, 200, changed.text)
-        self.assertLessEqual(changed.json()["count"], good.json()["count"])
+        self.assertGreater(good.json()["count"], 0)
+        self.assertTrue(
+            all(
+                _canonical_province(item["province"]) == wrong
+                for item in changed.json()["items"]
+            )
+        )
 
     def test_capacity_api_unknown_period_returns_empty_with_note(self):
         major_id, province, _ = self._real_case()

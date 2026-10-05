@@ -1,4 +1,4 @@
-"""Direct read-only selector for 1404 exam-capacity rows.
+"""Direct read-only selector for group-specific exam-capacity rows.
 
 This module is isolated from the existing exam cutoff/ranking path.
 It reads only the owner-provided group-specific Sanjesh extraction and never
@@ -20,9 +20,9 @@ from admission_sanjesh_engine import (
 
 ROOT = Path(__file__).resolve().parent
 CAPACITY_PATHS = {
-    "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1404_programs.json",
-    "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1404_programs.json",
-    "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1404_programs.json",
+    "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1405_programs.json",
+    "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1405_programs.json",
+    "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1405_programs.json",
     "honar": ROOT / "docs" / "data" / "sanjesh_honar_1404_programs.json",
     "zaban": ROOT / "docs" / "data" / "sanjesh_zaban_1404_programs.json",
 }
@@ -93,7 +93,7 @@ def _extract_rows(payload: Any, source_name: str) -> list[dict[str, Any]]:
 
 @lru_cache(maxsize=4)
 def load_exam_capacity_rows(group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = "riazi") -> tuple[dict[str, Any], ...]:
-    """Load one group-specific 1404 extraction read-only."""
+    """Load one group-specific extraction read-only."""
     try:
         path = CAPACITY_PATHS[str(group)]
     except KeyError as exc:
