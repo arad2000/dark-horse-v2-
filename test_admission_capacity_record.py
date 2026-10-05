@@ -89,6 +89,30 @@ class RecordCapacityDirectTests(unittest.TestCase):
         self.assertEqual(items[0]["province"], "تهران")
         self.assertEqual(items[0]["period"], "روزانه")
 
+    def test_1405_group_honar_painting_real_province_returns_capacity(self):
+        items = build_record_capacity_results(
+            major_ids=[142],  # نقاشی
+            province="سیستان و بلوچستان",
+            periods=["روزانه"],
+            group="honar",
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertEqual(items[0]["province"], "سیستان و بلوچستان")
+        self.assertEqual(items[0]["period"], "روزانه")
+
+    def test_1405_group_zaban_english_teaching_real_province_returns_capacity(self):
+        items = build_record_capacity_results(
+            major_ids=[147],  # آموزش زبان انگلیسی
+            province="خراسان جنوبی",
+            periods=["روزانه"],
+            group="zaban",
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertEqual(items[0]["province"], "خراسان جنوبی")
+        self.assertEqual(items[0]["period"], "روزانه")
+
     def test_group_source_first_then_legacy_fallback(self):
         major_id, province, period, major_name = self._approved_real_case()
         group_row = {
@@ -260,6 +284,50 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertEqual(payload["context"]["group"], "riazi")
         self.assertGreater(payload["count"], 0)
         self.assertTrue(payload["items"][0]["sanjesh_code"])
+
+    def test_record_capacity_honar_group_uses_1405_source(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [142],
+                "province": "سیستان و بلوچستان",
+                "periods": ["روزانه"],
+                "target_field_group": "honar",
+                "diploma_type": "other_fani",
+                "gpa_written": 18.0,
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["context"]["group"], "honar")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(payload["items"][0]["sanjesh_code"])
+        self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
+
+    def test_record_capacity_zaban_group_uses_1405_source(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [147],
+                "province": "خراسان جنوبی",
+                "periods": ["روزانه"],
+                "target_field_group": "zaban",
+                "diploma_type": "other_fani",
+                "gpa_written": 18.0,
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["context"]["group"], "zaban")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(payload["items"][0]["sanjesh_code"])
+        self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
 
     def test_capacity_api_returns_real_item(self):
         major_id, province, period = self._real_case()
