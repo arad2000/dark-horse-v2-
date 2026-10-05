@@ -258,7 +258,10 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                         "include_unknown": request.include_unknown,
                         "group": request.group,
                     },
-                    "notes": notes,
+                    "notes": [
+                        f"منبع ظرفیت سوابق: اولویت با JSON گروهی ۱۴۰۵ برای گروه {record_capacity_group} است؛ در صورت کمبود، sanjesh_record_capacity_full.json به‌عنوان fallback استفاده می‌شود.",
+                        *notes,
+                    ],
                     "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ جایگزین دفترچه و اعلام رسمی سنجش نیستند و هیچ درصد شانس عددی ارائه نمی‌کنند.",
                 }
 
@@ -367,11 +370,19 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 special = _normalize_text(request.special_quota or "none")
                 if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
                     raise AdmissionInputError("special_quota نامعتبر است.")
+                record_capacity_group = (
+                    request.target_field_group
+                    if request.target_field_group in {"riazi", "tajrobi", "ensani"}
+                    else request.group
+                    if request.group in {"riazi", "tajrobi", "ensani"}
+                    else "riazi"
+                )
                 items = build_record_capacity_results(
                     major_ids=request.major_ids,
                     province=province,
                     periods=request.periods,
                     special_quota=special,
+                    group=record_capacity_group,
                     limit=request.limit,
                 )
                 notes: list[str] = []
@@ -388,6 +399,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                         "province": province,
                         "periods": request.periods,
                         "special_quota": special,
+                        "group": record_capacity_group,
                     },
                     "notes": notes,
                     "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ این خروجی احتمال قبولی نیست و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
