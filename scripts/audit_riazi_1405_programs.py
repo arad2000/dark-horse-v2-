@@ -69,6 +69,9 @@ def audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
     code_counts = Counter(
         str(row.get("sanjesh_code") or "").strip() for row in rows
     )
+    blank_code_rows = sum(
+        not str(row.get("sanjesh_code") or "").strip() for row in rows
+    )
     admission = Counter(normalized_admission(row.get("admission_type")) for row in rows)
     periods = Counter(str(row.get("period") or "").strip() for row in rows)
     provinces_blank = sum(
@@ -91,7 +94,7 @@ def audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "total_rows": len(rows),
         "unique_codes": len(code_set(rows)),
-        "blank_code_rows": sum(not code for code in code_counts if not code),
+        "blank_code_rows": blank_code_rows,
         "duplicate_code_values": sum(1 for code, count in code_counts.items() if code and count > 1),
         "duplicate_code_rows": sum(count for code, count in code_counts.items() if code and count > 1),
         "admission_type": dict(admission),
