@@ -13,7 +13,7 @@ class RiaziExamCapacityLoaderTests(unittest.TestCase):
     def test_electrical_engineering_tehran_daily_returns_capacity(self):
         items = build_exam_capacity_results(
             group="riazi",
-            major_ids=[40],  # مهندسی برق
+            major_ids=[41],  # مهندسی برق
             province="تهران",
             periods=["روزانه"],
             limit=5,
@@ -26,7 +26,7 @@ class RiaziExamCapacityLoaderTests(unittest.TestCase):
     def test_unrelated_province_returns_empty(self):
         items = build_exam_capacity_results(
             group="riazi",
-            major_ids=[40],
+            major_ids=[41],
             province="سیستان و بلوچستان",
             periods=["روزانه"],
             limit=5,
