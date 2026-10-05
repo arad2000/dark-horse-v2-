@@ -7,11 +7,15 @@ from admission_exam_capacity import build_exam_capacity_results
 
 
 class HonarExamCapacityLoaderTests(unittest.TestCase):
+    def test_honar_uses_1405_source(self):
+        from admission_exam_capacity import CAPACITY_PATHS
+        self.assertIn("sanjesh_honar_1405_programs.json", str(CAPACITY_PATHS["honar"]))
+
     def test_graphic_alias_karaj_daily_returns_capacity_rows(self):
         items = build_exam_capacity_results(
             group="honar",
             major_ids=[140],  # majors_database_v2: طراحی گرافیک
-            province="البرز",
+            province="تهران",
             periods=["روزانه"],
         )
         self.assertGreater(len(items), 0)
@@ -25,7 +29,7 @@ class HonarExamCapacityLoaderTests(unittest.TestCase):
         items = build_exam_capacity_results(
             group="honar",
             major_ids=[140],
-            province="تهران",
+            province="اصفهان",
             periods=["روزانه"],
         )
         self.assertEqual(items, [])
