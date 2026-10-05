@@ -216,6 +216,51 @@ class RecordCapacityApiTests(unittest.TestCase):
                 return ids[0], province, period
         raise AssertionError("No real API sample found")
 
+    def test_record_capacity_ensani_group_uses_1405_source(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [100],
+                "province": "تهران",
+                "periods": ["روزانه"],
+                "target_field_group": "ensani",
+                "diploma_type": "ensani",
+                "gpa_written": 18.0,
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["admission_path"], "record")
+        self.assertEqual(payload["source"], "capacity")
+        self.assertEqual(payload["context"]["group"], "ensani")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(payload["items"][0]["sanjesh_code"])
+        self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
+
+    def test_record_capacity_riazi_group_uses_1405_source(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [132],
+                "province": "تهران",
+                "periods": ["روزانه"],
+                "target_field_group": "riazi",
+                "diploma_type": "riazi",
+                "gpa_written": 18.0,
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["context"]["group"], "riazi")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(payload["items"][0]["sanjesh_code"])
+
     def test_capacity_api_returns_real_item(self):
         major_id, province, period = self._real_case()
         response = self.client.post(
