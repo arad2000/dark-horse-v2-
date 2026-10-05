@@ -258,10 +258,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                         "include_unknown": request.include_unknown,
                         "group": request.group,
                     },
-                    "notes": [
-                        f"منبع ظرفیت سوابق: اولویت با JSON گروهی ۱۴۰۵ برای گروه {record_capacity_group} است؛ در صورت کمبود، sanjesh_record_capacity_full.json به‌عنوان fallback استفاده می‌شود.",
-                        *notes,
-                    ],
+                    "notes": notes,
                     "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ جایگزین دفترچه و اعلام رسمی سنجش نیستند و هیچ درصد شانس عددی ارائه نمی‌کنند.",
                 }
 
@@ -388,6 +385,10 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 notes: list[str] = []
                 if not items:
                     notes.append("برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت منطبق در منبع سنجش یافت نشد.")
+                notes.insert(
+                    0,
+                    f"منبع ظرفیت سوابق: اولویت با JSON گروهی ۱۴۰۵ برای گروه {record_capacity_group} است؛ در صورت کمبود، sanjesh_record_capacity_full.json به‌عنوان fallback استفاده می‌شود.",
+                )
                 return {
                     "admission_path": "record",
                     "source": "capacity",
