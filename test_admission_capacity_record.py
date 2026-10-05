@@ -285,7 +285,7 @@ class RecordCapacityApiTests(unittest.TestCase):
 
     def test_capacity_api_wrong_province_reduces_or_zeros(self):
         major_id, province, period = self._real_case()
-        from admission_sanjesh_engine import PROVINCE_OPTIONS
+        from admission_sanjesh_engine import PROVINCE_OPTIONS, _canonical_province
 
         wrong = next(candidate for candidate in PROVINCE_OPTIONS if candidate != province)
         good = self.client.post(
@@ -316,7 +316,10 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertEqual(changed.status_code, 200, changed.text)
         self.assertGreater(good.json()["count"], 0)
         self.assertTrue(
-            all(item["province"] == wrong for item in changed.json()["items"])
+            all(
+                _canonical_province(item["province"]) == wrong
+                for item in changed.json()["items"]
+            )
         )
 
     def test_capacity_api_unknown_period_returns_empty_with_note(self):
