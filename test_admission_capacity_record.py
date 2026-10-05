@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from admission_capacity_record import (
     build_record_capacity_results,
+    load_group_record_capacity_rows,
     load_record_capacity_rows,
     record_capacity_periods,
 )
@@ -63,6 +64,55 @@ class RecordCapacityDirectTests(unittest.TestCase):
             "Approved capacity smoke sample major_id=81 / آذربایجان غربی / روزانه is missing from source",
         )
         return major_id, province, period, major_name
+
+    def test_1405_group_ensani_law_tehran_daily_returns_capacity(self):
+        items = build_record_capacity_results(
+            major_ids=[100],  # حقوق در majors_database_v2.json
+            province="تهران",
+            periods=["روزانه"],
+            group="ensani",
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertEqual(items[0]["province"], "تهران")
+        self.assertEqual(items[0]["period"], "روزانه")
+
+    def test_1405_group_riazi_philosophy_tehran_daily_returns_capacity(self):
+        items = build_record_capacity_results(
+            major_ids=[132],  # فلسفه
+            province="تهران",
+            periods=["روزانه"],
+            group="riazi",
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertEqual(items[0]["province"], "تهران")
+        self.assertEqual(items[0]["period"], "روزانه")
+
+    def test_group_source_first_then_legacy_fallback(self):
+        major_id, province, period, major_name = self._approved_real_case()
+        group_row = {
+            "sanjesh_code": "__group-1405-test__",
+            "major_name": major_name,
+            "province": province,
+            "period": period,
+            "capacity": 7,
+            "admission_type": "صرفاً سوابق",
+            "year": 1405,
+            "group": "riazi",
+        }
+        with patch(
+            "admission_capacity_record.load_group_record_capacity_rows",
+            return_value=(group_row,),
+        ):
+            items = build_record_capacity_results(
+                major_ids=[major_id],
+                province=province,
+                periods=[period],
+                group="riazi",
+            )
+        self.assertGreaterEqual(len(items), 1)
+        self.assertEqual(items[0]["sanjesh_code"], "__group-1405-test__")
 
     def test_approved_major_81_west_azerbaijan_daily_returns_capacity(self):
         major_id, province, period, _ = self._approved_real_case()
