@@ -67,7 +67,7 @@ class RecordCapacityDirectTests(unittest.TestCase):
 
     def test_1405_group_ensani_law_tehran_daily_returns_capacity(self):
         items = build_record_capacity_results(
-            major_ids=[100],  # حقوق در majors_database_v2.json
+            major_ids=[101],  # حقوق در majors_database_v2.json
             province="تهران",
             periods=["روزانه"],
             group="ensani",
@@ -79,7 +79,7 @@ class RecordCapacityDirectTests(unittest.TestCase):
 
     def test_1405_group_riazi_philosophy_tehran_daily_returns_capacity(self):
         items = build_record_capacity_results(
-            major_ids=[132],  # فلسفه
+            major_ids=[133],  # فلسفه
             province="تهران",
             periods=["روزانه"],
             group="riazi",
@@ -222,7 +222,7 @@ class RecordCapacityApiTests(unittest.TestCase):
             json={
                 "admission_path": "record",
                 "source": "capacity",
-                "major_ids": [100],
+                "major_ids": [101],
                 "province": "تهران",
                 "periods": ["روزانه"],
                 "target_field_group": "ensani",
@@ -246,7 +246,7 @@ class RecordCapacityApiTests(unittest.TestCase):
             json={
                 "admission_path": "record",
                 "source": "capacity",
-                "major_ids": [132],
+                "major_ids": [133],
                 "province": "تهران",
                 "periods": ["روزانه"],
                 "target_field_group": "riazi",
@@ -314,7 +314,10 @@ class RecordCapacityApiTests(unittest.TestCase):
         )
         self.assertEqual(good.status_code, 200, good.text)
         self.assertEqual(changed.status_code, 200, changed.text)
-        self.assertLessEqual(changed.json()["count"], good.json()["count"])
+        self.assertGreater(good.json()["count"], 0)
+        self.assertTrue(
+            all(item["province"] == wrong for item in changed.json()["items"])
+        )
 
     def test_capacity_api_unknown_period_returns_empty_with_note(self):
         major_id, province, _ = self._real_case()
