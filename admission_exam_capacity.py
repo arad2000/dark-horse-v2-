@@ -23,8 +23,8 @@ CAPACITY_PATHS = {
     "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1405_programs.json",
     "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1405_programs.json",
     "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1405_programs.json",
-    "honar": ROOT / "docs" / "data" / "sanjesh_honar_1404_programs.json",
-    "zaban": ROOT / "docs" / "data" / "sanjesh_zaban_1404_programs.json",
+    "honar": ROOT / "docs" / "data" / "sanjesh_honar_1405_programs.json",
+    "zaban": ROOT / "docs" / "data" / "sanjesh_zaban_1405_programs.json",
 }
 
 GROUP_MAJOR_ALIASES = {
