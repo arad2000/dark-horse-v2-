@@ -20,6 +20,12 @@ from admission_sanjesh_engine import (
 
 ROOT = Path(__file__).resolve().parent
 CAPACITY_PATH = ROOT / "docs" / "data" / "sanjesh_record_capacity_full.json"
+GROUP_RECORD_CAPACITY_PATHS = {
+    "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1405_programs.json",
+    "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1405_programs.json",
+    "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1405_programs.json",
+}
+RECORD_CAPACITY_GROUPS = frozenset(GROUP_RECORD_CAPACITY_PATHS)
 
 
 def _extract_capacity_rows(payload: Any) -> list[dict[str, Any]]:
@@ -36,6 +42,28 @@ def _extract_capacity_rows(payload: Any) -> list[dict[str, Any]]:
     else:
         raise RuntimeError("sanjesh_record_capacity_full.json structure is unsupported")
     return [row for row in rows if isinstance(row, dict)]
+
+
+@lru_cache(maxsize=3)
+def load_group_record_capacity_rows(group: str) -> tuple[dict[str, Any], ...]:
+    """Load 1405 group rows and keep only صرفاً سوابق records."""
+    try:
+        path = GROUP_RECORD_CAPACITY_PATHS[str(group)]
+    except KeyError as exc:
+        raise AdmissionInputError(
+            "group برای ظرفیت سوابق باید یکی از riazi، tajrobi یا ensani باشد."
+        ) from exc
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows = _extract_capacity_rows(payload)
+    record_rows = [
+        row
+        for row in rows
+        if _normalize_text(row.get("admission_type")) in {"صرفاً سوابق", "صرفا سوابق"}
+    ]
+    if not record_rows:
+        raise RuntimeError(f"{path.name} contains no record-capacity rows")
+    return tuple(record_rows)
 
 
 @lru_cache(maxsize=1)
@@ -90,6 +118,7 @@ def build_record_capacity_results(
     province: str,
     periods: list[str],
     special_quota: str = "none",
+    group: str | None = None,
     limit: int = 100,
 ) -> list[dict[str, Any]]:
     """Select capacity rows by exact source fields; never writes program2s."""
@@ -112,7 +141,17 @@ def build_record_capacity_results(
     results: list[dict[str, Any]] = []
     seen_codes: set[str] = set()
 
-    for row in load_record_capacity_rows():
+    if group is not None and group not in RECORD_CAPACITY_GROUPS:
+        raise AdmissionInputError(
+            "group برای ظرفیت سوابق باید یکی از riazi، tajrobi یا ensani باشد."
+        )
+
+    source_rows: list[dict[str, Any]] = []
+    if group is not None:
+        source_rows.extend(load_group_record_capacity_rows(group))
+    source_rows.extend(load_record_capacity_rows())
+
+    for row in source_rows:
         major_name = str(row.get("major_name") or "")
         if _normalize_text(major_name) not in major_names:
             continue
