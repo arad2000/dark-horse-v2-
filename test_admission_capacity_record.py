@@ -296,7 +296,7 @@ class RecordCapacityApiTests(unittest.TestCase):
                 "periods": ["روزانه"],
                 "target_field_group": "honar",
                 "diploma_type": "other_fani",
-                "gpa_written": 18.0,
+                "gpa_total": 18.0,
                 "special_quota": "none",
             },
         )
@@ -318,7 +318,7 @@ class RecordCapacityApiTests(unittest.TestCase):
                 "periods": ["روزانه"],
                 "target_field_group": "zaban",
                 "diploma_type": "other_fani",
-                "gpa_written": 18.0,
+                "gpa_total": 18.0,
                 "special_quota": "none",
             },
         )
