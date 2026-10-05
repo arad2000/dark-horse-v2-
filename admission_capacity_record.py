@@ -24,6 +24,8 @@ GROUP_RECORD_CAPACITY_PATHS = {
     "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1405_programs.json",
     "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1405_programs.json",
     "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1405_programs.json",
+    "honar": ROOT / "docs" / "data" / "sanjesh_honar_1405_programs.json",
+    "zaban": ROOT / "docs" / "data" / "sanjesh_zaban_1405_programs.json",
 }
 RECORD_CAPACITY_GROUPS = frozenset(GROUP_RECORD_CAPACITY_PATHS)
 
@@ -51,7 +53,7 @@ def load_group_record_capacity_rows(group: str) -> tuple[dict[str, Any], ...]:
         path = GROUP_RECORD_CAPACITY_PATHS[str(group)]
     except KeyError as exc:
         raise AdmissionInputError(
-            "group برای ظرفیت سوابق باید یکی از riazi، tajrobi یا ensani باشد."
+            "group برای ظرفیت سوابق باید یکی از riazi، tajrobi، ensani، honar یا zaban باشد."
         ) from exc
 
     payload = json.loads(path.read_text(encoding="utf-8"))
