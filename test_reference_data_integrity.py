@@ -65,10 +65,12 @@ def test_phase2_wave1_behavioral_contract():
     assert all(len(m.get("micro_motive_codes", [])) == 7 for m in phase2)
     assert all(m.get("weights_version", "").endswith("phase2_behavioral_cal_v1") for m in phase2)
 
+
+
+def test_biotechnology_references_are_canonical():
     majors = load_json("majors_database_v2.json")
     biotech = next(m for m in majors if m.get("id") == 34)
     assert biotech["micro_motive_codes"] == [f"BIOT-{i:03d}" for i in range(1, 8)]
-
 
 if __name__ == "__main__":
     test_micro_motive_references()
