@@ -1,0 +1,829 @@
+{
+  "schema_version": 1,
+  "phase": "phase2_wave1",
+  "status": "behavioral_evidence_and_expert_weights_v1",
+  "generated_from": [
+    "majors_database_v2.json",
+    "docs/data/micro_motives.json",
+    "trait_map_v3.json",
+    "value_poles_v2.json"
+  ],
+  "guardrails": [
+    "IDs 1..160 are not semantically edited by this phase.",
+    "Scoring formula remains 0.55*M + 0.30*V + 0.15*S.",
+    "No admission probability or calibration percentage is claimed.",
+    "motive_driven=true is enabled only after all seven behavioral micro-motives exist for the major."
+  ],
+  "notes": "Each new major has seven observable behavior statements. Statements were derived from curriculum/role evidence and then translated into motive wording. Numeric weights are expert calibration v1, not statistical ground truth.",
+  "majors": [
+    {
+      "id": 161,
+      "name": "علوم ورزشی",
+      "cluster": "D",
+      "group": "علوم انسانی",
+      "subgroup": "D2",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swCROSS17_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-161-EDU-001",
+          "description_fa": "تحلیل داده‌های فیزیولوژیک و تبدیل آن به برنامه تمرینی."
+        },
+        {
+          "code": "P2-161-EDU-002",
+          "description_fa": "دیدن اثر یک تغییر تمرینی در آزمون بعدی."
+        },
+        {
+          "code": "P2-161-EDU-003",
+          "description_fa": "پیدا کردن نقص الگوی حرکت با مشاهده دقیق."
+        },
+        {
+          "code": "P2-161-EDU-004",
+          "description_fa": "آزمودن روش تمرینی جدید و مقایسه نتیجه."
+        },
+        {
+          "code": "P2-161-EDU-005",
+          "description_fa": "تنظیم تمرین برای پیشگیری از آسیب هر ورزشکار."
+        },
+        {
+          "code": "P2-161-EDU-006",
+          "description_fa": "توضیح یک نکته فنی یا فیزیولوژیک و دیدن اجرای درست آن."
+        },
+        {
+          "code": "P2-161-EDU-007",
+          "description_fa": "پیگیری تغییرات عملکرد تیم از جلسه‌ای به جلسه دیگر."
+        }
+      ],
+      "source_urls": [
+        "https://shamsgonbad.ac.ir/physical-education-group/",
+        "https://zand.ac.ir/کارشناسی-ارشد-فیزیولوژی-ورزشی-گرایش-فیزیولوژی-فعالیت-ورزشی-بالینی/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 162,
+      "name": "مهندسی معماری",
+      "cluster": "B",
+      "group": "مهندسی",
+      "subgroup": "B2",
+      "high_school_branch": "ریاضی فیزیک",
+      "exam_group": "ریاضی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_eng_v2_focused|structural_ground_v1|swFIX72_v2|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-162-URB-001",
+          "description_fa": "حل همزمان عملکرد فضا و محدودیت سازه در چند پلان."
+        },
+        {
+          "code": "P2-162-URB-002",
+          "description_fa": "تبدیل اسکیس به نقشه قابل اجرا."
+        },
+        {
+          "code": "P2-162-URB-003",
+          "description_fa": "بررسی حجم، نور و حرکت با ماکت یا مدل سه‌بعدی."
+        },
+        {
+          "code": "P2-162-URB-004",
+          "description_fa": "هماهنگ کردن فرم، سازه، مصالح و اقلیم."
+        },
+        {
+          "code": "P2-162-URB-005",
+          "description_fa": "کشف خطای نقشه با کنترل تناسب و نیاز استفاده‌کننده."
+        },
+        {
+          "code": "P2-162-URB-006",
+          "description_fa": "بازطراحی مداوم تا رسیدن به تناسب و جزئیات دقیق."
+        },
+        {
+          "code": "P2-162-URB-007",
+          "description_fa": "دیدن اثر تصمیم طراحی بر تجربه واقعی انسان در فضای ساخته‌شده."
+        }
+      ],
+      "source_urls": [
+        "https://ariana.ac/%D8%A7%D9%86%D8%AA%D8%AE%D8%A7%D8%A8-%D8%B1%D8%B4%D8%AA%D9%87-%D9%85%D9%87%D9%86%D8%AF%D8%B3%DB%8C-%D9%85%D8%B9%D9%85%D8%A7%D8%B1%DB%8C/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 163,
+      "name": "گردشگری",
+      "cluster": "D",
+      "group": "علوم انسانی",
+      "subgroup": "D3",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_hum_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-163-TOUR-001",
+          "description_fa": "ساخت برنامه سفر با کنترل زمان، هزینه و جابه‌جایی."
+        },
+        {
+          "code": "P2-163-TOUR-002",
+          "description_fa": "فهم ترجیح مسافر از راه گفت‌وگو."
+        },
+        {
+          "code": "P2-163-TOUR-003",
+          "description_fa": "تبدیل شناخت فرهنگ و جاذبه مقصد به پیشنهاد سفر."
+        },
+        {
+          "code": "P2-163-TOUR-004",
+          "description_fa": "حل بحران اجرایی تور در لحظه."
+        },
+        {
+          "code": "P2-163-TOUR-005",
+          "description_fa": "مذاکره با ارائه‌دهنده خدمات و رسیدن به توافق."
+        },
+        {
+          "code": "P2-163-TOUR-006",
+          "description_fa": "ساختن تجربه تازه برای یک مقصد ناشناخته."
+        },
+        {
+          "code": "P2-163-TOUR-007",
+          "description_fa": "دیدن رضایت مسافر از تجربه‌ای که طراحی کرده‌ای."
+        }
+      ],
+      "source_urls": [
+        "https://raja.ac.ir/%DA%86%D8%A7%D8%B1%D8%AA-%D8%AF%D8%A7%D9%86%D8%B4%DA%A9%D8%AF%D9%87-%D8%B9%D9%84%D9%88%D9%85-%D8%A7%D8%AC%D8%AA%D9%85%D8%A7%D8%B9%DB%8C/",
+        "https://uast33.com/tourism-managment-registration/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 164,
+      "name": "علوم قرآن و حدیث",
+      "cluster": "D",
+      "group": "علوم انسانی",
+      "subgroup": "D5",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-164-PERS-001",
+          "description_fa": "مقایسه روایت‌های تفسیری و پیدا کردن تفاوت استدلالی."
+        },
+        {
+          "code": "P2-164-PERS-002",
+          "description_fa": "بررسی سند و متن یک روایت پیش از نتیجه‌گیری."
+        },
+        {
+          "code": "P2-164-PERS-003",
+          "description_fa": "خواندن متن قرآن یا حدیث در زبان اصلی."
+        },
+        {
+          "code": "P2-164-PERS-004",
+          "description_fa": "ساخت پاسخ مستند برای یک شبهه با چند منبع."
+        },
+        {
+          "code": "P2-164-PERS-005",
+          "description_fa": "طبقه‌بندی یک موضوع قرآنی برای پژوهش یا تدریس."
+        },
+        {
+          "code": "P2-164-PERS-006",
+          "description_fa": "پیوند دادن متن تفسیری قدیمی با پرسش امروز."
+        },
+        {
+          "code": "P2-164-PERS-007",
+          "description_fa": "مکث طولانی روی متن دشوار تا زمینه و ساختار آن دقیق فهمیده شود."
+        }
+      ],
+      "source_urls": [
+        "https://alalbaytuniversity.com/fa/%D9%83%D9%84%D9%8A%D8%A9-%D8%B9%D9%84%D9%88%D9%85-%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86-%D9%88%D8%A7%D9%84%D8%AD%D8%AF%D9%8A%D8%AB/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 165,
+      "name": "علوم و مهندسی آب",
+      "cluster": "B",
+      "group": "مهندسی",
+      "subgroup": "B2",
+      "high_school_branch": "ریاضی فیزیک",
+      "exam_group": "ریاضی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_eng_v2_focused|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-165-WW-001",
+          "description_fa": "مدل‌کردن جریان آب و پیدا کردن نقطه اختلال فشار یا دبی."
+        },
+        {
+          "code": "P2-165-WW-002",
+          "description_fa": "تبدیل اندازه‌گیری صحرایی به تصمیم مهندسی."
+        },
+        {
+          "code": "P2-165-WW-003",
+          "description_fa": "طراحی آبیاری یا زهکشی با توجه به آب، خاک و انرژی."
+        },
+        {
+          "code": "P2-165-WW-004",
+          "description_fa": "مدل‌سازی رفتار رودخانه یا آب زیرزمینی در شرایط مختلف."
+        },
+        {
+          "code": "P2-165-WW-005",
+          "description_fa": "مقایسه نتیجه آزمایش هیدرولیکی با پیش‌بینی محاسباتی."
+        },
+        {
+          "code": "P2-165-WW-006",
+          "description_fa": "طراحی شبکه یا سازه آبی پایدار و کم‌اتلاف."
+        },
+        {
+          "code": "P2-165-WW-007",
+          "description_fa": "دیدن بهبود واقعی دسترسی روستا، مزرعه یا شهر به آب."
+        }
+      ],
+      "source_urls": [
+        "https://raeigroup.com/%D8%B9%D9%84%D9%88%D9%85-%D9%88-%D9%85%D9%87%D9%86%D8%AF%D8%B3%DB%8C-%D8%A2%D8%A8-2/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 166,
+      "name": "باستان‌شناسی",
+      "cluster": "D",
+      "group": "علوم انسانی",
+      "subgroup": "D5",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-166-HIST-001",
+          "description_fa": "پیدا کردن لایه یا یافته‌ای که ترتیب تاریخی را روشن کند."
+        },
+        {
+          "code": "P2-166-HIST-002",
+          "description_fa": "ثبت دقیق موقعیت و ویژگی شیء قبل از تفسیر."
+        },
+        {
+          "code": "P2-166-HIST-003",
+          "description_fa": "مقایسه یافته‌های چند دوره و کشف الگوی زمانی."
+        },
+        {
+          "code": "P2-166-HIST-004",
+          "description_fa": "استفاده از اسناد برای ساخت فرضیه درباره یک محوطه."
+        },
+        {
+          "code": "P2-166-HIST-005",
+          "description_fa": "تشخیص شیء اصیل از نمونه مشکوک به جعل یا جابه‌جایی."
+        },
+        {
+          "code": "P2-166-HIST-006",
+          "description_fa": "بازسازی روایت تاریخی از شواهد ناقص بدون حدس بی‌مدرک."
+        },
+        {
+          "code": "P2-166-HIST-007",
+          "description_fa": "کشف جزئیاتی در یک یافته که تصویر بزرگ‌تر را تغییر می‌دهد."
+        }
+      ],
+      "source_urls": [
+        "https://business1391.blogfa.com/post/48"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 167,
+      "name": "فرش",
+      "cluster": "E",
+      "group": "هنر",
+      "subgroup": "E1",
+      "high_school_branch": "فنی و حرفه‌ای",
+      "exam_group": "هنر",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-167-GRAPH-001",
+          "description_fa": "طراحی نقش قالی با ریتم و تعادل دقیق."
+        },
+        {
+          "code": "P2-167-GRAPH-002",
+          "description_fa": "انتخاب رنگ و مصالح با توجه به سنت و دوام."
+        },
+        {
+          "code": "P2-167-GRAPH-003",
+          "description_fa": "کنترل جزئیات تکرارشونده تا کوچک‌ترین ناهمخوانی دیده نشود."
+        },
+        {
+          "code": "P2-167-GRAPH-004",
+          "description_fa": "تبدیل نقش‌مایه تاریخی به طرح قابل بافت امروز."
+        },
+        {
+          "code": "P2-167-GRAPH-005",
+          "description_fa": "ساخت نمونه کوچک و اصلاح طرح پیش از اجرای کامل."
+        },
+        {
+          "code": "P2-167-GRAPH-006",
+          "description_fa": "پیگیری بافت و مرمت برای حفظ کیفیت."
+        },
+        {
+          "code": "P2-167-GRAPH-007",
+          "description_fa": "دیدن تبدیل طرح روی کاغذ به قالی واقعی و ماندگار."
+        }
+      ],
+      "source_urls": [
+        "https://lilit.ir/1666/",
+        "https://t.me/s/universityofart/1786"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 168,
+      "name": "صنایع دستی",
+      "cluster": "E",
+      "group": "هنر",
+      "subgroup": "E1",
+      "high_school_branch": "فنی و حرفه‌ای",
+      "exam_group": "هنر",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-168-GRAPH-001",
+          "description_fa": "آزمودن رفتار چوب، فلز، سفال یا الیاف در ساخت نمونه."
+        },
+        {
+          "code": "P2-168-GRAPH-002",
+          "description_fa": "ساخت شیء با دست و اصلاح فرم تا زیبا و کاربردی شود."
+        },
+        {
+          "code": "P2-168-GRAPH-003",
+          "description_fa": "ترکیب تکنیک سنتی با فرم جدید بدون از دست دادن هویت."
+        },
+        {
+          "code": "P2-168-GRAPH-004",
+          "description_fa": "پرداخت، رنگ و جزئیات یک قطعه در کارگاه."
+        },
+        {
+          "code": "P2-168-GRAPH-005",
+          "description_fa": "مقایسه نمونه‌ها و انتخاب دقیق‌ترین روش ساخت."
+        },
+        {
+          "code": "P2-168-GRAPH-006",
+          "description_fa": "مرمت یا تکمیل اثر با کمترین آسیب به اصل آن."
+        },
+        {
+          "code": "P2-168-GRAPH-007",
+          "description_fa": "دیدن واکنش مخاطب به کیفیت و هویت یک قطعه دست‌ساز."
+        }
+      ],
+      "source_urls": [
+        "https://www.scribd.com/document/699364119/%D8%B3%D8%B1%D9%81%D8%B5%D9%84-%D9%87%D8%A7%DB%8C-%D8%AF%D8%B1%D9%88%D8%B3-%DA%A9%D8%A7%D8%B1%D8%B4%D9%86%D8%A7%D8%B3%DB%8C-%D8%A7%D8%B1%D8%B4%D8%AF-%D8%B5%D9%86%D8%A7%DB%8C%D8%B9-%D8%AF%D8%B3%D8%AA%DB%8C",
+        "https://t.me/s/universityofart/1786"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 169,
+      "name": "زیست‌فناوری",
+      "cluster": "C",
+      "group": "علوم پایه",
+      "subgroup": "A6",
+      "high_school_branch": "علوم تجربی",
+      "exam_group": "تجربی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_basic_v2|base_value_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-169-BIOT-001",
+          "description_fa": "طراحی آزمایش مولکولی که واقعاً به سؤال پژوهش پاسخ دهد."
+        },
+        {
+          "code": "P2-169-BIOT-002",
+          "description_fa": "کار با DNA، سلول یا پروتئین و ثبت منظم داده."
+        },
+        {
+          "code": "P2-169-BIOT-003",
+          "description_fa": "بهینه‌سازی فرایند زیستی با مقایسه شرایط."
+        },
+        {
+          "code": "P2-169-BIOT-004",
+          "description_fa": "تشخیص داده قابل اعتماد از نتیجه نیازمند تکرار."
+        },
+        {
+          "code": "P2-169-BIOT-005",
+          "description_fa": "تبدیل یافته آزمایشگاهی به کاربرد دارویی، کشاورزی یا محیط‌زیستی."
+        },
+        {
+          "code": "P2-169-BIOT-006",
+          "description_fa": "تکرار آزمایش حساس تا نتیجه پایدار و بازتولیدپذیر شود."
+        },
+        {
+          "code": "P2-169-BIOT-007",
+          "description_fa": "دیدن عبور یک فرضیه از آزمایشگاه به نتیجه قابل استفاده."
+        }
+      ],
+      "source_urls": [
+        "https://zand.ac.ir/elementor-2734/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 170,
+      "name": "هنر اسلامی",
+      "cluster": "E",
+      "group": "هنر",
+      "subgroup": "E1",
+      "high_school_branch": "فنی و حرفه‌ای",
+      "exam_group": "هنر",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-170-PAINT-001",
+          "description_fa": "طراحی نگارگری یا تذهیب با کنترل خط، رنگ و تناسب."
+        },
+        {
+          "code": "P2-170-PAINT-002",
+          "description_fa": "بازسازی منطق بصری یک الگوی تاریخی."
+        },
+        {
+          "code": "P2-170-PAINT-003",
+          "description_fa": "ساخت نمونه با مواد سنتی و اصلاح تکنیک."
+        },
+        {
+          "code": "P2-170-PAINT-004",
+          "description_fa": "ترکیب میراث هنر اسلامی با بیان معاصر."
+        },
+        {
+          "code": "P2-170-PAINT-005",
+          "description_fa": "تشخیص تفاوت مهم سبک و اجرا میان دو نمونه."
+        },
+        {
+          "code": "P2-170-PAINT-006",
+          "description_fa": "کار طولانی روی جزئیات ریز برای اجرای بی‌نقص."
+        },
+        {
+          "code": "P2-170-PAINT-007",
+          "description_fa": "دیدن اینکه هویت فرهنگی و جزئیات اثر توسط مخاطب فهمیده می‌شود."
+        }
+      ],
+      "source_urls": [
+        "https://www.ricac.ac.ir/book/361/%D9%87%D9%86%D8%B1-%D9%82%D8%B1%D8%A2%D9%86%DB%8C%D8%9B-%D8%AA%D8%AD%D9%84%DB%8C%D9%84-%D8%B2%DB%8C%D8%A8%D8%A7%DB%8C%DB%8C%E2%80%8C%D8%B4%D9%86%D8%A7%D8%B3%DB%8C-%D8%AA%D8%B0%D9%87%DB%8C%D8%A8%E2%80%8C%D9%87%D8%A7%DB%8C-%D9%82%D8%B1%D8%A2%D9%86%DB%8C-%D8%AF%D9%88%D8%B1%D9%87-%D8%B5%D9%81%D9%88%DB%8C%D9%87-",
+        "https://www.ricac.ac.ir/news/3874/%D9%BE%DA%98%D9%88%D9%87%D8%B4%DB%8C-%D8%AF%D8%B1%D8%A8%D8%A7%D8%B1%D9%87-%D8%AA%D8%B4%D8%B9%DB%8C%D8%B1%E2%80%8C%D9%87%D8%A7%DB%8C-%D8%AF%D9%88-%D9%85%DA%A9%D8%AA%D8%A8-%D8%A7%D8%B5%D9%81%D9%87%D8%A7%D9%86-%D9%88-%D9%85%D9%83%D8%AA%D8%A8-%D8%AA%D9%87%D8%B1%D8%A7%D9%86"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 171,
+      "name": "هتلداری",
+      "cluster": "D",
+      "group": "علوم انسانی",
+      "subgroup": "D3",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_hum_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-171-TOUR-001",
+          "description_fa": "هماهنگ کردن پذیرش، خانه‌داری و غذا و نوشیدنی در شیفت شلوغ."
+        },
+        {
+          "code": "P2-171-TOUR-002",
+          "description_fa": "حل شکایت مهمان با شنیدن مسئله و اقدام اجرایی."
+        },
+        {
+          "code": "P2-171-TOUR-003",
+          "description_fa": "مدیریت رزرو و حل تعارض اتاق در زمان ظرفیت کامل."
+        },
+        {
+          "code": "P2-171-TOUR-004",
+          "description_fa": "ساخت استاندارد تجربه مهمان و کنترل اجرای آن."
+        },
+        {
+          "code": "P2-171-TOUR-005",
+          "description_fa": "تنظیم شیفت و نیروی انسانی بر اساس حجم کار."
+        },
+        {
+          "code": "P2-171-TOUR-006",
+          "description_fa": "استفاده از بازخورد مهمان برای اصلاح یک فرایند."
+        },
+        {
+          "code": "P2-171-TOUR-007",
+          "description_fa": "دیدن اینکه فعالیت‌های پشت صحنه به تجربه واحد مهمان تبدیل می‌شوند."
+        }
+      ],
+      "source_urls": [
+        "https://uast33.com/hotel-managment-registration/",
+        "https://easyshiksha.com/fa/%D8%A8%D8%B1%D9%86%D8%A7%D9%85%D9%87%E2%80%8C%D9%87%D8%A7%DB%8C-%D8%AF%D8%A7%D9%86%D8%B4%DA%AF%D8%A7%D9%87%DB%8C/%D8%A8%DB%8C-%D9%88%D9%88%DA%A9/%D9%85%D8%AF%DB%8C%D8%B1%DB%8C%D8%AA-%D9%87%D8%AA%D9%84-%D8%AF%D8%A7%D9%86%D8%B4%DA%AF%D8%A7%D9%87-%D9%85%D9%86%DA%AF%D9%84%D8%A7%DB%8C%D8%A7%D8%AA%D8%A7%D9%86-%D8%A7%D9%88%D8%AA%D8%A7%D8%B1-%D9%BE%D8%B1%D8%A7%D8%AF%D8%B4"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 172,
+      "name": "معماری داخلی",
+      "cluster": "E",
+      "group": "هنر",
+      "subgroup": "E2",
+      "high_school_branch": "فنی و حرفه‌ای",
+      "exam_group": "هنر",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-172-ARCHA-001",
+          "description_fa": "ترسیم پلان داخلی با توجه به حرکت، مبلمان، نور و کاربری."
+        },
+        {
+          "code": "P2-172-ARCHA-002",
+          "description_fa": "انتخاب مصالح، رنگ و بافت بر اساس اثر فضایی و عملکردی."
+        },
+        {
+          "code": "P2-172-ARCHA-003",
+          "description_fa": "اصلاح تناسبات با مدل سه‌بعدی یا ماکت."
+        },
+        {
+          "code": "P2-172-ARCHA-004",
+          "description_fa": "طراحی نور برای پشتیبانی همزمان از عملکرد و حس."
+        },
+        {
+          "code": "P2-172-ARCHA-005",
+          "description_fa": "کنترل اندازه‌ها و جزئیات اجرایی نقشه."
+        },
+        {
+          "code": "P2-172-ARCHA-006",
+          "description_fa": "بازطراحی فضا بر اساس ارگونومی و نیاز استفاده‌کننده."
+        },
+        {
+          "code": "P2-172-ARCHA-007",
+          "description_fa": "دیدن انطباق تجربه فضای ساخته‌شده با منطق طراحی."
+        }
+      ],
+      "source_urls": [
+        "https://prozhehmemari.ir/interior-architecture-lesson-chart/",
+        "https://ariana.ac/%D8%A7%D9%86%D8%AA%D8%AE%D8%A7%D8%A8-%D8%B1%D8%B4%D8%AA%D9%87-%D9%85%D9%87%D9%86%D8%AF%D8%B3%DB%8C-%D9%85%D8%B9%D9%85%D8%A7%D8%B1%DB%8C/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 173,
+      "name": "ادیان و عرفان",
+      "cluster": "D",
+      "group": "علوم انسانی",
+      "subgroup": "D5",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-173-PHIL-001",
+          "description_fa": "مقایسه سنت‌های دینی و تشخیص تفاوت‌های واقعی در مبانی."
+        },
+        {
+          "code": "P2-173-PHIL-002",
+          "description_fa": "خواندن متن دینی در زبان اصلی و توجه به اصطلاحات زمینه‌مند."
+        },
+        {
+          "code": "P2-173-PHIL-003",
+          "description_fa": "بررسی تجربه عرفانی با متن، تاریخ و زمینه فرهنگی."
+        },
+        {
+          "code": "P2-173-PHIL-004",
+          "description_fa": "ساخت پژوهش تطبیقی از چند منبع و روایت."
+        },
+        {
+          "code": "P2-173-PHIL-005",
+          "description_fa": "تحلیل مفهومی مثل وحی یا سلوک و دفاع مستند از تفسیر."
+        },
+        {
+          "code": "P2-173-PHIL-006",
+          "description_fa": "بازبینی ادعا با مراجعه به منبع اولیه."
+        },
+        {
+          "code": "P2-173-PHIL-007",
+          "description_fa": "تمایز دادن متن، تجربه، تاریخ و تفسیر در یک مسئله چندلایه."
+        }
+      ],
+      "source_urls": [
+        "https://aeae.blogfa.com/1385/05",
+        "https://t.me/s/ram_ut?before=13"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 174,
+      "name": "مطالعات خانواده",
+      "cluster": "D",
+      "group": "علوم انسانی",
+      "subgroup": "D2",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swCROSS17_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-174-EDU-001",
+          "description_fa": "تحلیل مسئله خانواده از زاویه روانی، تربیتی، اجتماعی و حقوقی."
+        },
+        {
+          "code": "P2-174-EDU-002",
+          "description_fa": "پیدا کردن الگوی تعارض، ارتباط یا تغییر نقش‌ها در یک مورد."
+        },
+        {
+          "code": "P2-174-EDU-003",
+          "description_fa": "طراحی محتوای آموزشی برای تقویت ارتباط یا حل تعارض."
+        },
+        {
+          "code": "P2-174-EDU-004",
+          "description_fa": "تشخیص اینکه یک راه‌حل برای همه خانواده‌ها قابل تعمیم نیست."
+        },
+        {
+          "code": "P2-174-EDU-005",
+          "description_fa": "دیدن پیامد یک تصمیم خانوادگی برای اعضای مختلف."
+        },
+        {
+          "code": "P2-174-EDU-006",
+          "description_fa": "تبدیل یافته پژوهش خانواده به پیشنهاد عملی و قابل فهم."
+        },
+        {
+          "code": "P2-174-EDU-007",
+          "description_fa": "دیدن اثر یک تغییر کوچک در گفت‌وگو یا آموزش بر کیفیت رابطه."
+        }
+      ],
+      "source_urls": [
+        "https://www.heyvagroup.com/shownews/323/%D9%85%D8%B9%D8%B1%D9%81%DB%8C-%D8%B1%D8%B4%D8%AA%D9%87-%D9%85%D8%B7%D8%A7%D9%84%D8%B9%D8%A7%D8%AA-%D8%AE%D8%A7%D9%86%D9%88%D8%A7%D8%AF%D9%87.html"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 175,
+      "name": "زبان و ادبیات فرانسه",
+      "cluster": "E",
+      "group": "زبان و ادبیات",
+      "subgroup": "E3",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "زبان",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_art_lang_v1|lang_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-175-ENGL-001",
+          "description_fa": "خواندن متن فرانسوی و تشخیص ظرافت فراتر از ترجمه لفظی."
+        },
+        {
+          "code": "P2-175-ENGL-002",
+          "description_fa": "بازسازی معنای گفت‌وگوی فرانسوی با توجه به لحن و بافت."
+        },
+        {
+          "code": "P2-175-ENGL-003",
+          "description_fa": "ویرایش چندباره متن فرانسوی تا ساختار و واژگان دقیق شود."
+        },
+        {
+          "code": "P2-175-ENGL-004",
+          "description_fa": "تحلیل شعر یا نمایشنامه با شاهد متنی."
+        },
+        {
+          "code": "P2-175-ENGL-005",
+          "description_fa": "پیوند سبک نویسنده با زمینه تاریخی ادبیات فرانسه."
+        },
+        {
+          "code": "P2-175-ENGL-006",
+          "description_fa": "مقایسه دو ترجمه یا برداشت و توضیح تفاوت اثرگذار."
+        },
+        {
+          "code": "P2-175-ENGL-007",
+          "description_fa": "حل یک عبارت دشوار با بررسی رابطه واژه، ساختار و فرهنگ."
+        }
+      ],
+      "source_urls": [
+        "https://www.scribd.com/document/917920621/%D8%AC%D8%AF%D9%88%D9%84-%D9%88%D8%A7%D8%AD%D8%AF%D9%87%D8%A7%DB%8C-%DA%A9%D8%A7%D8%B1%D8%B4%D9%86%D8%A7%D8%B3%DB%8C-%D9%81%D8%B1%D8%A7%D9%86%D8%B3%D9%87-2"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    },
+    {
+      "id": 176,
+      "name": "مترجمی زبان عربی",
+      "cluster": "E",
+      "group": "زبان و ادبیات",
+      "subgroup": "D5",
+      "high_school_branch": "علوم انسانی",
+      "exam_group": "انسانی",
+      "motive_driven": true,
+      "handcrafted": true,
+      "weights_version": "hybrid_swRESHARP_art_lang_v1|lang_value_v1|phase2_behavioral_cal_v1",
+      "micro_motives": [
+        {
+          "code": "P2-176-ARAB-001",
+          "description_fa": "ترجمه عربی به فارسی با حفظ معنا و لحن."
+        },
+        {
+          "code": "P2-176-ARAB-002",
+          "description_fa": "بازنویسی فارسی به عربی با نحو و سبک طبیعی."
+        },
+        {
+          "code": "P2-176-ARAB-003",
+          "description_fa": "پیدا کردن معادل تخصصی با فرهنگ و منبع معتبر."
+        },
+        {
+          "code": "P2-176-ARAB-004",
+          "description_fa": "ویرایش ترجمه و کشف خطاهای معنایی و سبکی."
+        },
+        {
+          "code": "P2-176-ARAB-005",
+          "description_fa": "تغییر روش ترجمه بر اساس نوع متن خبری، اقتصادی، حقوقی یا دینی."
+        },
+        {
+          "code": "P2-176-ARAB-006",
+          "description_fa": "مقایسه دو ترجمه و دفاع از انتخاب واژه و ساختار."
+        },
+        {
+          "code": "P2-176-ARAB-007",
+          "description_fa": "بررسی کاربرد فرهنگی واژه پیش از ترجمه آن."
+        }
+      ],
+      "source_urls": [
+        "https://www.isba.ir/Default/BookDetail/18539/-%D8%AA%D8%B1%D8%AC%D9%85%D9%87-%D9%85%D8%AA%D9%88%D9%86-%D8%A7%D9%82%D8%AA%D8%B5%D8%A7%D8%AF%DB%8C%3A-%D8%B1%D8%B4%D8%AA%D9%87-%D9%85%D8%AA%D8%B1%D8%AC%D9%85%DB%8C-%D8%B2%D8%A8%D8%A7%D9%86-%D8%B9%D8%B1%D8%A8%DB%8C",
+        "https://raeigroup.com/%D9%85%D8%AA%D8%B1%D8%AC%D9%85%DB%8C-%D8%B2%D8%A8%D8%A7%D9%86-%D8%B9%D8%B1%D8%A8%DB%8C-2/"
+      ],
+      "weighting": {
+        "strategy": "expert_calibrated_v1 from role/curriculum behavioral profile mapped to S01..S25 trait options; each row normalized to sum=1.",
+        "value": "expert_calibrated_v1 from Q01..Q15 pole preferences; preferred pole 0.88, opposite 0.34.",
+        "statistical_status": "not population-calibrated; requires empirical calibration after real-user outcome data exists."
+      }
+    }
+  ]
+}

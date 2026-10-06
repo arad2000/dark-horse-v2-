@@ -45,7 +45,7 @@ def test_micro_motive_references():
                 deferred.append((major.get("id"), major.get("name"), code))
                 continue
             missing.append((major.get("id"), major.get("name"), code))
-    assert len(deferred) == 112, f"Expected 112 explicit phase2 stub refs, got {len(deferred)}"
+    assert len(deferred) == 0, f"Phase2 references must be fully resolved: {deferred}"
     assert not missing, f"Missing micro-motive references: {missing}"
 
 
@@ -56,11 +56,21 @@ def test_phase2_wave1_catalog_contract():
     assert ids == list(range(1, 177))
 
 
+def test_phase2_wave1_behavioral_contract():
+    majors = load_json("majors_database_v2.json")
+    phase2 = [m for m in majors if int(m["id"]) in PHASE2_WAVE1_IDS]
+    assert len(phase2) == 16
+    assert all(m.get("motive_driven") is True for m in phase2)
+    assert all(m.get("handcrafted") is True for m in phase2)
+    assert all(len(m.get("micro_motive_codes", [])) == 7 for m in phase2)
+    assert all(m.get("weights_version", "").endswith("phase2_behavioral_cal_v1") for m in phase2)
+
+
+
 def test_biotechnology_references_are_canonical():
     majors = load_json("majors_database_v2.json")
     biotech = next(m for m in majors if m.get("id") == 34)
     assert biotech["micro_motive_codes"] == [f"BIOT-{i:03d}" for i in range(1, 8)]
-
 
 if __name__ == "__main__":
     test_micro_motive_references()
