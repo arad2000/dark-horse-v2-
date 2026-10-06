@@ -11,6 +11,33 @@ from record_major_map import load_major_id_name_map, major_name_for_id
 ROOT = Path(__file__).resolve().parent
 
 
+def _legacy_full_weight_fingerprint(items):
+    payload = "\n".join(
+        json.dumps(
+            {
+                "id": int(item["id"]),
+                "name": item["name"],
+                "weights_version": item["weights_version"],
+                "strategy_weights": item.get("strategy_weights") or item.get("strategy_profile") or {},
+                "value_weights": item.get("value_weights") or {},
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        for item in sorted(
+            (item for item in items if 1 <= int(item["id"]) <= 160),
+            key=lambda item: int(item["id"]),
+        )
+    )
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in payload:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+
 def _legacy_name_weight_fingerprint(items):
     payload = "\n".join(
         f"{int(item['id'])}|{item['name']}|{item['weights_version']}"
@@ -42,6 +69,10 @@ class RecordMajorMapTests(unittest.TestCase):
         self.assertEqual(
             _legacy_name_weight_fingerprint(legacy),
             "15ce7c0ad63de857",
+        )
+        self.assertEqual(
+            _legacy_full_weight_fingerprint(legacy),
+            "7b3cfeb5ec7def9d",
         )
 
     def test_phase2_wave1_new_majors_are_capacity_stubs(self):
