@@ -37128,13 +37128,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swCROSS17_v1|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-161-EDU-001",
-      "P2-161-EDU-002",
-      "P2-161-EDU-003",
-      "P2-161-EDU-004",
-      "P2-161-EDU-005",
-      "P2-161-EDU-006",
-      "P2-161-EDU-007"
+      "SPORT-001",
+      "SPORT-002",
+      "SPORT-003",
+      "SPORT-004",
+      "SPORT-005",
+      "SPORT-006",
+      "SPORT-007"
     ],
     "strategy_weights": [
       [
@@ -37360,13 +37360,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_eng_v2_focused|structural_ground_v1|swFIX72_v2|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-162-URB-001",
-      "P2-162-URB-002",
-      "P2-162-URB-003",
-      "P2-162-URB-004",
-      "P2-162-URB-005",
-      "P2-162-URB-006",
-      "P2-162-URB-007"
+      "ARCH-001",
+      "ARCH-002",
+      "ARCH-003",
+      "ARCH-004",
+      "ARCH-005",
+      "ARCH-006",
+      "ARCH-007"
     ],
     "strategy_weights": [
       [
@@ -37592,13 +37592,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_hum_v1|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-163-TOUR-001",
-      "P2-163-TOUR-002",
-      "P2-163-TOUR-003",
-      "P2-163-TOUR-004",
-      "P2-163-TOUR-005",
-      "P2-163-TOUR-006",
-      "P2-163-TOUR-007"
+      "TOURISM-001",
+      "TOURISM-002",
+      "TOURISM-003",
+      "TOURISM-004",
+      "TOURISM-005",
+      "TOURISM-006",
+      "TOURISM-007"
     ],
     "strategy_weights": [
       [
@@ -37824,13 +37824,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-164-PERS-001",
-      "P2-164-PERS-002",
-      "P2-164-PERS-003",
-      "P2-164-PERS-004",
-      "P2-164-PERS-005",
-      "P2-164-PERS-006",
-      "P2-164-PERS-007"
+      "QURAN-001",
+      "QURAN-002",
+      "QURAN-003",
+      "QURAN-004",
+      "QURAN-005",
+      "QURAN-006",
+      "QURAN-007"
     ],
     "strategy_weights": [
       [
@@ -38056,13 +38056,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_eng_v2_focused|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-165-WW-001",
-      "P2-165-WW-002",
-      "P2-165-WW-003",
-      "P2-165-WW-004",
-      "P2-165-WW-005",
-      "P2-165-WW-006",
-      "P2-165-WW-007"
+      "WATER-001",
+      "WATER-002",
+      "WATER-003",
+      "WATER-004",
+      "WATER-005",
+      "WATER-006",
+      "WATER-007"
     ],
     "strategy_weights": [
       [
@@ -38288,13 +38288,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-166-HIST-001",
-      "P2-166-HIST-002",
-      "P2-166-HIST-003",
-      "P2-166-HIST-004",
-      "P2-166-HIST-005",
-      "P2-166-HIST-006",
-      "P2-166-HIST-007"
+      "ARCHY-001",
+      "ARCHY-002",
+      "ARCHY-003",
+      "ARCHY-004",
+      "ARCHY-005",
+      "ARCHY-006",
+      "ARCHY-007"
     ],
     "strategy_weights": [
       [
@@ -38520,13 +38520,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-167-GRAPH-001",
-      "P2-167-GRAPH-002",
-      "P2-167-GRAPH-003",
-      "P2-167-GRAPH-004",
-      "P2-167-GRAPH-005",
-      "P2-167-GRAPH-006",
-      "P2-167-GRAPH-007"
+      "CARPET-001",
+      "CARPET-002",
+      "CARPET-003",
+      "CARPET-004",
+      "CARPET-005",
+      "CARPET-006",
+      "CARPET-007"
     ],
     "strategy_weights": [
       [
@@ -38752,13 +38752,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-168-GRAPH-001",
-      "P2-168-GRAPH-002",
-      "P2-168-GRAPH-003",
-      "P2-168-GRAPH-004",
-      "P2-168-GRAPH-005",
-      "P2-168-GRAPH-006",
-      "P2-168-GRAPH-007"
+      "CRAFT-001",
+      "CRAFT-002",
+      "CRAFT-003",
+      "CRAFT-004",
+      "CRAFT-005",
+      "CRAFT-006",
+      "CRAFT-007"
     ],
     "strategy_weights": [
       [
@@ -38980,13 +38980,13 @@
     "name": "زیست‌فناوری",
     "group": "علوم پایه",
     "micro_motive_codes": [
-      "P2-169-BIOT-001",
-      "P2-169-BIOT-002",
-      "P2-169-BIOT-003",
-      "P2-169-BIOT-004",
-      "P2-169-BIOT-005",
-      "P2-169-BIOT-006",
-      "P2-169-BIOT-007"
+      "BIOTECH-001",
+      "BIOTECH-002",
+      "BIOTECH-003",
+      "BIOTECH-004",
+      "BIOTECH-005",
+      "BIOTECH-006",
+      "BIOTECH-007"
     ],
     "strategy_weights": [
       [
@@ -39216,13 +39216,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-170-PAINT-001",
-      "P2-170-PAINT-002",
-      "P2-170-PAINT-003",
-      "P2-170-PAINT-004",
-      "P2-170-PAINT-005",
-      "P2-170-PAINT-006",
-      "P2-170-PAINT-007"
+      "ISLART-001",
+      "ISLART-002",
+      "ISLART-003",
+      "ISLART-004",
+      "ISLART-005",
+      "ISLART-006",
+      "ISLART-007"
     ],
     "strategy_weights": [
       [
@@ -39448,13 +39448,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_hum_v1|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-171-TOUR-001",
-      "P2-171-TOUR-002",
-      "P2-171-TOUR-003",
-      "P2-171-TOUR-004",
-      "P2-171-TOUR-005",
-      "P2-171-TOUR-006",
-      "P2-171-TOUR-007"
+      "HOTEL-001",
+      "HOTEL-002",
+      "HOTEL-003",
+      "HOTEL-004",
+      "HOTEL-005",
+      "HOTEL-006",
+      "HOTEL-007"
     ],
     "strategy_weights": [
       [
@@ -39680,13 +39680,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-172-ARCHA-001",
-      "P2-172-ARCHA-002",
-      "P2-172-ARCHA-003",
-      "P2-172-ARCHA-004",
-      "P2-172-ARCHA-005",
-      "P2-172-ARCHA-006",
-      "P2-172-ARCHA-007"
+      "INTARCH-001",
+      "INTARCH-002",
+      "INTARCH-003",
+      "INTARCH-004",
+      "INTARCH-005",
+      "INTARCH-006",
+      "INTARCH-007"
     ],
     "strategy_weights": [
       [
@@ -39912,13 +39912,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-173-PHIL-001",
-      "P2-173-PHIL-002",
-      "P2-173-PHIL-003",
-      "P2-173-PHIL-004",
-      "P2-173-PHIL-005",
-      "P2-173-PHIL-006",
-      "P2-173-PHIL-007"
+      "RELIG-001",
+      "RELIG-002",
+      "RELIG-003",
+      "RELIG-004",
+      "RELIG-005",
+      "RELIG-006",
+      "RELIG-007"
     ],
     "strategy_weights": [
       [
@@ -40144,13 +40144,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_hum_v1|hum_value_v1|swCROSS17_v1|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-174-EDU-001",
-      "P2-174-EDU-002",
-      "P2-174-EDU-003",
-      "P2-174-EDU-004",
-      "P2-174-EDU-005",
-      "P2-174-EDU-006",
-      "P2-174-EDU-007"
+      "FAMILY-001",
+      "FAMILY-002",
+      "FAMILY-003",
+      "FAMILY-004",
+      "FAMILY-005",
+      "FAMILY-006",
+      "FAMILY-007"
     ],
     "strategy_weights": [
       [
@@ -40376,13 +40376,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_art_lang_v1|lang_value_v1|swFIX72_v2|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-175-ENGL-001",
-      "P2-175-ENGL-002",
-      "P2-175-ENGL-003",
-      "P2-175-ENGL-004",
-      "P2-175-ENGL-005",
-      "P2-175-ENGL-006",
-      "P2-175-ENGL-007"
+      "FRENCH-001",
+      "FRENCH-002",
+      "FRENCH-003",
+      "FRENCH-004",
+      "FRENCH-005",
+      "FRENCH-006",
+      "FRENCH-007"
     ],
     "strategy_weights": [
       [
@@ -40608,13 +40608,13 @@
     "motive_driven": true,
     "weights_version": "hybrid_swRESHARP_art_lang_v1|lang_value_v1|phase2_behavioral_cal_v1",
     "micro_motive_codes": [
-      "P2-176-ARAB-001",
-      "P2-176-ARAB-002",
-      "P2-176-ARAB-003",
-      "P2-176-ARAB-004",
-      "P2-176-ARAB-005",
-      "P2-176-ARAB-006",
-      "P2-176-ARAB-007"
+      "ARBTR-001",
+      "ARBTR-002",
+      "ARBTR-003",
+      "ARBTR-004",
+      "ARBTR-005",
+      "ARBTR-006",
+      "ARBTR-007"
     ],
     "strategy_weights": [
       [
