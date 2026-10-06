@@ -89,6 +89,40 @@ class RecordCapacityDirectTests(unittest.TestCase):
         self.assertEqual(items[0]["province"], "تهران")
         self.assertEqual(items[0]["period"], "روزانه")
 
+    def test_phase1_explicit_aliases_match_by_major_id(self):
+        cases = [
+            ("tajrobi", 1, "دکتری عمومی پزشکی"),
+            ("ensani", 101, "کارشناسی حقوق"),
+            ("ensani", 107, "مشاوره"),
+        ]
+        for group, major_id, booklet_name in cases:
+            with patch(
+                "admission_capacity_record.load_group_record_capacity_rows",
+                return_value=(
+                    {
+                        "sanjesh_code": f"__record-alias-{major_id}__",
+                        "major_name": booklet_name,
+                        "province": "تهران",
+                        "period": "روزانه",
+                        "admission_type": "صرفاً سوابق",
+                        "capacity": 1,
+                    },
+                ),
+            ):
+                items = build_record_capacity_results(
+                    major_ids=[major_id],
+                    province="تهران",
+                    periods=["روزانه"],
+                    group=group,
+                )
+            self.assertEqual(
+                [item["sanjesh_code"] for item in items],
+                [f"__record-alias-{major_id}__"],
+            )
+            self.assertTrue(
+                any("alias صریح major_id" in note for note in items[0]["notes"])
+            )
+
     def test_group_source_first_then_legacy_fallback(self):
         major_id, province, period, major_name = self._approved_real_case()
         group_row = {
