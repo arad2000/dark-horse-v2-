@@ -37,7 +37,7 @@ ROOT = Path(__file__).resolve().parent
 DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
 LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT = "15ce7c0ad63de857"
-LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "7b3cfeb5ec7def9d"
+LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "e0e81b6b783c1007"
 
 
 def load_json(path: Path) -> Any:
@@ -133,6 +133,25 @@ def legacy_major_name_weight_fingerprint(major_records: list[dict[str, Any]]) ->
     return f"{value:016x}"
 
 
+def _canonical_weight_value(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return f"#{int(float(value) * 1_000_000 + 0.5)}"
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(value, list):
+        return "[" + ",".join(_canonical_weight_value(item) for item in value) + "]"
+    if isinstance(value, dict):
+        return "{" + ",".join(
+            f"{json.dumps(str(key), ensure_ascii=False)}:{_canonical_weight_value(value[key])}"
+            for key in sorted(value)
+        ) + "}"
+    return str(value)
+
+
 def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) -> str:
     rows = []
     for item in sorted(
@@ -140,15 +159,19 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
         key=lambda item: int(item["id"]),
     ):
         rows.append(
-            {
-                "id": int(item["id"]),
-                "name": item["name"],
-                "weights_version": item["weights_version"],
-                "strategy_weights": item.get("strategy_weights") or item.get("strategy_profile") or {},
-                "value_weights": item.get("value_weights") or {},
-            }
+            "|".join(
+                [
+                    str(int(item["id"])),
+                    str(item["name"]),
+                    str(item["weights_version"]),
+                    _canonical_weight_value(
+                        item.get("strategy_weights") or item.get("strategy_profile") or {}
+                    ),
+                    _canonical_weight_value(item.get("value_weights") or {}),
+                ]
+            )
         )
-    payload = "\n".join(json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in rows)
+    payload = "\n".join(rows)
     value = 0xCBF29CE484222325
     prime = 0x100000001B3
     mask = 0xFFFFFFFFFFFFFFFF
@@ -156,7 +179,6 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
         value ^= ord(char)
         value = (value * prime) & mask
     return f"{value:016x}"
-
 
 def require_no_duplicate(values: list[str], label: str) -> None:
     seen: set[str] = set()
