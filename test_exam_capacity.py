@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from admission_chance_api import AdmissionChanceRequest, admission_chance
 from admission_exam_capacity import build_exam_capacity_results
@@ -43,6 +44,62 @@ class ExamCapacityLoaderTests(unittest.TestCase):
             periods=["نامشخص"],
         )
         self.assertEqual(items, [])
+
+    def test_phase1_explicit_aliases_match_by_major_id(self):
+        cases = [
+            ("tajrobi", 1, "دکتری عمومی پزشکی"),
+            ("riazi", 53, "مهندسی صنایع و سیستم‌ها"),
+            ("honar", 140, "گرافیک"),
+            ("riazi", 82, "آمار"),
+        ]
+        with patch("admission_exam_capacity.load_exam_capacity_rows") as load_rows:
+            for group, major_id, booklet_name in cases:
+                load_rows.return_value = (
+                    {
+                        "sanjesh_code": f"__alias-{major_id}__",
+                        "major_name": booklet_name,
+                        "province": "تهران",
+                        "period": "روزانه",
+                        "admission_type": "با آزمون",
+                        "capacity": 1,
+                    },
+                )
+                items = build_exam_capacity_results(
+                    major_ids=[major_id],
+                    province="تهران",
+                    periods=["روزانه"],
+                    group=group,
+                )
+                self.assertEqual([item["sanjesh_code"] for item in items], [f"__alias-{major_id}__"])
+
+    def test_phase1_graphic_alias_does_not_capture_visual_communication_major(self):
+        with patch("admission_exam_capacity.load_exam_capacity_rows") as load_rows:
+            load_rows.return_value = (
+                {
+                    "sanjesh_code": "__visual-communication__",
+                    "major_name": "ارتباط تصویری",
+                    "province": "تهران",
+                    "period": "روزانه",
+                    "admission_type": "با آزمون",
+                    "capacity": 1,
+                },
+            )
+            self.assertEqual(
+                build_exam_capacity_results(
+                    major_ids=[140],
+                    province="تهران",
+                    periods=["روزانه"],
+                    group="honar",
+                ),
+                [],
+            )
+            items = build_exam_capacity_results(
+                major_ids=[141],
+                province="تهران",
+                periods=["روزانه"],
+                group="honar",
+            )
+            self.assertEqual([item["sanjesh_code"] for item in items], ["__visual-communication__"])
 
     def test_api_exam_capacity_uses_loader_without_rank_cutoff(self):
         request = AdmissionChanceRequest(
