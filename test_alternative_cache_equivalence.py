@@ -17,7 +17,7 @@ class AlternativeCacheEquivalenceTests(unittest.TestCase):
         )
 
     def test_major_cache_matches_fresh_computation_for_all_majors(self):
-        self.assertEqual(len(self.engine.majors_db), 160)
+        self.assertEqual(len(self.engine.majors_db), 176)
         self.assertEqual(set(self.engine._alt_paths_cache), set(self.engine.majors_db))
 
         for major_id in self.engine.majors_db:
