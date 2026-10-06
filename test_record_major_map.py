@@ -11,18 +11,35 @@ from record_major_map import load_major_id_name_map, major_name_for_id
 ROOT = Path(__file__).resolve().parent
 
 
+def _canonical_weight_value(value):
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return f"#{int(float(value) * 1_000_000 + 0.5)}"
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(value, list):
+        return "[" + ",".join(_canonical_weight_value(item) for item in value) + "]"
+    if isinstance(value, dict):
+        return "{" + ",".join(
+            f"{json.dumps(str(key), ensure_ascii=False)}:{_canonical_weight_value(value[key])}"
+            for key in sorted(value)
+        ) + "}"
+    return str(value)
+
+
 def _legacy_full_weight_fingerprint(items):
     payload = "\n".join(
-        json.dumps(
-            {
-                "id": int(item["id"]),
-                "name": item["name"],
-                "weights_version": item["weights_version"],
-                "strategy_weights": item.get("strategy_weights") or item.get("strategy_profile") or {},
-                "value_weights": item.get("value_weights") or {},
-            },
-            ensure_ascii=False,
-            separators=(",", ":"),
+        "|".join(
+            [
+                str(int(item["id"])),
+                str(item["name"]),
+                str(item["weights_version"]),
+                _canonical_weight_value(item.get("strategy_weights") or item.get("strategy_profile") or {}),
+                _canonical_weight_value(item.get("value_weights") or {}),
+            ]
         )
         for item in sorted(
             (item for item in items if 1 <= int(item["id"]) <= 160),
@@ -36,6 +53,7 @@ def _legacy_full_weight_fingerprint(items):
         value ^= ord(char)
         value = (value * prime) & mask
     return f"{value:016x}"
+
 
 
 def _legacy_name_weight_fingerprint(items):
@@ -72,7 +90,7 @@ class RecordMajorMapTests(unittest.TestCase):
         )
         self.assertEqual(
             _legacy_full_weight_fingerprint(legacy),
-            "7b3cfeb5ec7def9d",
+            "e0e81b6b783c1007",
         )
 
     def test_phase2_wave1_new_majors_are_capacity_stubs(self):
