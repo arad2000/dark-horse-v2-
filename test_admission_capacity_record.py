@@ -379,40 +379,9 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertEqual(response.json()["source"], "program")
 
 
-    def test_debug_1405_honar_zaban_tehran_daily_major_candidates(self):
-        from admission_sanjesh_engine import _normalize_text, load_majors
-        majors = load_majors()
-        names = {
-            _normalize_text(value.get("name")): int(key)
-            for key, value in majors.items()
-            if isinstance(value, dict) and str(value.get("name") or "").strip()
-        }
-        report = {}
-        for group in ("honar", "zaban"):
-            rows = load_group_record_capacity_rows(group)
-            candidates = []
-            for row in rows:
-                province = str(row.get("province") or "").strip()
-                period = str(row.get("period") or "").strip()
-                name = str(row.get("major_name") or "").strip()
-                if province == "تهران" and period == "روزانه" and name:
-                    candidates.append({
-                        "major_id": names.get(_normalize_text(name)),
-                        "major_name": name,
-                        "admission_type": row.get("admission_type"),
-                        "province": province,
-                        "period": period,
-                        "sanjesh_code": row.get("sanjesh_code"),
-                        "capacity": row.get("capacity"),
-                    })
-                if len(candidates) >= 30:
-                    break
-            report[group] = candidates
-        self.fail(repr(report))
-
-    def test_1405_group_honar_graphic_tehran_daily_returns_capacity(self):
+    def test_1405_group_honar_law_tehran_daily_returns_capacity(self):
         items = build_record_capacity_results(
-            major_ids=[140],
+            major_ids=[101],  # حقوق; verified in 1405 honar JSON: Tehran + روزانه + صرفاً سوابق
             province="تهران",
             periods=["روزانه"],
             group="honar",
@@ -422,9 +391,9 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertEqual(items[0]["province"], "تهران")
         self.assertEqual(items[0]["period"], "روزانه")
 
-    def test_1405_group_zaban_tefl_tehran_daily_returns_capacity(self):
+    def test_1405_group_zaban_philosophy_tehran_daily_returns_capacity(self):
         items = build_record_capacity_results(
-            major_ids=[147],
+            major_ids=[133],  # فلسفه; verified in 1405 zaban JSON: Tehran + روزانه + صرفاً سوابق
             province="تهران",
             periods=["روزانه"],
             group="zaban",
@@ -440,11 +409,11 @@ class RecordCapacityApiTests(unittest.TestCase):
             json={
                 "admission_path": "record",
                 "source": "capacity",
-                "major_ids": [140],
+                "major_ids": [101],
                 "province": "تهران",
                 "periods": ["روزانه"],
                 "target_field_group": "honar",
-                "diploma_type": "other_fani",
+                "diploma_type": "ensani",
                 "gpa_written": 18.0,
                 "special_quota": "none",
             },
@@ -461,11 +430,11 @@ class RecordCapacityApiTests(unittest.TestCase):
             json={
                 "admission_path": "record",
                 "source": "capacity",
-                "major_ids": [147],
+                "major_ids": [133],
                 "province": "تهران",
                 "periods": ["روزانه"],
                 "target_field_group": "zaban",
-                "diploma_type": "other_fani",
+                "diploma_type": "ensani",
                 "gpa_written": 18.0,
                 "special_quota": "none",
             },
