@@ -35,6 +35,9 @@ from models import (
 
 ROOT = Path(__file__).resolve().parent
 DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
+PHASE2_WAVE1_IDS = frozenset(range(161, 177))
+LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT = "15ce7c0ad63de857"
+LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "e0e81b6b783c1007"
 
 
 def load_json(path: Path) -> Any:
@@ -113,6 +116,70 @@ def parse_trait_options(payload: Any) -> list[dict[str, Any]]:
     return result
 
 
+def legacy_major_name_weight_fingerprint(major_records: list[dict[str, Any]]) -> str:
+    payload = "\n".join(
+        f"{int(item['id'])}|{item['name']}|{item['weights_version']}"
+        for item in sorted(
+            (item for item in major_records if 1 <= int(item.get("id")) <= 160),
+            key=lambda item: int(item["id"]),
+        )
+    )
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in payload:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+
+def _canonical_weight_value(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return f"#{int(float(value) * 1_000_000 + 0.5)}"
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(value, list):
+        return "[" + ",".join(_canonical_weight_value(item) for item in value) + "]"
+    if isinstance(value, dict):
+        return "{" + ",".join(
+            f"{json.dumps(str(key), ensure_ascii=False)}:{_canonical_weight_value(value[key])}"
+            for key in sorted(value)
+        ) + "}"
+    return str(value)
+
+
+def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) -> str:
+    rows = []
+    for item in sorted(
+        (item for item in major_records if 1 <= int(item.get("id")) <= 160),
+        key=lambda item: int(item["id"]),
+    ):
+        rows.append(
+            "|".join(
+                [
+                    str(int(item["id"])),
+                    str(item["name"]),
+                    str(item["weights_version"]),
+                    _canonical_weight_value(
+                        item.get("strategy_weights") or item.get("strategy_profile") or {}
+                    ),
+                    _canonical_weight_value(item.get("value_weights") or {}),
+                ]
+            )
+        )
+    payload = "\n".join(rows)
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in payload:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
 def require_no_duplicate(values: list[str], label: str) -> None:
     seen: set[str] = set()
     duplicates: list[str] = []
@@ -141,7 +208,14 @@ def validate_motive_references(
             code = str(raw_code).strip()
             if code not in known_codes:
                 finding = f"major:{item.get('id') or item.get('major_id')}:{code}"
-                if code.startswith(DEFERRED_MOTIVE_PREFIXES):
+                try:
+                    major_id = int(item.get("id") or item.get("major_id"))
+                except (TypeError, ValueError):
+                    major_id = None
+                if code.startswith(DEFERRED_MOTIVE_PREFIXES) or (
+                    major_id in PHASE2_WAVE1_IDS
+                    and code.startswith(f"P2-{major_id}-")
+                ):
                     deferred.append(finding)
                 else:
                     missing.append(finding)
@@ -194,8 +268,15 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         for item in major_records
         if item.get("id") is not None or item.get("major_id") is not None
     ]
-    if sorted(major_ids) != list(range(1, 161)):
-        raise ValueError("Major IDs are not exactly 1..160")
+    if sorted(major_ids) != list(range(1, 177)):
+        raise ValueError("Major IDs are not exactly 1..176")
+    legacy_major_records = [item for item in major_records if 1 <= int(item.get("id")) <= 160]
+    if len(legacy_major_records) != 160:
+        raise ValueError("Legacy major set must contain exactly 160 rows")
+    if legacy_major_name_weight_fingerprint(major_records) != LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT:
+        raise ValueError("Legacy 1..160 name/weights_version fingerprint changed")
+    if legacy_major_full_weight_fingerprint(major_records) != LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT:
+        raise ValueError("Legacy 1..160 strategy/value/name/weights fingerprint changed")
 
     value_codes = [item["pole_code"] for item in value_records]
     require_no_duplicate(value_codes, "value pole codes")
@@ -306,8 +387,9 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
 
     db.flush()
 
-    # Rebuild only valid reference associations. Deferred BIOTM-* mappings remain
-    # absent from PostgreSQL until the dedicated BIOTM correction phase.
+    # Rebuild only valid reference associations. Deferred BIOTM-* mappings and
+    # explicit Phase 2 capacity-stub P2-* references remain absent from PostgreSQL
+    # until their dedicated scientific-profile phases.
     db.execute(major_micro_motives.delete())
     db.execute(branch_micro_motives.delete())
     db.flush()
