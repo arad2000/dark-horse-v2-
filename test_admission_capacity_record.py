@@ -379,6 +379,37 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertEqual(response.json()["source"], "program")
 
 
+    def test_debug_1405_honar_zaban_tehran_daily_major_candidates(self):
+        from admission_sanjesh_engine import _normalize_text, load_majors
+        majors = load_majors()
+        names = {
+            _normalize_text(value.get("name")): int(key)
+            for key, value in majors.items()
+            if isinstance(value, dict) and str(value.get("name") or "").strip()
+        }
+        report = {}
+        for group in ("honar", "zaban"):
+            rows = load_group_record_capacity_rows(group)
+            candidates = []
+            for row in rows:
+                province = str(row.get("province") or "").strip()
+                period = str(row.get("period") or "").strip()
+                name = str(row.get("major_name") or "").strip()
+                if province == "تهران" and period == "روزانه" and name:
+                    candidates.append({
+                        "major_id": names.get(_normalize_text(name)),
+                        "major_name": name,
+                        "admission_type": row.get("admission_type"),
+                        "province": province,
+                        "period": period,
+                        "sanjesh_code": row.get("sanjesh_code"),
+                        "capacity": row.get("capacity"),
+                    })
+                if len(candidates) >= 30:
+                    break
+            report[group] = candidates
+        self.fail(repr(report))
+
     def test_1405_group_honar_graphic_tehran_daily_returns_capacity(self):
         items = build_record_capacity_results(
             major_ids=[140],
