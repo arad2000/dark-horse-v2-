@@ -11,6 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from admission_exam_capacity import GROUP_MAJOR_ALIASES
 from admission_sanjesh_engine import (
     AdmissionInputError,
     _canonical_province,
@@ -92,11 +93,17 @@ def record_capacity_periods() -> tuple[str, ...]:
 def _resolved_major_names(major_ids: list[int]) -> set[str]:
     majors = load_majors()
     names: set[str] = set()
+    # Record source groups are not the catalog's exam_group; the same
+    # major_id-scoped alias must therefore work across all record sources.
+    alias_groups = tuple(GROUP_MAJOR_ALIASES.values())
     for major_id in major_ids:
         major = majors.get(str(int(major_id)))
         if not isinstance(major, dict) or not str(major.get("name") or "").strip():
             raise AdmissionInputError(f"major_id={major_id} در majors_database_v2.json پیدا نشد.")
         names.add(_normalize_text(major.get("name")))
+        for aliases_by_major in alias_groups:
+            for alias in aliases_by_major.get(int(major_id), set()):
+                names.add(_normalize_text(alias))
     return names
 
 
@@ -178,7 +185,7 @@ def build_record_capacity_results(
 
         notes = [
             "منبع مستقیم ظرفیت سنجش؛ بدون اتصال به program2s.",
-            "major_name با نام موجود در majors_database_v2 تطبیق دقیق شد.",
+            "major_name با نام کاتالوگ یا alias صریح major_id تطبیق دقیق شد.",
             "period به‌صورت دقیق از مقادیر موجود در منبع ظرفیت فیلتر شد.",
             "استان فقط با province پرشده ردیف و بدون استنباط از campus تطبیق شد.",
         ]
