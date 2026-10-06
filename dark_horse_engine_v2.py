@@ -563,6 +563,11 @@ class DarkHorseEngineV2:
         discovered = []
         for major_id, major_data in self.majors_db.items():
             try:
+                # ایمنی داده: رشته‌هایی که هنوز motive واقعی و وزن‌دهی معتبر ندارند
+                # نباید وارد discovery فردی شوند، حتی اگر کد P2-* آن‌ها دستی به ورودی تزریق شود.
+                if major_data.get("motive_driven") is False:
+                    continue
+
                 m_score, m_ev = self._compute_m_score(user_motives or [], major_data)
                 # فیلتر سخت خرده‌انگیزه: بدون همپوشانی واقعی جرقه، رشته نباید فقط با S/V بیاید.
                 # (حذف قبلی این شرط باعث ظاهر شدن رشته‌ها تا ~۳۰–۴۵٪ فقط از روی راهبرد/ارزش شد.)
