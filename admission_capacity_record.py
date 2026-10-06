@@ -90,30 +90,20 @@ def record_capacity_periods() -> tuple[str, ...]:
     return tuple(seen)
 
 
-def _resolved_major_names(
-    major_ids: list[int],
-    group: str | None = None,
-) -> set[str]:
+def _resolved_major_names(major_ids: list[int]) -> set[str]:
     majors = load_majors()
     names: set[str] = set()
-    alias_groups = (
-        (GROUP_MAJOR_ALIASES.get(str(group), {}) ,)
-        if group is not None
-        else tuple(GROUP_MAJOR_ALIASES.values())
-    )
+    # Record source groups are not the catalog's exam_group; the same
+    # major_id-scoped alias must therefore work across all record sources.
+    alias_groups = tuple(GROUP_MAJOR_ALIASES.values())
     for major_id in major_ids:
         major = majors.get(str(int(major_id)))
         if not isinstance(major, dict) or not str(major.get("name") or "").strip():
             raise AdmissionInputError(f"major_id={major_id} در majors_database_v2.json پیدا نشد.")
         names.add(_normalize_text(major.get("name")))
-        if group is not None:
-            aliases = alias_groups[0].get(int(major_id), set())
-            for alias in aliases:
+        for aliases_by_major in alias_groups:
+            for alias in aliases_by_major.get(int(major_id), set()):
                 names.add(_normalize_text(alias))
-        else:
-            for aliases_by_major in alias_groups:
-                for alias in aliases_by_major.get(int(major_id), set()):
-                    names.add(_normalize_text(alias))
     return names
 
 
@@ -154,7 +144,7 @@ def build_record_capacity_results(
     if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
         raise AdmissionInputError("special_quota نامعتبر است.")
 
-    major_names = _resolved_major_names(major_ids, group)
+    major_names = _resolved_major_names(major_ids)
     requested_periods = _canonical_periods(periods)
 
     results: list[dict[str, Any]] = []
