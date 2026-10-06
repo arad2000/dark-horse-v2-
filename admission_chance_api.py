@@ -68,7 +68,7 @@ class AdmissionChanceRequest(BaseModel):
     )
     source: Literal["program", "capacity"] = Field(
         default="program",
-        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه گروه انتخاب‌شده ۱۴۰۴ متصل است.",
+        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه گروه انتخاب‌شده متصل است.",
     )
     group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = Field(
         default="riazi",
@@ -234,7 +234,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     group=request.group,
                 )
                 notes = [
-                    "منبع مستقیم ظرفیت دفترچه گروه انتخاب‌شده ۱۴۰۴ است؛ خروجی احتمال قبولی نیست.",
+                    "منبع مستقیم ظرفیت دفترچه گروه انتخاب‌شده است؛ خروجی احتمال قبولی نیست.",
                     "rank_in_quota در این مسیر فقط اطلاعاتی است و هیچ cutoff رتبه‌ای اعمال نمی‌شود.",
                     "region_zone و special_quota روی capacity کل فیلتر نمی‌شوند؛ در این موج فقط یادداشت/اطلاعات قراردادی هستند.",
                 ]
@@ -369,9 +369,9 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     raise AdmissionInputError("special_quota نامعتبر است.")
                 record_capacity_group = (
                     request.target_field_group
-                    if request.target_field_group in {"riazi", "tajrobi", "ensani"}
+                    if request.target_field_group in {"riazi", "tajrobi", "ensani", "honar", "zaban"}
                     else request.group
-                    if request.group in {"riazi", "tajrobi", "ensani"}
+                    if request.group in {"riazi", "tajrobi", "ensani", "honar", "zaban"}
                     else "riazi"
                 )
                 items = build_record_capacity_results(
