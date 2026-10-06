@@ -11,6 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from admission_exam_capacity import GROUP_MAJOR_ALIASES
 from admission_sanjesh_engine import (
     AdmissionInputError,
     _canonical_province,
@@ -89,14 +90,30 @@ def record_capacity_periods() -> tuple[str, ...]:
     return tuple(seen)
 
 
-def _resolved_major_names(major_ids: list[int]) -> set[str]:
+def _resolved_major_names(
+    major_ids: list[int],
+    group: str | None = None,
+) -> set[str]:
     majors = load_majors()
     names: set[str] = set()
+    alias_groups = (
+        (GROUP_MAJOR_ALIASES.get(str(group), {}) ,)
+        if group is not None
+        else tuple(GROUP_MAJOR_ALIASES.values())
+    )
     for major_id in major_ids:
         major = majors.get(str(int(major_id)))
         if not isinstance(major, dict) or not str(major.get("name") or "").strip():
             raise AdmissionInputError(f"major_id={major_id} در majors_database_v2.json پیدا نشد.")
         names.add(_normalize_text(major.get("name")))
+        if group is not None:
+            aliases = alias_groups[0].get(int(major_id), set())
+            for alias in aliases:
+                names.add(_normalize_text(alias))
+        else:
+            for aliases_by_major in alias_groups:
+                for alias in aliases_by_major.get(int(major_id), set()):
+                    names.add(_normalize_text(alias))
     return names
 
 
@@ -137,7 +154,7 @@ def build_record_capacity_results(
     if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
         raise AdmissionInputError("special_quota نامعتبر است.")
 
-    major_names = _resolved_major_names(major_ids)
+    major_names = _resolved_major_names(major_ids, group)
     requested_periods = _canonical_periods(periods)
 
     results: list[dict[str, Any]] = []
@@ -178,7 +195,7 @@ def build_record_capacity_results(
 
         notes = [
             "منبع مستقیم ظرفیت سنجش؛ بدون اتصال به program2s.",
-            "major_name با نام موجود در majors_database_v2 تطبیق دقیق شد.",
+            "major_name با نام کاتالوگ یا alias صریح major_id تطبیق دقیق شد.",
             "period به‌صورت دقیق از مقادیر موجود در منبع ظرفیت فیلتر شد.",
             "استان فقط با province پرشده ردیف و بدون استنباط از campus تطبیق شد.",
         ]
