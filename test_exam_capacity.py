@@ -101,6 +101,30 @@ class ExamCapacityLoaderTests(unittest.TestCase):
             )
             self.assertEqual([item["sanjesh_code"] for item in items], ["__visual-communication__"])
 
+    def test_phase2_wave1_new_major_ids_match_1405_capacity_rows(self):
+        cases = [
+            (161, "فارس", "روزانه", "ensani"),   # علوم ورزشی
+            (162, "آذربایجان شرقی", "روزانه", "riazi"),  # مهندسی معماری
+            (163, "اردبیل", "روزانه", "ensani"),  # گردشگری
+            (166, "تهران", "روزانه", "ensani"),  # باستان‌شناسی
+            (169, "قم", "روزانه", "tajrobi"),    # زیست‌فناوری / alias
+        ]
+        for major_id, province, period, group in cases:
+            items = build_exam_capacity_results(
+                major_ids=[major_id],
+                province=province,
+                periods=[period],
+                group=group,
+            )
+            self.assertGreater(
+                len(items),
+                0,
+                f"phase2 major_id={major_id} should match 1405 {group} capacity data",
+            )
+            self.assertTrue(all(item["sanjesh_code"] for item in items))
+            self.assertTrue(all(item["province"] == province for item in items))
+            self.assertTrue(all(item["period"] == period for item in items))
+
     def test_api_exam_capacity_uses_loader_without_rank_cutoff(self):
         request = AdmissionChanceRequest(
             admission_path="exam",
