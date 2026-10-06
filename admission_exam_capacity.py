@@ -28,9 +28,23 @@ CAPACITY_PATHS = {
 }
 
 GROUP_MAJOR_ALIASES = {
-    # The booklet names below are alternate normalized labels for the same
-    # owner-defined major_id. Keep aliases major_id-scoped to avoid false
-    # positives such as "پزشکی" matching "مهندسی پزشکی".
+    # Booklet labels are explicit aliases for one catalog major_id only.
+    # Matching remains normalized full equality; no generic substring match.
+    # Do not add an alias when the catalog contains a distinct/conflicting id.
+    "riazi": {
+        40: {
+            "مهندسی پزشکی",
+        },
+        53: {
+            "مهندسی صنایع و سیستم‌ها",
+        },
+        69: {
+            "علوم و مهندسی باغبانی",
+        },
+        82: {
+            "آمار",
+        },
+    },
     "tajrobi": {
         1: {
             "دکتری عمومی پزشکی",
@@ -51,21 +65,43 @@ GROUP_MAJOR_ALIASES = {
         6: {
             "کارشناسی مامایی",
         },
+        7: {
+            "فوریت‌های پزشکی پیش‌بیمارستانی",
+        },
+        8: {
+            "تکنولوژی اتاق عمل",
+        },
+        22: {
+            "مهندسی بهداشت حرفه‌ای و ایمنی کار",
+        },
+        95: {
+            "زمین‌شناسی",
+        },
     },
     "ensani": {
         101: {
             "کارشناسی حقوق",
         },
+        104: {
+            "فقه و مبانی حقوق اسلامی",
+        },
         106: {
             "کارشناسی روانشناسی",
         },
+        107: {
+            "مشاوره",
+        },
         120: {
             "کارشناسی حسابداری",
+        },
+        133: {
+            "فلسفه و کلام اسلامی",
         },
     },
     "honar": {
         140: {
             "گرافيک",
+            "گرافیک",
         },
     },
 }
