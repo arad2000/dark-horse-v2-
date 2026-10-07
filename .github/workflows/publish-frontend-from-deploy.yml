@@ -1,0 +1,77 @@
+name: Publish frontend from main
+
+on:
+  pull_request:
+    branches:
+      - deploy/liara-commercial-sandbox
+  push:
+    branches:
+      - deploy/liara-commercial-sandbox
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify publish artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/index.html
+          test -f docs/data.js
+          test -f docs/data/micro_motives.json
+          grep -q 'SPORT-' docs/data.js
+          grep -q 'ARCHY-' docs/data.js
+          grep -q 'history-meaning-text' docs/data.js
+          grep -q 'data.js?v=phase3-161-176-1' docs/index.html
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("docs/data/micro_motives.json").read_text(encoding="utf-8"))
+          assert len(data) >= 1211, len(data)
+          sport = [x for x in data if str(x.get("code", "")).startswith("SPORT-")]
+          assert len(sport) >= 7, len(sport)
+          assert any(x.get("code") == "SPORT-001" for x in sport)
+          print(f"micro_motives_count={len(data)} sport_count={len(sport)}")
+          PY
+
+      - name: Verify artifact layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/data.js
+          test -f docs/data/micro_motives.json
+          ! test -f data.js
+          ! test -f data/micro_motives.json
+
+  publish:
+    if: github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload docs/ as site root
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
