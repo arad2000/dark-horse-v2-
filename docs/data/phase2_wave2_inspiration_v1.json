@@ -1,0 +1,151 @@
+{
+  "phase": "phase2_wave2_behavioral_cal_v1",
+  "base": "ddf43105cee59697e9ba6d65263432a6e046a951",
+  "note": "ID 188 repeats the display name of protected ID 25; ID 25 is unchanged and ID 188 uses HEALTHIT-.",
+  "rows": [
+    {
+      "id": 177,
+      "name": "مهندسی تولید و ژنتیک گیاهی",
+      "prefix": "PLANTGEN-",
+      "realm": "سازنده",
+      "subRealm": "builder-earth",
+      "narrowPath": "earth-produce",
+      "source_major_id": 68
+    },
+    {
+      "id": 178,
+      "name": "مهندسی حرفه‌ای معماری",
+      "prefix": "PROARCH-",
+      "realm": "سازنده",
+      "subRealm": "builder-structure",
+      "narrowPath": "structure-builders",
+      "source_major_id": 162
+    },
+    {
+      "id": 179,
+      "name": "علوم و مهندسی خاک",
+      "prefix": "SOIL-",
+      "realm": "سازنده",
+      "subRealm": "builder-earth",
+      "narrowPath": "earth-ecosystem",
+      "source_major_id": 72
+    },
+    {
+      "id": 180,
+      "name": "مهندسی طبیعت",
+      "prefix": "NATURE-",
+      "realm": "سازنده",
+      "subRealm": "builder-earth",
+      "narrowPath": "earth-ecosystem",
+      "source_major_id": 72
+    },
+    {
+      "id": 181,
+      "name": "علوم و مهندسی شیلات",
+      "prefix": "FISHSCI-",
+      "realm": "سازنده",
+      "subRealm": "builder-earth",
+      "narrowPath": "earth-produce",
+      "source_major_id": 71
+    },
+    {
+      "id": 182,
+      "name": "مهندسی و علم مواد",
+      "prefix": "MATSCI-",
+      "realm": "سازنده",
+      "subRealm": "builder-transform",
+      "narrowPath": "transform-material",
+      "source_major_id": 62
+    },
+    {
+      "id": 183,
+      "name": "علم اطلاعات و دانش‌شناسی",
+      "prefix": "LIS-",
+      "realm": "اندیشمند",
+      "subRealm": "thinker-society",
+      "narrowPath": "knowledge-organization",
+      "source_major_id": 100
+    },
+    {
+      "id": 184,
+      "name": "مهندسی حرفه‌ای کامپیوتر",
+      "prefix": "PROCOMP-",
+      "realm": "سازنده",
+      "subRealm": "builder-digital",
+      "narrowPath": "digital-logic",
+      "source_major_id": 42
+    },
+    {
+      "id": 185,
+      "name": "علوم و مهندسی جنگل",
+      "prefix": "FORESTRY-",
+      "realm": "سازنده",
+      "subRealm": "builder-earth",
+      "narrowPath": "earth-ecosystem",
+      "source_major_id": 72
+    },
+    {
+      "id": 186,
+      "name": "مهندسی فضای سبز",
+      "prefix": "LANDSCAPE-",
+      "realm": "هنرمند",
+      "subRealm": "artist-space",
+      "narrowPath": "space-architect",
+      "source_major_id": 136
+    },
+    {
+      "id": 187,
+      "name": "رشد و پرورش کودکان پیش‌دبستانی",
+      "prefix": "PRESCHOOL-",
+      "realm": "اندیشمند",
+      "subRealm": "thinker-psych",
+      "narrowPath": "psych-education",
+      "source_major_id": 110
+    },
+    {
+      "id": 188,
+      "name": "فناوری اطلاعات سلامت",
+      "prefix": "HEALTHIT-",
+      "realm": "درمانگر",
+      "subRealm": "healer-system",
+      "narrowPath": "system-it",
+      "source_major_id": 25
+    },
+    {
+      "id": 189,
+      "name": "مهندسی ساخت و تولید",
+      "prefix": "MANUPROD-",
+      "realm": "سازنده",
+      "subRealm": "builder-transform",
+      "narrowPath": "transform-process",
+      "source_major_id": 53
+    },
+    {
+      "id": 190,
+      "name": "تکنولوژی پرتوشناسی",
+      "prefix": "RADTECH-",
+      "realm": "درمانگر",
+      "subRealm": "healer-detect",
+      "narrowPath": "detect-image",
+      "source_major_id": 39
+    },
+    {
+      "id": 191,
+      "name": "ادبیات نمایشی",
+      "prefix": "DRAMA-",
+      "realm": "هنرمند",
+      "subRealm": "artist-space",
+      "narrowPath": "space-stage",
+      "source_major_id": 135
+    },
+    {
+      "id": 192,
+      "name": "سینما",
+      "prefix": "CINEMA-",
+      "realm": "هنرمند",
+      "subRealm": "artist-space",
+      "narrowPath": "screen-cinema",
+      "source_major_id": 141
+    }
+  ]
+}
