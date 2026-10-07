@@ -340,7 +340,7 @@ function resumeJourney() {
 // ==================== بارگذاری داده‌ها ====================
 async function loadMicroMotivesMap() {
   try {
-    const res = await fetch(DATA_BASE + 'micro_motives.json');
+    const res = await fetch(DATA_BASE + 'micro_motives.json?v=phase3-161-176-1');
     const all = await res.json();
     all.forEach(m => { state.microMotivesMap[m.code] = m.description_fa; });
     state.motivesReady = true;
@@ -768,7 +768,7 @@ async function loadSwipeCards() {
     if (state.cachedMotives) {
       all = state.cachedMotives;
     } else {
-      const res = await fetch(DATA_BASE + 'micro_motives.json');
+      const res = await fetch(DATA_BASE + 'micro_motives.json?v=phase3-161-176-1');
       all = await res.json();
       state.cachedMotives = all;
     }
