@@ -4842,5 +4842,453 @@
   {
     "code": "ARBTR-007",
     "description_fa": "بررسی کاربرد فرهنگی واژه پیش از ترجمه آن."
+  },
+  {
+    "code": "PLANTGEN-001",
+    "description_fa": "اصلاح و گزینش والد گیاهی"
+  },
+  {
+    "code": "PLANTGEN-002",
+    "description_fa": "تلاقی آزمایشی و ثبت صفات نسل حاصل"
+  },
+  {
+    "code": "PLANTGEN-003",
+    "description_fa": "مقایسه رشد ژنوتیپ‌ها در مزرعه"
+  },
+  {
+    "code": "PLANTGEN-004",
+    "description_fa": "ردیابی نشانگر ژنتیکی صفت هدف"
+  },
+  {
+    "code": "PLANTGEN-005",
+    "description_fa": "انتخاب بوته‌های برتر برای نسل بعد"
+  },
+  {
+    "code": "PLANTGEN-006",
+    "description_fa": "تفکیک اثر محیط از تفاوت ژنتیکی"
+  },
+  {
+    "code": "PLANTGEN-007",
+    "description_fa": "تبدیل انتخاب ژنتیکی به رقم قابل‌کشت"
+  },
+  {
+    "code": "PROARCH-001",
+    "description_fa": "تبدیل طرح به نقشه اجرایی"
+  },
+  {
+    "code": "PROARCH-002",
+    "description_fa": "هماهنگی معماری، سازه و تأسیسات"
+  },
+  {
+    "code": "PROARCH-003",
+    "description_fa": "کنترل ابعاد نقشه برای اجرا"
+  },
+  {
+    "code": "PROARCH-004",
+    "description_fa": "طراحی جزئیات اتصال و پوسته"
+  },
+  {
+    "code": "PROARCH-005",
+    "description_fa": "بررسی عملکرد پلان و حرکت"
+  },
+  {
+    "code": "PROARCH-006",
+    "description_fa": "مدل‌سازی سه‌بعدی و اصلاح فرم"
+  },
+  {
+    "code": "PROARCH-007",
+    "description_fa": "تبدیل نقشه دقیق به فضای واقعی"
+  },
+  {
+    "code": "SOIL-001",
+    "description_fa": "نمونه‌برداری پروفایل خاک"
+  },
+  {
+    "code": "SOIL-002",
+    "description_fa": "اندازه‌گیری بافت، ماده آلی و pH"
+  },
+  {
+    "code": "SOIL-003",
+    "description_fa": "بررسی نفوذ آب و هوادهی ریشه"
+  },
+  {
+    "code": "SOIL-004",
+    "description_fa": "اصلاح خاک شور یا سدیمی"
+  },
+  {
+    "code": "SOIL-005",
+    "description_fa": "مقایسه کربن آلی دو کاربری"
+  },
+  {
+    "code": "SOIL-006",
+    "description_fa": "نقشه‌برداری ویژگی‌های خاک"
+  },
+  {
+    "code": "SOIL-007",
+    "description_fa": "بهبود ساختار خاک و کاهش فرسایش"
+  },
+  {
+    "code": "NATURE-001",
+    "description_fa": "ارزیابی زیست‌بوم"
+  },
+  {
+    "code": "NATURE-002",
+    "description_fa": "طراحی اقدام احیایی"
+  },
+  {
+    "code": "NATURE-003",
+    "description_fa": "تحلیل رابطه آب، خاک و پوشش"
+  },
+  {
+    "code": "NATURE-004",
+    "description_fa": "پایش تغییرات با داده میدانی یا سنجش‌ازدور"
+  },
+  {
+    "code": "NATURE-005",
+    "description_fa": "توازن بهره‌برداری و کارکرد اکوسیستم"
+  },
+  {
+    "code": "NATURE-006",
+    "description_fa": "تشخیص کانون تخریب و اولویت مداخله"
+  },
+  {
+    "code": "NATURE-007",
+    "description_fa": "بازگشت گونه یا زیستگاه پس از احیا"
+  },
+  {
+    "code": "FISHSCI-001",
+    "description_fa": "طراحی واحد پرورش ماهی"
+  },
+  {
+    "code": "FISHSCI-002",
+    "description_fa": "تنظیم کیفیت آب استخر"
+  },
+  {
+    "code": "FISHSCI-003",
+    "description_fa": "تکثیر مصنوعی و ثبت رشد لارو"
+  },
+  {
+    "code": "FISHSCI-004",
+    "description_fa": "تشخیص بیماری و اقدام به‌موقع"
+  },
+  {
+    "code": "FISHSCI-005",
+    "description_fa": "طراحی جیره متناسب با مرحله رشد"
+  },
+  {
+    "code": "FISHSCI-006",
+    "description_fa": "پایش عامل محدودکننده بقا یا تولید"
+  },
+  {
+    "code": "FISHSCI-007",
+    "description_fa": "بهبود بقای بچه‌ماهی پس از اصلاح مدیریت"
+  },
+  {
+    "code": "MATSCI-001",
+    "description_fa": "انتخاب ماده برای قطعه مهندسی"
+  },
+  {
+    "code": "MATSCI-002",
+    "description_fa": "تحلیل ریزساختار و خواص"
+  },
+  {
+    "code": "MATSCI-003",
+    "description_fa": "طراحی ترکیب یا فرایند ساخت"
+  },
+  {
+    "code": "MATSCI-004",
+    "description_fa": "تحلیل سطح شکست"
+  },
+  {
+    "code": "MATSCI-005",
+    "description_fa": "عملیات حرارتی و مقایسه نتیجه"
+  },
+  {
+    "code": "MATSCI-006",
+    "description_fa": "مقایسه خوردگی مواد"
+  },
+  {
+    "code": "MATSCI-007",
+    "description_fa": "اثر تغییر فرایند بر عملکرد قطعه"
+  },
+  {
+    "code": "LIS-001",
+    "description_fa": "طراحی رده‌بندی موضوعی"
+  },
+  {
+    "code": "LIS-002",
+    "description_fa": "ثبت فراداده و فیلدهای بازیابی"
+  },
+  {
+    "code": "LIS-003",
+    "description_fa": "پیونددهی اسناد و دانش"
+  },
+  {
+    "code": "LIS-004",
+    "description_fa": "ارزیابی و بهبود نتایج جست‌وجو"
+  },
+  {
+    "code": "LIS-005",
+    "description_fa": "سازمان‌دهی مجموعه دیجیتال"
+  },
+  {
+    "code": "LIS-006",
+    "description_fa": "طراحی مسیر جست‌وجوی اطلاعات"
+  },
+  {
+    "code": "LIS-007",
+    "description_fa": "پیدا کردن منبع گمشده با ساختار دانشی"
+  },
+  {
+    "code": "PROCOMP-001",
+    "description_fa": "تبدیل نیاز به طراحی نرم‌افزار"
+  },
+  {
+    "code": "PROCOMP-002",
+    "description_fa": "دیباگ برنامه در شرایط خاص"
+  },
+  {
+    "code": "PROCOMP-003",
+    "description_fa": "طراحی معماری سامانه مقیاس‌پذیر"
+  },
+  {
+    "code": "PROCOMP-004",
+    "description_fa": "تحلیل الگوریتم و ساختار داده"
+  },
+  {
+    "code": "PROCOMP-005",
+    "description_fa": "پیاده‌سازی سرویس و تست مرزی"
+  },
+  {
+    "code": "PROCOMP-006",
+    "description_fa": "بستن مسیر نشت داده حساس"
+  },
+  {
+    "code": "PROCOMP-007",
+    "description_fa": "تبدیل راه‌حل به ابزار پایدار"
+  },
+  {
+    "code": "FORESTRY-001",
+    "description_fa": "پایش ساختار توده جنگلی"
+  },
+  {
+    "code": "FORESTRY-002",
+    "description_fa": "انتخاب گونه و شیوه احیا"
+  },
+  {
+    "code": "FORESTRY-003",
+    "description_fa": "تشخیص تنش، آفت یا بیماری درختان"
+  },
+  {
+    "code": "FORESTRY-004",
+    "description_fa": "مدیریت با کمترین آسیب به خاک و زیستگاه"
+  },
+  {
+    "code": "FORESTRY-005",
+    "description_fa": "تحلیل آب، خاک و تاج‌پوشش"
+  },
+  {
+    "code": "FORESTRY-006",
+    "description_fa": "مقایسه سنجش‌ازدور با مشاهده زمینی"
+  },
+  {
+    "code": "FORESTRY-007",
+    "description_fa": "بازگشت پوشش و تنوع زیستی پس از احیا"
+  },
+  {
+    "code": "LANDSCAPE-001",
+    "description_fa": "طراحی فضای سبز با توجه به حرکت و اقلیم"
+  },
+  {
+    "code": "LANDSCAPE-002",
+    "description_fa": "انتخاب گونه بر اساس آب و خاک"
+  },
+  {
+    "code": "LANDSCAPE-003",
+    "description_fa": "ترسیم پلان کاشت قابل اجرا"
+  },
+  {
+    "code": "LANDSCAPE-004",
+    "description_fa": "ارتقای کیفیت فضای شهری با پوشش گیاهی"
+  },
+  {
+    "code": "LANDSCAPE-005",
+    "description_fa": "طراحی آبیاری کم‌هدررفت"
+  },
+  {
+    "code": "LANDSCAPE-006",
+    "description_fa": "مدل‌سازی سه‌بعدی محوطه"
+  },
+  {
+    "code": "LANDSCAPE-007",
+    "description_fa": "ساخت محیط سبز کاربردی و دلپذیر"
+  },
+  {
+    "code": "PRESCHOOL-001",
+    "description_fa": "طراحی بازی برای مهارت زبانی یا حرکتی"
+  },
+  {
+    "code": "PRESCHOOL-002",
+    "description_fa": "مشاهده و ثبت نشانه‌های رشد"
+  },
+  {
+    "code": "PRESCHOOL-003",
+    "description_fa": "ساخت محیط امن و تجربه‌محور"
+  },
+  {
+    "code": "PRESCHOOL-004",
+    "description_fa": "هماهنگی بازی، قصه و فعالیت دستی"
+  },
+  {
+    "code": "PRESCHOOL-005",
+    "description_fa": "گفت‌وگو با خانواده و برنامه حمایتی"
+  },
+  {
+    "code": "PRESCHOOL-006",
+    "description_fa": "فعالیت برای کودک با نیاز رشدی متفاوت"
+  },
+  {
+    "code": "PRESCHOOL-007",
+    "description_fa": "اجرای مستقل مهارت تمرین‌شده توسط کودک"
+  },
+  {
+    "code": "HEALTHIT-001",
+    "description_fa": "طراحی جریان داده بیمارستان"
+  },
+  {
+    "code": "HEALTHIT-002",
+    "description_fa": "تحلیل داده پرونده الکترونیک"
+  },
+  {
+    "code": "HEALTHIT-003",
+    "description_fa": "استانداردسازی تبادل داده سلامت"
+  },
+  {
+    "code": "HEALTHIT-004",
+    "description_fa": "طراحی داشبورد شاخص‌های درمان"
+  },
+  {
+    "code": "HEALTHIT-005",
+    "description_fa": "آزمون فرم و گردش‌کار اطلاعاتی"
+  },
+  {
+    "code": "HEALTHIT-006",
+    "description_fa": "حفاظت از محرمانگی داده سلامت"
+  },
+  {
+    "code": "HEALTHIT-007",
+    "description_fa": "روان‌سازی ثبت و دسترسی به پرونده"
+  },
+  {
+    "code": "MANUPROD-001",
+    "description_fa": "انتخاب روش ساخت محصول"
+  },
+  {
+    "code": "MANUPROD-002",
+    "description_fa": "طراحی توالی ماشین‌کاری و کنترل ابعاد"
+  },
+  {
+    "code": "MANUPROD-003",
+    "description_fa": "تحلیل گلوگاه فرایند ساخت"
+  },
+  {
+    "code": "MANUPROD-004",
+    "description_fa": "تنظیم پارامترهای ماشین"
+  },
+  {
+    "code": "MANUPROD-005",
+    "description_fa": "طراحی فیکسچر یا ابزار کمکی"
+  },
+  {
+    "code": "MANUPROD-006",
+    "description_fa": "ریشه‌یابی عیب تولید"
+  },
+  {
+    "code": "MANUPROD-007",
+    "description_fa": "رسیدن به محصول سالم و تکرارپذیر"
+  },
+  {
+    "code": "RADTECH-001",
+    "description_fa": "تنظیم دستگاه برای تصویر باکیفیت"
+  },
+  {
+    "code": "RADTECH-002",
+    "description_fa": "پوزیشن‌دهی بیمار و انتخاب پروتکل"
+  },
+  {
+    "code": "RADTECH-003",
+    "description_fa": "تشخیص و اصلاح آرتیفکت"
+  },
+  {
+    "code": "RADTECH-004",
+    "description_fa": "کنترل کیفیت تجهیزات تصویربرداری"
+  },
+  {
+    "code": "RADTECH-005",
+    "description_fa": "حفاظت پرتویی در زمان کار"
+  },
+  {
+    "code": "RADTECH-006",
+    "description_fa": "هماهنگی برای تصویر تکمیلی"
+  },
+  {
+    "code": "RADTECH-007",
+    "description_fa": "تحویل تصویر فنی قابل استفاده تشخیصی"
+  },
+  {
+    "code": "DRAMA-001",
+    "description_fa": "تبدیل نمایشنامه به جهان صحنه"
+  },
+  {
+    "code": "DRAMA-002",
+    "description_fa": "تحلیل شخصیت و تعارض برای میزانسن"
+  },
+  {
+    "code": "DRAMA-003",
+    "description_fa": "بازنویسی صحنه برای کنش روشن"
+  },
+  {
+    "code": "DRAMA-004",
+    "description_fa": "طراحی و آزمون طرح صحنه"
+  },
+  {
+    "code": "DRAMA-005",
+    "description_fa": "نوشتن مونولوگ با منطق شخصیت"
+  },
+  {
+    "code": "DRAMA-006",
+    "description_fa": "اصلاح متن بر اساس تمرین بازیگران"
+  },
+  {
+    "code": "DRAMA-007",
+    "description_fa": "تبدیل متن به اجرای زنده"
+  },
+  {
+    "code": "CINEMA-001",
+    "description_fa": "شکستن ایده به صحنه‌های فیلم"
+  },
+  {
+    "code": "CINEMA-002",
+    "description_fa": "ساخت استوری‌برد"
+  },
+  {
+    "code": "CINEMA-003",
+    "description_fa": "تحلیل نور، میزانسن و قاب"
+  },
+  {
+    "code": "CINEMA-004",
+    "description_fa": "بازبینی راش‌ها و ریتم"
+  },
+  {
+    "code": "CINEMA-005",
+    "description_fa": "هماهنگی صدا، تصویر و تدوین"
+  },
+  {
+    "code": "CINEMA-006",
+    "description_fa": "اصلاح نسخه اولیه با تدوین یا قاب"
+  },
+  {
+    "code": "CINEMA-007",
+    "description_fa": "تبدیل ایده خام به روایت تصویری"
   }
 ]
