@@ -1,6 +1,7 @@
 // ==================== Dark Horse App V2.0 ====================
 // تغییرات نسبت به V1.0:
 //   • API_BASE → api.asbe-siah.ir
+//   • AI counsel → /api/v2/darkhorse/counsel
 //   • Endpointها → /api/v2/darkhorse/...
 //   • فایل سوالات → questions_v2.json
 //   • اضافه شدن صفحه انتخاب بین هدایت تحصیلی و انتخاب رشته دانشگاهی
@@ -80,13 +81,13 @@ function ensureUXStyles() {
   const s = document.createElement('style');
   s.id = 'dh-ux-styles';
   s.textContent = `
-    .dh-progress-wrap{position:sticky;top:0;z-index:50;background:rgba(10,10,15,.94);backdrop-filter:blur(10px);padding:10px 0 8px;margin-bottom:10px;border-bottom:1px solid rgba(240,192,64,.12)}
-    .dh-progress-labels{display:flex;justify-content:space-between;font-size:.72rem;color:#8a7a55;margin-bottom:6px}
+    .dh-progress-wrap{position:sticky;top:0;z-index:50;background:rgba(18,18,26,.94);backdrop-filter:blur(10px);padding:10px 0 8px;margin-bottom:10px;border-bottom:1px solid rgba(240,192,64,.12)}
+    .dh-progress-labels{display:flex;justify-content:space-between;font-size:.72rem;color:#c9b896;margin-bottom:6px}
     .dh-progress-labels .on{color:#f0c040;font-weight:700}
     .dh-progress-track{height:6px;background:#2a2a3e;border-radius:99px;overflow:hidden}
     .dh-progress-fill{height:100%;background:linear-gradient(90deg,#b8860b,#f0c040,#ffe9a0);border-radius:99px;transition:width .4s ease;box-shadow:0 0 12px rgba(240,192,64,.45)}
     .dh-spark-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.35);color:#f0c040;border-radius:99px;padding:7px 14px;font-size:.85rem;margin:6px 0 12px;box-shadow:0 0 20px rgba(240,192,64,.08)}
-    .dh-stage-hint{color:#8a7a55;font-size:.82rem;text-align:center;margin:0 0 14px;line-height:1.7}
+    .dh-stage-hint{color:#c9b896;font-size:.82rem;text-align:center;margin:0 0 14px;line-height:1.7}
     .option{transition:transform .18s ease,box-shadow .18s ease,border-color .18s,background .18s;border-radius:14px}
     .option:active{transform:scale(.975)}
     .option.selected{transform:scale(1.015);box-shadow:0 0 0 1px rgba(240,192,64,.5),0 8px 24px rgba(240,192,64,.12)}
@@ -173,7 +174,7 @@ function sparkChipHTML() {
 }
 
 function loadingHTML(msg) {
-  return `<div class="dh-loading"><div class="spin"></div><p style="color:#f0c040">${msg || 'داره پروفایلت چیده می‌شه...'}</p><p style="color:#8a7a55;font-size:.85rem;margin-top:8px">اگر طول کشید، سرور در حال بیدار شدن است</p></div>`;
+  return `<div class="dh-loading"><div class="spin"></div><p style="color:#f0c040">${msg || 'داره پروفایلت چیده می‌شه...'}</p><p style="color:#c9b896;font-size:.85rem;margin-top:8px">اگر طول کشید، سرور در حال بیدار شدن است</p></div>`;
 }
 
 function wrapWithProgress(innerHTML) {
@@ -305,13 +306,15 @@ function startNewJourney() {
     if (typeof REALMS === 'undefined' || !REALMS || !REALMS.length) {
       app.innerHTML = `<div class="card" style="margin:20px;text-align:right;">
         <h2 style="color:#f0c040">دادهٔ شهر رؤیاها لود نشد</h2>
-        <p style="color:#b0a080;line-height:2">فایل <code>data.js</code> در دسترس نیست یا خطا دارد.</p>
+        <p style="color:#c9b896;line-height:2">فایل <code>data.js</code> در دسترس نیست یا خطا دارد.</p>
         <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="location.reload()">تلاش دوباره</button>
         <button class="btn" style="width:100%;margin-top:8px" onclick="goTo('splash')">بازگشت</button>
       </div>`;
       return;
     }
     state.stage = 'realm';
+    window.__dhInJourney = true;
+    try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e) {}
     // ذخیرهٔ تمیز بدون تیک‌های قبلی
     saveSession();
     render();
@@ -319,7 +322,7 @@ function startNewJourney() {
     console.error('startNewJourney error', e);
     app.innerHTML = `<div class="card" style="margin:20px;text-align:right;">
       <h2 style="color:#ff6b6b">خطا در ورود به محله‌ها</h2>
-      <p style="color:#b0a080;direction:ltr;text-align:left;font-size:.8rem">${String(e && e.message ? e.message : e)}</p>
+      <p style="color:#c9b896;direction:ltr;text-align:left;font-size:.8rem">${String(e && e.message ? e.message : e)}</p>
       <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="location.reload()">تلاش دوباره</button>
     </div>`;
   }
@@ -389,6 +392,56 @@ async function loadTraitMap() {
 }
 
 // ==================== NAVIGATION ====================
+
+function scrollPageToTop() {
+  try {
+    var y = 0;
+    try { window.scrollTo(0, 0); } catch (e0) {}
+    try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch (e1) {}
+    try {
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+    } catch (e2) {}
+    try { document.documentElement.scrollTop = 0; } catch (e3) {}
+    try { document.body.scrollTop = 0; } catch (e4) {}
+
+    var ids = ['app', 'dh-home-wrap'];
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      try { el.scrollTop = 0; } catch (e5) {}
+      try { if (el.scrollTo) el.scrollTo(0, 0); } catch (e6) {}
+    });
+
+    // همه ظرف‌های اسکرول‌دار داخل صفحه
+    try {
+      var all = document.querySelectorAll('#app, .container, .dh-home-wrap, .card, .dh-guide-body, [style*="overflow"]');
+      for (var i = 0; i < all.length; i++) {
+        try { all[i].scrollTop = 0; } catch (e7) {}
+      }
+    } catch (e8) {}
+
+    // موبایل / PWA: دوباره بعد از رسم
+    try {
+      requestAnimationFrame(function () {
+        try { window.scrollTo(0, 0); } catch (e9) {}
+        try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch (e10) {}
+      });
+    } catch (e11) {}
+    try {
+      setTimeout(function () {
+        try { window.scrollTo(0, 0); } catch (e12) {}
+        try {
+          if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+        } catch (e13) {}
+      }, 30);
+      setTimeout(function () {
+        try { window.scrollTo(0, 0); } catch (e14) {}
+      }, 120);
+    } catch (e15) {}
+  } catch (eAll) {}
+}
+window.scrollPageToTop = scrollPageToTop;
+
 function goTo(stage) {
   state.history.push(state.stage);
   state.stage = stage;
@@ -396,6 +449,7 @@ function goTo(stage) {
   if (stage === 'values') syncValueCursor();
   saveSession();
   render();
+  scrollPageToTop();
 }
 window.goTo = goTo;
 
@@ -409,6 +463,7 @@ function goBack() {
   state.currentValueQuestion = 0;
   saveSession();
   render();
+  scrollPageToTop();
 }
 
 // ==================== RENDER ====================
@@ -435,13 +490,16 @@ function render() {
         state.stage = 'splash';
         renderSplash();
     }
+    scrollPageToTop();
+    requestAnimationFrame(function () { scrollPageToTop(); });
+    setTimeout(scrollPageToTop, 50);
   } catch (e) {
     console.error('render failed', state.stage, e);
     const root = document.getElementById('app');
     if (root) {
       root.innerHTML = `<div class="card" style="margin:16px;text-align:right">
         <h2 style="color:#ff6b6b">خطای نمایش</h2>
-        <p style="color:#b0a080">مرحله: <b>${state.stage || '?'}</b></p>
+        <p style="color:#c9b896">مرحله: <b>${state.stage || '?'}</b></p>
         <p style="direction:ltr;text-align:left;color:#aaa;font-size:.8rem">${String(e && e.message ? e.message : e)}</p>
         <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="localStorage.removeItem('darkhorse_session_v2');location.reload()">پاک‌سازی نشست و شروع مجدد</button>
       </div>`;
@@ -457,15 +515,15 @@ function renderManifesto() {
     <div style="text-align:center;padding:20px;">
       <div style="font-size:3rem;margin-bottom:15px;">🐴</div>
       <h1 style="color:#f0c040;font-size:1.6rem;margin-bottom:10px;">اسب سیاه</h1>
-      <p style="color:#b0a080;font-style:italic;margin-bottom:20px;">انتخاب مسیر با معیار خودت، نه فقط رتبه‌ات</p>
+      <p style="color:#c9b896;font-style:italic;margin-bottom:20px;">انتخاب مسیر با معیار خودت، نه فقط رتبه‌ات</p>
       <div class="card" style="text-align:right;">
-        <p style="color:#b0a080;line-height:2.2;font-size:0.9rem;margin-bottom:15px;">
+        <p style="color:#c9b896;line-height:2.2;font-size:0.9rem;margin-bottom:15px;">
           <strong style="color:#f0c040;">«موفقیت از تقلید دیگران به دست نمی‌آید؛ از شناخت فردیت و ساختن مسیر شخصی می‌آید.»</strong>
           <br><span style="color:#888;font-size:0.8rem;">— تاد رز، کتاب «اسب سیاه» (پروژه هاروارد)</span>
         </p>
 
         <p style="color:#f0c040;font-weight:bold;font-size:1rem;margin-bottom:8px;">مشکل از کجاست؟</p>
-        <p style="color:#b0a080;line-height:2.2;font-size:0.9rem;margin-bottom:15px;">
+        <p style="color:#c9b896;line-height:2.2;font-size:0.9rem;margin-bottom:15px;">
           هر سال هزاران دانش‌آموز با این سؤال روبه‌رو می‌شوند: <strong>«چه رشته‌ای بخوانم؟»</strong><br>
           پاسخ‌های رایج معمولاً بر پایهٔ رتبه، پرستیژ یا بازار کار کلیشه‌ای است:
           «با این رتبه این رشته قبول می‌شوی»، «برو پزشکی چون اعتبار دارد»، «کامپیوتر بازار دارد».<br>
@@ -474,7 +532,7 @@ function renderManifesto() {
         </p>
 
         <p style="color:#f0c040;font-weight:bold;font-size:1rem;margin-bottom:8px;">راه‌حل این سامانه</p>
-        <p style="color:#b0a080;line-height:2.2;font-size:0.9rem;margin-bottom:15px;">
+        <p style="color:#c9b896;line-height:2.2;font-size:0.9rem;margin-bottom:15px;">
           بر اساس پژوهش <strong style="color:#f0c040;">Dark Horse</strong> در هاروارد و کتاب
           <strong style="color:#f0c040;">«اسب سیاه»</strong> نوشتهٔ تاد رز و اگی اوگاس،
           این سامانه به‌جای پرسیدن «چه نمره‌ای آوردی؟» می‌پرسد:<br>
@@ -482,7 +540,7 @@ function renderManifesto() {
         </p>
 
         <p style="color:#f0c040;font-weight:bold;font-size:1rem;margin-bottom:8px;">سه لایهٔ شناخت</p>
-        <p style="color:#b0a080;line-height:2.2;font-size:0.9rem;margin-bottom:5px;">
+        <p style="color:#c9b896;line-height:2.2;font-size:0.9rem;margin-bottom:5px;">
           🧩 <strong style="color:#f0c040;">خرده‌انگیزه‌ها</strong> — جرقه‌های لذت روزمره (پایهٔ اصلی انتخاب)<br>
           🧭 <strong style="color:#f0c040;">راهبردهای شخصی</strong> — سبک فکر و یادگیری (قابل رشد و یادگیری)<br>
           ⚖️ <strong style="color:#f0c040;">ارزش‌های بنیادین</strong> — آنچه به کارت معنا و رضایت عمیق می‌دهد
@@ -502,7 +560,7 @@ function renderGuide() {
   app.innerHTML = progressHTML('guide') + `
     <div style="text-align:right;padding:10px;">
       <h2 style="color:#f0c040;text-align:center;">🧭 راهنمای سفر اکتشافی</h2>
-      <p style="color:#b0a080;line-height:2.2;text-align:center;">
+      <p style="color:#c9b896;line-height:2.2;text-align:center;">
         این یک تست شخصیت نیست؛
         <strong style="color:#f0c040;">سفری برای شناخت انگیزه‌ها، سبک فکر و ارزش‌های خودت</strong> است.
         با آرامش و صداقت پیش برو. پاسخ درست یا غلط وجود ندارد.
@@ -511,21 +569,21 @@ function renderGuide() {
       <div class="card" style="margin-top:15px;">
         <p style="color:#f0c040;font-weight:bold;font-size:1rem;margin-bottom:8px;">مسیر سفر چگونه است؟</p>
 
-        <p style="color:#b0a080;line-height:2.2;">
+        <p style="color:#c9b896;line-height:2.2;">
           <strong style="color:#f0c040;">۱) خرده‌انگیزه‌ها — پایهٔ اصلی</strong><br>
           وارد «شهر رؤیاها» می‌شوی: چند حوزه و داخل هر کدام، فعالیت‌های ملموس.
           از میان <strong>بیش از ۱۱۰۰ خرده‌انگیزه</strong>، آن‌هایی را که واقعاً به تو انرژی می‌دهند ❤️ بزن.
           پیشنهاد: حدود <strong>۲۰ تا ۸۰</strong> مورد را انتخاب کن تا تصویر دقیق‌تری از خودت ساخته شود.
         </p>
 
-        <p style="color:#b0a080;line-height:2.2;">
+        <p style="color:#c9b896;line-height:2.2;">
           <strong style="color:#f0c040;">۲) راهبردهای شخصی — سبک تو</strong><br>
           حدود ۲۵ موقعیت کوتاه: چطور مسئله حل می‌کنی و یاد می‌گیری.
           راهبردها قابل یادگیری‌اند؛ اگر با رشته‌ای ناهمسو بود، یعنی
           <strong>هشدار برای رشد</strong>، نه رد شدن.
         </p>
 
-        <p style="color:#b0a080;line-height:2.2;">
+        <p style="color:#c9b896;line-height:2.2;">
           <strong style="color:#f0c040;">۳) ارزش‌های بنیادین — معنای کار</strong><br>
           ۱۵ دوگانهٔ ساده (مثلاً عمق تأثیر یا گستره تأثیر).
           این بخش کمک می‌کند بفهمی رضایت بلندمدت برای تو از کجا می‌آید.
@@ -534,15 +592,15 @@ function renderGuide() {
 
       <div class="card" style="margin-top:15px;">
         <p style="color:#f0c040;font-weight:bold;font-size:1rem;margin-bottom:8px;">وزن‌ها در نتیجهٔ نهایی</p>
-        <p style="color:#b0a080;line-height:2.2;">
+        <p style="color:#c9b896;line-height:2.2;">
           <strong style="color:#f0c040;">انتخاب رشتهٔ دانشگاهی</strong><br>
           خرده‌انگیزه ۵۵٪ | ارزش ۳۰٪ | راهبرد ۱۵٪
         </p>
-        <p style="color:#b0a080;line-height:2.2;">
+        <p style="color:#c9b896;line-height:2.2;">
           <strong style="color:#f0c040;">هدایت شاخهٔ دبیرستان</strong><br>
           خرده‌انگیزه ۶۰٪ | راهبرد ۲۰٪ | ارزش ۲۰٪
         </p>
-        <p style="color:#b0a080;line-height:2.2;margin-top:8px;">
+        <p style="color:#c9b896;line-height:2.2;margin-top:8px;">
           چرا؟ چون انگیزه و ارزش پایدارترند.
           راهبرد را می‌توان در طول زمان ساخت و تقویت کرد.
         </p>
@@ -550,7 +608,7 @@ function renderGuide() {
 
       <div class="card" style="margin-top:15px;">
         <p style="color:#f0c040;font-weight:bold;font-size:1rem;margin-bottom:8px;">در پایان چه می‌بینی؟</p>
-        <p style="color:#b0a080;line-height:2.2;">
+        <p style="color:#c9b896;line-height:2.2;">
           می‌توانی نتیجه را برای <strong>شاخهٔ دبیرستان</strong> یا
           <strong>رشته‌های دانشگاهی</strong> ببینی.
         </p>
@@ -580,7 +638,7 @@ function renderSplash() {
   app.innerHTML = progressHTML('splash') + `
     <div style="text-align:center;padding:20px 10px;">
       <h1 style="color:#f0c040;font-size:1.8rem;margin:12px 0 6px;">شهر رؤیاها</h1>
-      <p style="color:#b0a080;font-size:0.9rem;margin-bottom:18px;">شش محله · بیش از ۱۱۰۰ جرقه</p>
+      <p style="color:#c9b896;font-size:0.9rem;margin-bottom:18px;">شش محله · بیش از ۱۱۰۰ جرقه</p>
       <div class="card" style="text-align:right;">
         <p class="quote">«شهر رؤیاها، جایی که هر کودکی قبل از خواب به آن سفر می‌کرد...»</p>
         <p>یادت می‌آید بچه که بودی، چشمانت را می‌بستی و خودت را جای یک نفر دیگر تصور می‌کردی؟ یک روز دکتر بودی، یک روز خلبان، یک روز نقاش، یک روز هم کاشف سیارات دور. آن تصویرها، آن حس‌ها، هنوز هم جایی در عمق وجودت زنده‌اند.</p>
@@ -592,6 +650,8 @@ function renderSplash() {
 }
 
 function dhResumeFromSplash() {
+  window.__dhInJourney = true;
+  try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e0) {}
   const data = window.__dhSavedSession;
   // اگر کاربر قبلاً نتیجه را دیده، ادامه = شروع تمیز (بدون تیک‌های قبلی)
   if (!data || data.journeyFinished || window.__dhJourneyFinished) {
@@ -641,7 +701,7 @@ function renderRealm() {
     if (typeof REALMS === 'undefined' || !Array.isArray(REALMS) || REALMS.length === 0) {
       app.innerHTML = `<div class="card" style="margin:16px;text-align:right">
         <h2 style="color:#f0c040">محله‌ها لود نشدند</h2>
-        <p style="color:#b0a080">آرایهٔ REALMS از data.js خوانده نشد.</p>
+        <p style="color:#c9b896">آرایهٔ REALMS از data.js خوانده نشد.</p>
         <button class="btn btn-primary" style="width:100%" onclick="location.reload()">بارگذاری مجدد</button>
       </div>`;
       return;
@@ -649,7 +709,7 @@ function renderRealm() {
     const maxSelect = Math.min(3, REALMS.length);
     let html = progressHTML('realm') + sparkChipHTML() + `<h2>🌃 ورود به محله‌ها</h2>
       <p class="dh-stage-hint">به صدای بدن و کنجکاوی‌ات گوش بده — نه به انتظار دیگران</p>
-      <p style="color:#b0a080;">کدام محله‌ها تو را صدا می‌زنند؟ (۱ تا ${maxSelect})</p>
+      <p style="color:#c9b896;">کدام محله‌ها تو را صدا می‌زنند؟ (۱ تا ${maxSelect})</p>
       <p style="color:#f0c040;">💛 جرقه‌های تو: <strong>${state.likedCodes.length}</strong></p>
       <div class="grid" id="realmGrid">`;
     REALMS.forEach(r => {
@@ -687,7 +747,7 @@ function renderSubRealm() {
   const maxSelect = Math.min(3 * state.selectedRealms.length, subs.length);
   let html = progressHTML('subRealm') + sparkChipHTML() + `<h2>گذرهای نیمه‌روشن</h2>
     <p class="dh-stage-hint">هر گذر، بوی یک جور زندگی را می‌دهد</p>
-    <p style="color:#b0a080;">کدام گذر تو را آرام‌تر و کنجکاوتر می‌کند؟</p>
+    <p style="color:#c9b896;">کدام گذر تو را آرام‌تر و کنجکاوتر می‌کند؟</p>
     <p style="font-size:0.85rem;color:#888;">(۱ تا ${maxSelect} گذر انتخاب کن)</p>
     <div class="grid" id="subGrid">`;
   subs.forEach(s => {
@@ -717,7 +777,7 @@ function renderNarrowPath() {
   state.selectedSubRealms.forEach(subId => { if (NARROW_PATHS[subId]) paths.push(...NARROW_PATHS[subId]); });
   let html = progressHTML('narrowPath') + sparkChipHTML() + `<h2>مسیرهای باریک</h2>
     <p class="dh-stage-hint">اینجا دیگر خبری از کلیشه نیست؛ فقط کارهایی که ممکن است دوست داشته باشی انجام بدهی</p>
-    <p style="color:#b0a080;">کدام مسیر، یک‌جور کشش بی‌دلیل در تو ایجاد می‌کند؟</p>
+    <p style="color:#c9b896;">کدام مسیر، یک‌جور کشش بی‌دلیل در تو ایجاد می‌کند؟</p>
     <div class="grid" id="pathGrid">`;
   if (!(state.completedPaths instanceof Set)) {
     state.completedPaths = new Set(state.completedPaths || []);
@@ -749,7 +809,7 @@ function renderIntroSwipe() {
   app.innerHTML = progressHTML('introSwipe') + `
     <h2>🔥 به عمیق‌ترین لایه وجودت رسیدی!</h2>
     <div class="card">
-      <p style="color:#b0a080;line-height:2.2;">بر اساس تمام انتخاب‌هایی که تا اینجا کردی — از قلمروها و زیرقلمروها تا مسیرهای باریک — حالا درست در همان جایی ایستاده‌ای که <strong>ناخودآگاه و خودآگاهت</strong> به هم گره خورده‌اند.</p>
+      <p style="color:#c9b896;line-height:2.2;">بر اساس تمام انتخاب‌هایی که تا اینجا کردی — از قلمروها و زیرقلمروها تا مسیرهای باریک — حالا درست در همان جایی ایستاده‌ای که <strong>ناخودآگاه و خودآگاهت</strong> به هم گره خورده‌اند.</p>
       <p style="color:#d4af37;">در این مرحله، فعالیت‌های جزئی‌ای را می‌بینی. آن‌هایی که <strong>واقعاً</strong> به تو انرژی می‌دهند، ❤️ بزن. هرچه دقیق‌تر انتخاب کنی، خودِ واقعی‌ات شفاف‌تر کشف خواهد شد.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="loadSwipeCards()">🚀 شروع جرقه‌های انرژی</button>
       <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">⬅️ بازگشت</button>
@@ -866,7 +926,7 @@ function renderSwipe() {
       return;
     }
     app.innerHTML = progressHTML('swipe') + `<h2>🔥 جرقه‌های انرژی</h2>` + sparkChipHTML() + `<div style="color:#f0c040;margin:12px 0;"></div>
-      <div class="card"><p style="color:#b0a080;">🌟 شما به حداقل جرقه‌ها رسیدید! اما هرچه جرقه‌های بیشتری بزنی، خودِ واقعی‌ات را دقیق‌تر کشف می‌کنی.</p>
+      <div class="card"><p style="color:#c9b896;">🌟 شما به حداقل جرقه‌ها رسیدید! اما هرچه جرقه‌های بیشتری بزنی، خودِ واقعی‌ات را دقیق‌تر کشف می‌کنی.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="finishSwipe()">🚀 ورود به لایهٔ دوم</button>
       <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 جرقه‌های بیشتر</button></div>`;
     return;
@@ -886,12 +946,18 @@ function renderSwipe() {
     <h2>🔥 جرقهٔ انرژی</h2>
     <div style="color:#f0c040;">💛 <strong id="dh-spark-count">${n}</strong> جرقه <span style="font-size:0.8rem;color:#888;">(حداقل ۲۰ - حداکثر ۸۰)</span></div>
     <div class="progress-bar"><div class="progress-fill" id="dh-swipe-progress-fill" style="width:${progress}%"></div></div>
-    <div class="swipe-card" id="dh-swipe-card">
-      <p id="dh-swipe-text" style="font-size:1.2rem;line-height:2.2;">${escapeHtml(card.description_fa || '')}</p>
-      <button type="button" class="btn btn-heart" id="dh-btn-heart" onclick="likeCard(true, this)">❤️ جرقه زد</button>
-      <button type="button" class="btn btn-skip" id="dh-btn-skip" onclick="likeCard(false, this)">❌ جذبم نکرد</button>
-      <div id="dh-spark-need" style="margin-top:12px;"></div>
-      <div id="dh-prev-wrap"></div>
+    <div class="swipe-card" id="dh-swipe-card" style="min-height:280px;">
+      <p id="dh-swipe-text" style="font-size:1.15rem;line-height:2.1;min-height:6.5em;margin:0 0 18px 0;">${escapeHtml(card.description_fa || '')}</p>
+      <div id="dh-spark-actions" style="display:flex;flex-direction:column;gap:14px;margin:8px 0 4px 0;">
+        <button type="button" class="btn btn-heart" id="dh-btn-heart"
+          style="width:100%;min-height:54px;font-size:1.05rem;border-radius:14px;touch-action:manipulation;"
+          onclick="likeCard(true, this)">❤️ جرقه زد</button>
+        <button type="button" class="btn btn-skip" id="dh-btn-skip"
+          style="width:100%;min-height:54px;font-size:1.05rem;border-radius:14px;touch-action:manipulation;margin-top:0;"
+          onclick="likeCard(false, this)">❌ جذبم نکرد</button>
+      </div>
+      <div id="dh-spark-need" style="margin-top:14px;min-height:48px;"></div>
+      <div id="dh-prev-wrap" style="min-height:40px;"></div>
     </div>`;
   updateSwipeChrome();
 }
@@ -906,7 +972,7 @@ function updateSwipeChrome() {
   const need = document.getElementById('dh-spark-need');
   if (need) {
     if (n >= 20) {
-      need.innerHTML = `<p style="color:#b0a080;">🌟 حداقل جرقه‌ها را داری! اما هرچه بیشتر بزنی، دقیق‌تر کشف می‌شوی.</p>
+      need.innerHTML = `<p style="color:#c9b896;">🌟 حداقل جرقه‌ها را داری! اما هرچه بیشتر بزنی، دقیق‌تر کشف می‌شوی.</p>
         <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="finishSwipe()">🚀 ورود به لایهٔ دوم</button>
         <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 جرقه‌های بیشتر (تا ${80 - n} جرقهٔ دیگر)</button>`;
     } else {
@@ -936,8 +1002,6 @@ function updateSwipeCardInPlace() {
   textEl.textContent = card.description_fa || card.description || '';
   if (box) {
     box.classList.remove('dh-card-swap');
-    void box.offsetWidth;
-    box.classList.add('dh-card-swap');
   }
   updateSwipeChrome();
 }
@@ -1018,7 +1082,7 @@ function renderIntroStrategies() {
   app.innerHTML = progressHTML('introStrategies') + `
     <h2>🧭 لایهٔ دوم: راهبردهای فردی</h2>
     <div class="card">
-      <p style="color:#b0a080;line-height:2.2;">حالا که جرقه‌های انرژی‌ات را شناختی، وقت آن رسیده که بفهمی <strong>چطور</strong> فکر می‌کنی، یاد می‌گیری و با چالش‌ها روبرو می‌شوی. در این بخش، <strong>۲۵ موقعیت واقعی</strong> پیش روی توست. هیچ پاسخ درست یا غلطی وجود ندارد — فقط مسیرهای متفاوت.</p>
+      <p style="color:#c9b896;line-height:2.2;">حالا که جرقه‌های انرژی‌ات را شناختی، وقت آن رسیده که بفهمی <strong>چطور</strong> فکر می‌کنی، یاد می‌گیری و با چالش‌ها روبرو می‌شوی. در این بخش، <strong>۲۵ موقعیت واقعی</strong> پیش روی توست. هیچ پاسخ درست یا غلطی وجود ندارد — فقط مسیرهای متفاوت.</p>
       ${resumeHint}
       <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="goTo('strategies')">🚀 ${startLabel}</button>
       ${canResume ? `<button class="btn" style="width:100%;margin-top:8px;" onclick="state.currentQuestion=0;saveSession();goTo('strategies')">از سوال اول مرور کن</button>` : ''}
@@ -1046,16 +1110,21 @@ function renderStrategy() {
     html += `<button class="btn" style="display:block;width:100%;text-align:right;margin-bottom:8px;${isSelected ? 'border:2px solid #f0c040;' : ''}" onclick="answerStrategy(${o.index})">${escapeHtml(o.text)}</button>`;
   });
   html += `</div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;">
       ${state.currentQuestion > 0 ? `<button class="btn" onclick="previousStrategy()">⬅️ سوال قبل</button>` : ''}
+      <button class="btn btn-primary" onclick="continueStrategy()">ادامه ➡️</button>
       <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
-    </div>`;
+    </div>
+    <p style="text-align:center;color:#8f845f;font-size:0.8rem;margin-top:8px;line-height:1.7;">اگر فقط یک سوال را اصلاح کردی، با «ادامه» به اولین سوال بی‌پاسخ می‌روی.</p>`;
   app.innerHTML = html;
 }
 
 function answerStrategy(idx) {
   state.strategyAnswers[state.currentQuestion] = idx;
-  state.currentQuestion++;
+  const total = (state.strategyQuestions || []).length;
+  let next = state.currentQuestion + 1;
+  while (next < total && state.strategyAnswers[next] !== undefined && state.strategyAnswers[next] !== null) next++;
+  state.currentQuestion = next;
   saveSession();
   render();
 }
@@ -1065,6 +1134,22 @@ function previousStrategy() {
     saveSession();
     render();
   }
+}
+function continueStrategy() {
+  const total = (state.strategyQuestions || []).length;
+  if (!total) return;
+  syncStrategyCursor();
+  let answered = 0;
+  for (let i = 0; i < total; i++) {
+    if (state.strategyAnswers[i] !== undefined && state.strategyAnswers[i] !== null) answered++;
+  }
+  if (answered >= total) {
+    state.currentValueQuestion = state.currentValueQuestion || 0;
+    goTo('introValues');
+    return;
+  }
+  saveSession();
+  render();
 }
 /** پرش به اولین سوال بی‌پاسخ (برای ادامه نشست) */
 function syncStrategyCursor() {
@@ -1103,7 +1188,7 @@ function renderIntroValues() {
   app.innerHTML = progressHTML('introValues') + `
     <h2>⚖️ لایهٔ سوم: ارزش‌های بنیادین</h2>
     <div class="card">
-      <p style="color:#b0a080;line-height:2.2;">اینجا بین دو گزینه انتخاب می‌کنی که هر دو می‌توانند ارزشمند باشند. جواب درست یا غلطی وجود ندارد.</p>
+      <p style="color:#c9b896;line-height:2.2;">اینجا بین دو گزینه انتخاب می‌کنی که هر دو می‌توانند ارزشمند باشند. جواب درست یا غلطی وجود ندارد.</p>
       ${resumeHint}
       <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="goTo('values')">🚀 ${startLabel}</button>
       ${canResume ? `<button class="btn" style="width:100%;margin-top:8px;" onclick="state.currentValueQuestion=0;saveSession();goTo('values')">از سوال اول مرور کن</button>` : ''}
@@ -1138,14 +1223,39 @@ function renderValue() {
       <button class="btn" style="display:block;width:100%;margin-bottom:10px;text-align:right;${currentAnswer === opts[0].code ? 'border:2px solid #f0c040;' : ''}" onclick="answerValue('${opts[0].code}')">${escapeHtml(opts[0].text)}</button>
       <button class="btn" style="display:block;width:100%;text-align:right;${currentAnswer === opts[1].code ? 'border:2px solid #f0c040;' : ''}" onclick="answerValue('${opts[1].code}')">${escapeHtml(opts[1].text)}</button>
     </div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;">
       ${state.currentValueQuestion > 0 ? `<button class="btn" onclick="previousValue()">⬅️ سوال قبل</button>` : ''}
+      <button class="btn btn-primary" onclick="continueValue()">ادامه ➡️</button>
       <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
-    </div>`;
+    </div>
+    <p style="text-align:center;color:#8f845f;font-size:0.8rem;margin-top:8px;line-height:1.7;">اگر فقط یک سوال را اصلاح کردی، با «ادامه» به اولین سوال بی‌پاسخ می‌روی.</p>`;
 }
 
-function answerValue(code) { state.valueAnswers[state.currentValueQuestion] = code; state.currentValueQuestion++; saveSession(); render(); }
+function answerValue(code) {
+  state.valueAnswers[state.currentValueQuestion] = code;
+  const total = (state.valueQuestions || []).length;
+  let next = state.currentValueQuestion + 1;
+  while (next < total && state.valueAnswers[next] !== undefined && state.valueAnswers[next] !== null) next++;
+  state.currentValueQuestion = next;
+  saveSession();
+  render();
+}
 function previousValue() { if (state.currentValueQuestion > 0) { state.currentValueQuestion--; saveSession(); render(); } }
+function continueValue() {
+  const total = (state.valueQuestions || []).length;
+  if (!total) return;
+  syncValueCursor();
+  let answered = 0;
+  for (let i = 0; i < total; i++) {
+    if (state.valueAnswers[i] !== undefined && state.valueAnswers[i] !== null) answered++;
+  }
+  if (answered >= total) {
+    goTo('choice');
+    return;
+  }
+  saveSession();
+  render();
+}
 
 // ==================== صفحه انتخاب (جدید) ====================
 function renderChoice() {
@@ -1154,7 +1264,7 @@ function renderChoice() {
     <h2 style="color:#f0c040;margin:8px 0">دو در خروجی شهر</h2>
     <p class="dh-stage-hint">هر دو از یک نقشهٔ فردیت می‌آیند؛ فقط مقیاس‌شان فرق می‌کند</p></div>
     <div class="card" style="text-align:center;">
-      <p style="color:#b0a080;line-height:2.2;">
+      <p style="color:#c9b896;line-height:2.2;">
         جرقه‌ها و انتخاب‌هایت ثبت شد. حالا بگو نتیجه را در کدام مقیاس ببینی:
       </p>
       <div style="display:flex;flex-direction:column;gap:15px;margin-top:20px;">
@@ -1252,7 +1362,7 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
+      const timeout = setTimeout(() => controller.abort(), 90000);
       const res = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeout);
       if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -1265,6 +1375,73 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 }
 
 // ==================== DISPLAY RESULTS (نسخه نهایی با UI/UX بهبودیافته) ====================
+
+// ==================== توضیح مشاوره‌ای (Cloudflare Workers AI) ====================
+async function loadDeepCounselItem(index, mode) {
+  mode = mode || 'main';
+  const box = document.getElementById('dh-counsel-box-' + index);
+  if (!box) return;
+
+  const tops = state.lastCounselTops || [];
+  const item = tops[index];
+  if (!item) {
+    box.style.display = 'block';
+    box.innerHTML = '<p style="color:#f88;text-align:center;">داده‌ای برای این مسیر در دسترس نیست.</p>';
+    return;
+  }
+
+  box.style.display = 'block';
+  box.innerHTML = '<p style="color:#f0c040;line-height:1.9;margin:0;text-align:center;">در حال آماده‌سازی توضیح مشاوره‌ای برای «' + escapeHtml(item.name || '') + '»...</p>';
+
+  const profile = {
+    kind: state.lastCounselKind || 'majors',
+    micro_motives: state.likedCodes || [],
+    liked_motives: state.likedCodes || []
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 65000);
+    const res = await fetch(API_BASE + '/api/v2/darkhorse/counsel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: profile,
+        top_results: [item],
+        journey_type: state.lastCounselKind || 'majors',
+        mode: mode
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    let data = null;
+    try { data = await res.json(); } catch (_) {}
+    if (!res.ok) {
+      const msg = (data && (data.detail || data.message)) || ('خطا ' + res.status);
+      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    }
+    const text = (data && data.counseling) ? String(data.counseling).trim() : '';
+    if (!text) throw new Error('پاسخ خالی');
+    const safe = escapeHtml(text).replace(/\n/g, '<br>');
+    const title = mode === 'alternatives'
+      ? ('🔄 مسیرهای جایگزین «' + escapeHtml(item.name || '') + '»')
+      : ('✨ مشاوره «' + escapeHtml(item.name || '') + '»');
+    box.innerHTML =
+      '<div style="background:linear-gradient(145deg,#14141f,#0f0f18);border:1px solid rgba(212,175,55,.45);border-radius:16px;padding:18px;text-align:right;line-height:2;color:#e8dcc0;">' +
+      '<h3 style="color:#f0c040;margin:0 0 12px;font-size:1.02rem;">' + title + '</h3>' +
+      '<div style="font-size:0.95rem;">' + safe + '</div></div>';
+  } catch (e) {
+    console.error(e);
+    box.innerHTML = '<p style="color:#f88;line-height:1.8;margin:0;text-align:center;">الان نتوانستیم توضیح مشاوره‌ای را بگیریم. کمی بعد دوباره تلاش کنید.</p>';
+  }
+}
+
+async function loadDeepCounsel(mode) {
+  // سازگاری عقب‌رو: اگر هنوز جایی سراسری صدا بزند، اولین نتیجه
+  return loadDeepCounselItem(0, mode || 'main');
+}
+
+
 function displayResults(data, type) {
   // ===== ۱. استخراج آیتم‌ها =====
   let items = [];
@@ -1373,7 +1550,7 @@ function displayResults(data, type) {
       ${valueStyle ? `<p style="margin:5px 0;"><span style="font-size:1.2rem;">⚖️</span> <strong>ارزش‌های کلیدی:</strong> ${escapeHtml(valueStyle.summary)}</p>` : ''}
     </div>` : ''}
 
-    <p style="text-align:center;color:#b0a080;">بر اساس <strong style="color:#f0c040;">${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
+    <p style="text-align:center;color:#c9b896;">بر اساس <strong style="color:#f0c040;">${state.likedCodes.length}</strong> خرده‌انگیزه، ${matched.length} ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
   `;
 
   // ===== بهترین شاخه (فقط اگر در لیست matched باشد) =====
@@ -1399,7 +1576,7 @@ function displayResults(data, type) {
       html += `
         <div style="background:linear-gradient(135deg,#1a1a2e,#2a1a3e);border:2px solid #f0c040;border-radius:12px;padding:18px;margin:20px 0;text-align:center;">
           <p style="color:#f0c040;font-size:1.4rem;font-weight:bold;">🏆 بیشترین همخوانی: <span style="font-size:1.6rem;">${escapeHtml(bestName)}</span></p>
-          <p style="color:#b0a080;font-size:0.9rem;">امتیاز ${bestScore != null ? escapeHtml(String(bestScore)) + '٪ · ' : ''}نقطه شروع بررسی است، نه تصمیم نهایی.</p>
+          <p style="color:#c9b896;font-size:0.9rem;">امتیاز ${bestScore != null ? escapeHtml(String(bestScore)) + '٪ · ' : ''}نقطه شروع بررسی است، نه تصمیم نهایی.</p>
         </div>`;
     }
   }
@@ -1407,7 +1584,7 @@ function displayResults(data, type) {
   if (matched.length === 0) {
     html += `<p style="color:#f0c040;text-align:center;">با همین خرده‌انگیزه‌ها، هیچ ${isBranch ? 'شاخه‌ای' : 'رشته‌ای'} به آستانهٔ ۳۰٪ نرسیده است.</p>`;
   } else {
-    matched.forEach(r => {
+    matched.forEach((r, ri) => {
       const score = r.fit_score || 0;
       const raw = r.raw_components || {};
       const mPct = raw.m_score !== undefined ? raw.m_score : (r.avg_components?.m_score || 0);
@@ -1427,7 +1604,7 @@ function displayResults(data, type) {
       if (motiveMatched < 0) motiveMatched = 0;
       if (motiveMatched > 7) motiveMatched = 7;
       const motiveDenom = 7;
-      const motiveCountHtml = `<div class="dh-motive-count">جرقه‌های این رشته: ${motiveMatched} از ${motiveDenom}${motiveMatched < motiveDenom ? ' (کامل لایک نشده)' : ' (کامل)'}</div>`;
+      const motiveCountHtml = ''; // شمارش تستی «X از 7» برای انتشار عمومی حذف شد
 
       let sparkText = '';
       if (microMatch.length > 0) {
@@ -1460,19 +1637,19 @@ function displayResults(data, type) {
 
           <!-- نوارهای پیشرفت M, S, V -->
           <div style="margin:12px 0;">
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#b0a080;">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#c9b896;">
               <span>🔥 انگیزه (M)</span> <span>${mPct}%</span>
             </div>
             <div style="background:#333;height:6px;border-radius:4px;margin-bottom:6px;">
               <div style="background:#ff6b6b;width:${mPct}%;height:6px;border-radius:4px;"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#b0a080;">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#c9b896;">
               <span>🧭 راهبرد (S)</span> <span>${sPct}%</span>
             </div>
             <div style="background:#333;height:6px;border-radius:4px;margin-bottom:6px;">
               <div style="background:#4ecdc4;width:${sPct}%;height:6px;border-radius:4px;"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#b0a080;">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#c9b896;">
               <span>⚖️ ارزش (V)</span> <span>${vPct}%</span>
             </div>
             <div style="background:#333;height:6px;border-radius:4px;">
@@ -1480,11 +1657,11 @@ function displayResults(data, type) {
             </div>
           </div>
 
-          ${motiveCountHtml}${sparkText ? `<p style="font-size:0.85rem;color:#b0a080;margin:8px 0;">🔥 جرقه‌های مشترک: ${sparkText}</p>` : ''}
+          ${motiveCountHtml}${sparkText ? `<p style="font-size:0.85rem;color:#c9b896;margin:8px 0;">🔥 جرقه‌های مشترک: ${sparkText}</p>` : ''}
           
           ${r.personalized_description ? `
             <div style="background:#0a0a0f;border:1px solid #d4af37;border-radius:8px;padding:12px;margin:10px 0;font-size:0.9rem;line-height:1.9;">
-              <p style="margin:0;color:#b0a080;">💬 ${escapeHtml(r.personalized_description)}</p>
+              <p style="margin:0;color:#c9b896;">💬 ${escapeHtml(r.personalized_description)}</p>
             </div>` : ''}
 
           <!-- کهن‌الگو (با طراحی برجسته) -->
@@ -1494,7 +1671,7 @@ function displayResults(data, type) {
                 <span>🧠</span> <strong>کهن‌الگوی شناختی</strong>
               </div>
               <div style="font-size:1.3rem;font-weight:bold;color:#fff;margin:6px 0;">${escapeHtml(r.archetype.archetype || '')}</div>
-              ${r.archetype.identity_sentence ? `<div style="font-size:0.9rem;color:#b0a080;">📖 ${escapeHtml(r.archetype.identity_sentence)}</div>` : ''}
+              ${r.archetype.identity_sentence ? `<div style="font-size:0.9rem;color:#c9b896;">📖 ${escapeHtml(r.archetype.identity_sentence)}</div>` : ''}
             </div>` : ''}
 
           <!-- منبع رضایت عمیق -->
@@ -1503,19 +1680,19 @@ function displayResults(data, type) {
               <div style="display:flex;align-items:center;gap:6px;color:#f0c040;font-weight:bold;margin-bottom:4px;">
                 <span>🌟</span> منبع رضایت عمیق
               </div>
-              <div style="color:#b0a080;font-size:0.9rem;line-height:1.7;">${escapeHtml(r.fulfillment_source)}</div>
+              <div style="color:#c9b896;font-size:0.9rem;line-height:1.7;">${escapeHtml(r.fulfillment_source)}</div>
             </div>` : ''}
 
           <!-- صفات و ارزش‌های غالب -->
           ${!isBranch && r.archetype && ((r.archetype.dominant_traits && r.archetype.dominant_traits.length) || (r.archetype.dominant_values && r.archetype.dominant_values.length)) ? `
             <div style="margin:10px 0;">
               ${r.archetype.dominant_traits && r.archetype.dominant_traits.length ? `
-                <div style="font-size:0.85rem;color:#b0a080;margin-bottom:4px;">🧭 راهبردهای غالب شما در این رشته:</div>
+                <div style="font-size:0.85rem;color:#c9b896;margin-bottom:4px;">🧭 راهبردهای غالب شما در این رشته:</div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
                   ${r.archetype.dominant_traits.map(t => `<span style="background:#1a1a2e;border:1px solid #555;padding:3px 10px;border-radius:16px;font-size:0.8rem;color:#ddd;">${escapeHtml(t)}</span>`).join('')}
                 </div>` : ''}
               ${r.archetype.dominant_values && r.archetype.dominant_values.length ? `
-                <div style="font-size:0.85rem;color:#b0a080;margin-bottom:4px;">⚖️ ارزش‌های غالب شما در این رشته:</div>
+                <div style="font-size:0.85rem;color:#c9b896;margin-bottom:4px;">⚖️ ارزش‌های غالب شما در این رشته:</div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;">
                   ${r.archetype.dominant_values.map(v => `<span style="background:#1a1a2e;border:1px solid #555;padding:3px 10px;border-radius:16px;font-size:0.8rem;color:#ddd;">${escapeHtml(v)}</span>`).join('')}
                 </div>` : ''}
@@ -1524,7 +1701,7 @@ function displayResults(data, type) {
           <!-- مسیرهای جایگزین (به‌صورت برچسب‌های قابل کلیک) -->
           ${r.alternative_paths && r.alternative_paths.length > 0 ? `
             <div style="margin:10px 0;">
-              <div style="font-size:0.85rem;color:#b0a080;margin-bottom:6px;">🔄 مسیرهای جایگزین:</div>
+              <div style="font-size:0.85rem;color:#c9b896;margin-bottom:6px;">🔄 مسیرهای جایگزین:</div>
               <div style="display:flex;flex-wrap:wrap;gap:8px;">
                 ${r.alternative_paths.map(p => {
                   const name = p.branch_name || p.major_name || p.name || '';
@@ -1534,9 +1711,58 @@ function displayResults(data, type) {
             </div>` : ''}
 
           ${isBranch && r.count ? `<div style="font-size:0.75rem;color:#888;margin-top:8px;">📌 تعداد کدهای تحلیل‌شده: ${r.count}</div>` : ''}
+
+          ${!isBranch ? `
+          <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(212,175,55,0.25);">
+            <button type="button" class="btn btn-primary"
+              style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#f0c040,#d4af37);color:#0a0a0f;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'main')">
+              ✨ توضیح مشاوره‌ای این رشته
+            </button>
+            <button type="button" class="btn"
+              style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid rgba(212,175,55,0.55);background:rgba(240,192,64,0.08);color:#f0c040;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'alternatives')">
+              🔄 مسیرهای جایگزین این رشته
+            </button>
+            <div id="dh-counsel-box-${ri}" style="display:none;margin-top:12px;text-align:right;"></div>
+          </div>` : `
+          <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(212,175,55,0.25);">
+            <button type="button" class="btn btn-primary"
+              style="width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#f0c040,#d4af37);color:#0a0a0f;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'main')">
+              ✨ توضیح مشاوره‌ای این شاخه
+            </button>
+            <button type="button" class="btn"
+              style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid rgba(212,175,55,0.55);background:rgba(240,192,64,0.08);color:#f0c040;font-weight:600;"
+              onclick="loadDeepCounselItem(${ri}, 'alternatives')">
+              🔄 مسیرهای جایگزین این شاخه
+            </button>
+            <div id="dh-counsel-box-${ri}" style="display:none;margin-top:12px;text-align:right;"></div>
+          </div>`}
         </div>`;
     });
   }
+
+    // ذخیره برای مشاوره AI (بدون دکمه سراسری — دکمه زیر هر نتیجه است)
+  try {
+    state.lastCounselKind = isBranch ? 'branches' : 'majors';
+    state.lastCounselTops = (matched || []).map(function (r) {
+      return {
+        name: r.name,
+        score: r.fit_score,
+        fit_score: r.fit_score,
+        raw_components: r.raw_components || r.avg_components || {},
+        avg_components: r.avg_components || r.raw_components || {},
+        archetype: r.archetype || null,
+        fulfillment_source: r.fulfillment_source || null,
+        alternative_paths: r.alternative_paths || [],
+        micro_motives_matched: r.micro_motives_matched || []
+      };
+    });
+  } catch (e) {}
+
+    // دکمه‌های سراسری مشاوره حذف شد — زیر هر رشته/شاخه جداگانه است
+
 
   // ==================== دکمه‌های ناوبری ====================
   html += `
@@ -1559,50 +1785,50 @@ function displayResults(data, type) {
   html += `
     <div id="feedbackSection" style="background:#1a1a2e;border:1px solid #d4af37;border-radius:12px;padding:20px;margin:30px 0 15px 0;text-align:right;">
       <p style="color:#f0c040;font-weight:bold;margin-bottom:15px;font-size:1.1rem;">💬 نظرت دربارهٔ اسب سیاه چیه؟</p>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۱. چقدر از تجربهٔ کلی این سفر اکتشافی راضی بودی؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۱. چقدر از تجربهٔ کلی این سفر اکتشافی راضی بودی؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q1">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q1', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q1-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۲. چقدر نتایج با علایق و فردیت واقعی‌ات همخوانی داشت؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۲. چقدر نتایج با علایق و فردیت واقعی‌ات همخوانی داشت؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q2">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q2', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q2-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۳. آیا این اپلیکیشن را به یک دوست معرفی می‌کنی؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۳. آیا این اپلیکیشن را به یک دوست معرفی می‌کنی؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q3">
         <button class="btn btn-sm" onclick="setFeedback('q3', 'yes')" id="btn-q3-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q3', 'maybe')" id="btn-q3-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q3', 'no')" id="btn-q3-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۴. اگر می‌توانستی <strong>شانس قبولی خود را در دانشگاه‌های مختلف</strong> ببینی، چقدر برایت ارزشمند بود؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۴. اگر می‌توانستی <strong>شانس قبولی خود را در دانشگاه‌های مختلف</strong> ببینی، چقدر برایت ارزشمند بود؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q4">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q4', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q4-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۵. چقدر دوست داری <strong>آیندهٔ شغلی و بازار کار</strong> این رشته‌ها را ببینی؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۵. چقدر دوست داری <strong>آیندهٔ شغلی و بازار کار</strong> این رشته‌ها را ببینی؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q5">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q5', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q5-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۶. آیا به انتخاب رشتهٔ سنتی (بر اساس رتبه) هم نیاز داری؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۶. آیا به انتخاب رشتهٔ سنتی (بر اساس رتبه) هم نیاز داری؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q6">
         <button class="btn btn-sm" onclick="setFeedback('q6', 'yes')" id="btn-q6-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q6', 'no')" id="btn-q6-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۷. اگر سرویس <strong>کشف رشته‌های متناسب با فردیت</strong> (همین سفر اکتشافی) پولی بود، باز هم استفاده می‌کردی؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۷. اگر سرویس <strong>کشف رشته‌های متناسب با فردیت</strong> (همین سفر اکتشافی) پولی بود، باز هم استفاده می‌کردی؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q7">
         <button class="btn btn-sm" onclick="setFeedback('q7', 'yes')" id="btn-q7-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q7', 'maybe')" id="btn-q7-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q7', 'no')" id="btn-q7-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۸. اگر بخش <strong>آیندهٔ شغلی و بازار کار</strong> هر رشته (با هزینهٔ کم) ارائه شود، برایت ارزشمند است؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۸. اگر بخش <strong>آیندهٔ شغلی و بازار کار</strong> هر رشته (با هزینهٔ کم) ارائه شود، برایت ارزشمند است؟</p>
       <div style="display:flex;gap:10px;justify-content:flex-end;" id="feedback-q8">
         <button class="btn btn-sm" onclick="setFeedback('q8', 'yes')" id="btn-q8-yes" style="padding:6px 16px;">بله</button>
         <button class="btn btn-sm" onclick="setFeedback('q8', 'maybe')" id="btn-q8-maybe" style="padding:6px 16px;">شاید</button>
         <button class="btn btn-sm" onclick="setFeedback('q8', 'no')" id="btn-q8-no" style="padding:6px 16px;">خیر</button>
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود؟</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۹. چقدر این روش (کشف رشته از طریق فردیت) نسبت به روش‌های سنتی برات نوآورانه بود؟</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;" id="feedback-q10">
         ${[1,2,3,4,5].map(i => `<span onclick="setFeedback('q10', ${i})" style="font-size:1.8rem;cursor:pointer;opacity:0.3;" id="star-q10-${i}">⭐</span>`).join('')}
       </div>
-      <p style="color:#b0a080;margin:12px 0 5px 0;">۱۰. چه پیشنهادی برای بهبود داری؟ (اختیاری)</p>
+      <p style="color:#c9b896;margin:12px 0 5px 0;">۱۰. چه پیشنهادی برای بهبود داری؟ (اختیاری)</p>
       <textarea id="feedback-q9" placeholder="اینجا بنویس..." style="width:100%;padding:12px;background:#0a0a0f;color:#fff;border:1px solid #333;border-radius:8px;min-height:60px;font-family:Vazirmatn;"></textarea>
       <button class="btn btn-primary" style="width:100%;margin-top:15px;padding:12px;" onclick="submitFeedback()">📩 ثبت بازخورد</button>
       <p id="feedback-msg" style="color:#f0c040;margin-top:8px;display:none;">✅ ممنون از بازخوردت! نظرت ثبت شد.</p>
@@ -1619,7 +1845,6 @@ function displayResults(data, type) {
       <p style="margin:0 0 12px;font-size:.8rem;">بدون دادهٔ خصوصی — فقط خلاصهٔ مسیر</p>
       <button class="btn btn-primary" style="width:100%;" onclick="dhCopyShare()">کپی متن نتیجه</button>
     </div>`;
-  html += `<button class="btn" style="margin-top:16px;width:100%;font-size:0.8rem;background:#333;color:#aaa;" onclick="showAllFeedback()">📋 بازخوردها (مدیر)</button>`;
   app.innerHTML = html;
 }   
 // ==================== تحلیل سبک شخصی (اصلاح‌شده) ====================
@@ -1771,9 +1996,9 @@ async function showAllFeedback() {
       const date = new Date(fb.timestamp).toLocaleString('fa-IR');
       html += `<div class="card" style="text-align:right;margin-bottom:15px;">
         <p style="color:#888;font-size:0.8rem;">📅 ${date} | 🆔 ${escapeHtml(fb.session_id || '؟')}</p>
-        <p style="color:#b0a080;">✨ خرده‌انگیزه‌ها: <strong>${fb.likedCodes || '؟'}</strong> عدد</p>
-        <p style="color:#b0a080;">🧭 پاسخ‌های راهبرد: <strong>${fb.strategyAnswers || '؟'}</strong> از ۲۵</p>
-        <p style="color:#b0a080;">⚖️ پاسخ‌های ارزشی: <strong>${fb.valueAnswers || '؟'}</strong> از ۱۵</p>
+        <p style="color:#c9b896;">✨ خرده‌انگیزه‌ها: <strong>${fb.likedCodes || '؟'}</strong> عدد</p>
+        <p style="color:#c9b896;">🧭 پاسخ‌های راهبرد: <strong>${fb.strategyAnswers || '؟'}</strong> از ۲۵</p>
+        <p style="color:#c9b896;">⚖️ پاسخ‌های ارزشی: <strong>${fb.valueAnswers || '؟'}</strong> از ۱۵</p>
         <hr style="border-color:#333;margin:8px 0;">
         <p style="color:#f0c040;">۱. رضایت از تجربه: ${'⭐'.repeat(fb.feedback?.q1 || 0)}</p>
         <p style="color:#f0c040;">۲. همخوانی با فردیت: ${'⭐'.repeat(fb.feedback?.q2 || 0)}</p>
