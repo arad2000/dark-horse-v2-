@@ -3,10 +3,10 @@ name: Publish frontend from main
 on:
   pull_request:
     branches:
-      - deploy/liara-commercial-sandbox
+      - main
   push:
     branches:
-      - deploy/liara-commercial-sandbox
+      - main
 
 permissions:
   contents: read
