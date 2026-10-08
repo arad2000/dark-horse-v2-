@@ -265,6 +265,36 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
         if path == "exam":
             exam = _resolve_exam_request(request)
             programs = load_programs()
+            available_program_major_ids = {
+                str(program.get("major_id"))
+                for program in programs
+                if program.get("major_id") is not None
+            }
+            missing_program2s_major_ids = [
+                int(major_id)
+                for major_id in request.major_ids
+                if str(major_id) not in available_program_major_ids
+            ]
+            if missing_program2s_major_ids and len(missing_program2s_major_ids) == len(request.major_ids):
+                notes = [
+                    "برای این رشته در دادهٔ مقایسه رتبه برنامه‌ای ثبت نشده. ظرفیت را از منبع «ظرفیت دفترچه» ببینید."
+                ]
+                return {
+                    "admission_path": "exam",
+                    "source": "program",
+                    "items": [],
+                    "count": 0,
+                    "empty_reason": "no_program2s_data",
+                    "context": {
+                        "rank_in_quota": exam["rank_in_quota"],
+                        "region_zone": exam["region_zone"],
+                        "special_quota": exam["special_quota"],
+                        "province": exam["province"],
+                        "missing_program2s_major_ids": missing_program2s_major_ids,
+                    },
+                    "notes": notes,
+                    "disclaimer": "این مقایسه صرفاً نمایشی و بر پایه آخرین cutoff تاریخی موجود در داده برنامه است؛ هیچ احتمال عددی محاسبه نمی‌شود و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                }
             items = build_exam_results(
                 major_ids=request.major_ids,
                 rank_in_quota=exam["rank_in_quota"],
