@@ -1169,6 +1169,50 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertEqual(item["cutoff_source"], "program2s historical cutoff data")
         self.assertIn("هیچ احتمال عددی محاسبه نمی‌شود", payload["disclaimer"])
 
+    def test_exam_program_missing_program2s_major_returns_explicit_empty_reason(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "exam",
+                "source": "program",
+                "major_ids": [166],
+                "rank_in_quota": 1000,
+                "region_zone": 2,
+                "special_quota": "none",
+                "province": "تهران",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["items"], [])
+        self.assertEqual(payload["count"], 0)
+        self.assertEqual(payload["empty_reason"], "no_program2s_data")
+        self.assertEqual(payload["context"]["missing_program2s_major_ids"], [166])
+        self.assertIn(
+            "برای این رشته در دادهٔ مقایسه رتبه برنامه‌ای ثبت نشده. ظرفیت را از منبع «ظرفیت دفترچه» ببینید.",
+            payload["notes"],
+        )
+
+    def test_exam_program_medical_regression_still_returns_rows(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "exam",
+                "source": "program",
+                "major_ids": [1],
+                "rank_in_quota": 900,
+                "region_zone": 2,
+                "special_quota": "none",
+                "province": "تهران",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["source"], "program")
+        self.assertGreater(payload["count"], 0)
+        self.assertEqual(payload["items"][0]["major_id"], 1)
+        self.assertNotIn("empty_reason", payload)
+
     def test_exam_program_special_quota_uses_historical_special_cutoff(self):
         with patch("admission_chance_api.load_programs", return_value=(SPECIAL_HISTORICAL_PROGRAM,)):
             response = self.client.post(
