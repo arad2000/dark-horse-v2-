@@ -330,15 +330,23 @@
     }).join('');
   }
 
-  function renderItems(items, majorMap, path, source) {
+  function renderItems(items, majorMap, path, source, emptyReason) {
     if (!Array.isArray(items) || !items.length) {
+      var noProgram2s = path === 'exam' &&
+        source === 'program' &&
+        emptyReason === 'no_program2s_data';
       var emptyText = path === 'record'
         ? 'برای رشته‌های فعلی، برنامه‌ای با پذیرش «صرفاً سوابق تحصیلی» و دادهٔ قابل استفاده پیدا نشد. این وضعیت به معنی رد شدن داوطلب نیست.'
-        : source === 'program'
-          ? 'برای ترکیب رشته و استان انتخاب‌شده، برنامه‌ای با cutoff تاریخی قابل استفاده پیدا نشد. این وضعیت به معنی رد شدن داوطلب نیست.'
-          : 'برای ترکیب گروه آزمایشی، رشته، استان و دوره انتخاب‌شده، ردیف ظرفیت با آزمون در دفترچه ۱۴۰۴ پیدا نشد. این پیام به معنی رد شدن داوطلب نیست.';
+        : noProgram2s
+          ? 'برای این رشته در دادهٔ مقایسه رتبه برنامه‌ای ثبت نشده. ظرفیت را از منبع «ظرفیت دفترچه» ببینید.'
+          : source === 'program'
+            ? 'برای ترکیب رشته و استان انتخاب‌شده، برنامه‌ای با cutoff تاریخی قابل استفاده پیدا نشد. این وضعیت به معنی رد شدن داوطلب نیست.'
+            : 'برای ترکیب گروه آزمایشی، رشته، استان و دوره انتخاب‌شده، ردیف ظرفیت با آزمون در دفترچه ۱۴۰۴ پیدا نشد. این پیام به معنی رد شدن داوطلب نیست.';
+      var switchCapacity = noProgram2s
+        ? '<button type="button" class="dh-admission-submit dh-admission-empty-switch" data-dh-switch-capacity="1">📘 نمایش ظرفیت دفترچه</button>'
+        : '';
       return '<div class="dh-admission-card dh-admission-empty"><p>' +
-        escapeHtml(emptyText) + '</p></div>';
+        escapeHtml(emptyText) + '</p>' + switchCapacity + '</div>';
     }
 
     if (path === 'exam' && source === 'program') {
@@ -660,7 +668,13 @@
             'مسیر: <strong>' + escapeHtml(resultPath === 'record' ? 'سوابق تحصیلی' : 'با آزمون') + '</strong> · ' +
             'تعداد نتایج: <strong>' + escapeHtml(payload.count || 0) + '</strong> مورد' +
           '</p>' +
-          renderItems(payload.items || [], majorMap, resultPath, payload.source || null) +
+          renderItems(
+            payload.items || [],
+            majorMap,
+            resultPath,
+            payload.source || null,
+            payload.empty_reason || null
+          ) +
           '<div class="dh-admission-disclaimer">' +
             escapeHtml(payload.disclaimer || 'نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیستند.') +
           '</div>';
@@ -728,6 +742,19 @@
         requestAdmissionChance(recommendations, examForm, 'exam');
       });
     }
+
+    root.addEventListener('click', function (event) {
+      var switchButton = event.target.closest('[data-dh-switch-capacity]');
+      if (!switchButton) return;
+      var examForm = document.getElementById('dh-admission-exam-form');
+      if (!examForm || !examForm.source) return;
+      examForm.source.value = 'capacity';
+      updateExamSourceUI();
+      var results = document.getElementById('dh-admission-results');
+      if (results) results.innerHTML = '';
+      setStatus('منبع بررسی به «ظرفیت دفترچه» تغییر کرد. حالا نتیجه را دوباره بگیر.', false);
+      examForm.source.focus();
+    });
   }
 
   function isMajorResultsView() {
