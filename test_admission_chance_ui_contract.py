@@ -107,8 +107,18 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
     def test_empty_capacity_is_not_rejection_message(self):
         self.assertIn("این پیام به معنی رد شدن داوطلب نیست", self.ui)
 
+    def test_empty_program2s_shows_source_message_and_capacity_switch(self):
+        self.assertIn("empty_reason", self.ui)
+        self.assertIn("no_program2s_data", self.ui)
+        self.assertIn(
+            "برای این رشته در دادهٔ مقایسه رتبه برنامه‌ای ثبت نشده. ظرفیت را از منبع «ظرفیت دفترچه» ببینید.",
+            self.ui,
+        )
+        self.assertIn('data-dh-switch-capacity="1"', self.ui)
+        self.assertIn("examForm.source.value = 'capacity'", self.ui)
+
     def test_cache_bust_loads_new_ui_and_css(self):
-        self.assertIn('admission_chance_ui.js?v=9', self.index)
+        self.assertIn('admission_chance_ui.js?v=10', self.index)
         self.assertIn('admission_chance_ui.css?v=3', self.index)
 
     def test_no_engine_or_shell_changes_are_required(self):
