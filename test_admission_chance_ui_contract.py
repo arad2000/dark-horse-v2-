@@ -118,7 +118,7 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertIn("examForm.source.value = 'capacity'", self.ui)
 
     def test_cache_bust_loads_new_ui_and_css(self):
-        self.assertIn('admission_chance_ui.js?v=9', self.index)
+        self.assertIn('admission_chance_ui.js?v=10', self.index)
         self.assertIn('admission_chance_ui.css?v=3', self.index)
 
     def test_no_engine_or_shell_changes_are_required(self):
