@@ -10,7 +10,7 @@
   function wasDismissed() {
     if (dismissedInMemory) return true;
     try {
-      return window.localStorage.getItem(STORAGE_KEY) === '1';
+      return window.sessionStorage.getItem(STORAGE_KEY) === '1';
     } catch (e) {
       return dismissedInMemory;
     }
@@ -19,9 +19,9 @@
   function dismiss(banner) {
     dismissedInMemory = true;
     try {
-      window.localStorage.setItem(STORAGE_KEY, '1');
+      window.sessionStorage.setItem(STORAGE_KEY, '1');
     } catch (e) {
-      // The current banner still closes if storage is unavailable.
+      // The current banner still closes for this page session if storage is unavailable.
     }
     if (banner && banner.parentNode) {
       banner.parentNode.removeChild(banner);
