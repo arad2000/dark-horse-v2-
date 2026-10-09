@@ -39,9 +39,9 @@ assert.match(source, /id="dh-admission-exam-province" name="school_province_3y" 
 assert.match(source, /id="dh-admission-exam-period" name="period" required/);
 assert.match(source, /id="dh-admission-exam-source-help" class="dh-admission-help"/);
 assert.match(source, /در ظرفیت دفترچه، همه رشته‌های گروه انتخاب‌شده بر اساس استان و دوره از دفترچه ۱۴۰۵ فهرست می‌شوند/);
-assert.match(source, /برای مقایسه رتبه با آخرین قبولی تاریخی/);
-assert.match(source, /رتبه در سهمیه و منطقه برای انتخاب cutoff تاریخی لازم‌اند/);
-assert.match(source, /نتیجه فقط مقایسه نمایشی است و درصد شانس نیست/);
+assert.match(source, /برای مقایسه آخرین رتبه تاریخی، انتخاب رشته الزامی است/);
+assert.match(source, /برای مقایسه cutoff تاریخی، انتخاب رشته، رتبه در سهمیه و منطقه لازم‌اند/);
+assert.match(source, /این خروجی درصد شانس نیست/);
 assert.match(source, /id="dh-admission-exam-special-quota" name="special_quota"/);
 assert.match(source, /optionsHtml\(SPECIAL_QUOTA_OPTIONS\)/);
 assert.match(source, /form\.special_quota\.disabled = !isProgram/);
