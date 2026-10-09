@@ -2148,3 +2148,92 @@ body {
   font-size: 0.72rem !important;
   line-height: 1.6 !important;
 }
+
+
+/* Homepage dual entry points: Harvard discovery and Sanjesh admission. */
+.dh-home-sanjesh-entry {
+  margin: 14px 0 18px;
+  padding: 18px 16px;
+  border: 1px solid rgba(240, 192, 64, 0.42);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(34, 31, 23, 0.98), rgba(18, 18, 28, 0.98));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
+  text-align: right;
+}
+.dh-home-entry-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.dh-home-entry-icon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(240, 192, 64, 0.38);
+  border-radius: 13px;
+  background: rgba(240, 192, 64, 0.1);
+  font-size: 1.45rem;
+}
+.dh-home-entry-top h2 {
+  margin: 0 0 5px;
+  color: #f0c040;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.dh-home-entry-top p {
+  margin: 0;
+  color: #c9b896;
+  font-size: 0.83rem;
+  line-height: 1.85;
+}
+.dh-home-sanjesh-toggle {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(240, 192, 64, 0.4);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.18), rgba(212, 175, 55, 0.08));
+  color: #f5d777;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.dh-home-sanjesh-toggle:focus-visible {
+  outline: 2px solid #f0c040;
+  outline-offset: 3px;
+}
+.dh-home-sanjesh-panel[hidden] {
+  display: none !important;
+}
+.dh-home-sanjesh-panel {
+  margin-top: 10px;
+}
+.dh-home-sanjesh-mount {
+  scroll-margin-top: 16px;
+}
+.dh-home-sanjesh-mount .dh-admission-chance-widget {
+  margin: 10px 0 0;
+}
+.dh-home-sanjesh-mount .dh-admission-catalog-error {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(240, 192, 64, 0.3);
+  border-radius: 12px;
+  color: #c9b896;
+  line-height: 1.9;
+}
+.dh-home-sanjesh-mount .dh-admission-catalog-retry {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  border: 1px solid rgba(240, 192, 64, 0.4);
+  border-radius: 10px;
+  background: rgba(240, 192, 64, 0.12);
+  color: #f0c040;
+  font: inherit;
+  cursor: pointer;
+}
