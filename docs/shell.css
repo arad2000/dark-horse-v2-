@@ -1423,7 +1423,14 @@ h2 {
   font-size: 1.3rem; font-weight: 800; color: #F6D97A;
   text-shadow: 0 0 14px rgba(246,217,122,0.3);
 }
-.dh-mk2-hero-sub { margin-top: 5px; font-size: 0.88rem; color: #c5bdae; line-height: 1.55; }
+.dh-mk2-hero-sub {
+  margin-top: 5px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #F0C040;
+  line-height: 1.65;
+  text-shadow: 0 0 10px rgba(240,192,64,0.24);
+}
 .dh-mk2-cta {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 13px 28px; border: none; border-radius: 999px;
