@@ -5,16 +5,19 @@
   var STORAGE_KEY = 'dh_banner_1405_v1';
   var BANNER_ID = 'dh-banner-1405-v1';
   var HOME_SELECTOR = '.dh-home-wrap.dh-mk2';
+  var dismissedInMemory = false;
 
   function wasDismissed() {
+    if (dismissedInMemory) return true;
     try {
       return window.localStorage.getItem(STORAGE_KEY) === '1';
     } catch (e) {
-      return false;
+      return dismissedInMemory;
     }
   }
 
   function dismiss(banner) {
+    dismissedInMemory = true;
     try {
       window.localStorage.setItem(STORAGE_KEY, '1');
     } catch (e) {
