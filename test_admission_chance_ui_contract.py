@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import re
 import unittest
 
@@ -118,8 +119,20 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertIn("examForm.source.value = 'capacity'", self.ui)
 
     def test_cache_bust_loads_new_ui_and_css(self):
-        self.assertIn('admission_chance_ui.js?v=10', self.index)
+        self.assertIn('admission_chance_ui.js?v=11', self.index)
         self.assertIn('admission_chance_ui.css?v=3', self.index)
+
+    def test_home_has_two_primary_entries_and_independent_catalog(self):
+        shell = (ROOT / "docs" / "shell.js").read_text(encoding="utf-8")
+        catalog = json.loads((ROOT / "docs" / "majors_catalog_ui_v1.json").read_text(encoding="utf-8"))
+        self.assertIn("کشف رشته با منطق هاروارد", shell)
+        self.assertIn("انتخاب رشته با منطق سنجش", shell)
+        self.assertIn("DHAdmissionChanceUI.openHome('dh-home-sanjesh-mount')", shell)
+        self.assertIn("majors_catalog_ui_v1.json?v=1", self.ui)
+        self.assertEqual(len(catalog["majors"]), 160)
+        self.assertEqual(catalog["source_sha"], "c573c494e7c40bc9920b03734bd62698de455779")
+        self.assertIn("no_program2s_data", self.ui)
+        self.assertIn('data-dh-switch-capacity="1"', self.ui)
 
     def test_no_engine_or_shell_changes_are_required(self):
         self.assertNotIn("app.js", self.ui)
