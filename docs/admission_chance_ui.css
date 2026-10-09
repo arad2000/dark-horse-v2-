@@ -310,3 +310,14 @@
     flex-direction: column;
   }
 }
+
+/* Current record-path API limitation is visible but still secondary to the inputs. */
+.dh-admission-source-limitation {
+  display: block;
+  margin-top: 7px;
+  padding-right: 9px;
+  border-right: 3px solid rgba(240, 192, 64, 0.72);
+  color: #f0c040;
+  font-weight: 700;
+  line-height: 1.8;
+}

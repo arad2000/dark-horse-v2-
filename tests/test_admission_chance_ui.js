@@ -26,20 +26,22 @@ assert.match(source, /major_ids/);
 assert.match(source, /admission_path:\s*'exam'/);
 assert.match(source, /admission_path:\s*'record'/);
 
-/* Exam + capacity contract: group, major, province, period only. */
+/* Exam + capacity contract: group, province, period; no mandatory major. */
 assert.match(source, /data-path="exam"/);
 assert.match(source, /id="dh-admission-exam-source" name="source" required/);
 assert.match(source, /option value="capacity">ظرفیت دفترچه/);
 assert.match(source, /option value="program">مقایسه با آخرین رتبه/);
 assert.match(source, /id="dh-admission-exam-group" name="group" required/);
-assert.match(source, /id="dh-admission-exam-major" name="major_id" required/);
+assert.match(source, /id="dh-admission-exam-major" name="major_id"/);
+assert.match(source, /dh-admission-exam-major-only" hidden/);
+assert.match(source, /form\.major_id\.required = isProgram/);
 assert.match(source, /id="dh-admission-exam-province" name="school_province_3y" required/);
 assert.match(source, /id="dh-admission-exam-period" name="period" required/);
 assert.match(source, /id="dh-admission-exam-source-help" class="dh-admission-help"/);
-assert.match(source, /در حالت ظرفیت دفترچه فقط تعداد ظرفیت و کد رشته‌محل از دفترچه خوانده می‌شود/);
-assert.match(source, /برای مقایسه رتبه با آخرین قبولی تاریخی/);
-assert.match(source, /رتبه در سهمیه و منطقه برای انتخاب cutoff تاریخی لازم‌اند/);
-assert.match(source, /نتیجه فقط مقایسه نمایشی است و درصد شانس نیست/);
+assert.match(source, /در ظرفیت دفترچه، همه رشته‌های گروه انتخاب‌شده بر اساس استان و دوره از دفترچه ۱۴۰۵ فهرست می‌شوند/);
+assert.match(source, /برای مقایسه آخرین رتبه تاریخی، انتخاب رشته الزامی است/);
+assert.match(source, /برای مقایسه cutoff تاریخی، انتخاب رشته، رتبه در سهمیه و منطقه لازم‌اند/);
+assert.match(source, /این خروجی درصد شانس نیست/);
 assert.match(source, /id="dh-admission-exam-special-quota" name="special_quota"/);
 assert.match(source, /optionsHtml\(SPECIAL_QUOTA_OPTIONS\)/);
 assert.match(source, /form\.special_quota\.disabled = !isProgram/);
@@ -76,7 +78,8 @@ const examCapacityPayloadBlock = source.slice(
 );
 assert.match(examCapacityPayloadBlock, /source:\s*'capacity'/);
 assert.match(examCapacityPayloadBlock, /group:/);
-assert.match(examCapacityPayloadBlock, /major_ids:/);
+assert.match(examCapacityPayloadBlock, /major_ids:\s*\[\]/);
+assert.match(examCapacityPayloadBlock, /limit:\s*100/);
 assert.match(examCapacityPayloadBlock, /province:/);
 assert.match(examCapacityPayloadBlock, /periods:/);
 assert.match(examCapacityPayloadBlock, /include_unknown:\s*false/);
@@ -107,7 +110,10 @@ assert.match(source, /DHAdmissionChanceUI/);
 assert.match(source, /sanjesh_code/);
 assert.match(source, /ظرفیت کل:/);
 assert.match(source, /کد رشته‌محل:/);
-assert.match(source, /برای ترکیب گروه آزمایشی، رشته، استان و دوره انتخاب‌شده/);
+assert.match(source, /برای ترکیب گروه آزمایشی، استان و دوره انتخاب‌شده/);
+assert.match(source, /دفترچه ۱۴۰۵/);
+assert.doesNotMatch(source, /دفترچه ۱۴۰۴|دفترچه 1404/);
+assert.match(source, /API این مسیر بدون major_ids را پشتیبانی نمی‌کند/);
 assert.match(source, /این پیام به معنی رد شدن داوطلب نیست/);
 assert.match(source, /نتایج تخمینی/);
 assert.match(source, /renderRankComparisonItems/);
@@ -129,7 +135,10 @@ assert.match(css, /\.dh-admission-tab/);
 assert.match(css, /\.dh-admission-field select:disabled/);
 assert.match(css, /@media/);
 
-assert.match(indexSource, /admission_chance_ui\.css\?v=3/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=11/);
+assert.match(indexSource, /shell\.css\?v=64/);
+assert.match(indexSource, /admission_chance_ui\.css\?v=4/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=12/);
+assert.match(css, /\.dh-admission-source-limitation/);
+assert.match(shellSource, /کشف رشته با منطق هاروارد/);
 
 console.log('admission_chance_ui phase3 regression: PASS');
