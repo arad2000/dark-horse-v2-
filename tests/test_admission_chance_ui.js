@@ -4,9 +4,17 @@ const assert = require('assert');
 const source = fs.readFileSync('docs/admission_chance_ui.js', 'utf8');
 const css = fs.readFileSync('docs/admission_chance_ui.css', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
+const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
+const catalog = JSON.parse(fs.readFileSync('docs/majors_catalog_ui_v1.json', 'utf8'));
 
 assert.ok(source.includes('/api/v1/admission/chance'));
 assert.match(source, /state\.majorsResult/);
+assert.match(source, /majors_catalog_ui_v1\.json\?v=1/);
+assert.match(source, /function openHome\(mountId\)/);
+assert.match(shellSource, /کشف رشته با منطق هاروارد/);
+assert.match(shellSource, /انتخاب رشته با منطق سنجش/);
+assert.strictEqual(catalog.majors.length, 160);
+assert.strictEqual(catalog.source_sha, 'c573c494e7c40bc9920b03734bd62698de455779');
 assert.match(source, /major_ids/);
 assert.match(source, /admission_path:\s*'exam'/);
 assert.match(source, /admission_path:\s*'record'/);
@@ -115,6 +123,6 @@ assert.match(css, /\.dh-admission-field select:disabled/);
 assert.match(css, /@media/);
 
 assert.match(indexSource, /admission_chance_ui\.css\?v=3/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=10/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=11/);
 
 console.log('admission_chance_ui phase3 regression: PASS');
