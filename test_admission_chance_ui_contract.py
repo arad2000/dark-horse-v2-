@@ -82,6 +82,19 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertNotIn("periods:", program_payload)
         self.assertNotIn("group:", program_payload)
 
+    def test_rank_comparison_shows_program_period_and_locality_metadata(self):
+        for token in (
+            "course_type",
+            "bomi_type",
+            "campus",
+            "university_province",
+            "شناسه برنامه:",
+            "دوره:",
+            "بومی‌گزینی:",
+            "پردیس/محل:",
+        ):
+            self.assertIn(token, self.ui)
+
     def test_rank_comparison_render_contract(self):
         for token in (
             "renderRankComparisonItems",
