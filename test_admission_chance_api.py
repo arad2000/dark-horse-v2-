@@ -1192,6 +1192,69 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertIn("major_ids", program.json()["detail"])
         self.assertIn("major_ids", record.json()["detail"])
 
+    def test_electrical_shiraz_program_cards_include_period_locality_and_original_cutoff(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "exam",
+                "source": "program",
+                "major_ids": [41],
+                "rank_in_quota": 5000,
+                "region_zone": 2,
+                "special_quota": "none",
+                "province": "فارس",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        by_id = {item["program_id"]: item for item in payload["items"]}
+        expected = {
+            "PROG_00786": ("roozaneh", "ghotbi", "دانشگاه شیراز"),
+            "PROG_00825": ("nobat_dovom", "ostani", "دانشگاه شیراز"),
+            "PROG_02898": ("roozaneh", "ostani", "دانشگاه آزاد شیراز"),
+        }
+        source_by_id = {
+            item["program_id"]: item
+            for item in load_programs()
+            if item.get("program_id") in expected
+        }
+        for program_id, (course_type, bomi_type, university_name) in expected.items():
+            self.assertIn(program_id, by_id)
+            item = by_id[program_id]
+            self.assertEqual(item["course_type"], course_type)
+            self.assertEqual(item["bomi_type"], bomi_type)
+            self.assertEqual(item["university_name"], university_name)
+            self.assertEqual(item["university_province"], "فارس")
+            self.assertIsNone(item["campus"])
+            raw = source_by_id[program_id]
+            historical = raw["cutoffs_historical"]
+            latest_year = max(historical, key=lambda year: int(year))
+            self.assertEqual(item["cutoff_reference"]["year"], int(latest_year))
+            self.assertEqual(
+                item["cutoff_reference"]["value"],
+                historical[latest_year]["zone_2"],
+            )
+
+    def test_electrical_shiraz_locality_mismatch_excludes_shiraz_programs(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "exam",
+                "source": "program",
+                "major_ids": [41],
+                "rank_in_quota": 5000,
+                "region_zone": 2,
+                "special_quota": "none",
+                "province": "تهران",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        shiraz_items = [
+            item for item in response.json()["items"]
+            if item.get("university_name") in {"دانشگاه شیراز", "دانشگاه آزاد شیراز"}
+        ]
+        self.assertEqual(shiraz_items, [])
+
     def test_exam_program_rank_comparison_returns_status_and_reference(self):
         with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):
             response = self.client.post(

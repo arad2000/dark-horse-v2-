@@ -352,6 +352,19 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                         reference["value"] if reference else None,
                     )
                     enriched = dict(item)
+                    program_details = programs_by_id.get(str(item.get("program_id")), {})
+                    admission_info = program_details.get("admission_info") or {}
+                    university = program_details.get("university") or {}
+                    # Add explicit display metadata only; historical cutoff selection stays unchanged.
+                    enriched["course_type"] = admission_info.get("course_type") or item.get("course_type")
+                    enriched["bomi_type"] = admission_info.get("bomi_type") or None
+                    enriched["campus"] = (
+                        program_details.get("campus")
+                        or admission_info.get("campus")
+                        or university.get("campus")
+                        or None
+                    )
+                    enriched["university_province"] = university.get("province") or None
                     enriched["status"] = status
                     enriched["status_label"] = status_label
                     enriched["cutoff_reference"] = reference
