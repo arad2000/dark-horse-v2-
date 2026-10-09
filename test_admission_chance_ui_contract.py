@@ -59,7 +59,7 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         payload = self.ui[capacity_start:capacity_end]
         self.assertIn("source: 'capacity'", payload)
         self.assertIn("group:", payload)
-        self.assertIn("major_ids:", payload)
+        self.assertIn("major_ids: [],", payload)
         self.assertIn("province:", payload)
         self.assertIn("periods:", payload)
         self.assertIn("include_unknown: false", payload)
@@ -107,6 +107,12 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
 
     def test_empty_capacity_is_not_rejection_message(self):
         self.assertIn("این پیام به معنی رد شدن داوطلب نیست", self.ui)
+        self.assertIn("برای ترکیب گروه آزمایشی، استان و دوره انتخاب‌شده، ردیف ظرفیت با آزمون در دفترچه ۱۴۰۵ پیدا نشد.", self.ui)
+        self.assertNotRegex(self.ui, r"۱۴۰۴|1404")
+        self.assertIn("در حال خواندن ظرفیت دفترچه گروه انتخاب‌شده ۱۴۰۵", self.ui)
+        self.assertIn("form.major_id.required = isProgram", self.ui)
+        self.assertIn("API این مسیر بدون major_ids را پشتیبانی نمی‌کند", self.ui)
+        self.assertIn("همه رشته‌های گروه انتخاب‌شده", self.ui)
 
     def test_empty_program2s_shows_source_message_and_capacity_switch(self):
         self.assertIn("empty_reason", self.ui)
@@ -119,8 +125,12 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertIn("examForm.source.value = 'capacity'", self.ui)
 
     def test_cache_bust_loads_new_ui_and_css(self):
-        self.assertIn('admission_chance_ui.js?v=11', self.index)
-        self.assertIn('admission_chance_ui.css?v=3', self.index)
+        self.assertIn('shell.css?v=64', self.index)
+        self.assertIn('admission_chance_ui.js?v=12', self.index)
+        self.assertIn('admission_chance_ui.css?v=4', self.index)
+        shell_css = (ROOT / "docs" / "shell.css").read_text(encoding="utf-8")
+        self.assertIn("font-weight: 800;", shell_css)
+        self.assertIn("color: #F0C040;", shell_css)
 
     def test_home_has_two_primary_entries_and_independent_catalog(self):
         shell = (ROOT / "docs" / "shell.js").read_text(encoding="utf-8")
