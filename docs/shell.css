@@ -1762,7 +1762,8 @@ body, #app, .dh-home-wrap, .dh-mk2 {
   text-shadow: none !important;
 }
 .dh-mk2-hero-sub {
-  color: #c9b888 !important;
+  color: #F0C040 !important;
+  font-weight: 800 !important;
 }
 .dh-mk2-cta {
   background: linear-gradient(180deg, #E8C547, #D4AF37) !important;
