@@ -3,6 +3,7 @@ const assert = require('assert');
 
 const source = fs.readFileSync('docs/admission_chance_ui.js', 'utf8');
 const css = fs.readFileSync('docs/admission_chance_ui.css', 'utf8');
+const shellCss = fs.readFileSync('docs/shell.css', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
 const catalog = JSON.parse(fs.readFileSync('docs/majors_catalog_ui_v1.json', 'utf8'));
@@ -140,7 +141,7 @@ assert.match(indexSource, /shell\.js\?v=82/);
 assert.match(indexSource, /admission_chance_ui\.css\?v=4/);
 assert.match(indexSource, /admission_chance_ui\.js\?v=12/);
 assert.match(css, /\.dh-admission-source-limitation/);
-assert.ok(css.includes('.dh-mk2-hero-sub {\n  color: #F0C040 !important;\n  font-weight: 800 !important;\n}'));
+assert.ok(shellCss.includes('.dh-mk2-hero-sub {\n  color: #F0C040 !important;\n  font-weight: 800 !important;\n}'));
 assert.match(shellSource, /کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد/);
 
 console.log('admission_chance_ui phase3 regression: PASS');
