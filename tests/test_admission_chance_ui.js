@@ -139,7 +139,7 @@ assert.match(css, /@media/);
 assert.match(indexSource, /shell\.css\?v=65/);
 assert.match(indexSource, /shell\.js\?v=82/);
 assert.match(indexSource, /admission_chance_ui\.css\?v=4/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=12/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=13/);
 assert.match(css, /\.dh-admission-source-limitation/);
 assert.ok(shellCss.includes('.dh-mk2-hero-sub {\n  color: #F0C040 !important;\n  font-weight: 800 !important;\n}'));
 assert.match(shellSource, /کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد/);
