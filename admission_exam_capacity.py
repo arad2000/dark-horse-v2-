@@ -181,13 +181,12 @@ def build_exam_capacity_results(
     limit: int = 100,
     group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = "riazi",
 ) -> list[dict[str, Any]]:
-    """Select exact exam-capacity rows by major, province, and period.
+    """Select group-specific exam-capacity rows, optionally filtered by major.
 
-    Unknown/blank province rows are never fabricated into a requested province.
+    An empty major_ids list means all majors in the selected group. Province and
+    period remain exact filters; unknown/blank province rows are never inferred.
     include_unknown only permits an explicitly requested نامشخص period.
     """
-    if not major_ids:
-        raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
     if not periods:
         raise AdmissionInputError(
             "برای مسیر exam با source=capacity انتخاب period اجباری است."
@@ -199,7 +198,7 @@ def build_exam_capacity_results(
             "استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید."
         )
 
-    major_names = _resolved_major_names(major_ids, group)
+    major_names = _resolved_major_names(major_ids, group) if major_ids else set()
     requested_periods: list[str] = []
     for raw in periods:
         value = str(raw or "").strip()
@@ -214,7 +213,7 @@ def build_exam_capacity_results(
             continue
 
         major_name = str(row.get("major_name") or "").strip()
-        if _normalize_text(major_name) not in major_names:
+        if major_names and _normalize_text(major_name) not in major_names:
             continue
 
         raw_province = str(row.get("province") or "").strip()

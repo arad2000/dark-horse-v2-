@@ -1140,6 +1140,58 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertGreater(len(items), 0)
         self.assertTrue(all(item["sanjesh_code"] for item in items))
 
+    def test_exam_capacity_without_major_ids_returns_group_province_period_rows(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "exam",
+                "source": "capacity",
+                "group": "riazi",
+                "province": "تهران",
+                "periods": ["روزانه"],
+                "limit": 100,
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["source"], "capacity")
+        self.assertEqual(payload["context"]["major_ids"], [])
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in payload["items"]))
+        self.assertTrue(all(item["major_name"] for item in payload["items"]))
+        self.assertTrue(all(item["province"] == "تهران" for item in payload["items"]))
+        self.assertTrue(all(item["period"] == "روزانه" for item in payload["items"]))
+        self.assertGreater(len({item["major_name"] for item in payload["items"]}), 1)
+
+    def test_exam_capacity_empty_major_ids_do_not_expand_program_or_record_paths(self):
+        program = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "exam",
+                "source": "program",
+                "major_ids": [],
+                "rank_in_quota": 900,
+                "region_zone": 2,
+                "province": "تهران",
+            },
+        )
+        record = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "program",
+                "major_ids": [],
+                "province": "تهران",
+                "diploma_type": "tajrobi",
+                "gpa_written": 18.0,
+                "region_zone": 2,
+            },
+        )
+        self.assertEqual(program.status_code, 400)
+        self.assertEqual(record.status_code, 400)
+        self.assertIn("major_ids", program.json()["detail"])
+        self.assertIn("major_ids", record.json()["detail"])
+
     def test_exam_program_rank_comparison_returns_status_and_reference(self):
         with patch("admission_chance_api.load_programs", return_value=(EXAM_PROGRAM,)):
             response = self.client.post(

@@ -32,7 +32,10 @@ class AdmissionChanceRequest(BaseModel):
         default=None,
         description="مسیر پذیرش: exam=با آزمون، record=صرفاً سوابق تحصیلی.",
     )
-    major_ids: list[int] = Field(default_factory=list)
+    major_ids: list[int] = Field(
+        default_factory=list,
+        description="برای exam+capacity می‌تواند خالی باشد تا همه رشته‌های گروه بر اساس استان و دوره برگردند؛ سایر مسیرها به رشته نیاز دارند.",
+    )
 
     # Exam path
     rank_in_quota: int | None = Field(
@@ -210,7 +213,7 @@ def _rank_comparison(rank_in_quota: int, cutoff: int | float | None) -> tuple[st
 def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
     try:
         path = _resolve_legacy_path(request)
-        if not request.major_ids:
+        if not request.major_ids and not (path == "exam" and request.source == "capacity"):
             raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
 
         if path == "exam":
@@ -240,7 +243,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 ]
                 if not items:
                     notes.append(
-                        "برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت با آزمون یافت نشد."
+                        "برای ترکیب گروه آزمایشی/استان/دوره انتخاب‌شده ردیف ظرفیت با آزمون یافت نشد."
                     )
                 return {
                     "admission_path": "exam",
