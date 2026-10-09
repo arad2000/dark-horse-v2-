@@ -8,6 +8,17 @@
   var API_BASE_URL = 'https://api.asbe-siah.ir';
   var ADMISSION_PATH = '/api/v1/admission/chance';
   var WIDGET_ID = 'dh-admission-chance-widget';
+  var MAJOR_CATALOG_URL = (function () {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i += 1) {
+      var src = scripts[i].src || '';
+      if (/admission_chance_ui\.js(?:\?|$)/i.test(src)) {
+        try { return new URL('majors_catalog_ui_v1.json?v=1', src).href; } catch (_) {}
+      }
+    }
+    return 'majors_catalog_ui_v1.json?v=1';
+  }());
+  var majorCatalogPromise = null;
 
   var COURSE_LABELS = {
     roozaneh: 'روزانه',
@@ -104,6 +115,39 @@
     }
   }
 
+  function loadMajorCatalog() {
+    if (majorCatalogPromise) return majorCatalogPromise;
+    majorCatalogPromise = fetch(MAJOR_CATALOG_URL, {
+      headers: { 'Accept': 'application/json' }
+    }).then(function (response) {
+      if (!response.ok) throw new Error('خطا در بارگذاری کاتالوگ رشته‌ها: ' + response.status);
+      return response.json();
+    }).then(function (payload) {
+      var items = Array.isArray(payload) ? payload : (payload && payload.majors);
+      if (!Array.isArray(items)) throw new Error('ساختار کاتالوگ رشته‌ها معتبر نیست.');
+      var seen = {};
+      var catalog = items.map(function (item) {
+        var rawId = item && (item.id != null ? item.id : item.major_id);
+        var id = Number(rawId);
+        var name = String(item && (item.name || item.major_name_fa || item.major_name) || '').trim();
+        if (!Number.isInteger(id) || id < 1 || !name || seen[id]) return null;
+        seen[id] = true;
+        return {
+          major_id: id,
+          major_name: name,
+          major_name_fa: name,
+          group: String(item.group || '')
+        };
+      }).filter(Boolean);
+      if (!catalog.length) throw new Error('کاتالوگ رشته‌ها خالی است.');
+      return catalog;
+    }).catch(function (error) {
+      majorCatalogPromise = null;
+      throw error;
+    });
+    return majorCatalogPromise;
+  }
+
   function buildMajorMap(recommendations) {
     var map = {};
     recommendations.forEach(function (item) {
@@ -142,9 +186,10 @@
 
   function majorOptionsHtml(recommendations) {
     return recommendations.map(function (item) {
-      var id = Number(item && item.major_id);
+      var rawId = item && (item.major_id != null ? item.major_id : item.id);
+      var id = Number(rawId);
       if (!Number.isInteger(id) || id <= 0) return '';
-      var name = item.major_name_fa || item.major_name || ('رشته ' + id);
+      var name = item.major_name_fa || item.major_name || item.name || ('رشته ' + id);
       return '<option value="' + escapeHtml(id) + '">' +
         escapeHtml(name) + '</option>';
     }).join('');
@@ -156,6 +201,7 @@
       var target = String(form.target_field_group.value || '').trim();
       var gpaField = diploma === 'other_fani' ? 'gpa_total' : 'gpa_written';
       return {
+        major_id: form.major_id ? Number(form.major_id.value) : null,
         school_province_3y: String(form.school_province_3y.value || '').trim(),
         diploma_type: diploma,
         target_field_group: target || null,
@@ -189,6 +235,11 @@
     var values = selectedFormValues(form, path);
 
     if (path === 'record') {
+      if (form.major_id) {
+        majorIds = Number.isInteger(values.major_id) && values.major_id > 0
+          ? [values.major_id]
+          : [];
+      }
       var payload = {
         admission_path: 'record',
         major_ids: majorIds,
@@ -234,7 +285,7 @@
 
   function validateValues(values, path, majorIds) {
     if (!majorIds.length) {
-      return 'رشته‌ای برای بررسی شانس قبولی در نتیجهٔ کشف رشته پیدا نشد.';
+      return 'یک رشته معتبر برای بررسی انتخاب کن.';
     }
 
     if (!values.school_province_3y) {
@@ -427,7 +478,7 @@
     }).join('');
   }
 
-  function examFormHtml(recommendations) {
+  function examFormHtml(recommendations, useCatalog) {
     return (
       '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-exam-form" data-path="exam">' +
         '<div class="dh-admission-field full">' +
@@ -449,7 +500,11 @@
           '<select id="dh-admission-exam-major" name="major_id" required>' +
             '<option value="">انتخاب رشته</option>' + majorOptionsHtml(recommendations) +
           '</select>' +
-          '<small class="dh-admission-help">این انتخاب از رشته‌های کشف‌شده در مرحله قبل می‌آید.</small>' +
+          '<small class="dh-admission-help">' +
+            (useCatalog
+              ? 'فهرست رشته‌ها از کاتالوگ رشته‌های سامانه است؛ برای استفاده از سنجش نیازی به تکمیل سفر اکتشافی نیست.'
+              : 'این انتخاب از رشته‌های کشف‌شده در مرحله قبل می‌آید.') +
+          '</small>' +
         '</div>' +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-exam-province">استان *</label>' +
@@ -517,9 +572,18 @@
   }
 
 
-  function recordFormHtml() {
+  function recordFormHtml(recommendations, useCatalog) {
     return (
       '<form class="dh-admission-chance-form dh-admission-path-form" id="dh-admission-record-form" data-path="record">' +
+        (useCatalog
+          ? '<div class="dh-admission-field full">' +
+              '<label for="dh-admission-record-major">رشته هدف *</label>' +
+              '<select id="dh-admission-record-major" name="major_id" required>' +
+                '<option value="">انتخاب رشته</option>' + majorOptionsHtml(recommendations) +
+              '</select>' +
+              '<small class="dh-admission-help">این فهرست از کاتالوگ رشته‌های سامانه بارگذاری شده است.</small>' +
+            '</div>'
+          : '') +
         '<div class="dh-admission-field">' +
           '<label for="dh-admission-record-diploma">نوع دیپلم *</label>' +
           '<select id="dh-admission-record-diploma" name="diploma_type" required>' +
@@ -565,13 +629,17 @@
     );
   }
 
-  function widgetHtml() {
+  function widgetHtml(recommendations, useCatalog) {
     return (
       '<section class="dh-admission-chance-widget" id="' + WIDGET_ID + '">' +
         '<div class="dh-admission-heading-row">' +
           '<div>' +
             '<h3>🎓 ظرفیت و مقایسه پذیرش دانشگاه</h3>' +
-            '<p class="dh-admission-chance-lead">مسیر پذیرش را جدا انتخاب کن؛ «با آزمون» و «سوابق تحصیلی» منطق و ورودی مستقل دارند.</p>' +
+            '<p class="dh-admission-chance-lead">' +
+              (useCatalog
+                ? 'مسیر پذیرش را بر اساس داده‌های سنجش بررسی کن؛ برای شروع لازم نیست سفر اکتشافی را تمام کنی.'
+                : 'مسیر پذیرش را جدا انتخاب کن؛ «با آزمون» و «سوابق تحصیلی» منطق و ورودی مستقل دارند.') +
+            '</p>' +
           '</div>' +
         '</div>' +
         '<div class="dh-admission-tabs" role="tablist" aria-label="مسیر پذیرش">' +
@@ -579,10 +647,10 @@
           '<button type="button" class="dh-admission-tab" role="tab" aria-selected="false" aria-controls="dh-admission-record-panel" id="dh-admission-tab-record" data-admission-tab="record">سوابق تحصیلی</button>' +
         '</div>' +
         '<div class="dh-admission-panel" id="dh-admission-exam-panel" role="tabpanel" aria-labelledby="dh-admission-tab-exam">' +
-          examFormHtml(getMajorRecommendations()) +
+          examFormHtml(recommendations || [], !!useCatalog) +
         '</div>' +
         '<div class="dh-admission-panel" id="dh-admission-record-panel" role="tabpanel" aria-labelledby="dh-admission-tab-record" hidden>' +
-          recordFormHtml() +
+          recordFormHtml(recommendations || [], !!useCatalog) +
         '</div>' +
         '<div class="dh-admission-status" id="dh-admission-status" aria-live="polite"></div>' +
         '<div class="dh-admission-results" id="dh-admission-results"></div>' +
@@ -616,7 +684,9 @@
   }
 
   async function requestAdmissionChance(recommendations, form, path) {
-    var majorIds = uniqueMajorIds(recommendations);
+    var majorIds = form.major_id
+      ? (form.major_id.value ? [Number(form.major_id.value)] : [])
+      : uniqueMajorIds(recommendations);
     var values = selectedFormValues(form, path);
     var validationError = validateValues(values, path, majorIds);
     if (validationError) {
@@ -775,7 +845,7 @@
 
     var recommendations = getMajorRecommendations();
     var wrapper = document.createElement('div');
-    wrapper.innerHTML = widgetHtml();
+    wrapper.innerHTML = widgetHtml(recommendations, false);
     var section = wrapper.firstElementChild;
     if (!section) return;
 
@@ -786,6 +856,30 @@
       app.appendChild(section);
     }
     bindWidget(recommendations);
+  }
+
+  function openHome(mountId) {
+    var id = mountId || 'dh-home-sanjesh-mount';
+    var mount = document.getElementById(id);
+    if (!mount) return;
+    mount.hidden = false;
+    if (mount.querySelector('#' + WIDGET_ID)) return;
+
+    mount.innerHTML = '<p class="dh-admission-status">در حال بارگذاری کاتالوگ رشته‌ها…</p>';
+    loadMajorCatalog().then(function (catalog) {
+      if (document.getElementById(id) !== mount || mount.querySelector('#' + WIDGET_ID)) return;
+      mount.innerHTML = widgetHtml(catalog, true);
+      bindWidget(catalog);
+    }).catch(function () {
+      if (document.getElementById(id) !== mount) return;
+      mount.innerHTML =
+        '<div class="dh-admission-catalog-error" role="alert">' +
+          '<p>فهرست رشته‌ها بارگذاری نشد. اتصال را بررسی کن و دوباره تلاش کن.</p>' +
+          '<button type="button" class="dh-admission-catalog-retry" id="dh-admission-catalog-retry">تلاش دوباره</button>' +
+        '</div>';
+      var retry = mount.querySelector('#dh-admission-catalog-retry');
+      if (retry) retry.addEventListener('click', function () { openHome(id); });
+    });
   }
 
   function init() {
@@ -801,6 +895,7 @@
 
   window.DHAdmissionChanceUI = {
     init: init,
+    openHome: openHome,
     buildRequestPayload: buildRequestPayload,
     uniqueMajorIds: uniqueMajorIds,
     provinces: PROVINCES.slice()
