@@ -466,11 +466,22 @@
             '<div class="dh-mk2-hero-top">' +
               '<span class="dh-mk2-compass"><img src="' + base + 'ico-compass.svg" alt="" width="40" height="40"></span>' +
               '<div><div class="dh-mk2-hero-title">سفر اکتشافی</div>' +
-              '<div class="dh-mk2-hero-sub">مسیر متفاوت تو از اینجا شروع می‌شود</div></div>' +
+              '<div class="dh-mk2-hero-sub">کشف رشته با منطق هاروارد</div></div>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
               (canContinue ? 'ادامه سفر' : 'شروع سفر') + ' <span>›</span></button>' +
           '</div></section>' +
+        '<section class="dh-home-sanjesh-entry" aria-labelledby="dh-home-sanjesh-title">' +
+          '<div class="dh-home-entry-top">' +
+            '<span class="dh-home-entry-icon" aria-hidden="true">🎓</span>' +
+            '<div><h2 id="dh-home-sanjesh-title">انتخاب رشته با منطق سنجش</h2>' +
+            '<p>بررسی مستقل با داده‌های سنجش؛ بدون نیاز به تکمیل سفر اکتشافی.</p></div>' +
+          '</div>' +
+          '<button type="button" class="dh-home-sanjesh-toggle" id="dh-open-sanjesh" aria-controls="dh-home-sanjesh-panel" aria-expanded="false">ورود به بخش سنجش</button>' +
+          '<div class="dh-home-sanjesh-panel" id="dh-home-sanjesh-panel" hidden>' +
+            '<div class="dh-home-sanjesh-mount" id="dh-home-sanjesh-mount"></div>' +
+          '</div>' +
+        '</section>' +
         '<section class="dh-mk2-progress">' +
           '<div class="dh-mk2-ring"><svg viewBox="0 0 120 120">' +
             '<circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>' +
@@ -517,6 +528,33 @@
     try { startFardiyatTicker(); } catch (eTicker) {}
     on('dh-start-journey', function () { startJourneyFromShell(); });
     on('dh-continue-journey', function () { startJourneyFromShell(); });
+    on('dh-open-sanjesh', function () {
+      var panel = $('dh-home-sanjesh-panel');
+      var button = $('dh-open-sanjesh');
+      if (!panel) return;
+      var shouldOpen = !!panel.hidden;
+      panel.hidden = !shouldOpen;
+      if (button) {
+        button.setAttribute('aria-expanded', String(shouldOpen));
+        button.textContent = shouldOpen ? 'بستن بخش سنجش' : 'ورود به بخش سنجش';
+      }
+      if (shouldOpen) {
+        var mount = $('dh-home-sanjesh-mount');
+        if (mount && window.DHAdmissionChanceUI &&
+            typeof window.DHAdmissionChanceUI.openHome === 'function') {
+          window.DHAdmissionChanceUI.openHome('dh-home-sanjesh-mount');
+        } else if (mount) {
+          mount.textContent = 'بخش سنجش هنوز بارگذاری نشده است؛ صفحه را دوباره بارگذاری کنید.';
+        }
+        try {
+          setTimeout(function () {
+            if (panel && typeof panel.scrollIntoView === 'function') {
+              panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 80);
+        } catch (eScroll) {}
+      }
+    });
     on('dh-open-spark', function () {
       try { shellScrollTop(); } catch (eS) {}
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
