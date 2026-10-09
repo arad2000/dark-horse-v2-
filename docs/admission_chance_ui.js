@@ -339,6 +339,25 @@
       var status = item.status || 'unknown';
       var label = item.status_label || 'دادهٔ آخرین رتبه در دسترس نیست';
       var majorName = majorMap[String(item.major_id)] || ('رشته ' + String(item.major_id || 'نامشخص'));
+      var courseLabels = {
+        roozaneh: 'روزانه',
+        nobat_dovom: 'نوبت دوم',
+        payam_noor: 'پیام نور',
+        nonprofit: 'غیرانتفاعی',
+        majazi: 'مجازی',
+        pardis: 'پردیس خودگردان',
+        savabegh_dolati: 'سوابق تحصیلی دولتی'
+      };
+      var bomiLabels = {
+        ostani: 'استانی',
+        nahiyei: 'ناحیه‌ای',
+        ghotbi: 'قطبی',
+        keshvari: 'کشوری'
+      };
+      var courseLabel = courseLabels[item.course_type] || item.course_type || 'دوره نامشخص';
+      var bomiLabel = bomiLabels[item.bomi_type] || item.bomi_type || 'نوع بومی‌گزینی درج نشده';
+      var campusLabel = item.campus || 'در داده برنامه درج نشده';
+      var universityProvince = item.university_province || 'در داده برنامه درج نشده';
       var cutoffText = reference.value == null
         ? 'آخرین رتبه مرجع: در دسترس نیست'
         : 'آخرین رتبه مرجع: ' + reference.value +
@@ -354,10 +373,15 @@
             '<span class="dh-admission-label">' + escapeHtml(label) + '</span>' +
           '</div>' +
           '<div class="dh-admission-meta">' +
+            '<span>📚 دوره: ' + escapeHtml(courseLabel) + '</span>' +
+            '<span>🗺️ بومی‌گزینی: ' + escapeHtml(bomiLabel) + '</span>' +
+            '<span>📍 استان دانشگاه: ' + escapeHtml(universityProvince) + '</span>' +
+            '<span>🏫 پردیس/محل: ' + escapeHtml(campusLabel) + '</span>' +
+            '<span>🆔 شناسه برنامه: ' + escapeHtml(item.program_id || 'در داده برنامه درج نشده') + '</span>' +
             '<span>📊 وضعیت: <strong>' + escapeHtml(status) + '</strong></span>' +
             '<span>📌 ' + escapeHtml(cutoffText) + '</span>' +
           '</div>' +
-          '<p class="dh-admission-note">این مقایسه فقط با دادهٔ cutoff تاریخی موجود انجام شده و تخمینی است؛ جایگزین دفترچه و اعلام رسمی سنجش نیست.</p>' +
+          '<p class="dh-admission-note">این مقایسه فقط با دادهٔ cutoff تاریخی موجود انجام شده و تخمینی است؛ این کارت مربوط به یک برنامه و دوره مشخص است و جایگزین دفترچه و اعلام رسمی سنجش نیست.</p>' +
         '</article>'
       );
     }).join('');
