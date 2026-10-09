@@ -1,0 +1,60 @@
+/* Home-only information banner for 1405 admission updates. */
+.dh-update-banner-1405 {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(240, 192, 64, 0.42);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(40, 34, 22, 0.94), rgba(18, 16, 28, 0.98));
+  color: #e8e0cd;
+  text-align: right;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.dh-update-banner-1405__title {
+  margin: 0 0 7px;
+  color: #f0c040;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.7;
+}
+.dh-update-banner-1405__text {
+  margin: 0 0 7px;
+  font-size: 0.88rem;
+}
+.dh-update-banner-1405__text:last-of-type {
+  margin-bottom: 12px;
+}
+.dh-update-banner-1405__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+.dh-update-banner-1405__dismiss {
+  min-height: 40px;
+  padding: 7px 18px;
+  border: 1px solid rgba(240, 192, 64, 0.55);
+  border-radius: 10px;
+  background: rgba(240, 192, 64, 0.13);
+  color: #f5d777;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dh-update-banner-1405__dismiss:hover {
+  background: rgba(240, 192, 64, 0.2);
+}
+.dh-update-banner-1405__dismiss:focus-visible {
+  outline: 2px solid #f0c040;
+  outline-offset: 3px;
+}
+@media (max-width: 420px) {
+  .dh-update-banner-1405 {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .dh-update-banner-1405__text {
+    font-size: 0.84rem;
+  }
+}
