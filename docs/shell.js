@@ -466,7 +466,7 @@
             '<div class="dh-mk2-hero-top">' +
               '<span class="dh-mk2-compass"><img src="' + base + 'ico-compass.svg" alt="" width="40" height="40"></span>' +
               '<div><div class="dh-mk2-hero-title">سفر اکتشافی</div>' +
-              '<div class="dh-mk2-hero-sub">کشف رشته با منطق هاروارد</div></div>' +
+              '<div class="dh-mk2-hero-sub">کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد</div></div>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
               (canContinue ? 'ادامه سفر' : 'شروع سفر') + ' <span>›</span></button>' +
