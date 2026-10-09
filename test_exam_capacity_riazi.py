@@ -23,6 +23,20 @@ class RiaziExamCapacityLoaderTests(unittest.TestCase):
         self.assertTrue(all(item["province"] == "تهران" for item in items))
         self.assertTrue(all(item["period"] == "روزانه" for item in items))
 
+    def test_empty_major_ids_returns_all_matching_majors(self):
+        items = build_exam_capacity_results(
+            group="riazi",
+            major_ids=[],
+            province="تهران",
+            periods=["روزانه"],
+            limit=100,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertTrue(all(item["province"] == "تهران" for item in items))
+        self.assertTrue(all(item["period"] == "روزانه" for item in items))
+        self.assertGreater(len({item["major_name"] for item in items}), 1)
+
     def test_unrelated_province_returns_empty(self):
         items = build_exam_capacity_results(
             group="riazi",
