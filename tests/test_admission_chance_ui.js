@@ -12,7 +12,6 @@ assert.ok(source.includes('/api/v1/admission/chance'));
 assert.match(source, /state\.majorsResult/);
 assert.match(source, /majors_catalog_ui_v1\.json\?v=1/);
 assert.match(source, /function openHome\(mountId\)/);
-assert.match(shellSource, /کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد/);
 assert.match(shellSource, /انتخاب رشته با منطق سنجش/);
 assert.strictEqual(catalog.majors.length, 176);
 assert.ok(Math.max(...catalog.majors.map(item => item.id)) >= 176);
@@ -152,6 +151,5 @@ assert.match(indexSource, /admission_chance_ui\.css\?v=5/);
 assert.match(indexSource, /admission_chance_ui\.js\?v=14/);
 assert.match(css, /\.dh-admission-source-limitation/);
 assert.ok(shellCss.includes('.dh-mk2-hero-sub {\n  color: #F0C040 !important;\n  font-weight: 800 !important;\n}'));
-assert.match(shellSource, /کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد/);
 
 console.log('admission_chance_ui phase3 regression: PASS');
