@@ -88,6 +88,16 @@ assert.doesNotMatch(examCapacityPayloadBlock, /rank_in_quota/);
 assert.doesNotMatch(examCapacityPayloadBlock, /region_zone/);
 assert.doesNotMatch(examCapacityPayloadBlock, /special_quota/);
 
+/* Record + capacity defaults to direct 1405 rows; program2s is explicit opt-in. */
+assert.ok(source.includes('id="dh-admission-record-source" name="source" required'));
+assert.ok(source.includes('<option value="capacity" selected>ظرفیت دفترچه ۱۴۰۵ / صرفاً سوابق</option>'));
+assert.ok(source.includes('<option value="program">مقایسه با حداقل معدل برنامه (program2s)</option>'));
+assert.ok(source.includes("source: values.source === 'program' ? 'program' : 'capacity'"));
+assert.ok(source.includes('payload.group = values.group;'));
+assert.ok(source.includes('payload.periods = values.period ? [values.period] : [];'));
+assert.ok(source.includes('دوره پذیرش از دفترچه ۱۴۰۵ را انتخاب کن'));
+assert.ok(source.includes('sourceNotesHtml'));
+
 /* Existing record path contract remains intact. */
 assert.match(source, /diploma_type/);
 assert.match(source, /gpa_written/);
@@ -137,9 +147,9 @@ assert.match(css, /\.dh-admission-field select:disabled/);
 assert.match(css, /@media/);
 
 assert.match(indexSource, /shell\.css\?v=65/);
-assert.match(indexSource, /shell\.js\?v=82/);
-assert.match(indexSource, /admission_chance_ui\.css\?v=4/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=13/);
+assert.match(indexSource, /shell\.js\?v=83/);
+assert.match(indexSource, /admission_chance_ui\.css\?v=5/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=14/);
 assert.match(css, /\.dh-admission-source-limitation/);
 assert.ok(shellCss.includes('.dh-mk2-hero-sub {\n  color: #F0C040 !important;\n  font-weight: 800 !important;\n}'));
 assert.match(shellSource, /کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد/);
