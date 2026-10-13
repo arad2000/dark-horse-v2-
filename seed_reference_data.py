@@ -39,7 +39,7 @@ PHASE2_WAVE1_IDS = frozenset(range(161, 177))
 WAVE_A_DEFERRED_IDS = frozenset(range(177, 190))
 WAVE_B_DEFERRED_IDS = frozenset(range(190, 195))
 WAVE_C_DEFERRED_IDS = frozenset(range(195, 205))
-MAJOR_1_194_CATALOG_FINGERPRINT = "17c9b97787919b0a"
+MAJOR_1_194_CATALOG_FINGERPRINT = "5189181b82aab0e6"
 LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT = "15ce7c0ad63de857"
 LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "e0e81b6b783c1007"
 
@@ -184,24 +184,23 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
         value = (value * prime) & mask
     return f"{value:016x}"
 
-def major_catalog_fingerprint(major_records: list[dict[str, Any]], max_id: int = 194) -> str:
-    """Stable full-row fingerprint used to freeze the pre-Wave-C catalog."""
-    rows = sorted(
-        (
-            item for item in major_records
-            if 1 <= int(item.get("id") or item.get("major_id") or 0) <= max_id
-        ),
-        key=lambda item: int(item.get("id") or item.get("major_id") or 0),
-    )
-    payload = "\n".join(_canonical_weight_value(item) for item in rows)
+def major_catalog_fingerprint(major_json_text: str) -> str:
+    """Fingerprint the exact pre-Wave-C majors JSON, byte-for-character as decoded text."""
+    marker = '\\n  {\\n    "id": 195,'
+    prefix, found, _ = major_json_text.partition(marker)
+    if not found:
+        raise ValueError("Wave C baseline marker for major 195 is missing")
+    prefix = prefix.rstrip()
+    if not prefix.endswith(","):
+        raise ValueError("Wave C baseline catalog prefix is malformed")
+    baseline_text = prefix[:-1] + "\\n]\\n"
     value = 0xCBF29CE484222325
     prime = 0x100000001B3
     mask = 0xFFFFFFFFFFFFFFFF
-    for char in payload:
+    for char in baseline_text:
         value ^= ord(char)
         value = (value * prime) & mask
     return f"{value:016x}"
-
 
 def require_no_duplicate(values: list[str], label: str) -> None:
     seen: set[str] = set()
@@ -298,7 +297,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         for item in major_records
     ]
     require_no_duplicate(major_names, "major names")
-    if major_catalog_fingerprint(major_records, max_id=194) != MAJOR_1_194_CATALOG_FINGERPRINT:
+    if major_catalog_fingerprint(majors_path.read_text(encoding="utf-8")) != MAJOR_1_194_CATALOG_FINGERPRINT:
         raise ValueError("Wave C must preserve the complete baseline catalog 1..194 (including weights)")
     wave_a_records = [
         item for item in major_records
