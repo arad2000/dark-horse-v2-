@@ -112,6 +112,9 @@ class RecordCapacityDirectTests(unittest.TestCase):
                         "capacity": 1,
                     },
                 ),
+            ), patch(
+                "admission_capacity_record.load_record_capacity_rows",
+                return_value=(),
             ):
                 items = build_record_capacity_results(
                     major_ids=[major_id],
