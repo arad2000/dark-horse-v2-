@@ -36,6 +36,20 @@ class MotiveDrivenDiscoveryGuardTests(unittest.TestCase):
         for major_id in range(161, 177):
             self.assertNotIn(major_id, discovered_ids)
 
+    def test_wave_c_catalog_only_majors_are_never_discovered(self):
+        user_motives = ["MED-001", "ENG-001", "P2-161-EDU-001"]
+        result = self.engine.discover_individuality(
+            user_motives=user_motives,
+            sjt_answers={f"sjt_{i}": "A" for i in range(1, 26)},
+            conjoint_choices={f"conj_{i}": "Q1A" for i in range(1, 16)},
+        )
+        discovered_ids = {
+            item["major_id"]
+            for item in result["discovered_majors"]
+        }
+        for major_id in range(195, 205):
+            self.assertNotIn(major_id, discovered_ids)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
