@@ -542,5 +542,35 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertTrue(any(item["major_name"] == "گرافيک" for item in graphic_items))
 
 
+class WaveERealRecordCapacityTests(unittest.TestCase):
+    def _codes(self, major_id, province, group, period="روزانه"):
+        rows = build_record_capacity_results(
+            major_ids=[major_id],
+            province=province,
+            periods=[period],
+            group=group,
+        )
+        return {str(row.get("sanjesh_code") or "").strip() for row in rows}
+
+    def test_real_record_capacity_rows_match_216_and_223(self):
+        self.assertIn("10014", self._codes(216, "آذربایجان شرقی", "riazi"))
+        self.assertIn("10506", self._codes(223, "آذربایجان شرقی", "riazi"))
+
+    def test_horticulture_69_and_fisheries_71_match_official_booklet_names(self):
+        self.assertIn("10011", self._codes(69, "آذربایجان شرقی", "riazi"))
+        self.assertIn("10988", self._codes(71, "اصفهان", "riazi"))
+
+    def test_plant_pathology_and_veterinary_laboratory_never_alias_to_id_1(self):
+        plant_codes = self._codes(222, "آذربایجان شرقی", "riazi")
+        medicine_codes = self._codes(1, "آذربایجان شرقی", "riazi")
+        self.assertIn("10017", plant_codes)
+        self.assertNotIn("10017", medicine_codes)
+
+        vet_lab_codes = self._codes(1, "البرز", "ensani")
+        vet_codes = self._codes(4, "البرز", "ensani")
+        self.assertNotIn("11749", vet_lab_codes)
+        self.assertNotIn("11749", vet_codes)
+
+
 if __name__ == "__main__":
     unittest.main()
