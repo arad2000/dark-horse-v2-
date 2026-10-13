@@ -1427,7 +1427,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_wave_a_deferred_catalog_entries_177_to_189_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 205)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 216)})
         for major_id in range(177, 190):
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
@@ -1460,7 +1460,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_wave_b_deferred_catalog_entries_190_to_194_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 205)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 216)})
         self.assertEqual(
             [majors[str(i)]["name"] for i in range(190, 195)],
             [
