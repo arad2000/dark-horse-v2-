@@ -48,7 +48,11 @@ class ExamCapacityLoaderTests(unittest.TestCase):
     def test_phase1_explicit_aliases_match_by_major_id(self):
         cases = [
             ("tajrobi", 1, "دکتری عمومی پزشکی"),
-            ("riazi", 53, "مهندسی صنایع و سیستم‌ها"),
+            ("tajrobi", 25, "فناوري اطالعات سالمت"),
+            ("riazi", 44, "مهندسي رايانه (نرم افزار)"),
+            ("riazi", 53, "مهندسي صنايع و سيستمها"),
+            ("riazi", 62, "مهندسي و علم مواد"),
+            ("riazi", 195, "مهندسي حرفهاي کامپيوتر"),
             ("honar", 140, "گرافیک"),
             ("riazi", 82, "آمار"),
         ]
@@ -124,6 +128,32 @@ class ExamCapacityLoaderTests(unittest.TestCase):
             self.assertTrue(all(item["sanjesh_code"] for item in items))
             self.assertTrue(all(item["province"] == province for item in items))
             self.assertTrue(all(item["period"] == period for item in items))
+
+    def test_wave_c_new_majors_match_real_1405_capacity_rows(self):
+        # These are source-backed 1405 riazi rows, not mocked aliases:
+        # 195 has booklet spelling "مهندسي حرفهاي کامپيوتر";
+        # 198 has booklet spelling "مهندسي ساخت و توليد".
+        cases = [
+            (195, "آذربایجان شرقی", "روزانه"),
+            (198, "آذربایجان شرقی", "روزانه"),
+        ]
+        for major_id, province, period in cases:
+            items = build_exam_capacity_results(
+                major_ids=[major_id],
+                province=province,
+                periods=[period],
+                group="riazi",
+                limit=5,
+            )
+            self.assertGreater(
+                len(items),
+                0,
+                f"wave C major_id={major_id} must match real 1405 riazi capacity rows",
+            )
+            self.assertTrue(all(item["sanjesh_code"] for item in items))
+            self.assertTrue(all(item["province"] == province for item in items))
+            self.assertTrue(all(item["period"] == period for item in items))
+            self.assertTrue(all(item["capacity"] is not None for item in items))
 
     def test_api_exam_capacity_uses_loader_without_rank_cutoff(self):
         request = AdmissionChanceRequest(
