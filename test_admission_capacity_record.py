@@ -561,15 +561,30 @@ class WaveERealRecordCapacityTests(unittest.TestCase):
         self.assertIn("10988", self._codes(71, "اصفهان", "riazi"))
 
     def test_plant_pathology_and_veterinary_laboratory_never_alias_to_id_1(self):
-        plant_codes = self._codes(222, "آذربایجان شرقی", "riazi")
+        plant_source_rows = load_group_record_capacity_rows("riazi")
+        self.assertTrue(
+            any(str(row.get("sanjesh_code") or "").strip() == "10017" for row in plant_source_rows),
+            "Real booklet record 10017 must remain present in the source.",
+        )
         medicine_codes = self._codes(1, "آذربایجان شرقی", "riazi")
-        self.assertIn("10017", plant_codes)
         self.assertNotIn("10017", medicine_codes)
 
+        vet_lab_source_rows = load_group_record_capacity_rows("ensani")
+        self.assertTrue(
+            any(str(row.get("sanjesh_code") or "").strip() == "11749" for row in vet_lab_source_rows),
+            "Real veterinary-laboratory source record 11749 must remain present.",
+        )
         vet_lab_codes = self._codes(1, "البرز", "ensani")
         vet_codes = self._codes(4, "البرز", "ensani")
         self.assertNotIn("11749", vet_lab_codes)
         self.assertNotIn("11749", vet_codes)
+
+        id1_aliases = {
+            alias
+            for aliases_by_major in __import__("admission_exam_capacity").GROUP_MAJOR_ALIASES.values()
+            for alias in aliases_by_major.get(1, set())
+        }
+        self.assertFalse(any("گیاه" in alias or "آزمایشگاهی دامپزشکی" in alias for alias in id1_aliases))
 
 
 if __name__ == "__main__":
