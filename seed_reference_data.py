@@ -38,6 +38,8 @@ DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
 WAVE_A_DEFERRED_IDS = frozenset(range(177, 190))
 WAVE_B_DEFERRED_IDS = frozenset(range(190, 195))
+WAVE_C_DEFERRED_IDS = frozenset(range(195, 205))
+MAJOR_1_194_CATALOG_FINGERPRINT = "17c9b97787919b0a"
 LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT = "15ce7c0ad63de857"
 LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "e0e81b6b783c1007"
 
@@ -182,6 +184,25 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
         value = (value * prime) & mask
     return f"{value:016x}"
 
+def major_catalog_fingerprint(major_records: list[dict[str, Any]], max_id: int = 194) -> str:
+    """Stable full-row fingerprint used to freeze the pre-Wave-C catalog."""
+    rows = sorted(
+        (
+            item for item in major_records
+            if 1 <= int(item.get("id") or item.get("major_id") or 0) <= max_id
+        ),
+        key=lambda item: int(item.get("id") or item.get("major_id") or 0),
+    )
+    payload = "\n".join(_canonical_weight_value(item) for item in rows)
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in payload:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+
 def require_no_duplicate(values: list[str], label: str) -> None:
     seen: set[str] = set()
     duplicates: list[str] = []
@@ -270,13 +291,15 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         for item in major_records
         if item.get("id") is not None or item.get("major_id") is not None
     ]
-    if sorted(major_ids) != list(range(1, 195)):
-        raise ValueError("Major IDs are not exactly 1..194")
+    if sorted(major_ids) != list(range(1, 205)):
+        raise ValueError("Major IDs are not exactly 1..204")
     major_names = [
         str(item.get("name") or "").strip()
         for item in major_records
     ]
     require_no_duplicate(major_names, "major names")
+    if major_catalog_fingerprint(major_records, max_id=194) != MAJOR_1_194_CATALOG_FINGERPRINT:
+        raise ValueError("Wave C must preserve the complete baseline catalog 1..194 (including weights)")
     wave_a_records = [
         item for item in major_records
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_A_DEFERRED_IDS
@@ -310,6 +333,23 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         ):
             raise ValueError(
                 f"Wave B major {item.get('id')} must remain a deferred catalog-only stub"
+            )
+    wave_c_records = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_C_DEFERRED_IDS
+    ]
+    if len(wave_c_records) != len(WAVE_C_DEFERRED_IDS):
+        raise ValueError("Wave C must contain exactly 10 catalog-only rows (195..204)")
+    for item in wave_c_records:
+        if (
+            item.get("motive_driven") is not False
+            or item.get("micro_motive_codes") not in (None, [])
+            or item.get("strategy_weights") not in (None, [])
+            or item.get("value_weights") not in (None, {})
+            or item.get("weights_version") != "deferred_catalog_only_v1"
+        ):
+            raise ValueError(
+                f"Wave C major {item.get('id')} must remain a deferred catalog-only stub"
             )
     legacy_major_records = [item for item in major_records if 1 <= int(item.get("id")) <= 160]
     if len(legacy_major_records) != 160:
