@@ -1603,7 +1603,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
             ("riazi", 53, "مهندسي صنايع و سيستمها"),
             ("riazi", 62, "مهندسي و علم مواد"),
             ("riazi", 44, "مهندسي رايانه (نرم افزار)"),
-            ("riazi", 44, "مهندسي كامپيوتر (نرم‌افزار)"),
+            ("riazi", 44, "مهندسی رایانه (نرم افزار)"),
         ]
         for group, major_id, booklet_name in cases:
             with self.subTest(group=group, major_id=major_id, booklet_name=booklet_name):
