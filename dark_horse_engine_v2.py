@@ -30,6 +30,8 @@ class DarkHorseEngineV2:
         self.trait_map: Dict[str, Dict[int, List[str]]] = {}
         self.value_poles: Dict[str, str] = {}
         self.school_branches: Dict[str, Dict] = {}
+        self._alt_paths_cache: Dict[str, List[Dict]] = {}
+        self._branch_alt_paths_cache: Dict[str, List[Dict]] = {}
         self._load_data(motives_path, majors_path, trait_map_path, value_poles_path, school_branches_path)
         self._validate_schema_consistency()
         self._precompute_alternative_paths()
@@ -469,7 +471,7 @@ class DarkHorseEngineV2:
             elif v_aligned:
                 desc += "خرده‌انگیزه‌های شما با این رشته همسو نیستند، اما ارزش‌های بنیادین شما همخوانی خوبی با این حرفه دارد. این رشته می‌تواند از منظر معنا و رضایت درونی برایتان جذاب باشد، هرچند جرقه‌های روزمرهٔ آن را کمتر دوست داشته باشید."
         else:
-            desc += "خرده‌انگیزه‌های شما با این رشته همسو هستند. راهبردهای شخصی و ارزش‌های شما در سطح متوسطی با این رشته هماهنگ‌اند. می‌توانید این مسیر را به عنوان یک گزینه در نظر بگیرید."
+            desc += "هیچ‌کدام از سه لایهٔ فردیت شما — خرده‌انگیزه‌ها، راهبردهای شخصی و ارزش‌های بنیادین — با این رشته هم‌ترازی بالایی ندارند. بنابراین این مسیر پرریسک‌تر است و گزینهٔ اصلی شما نیست؛ بهتر است ابتدا گزینه‌هایی را بررسی کنید که دست‌کم در یک لایه با فردیت شما هم‌ترازی دارند."
 
         if not s_aligned:
             mis_traits = self._extract_s_misaligned_traits(strategy_answers, strategy_weights)
