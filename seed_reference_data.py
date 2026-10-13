@@ -227,14 +227,14 @@ def major_catalog_1_204_fingerprint(major_json_text: str) -> str:
 
 def major_catalog_1_215_fingerprint(major_json_text: str) -> str:
     """Fingerprint the exact pre-Wave-E catalog, including all 1..215 fields and weights."""
-    marker = '\\n  {\\n    "id": 216,'
+    marker = '\n  {\n    "id": 216,'
     prefix, found, _ = major_json_text.partition(marker)
     if not found:
         raise ValueError("Wave E baseline marker for major 216 is missing")
     prefix = prefix.rstrip()
     if not prefix.endswith(","):
         raise ValueError("Wave E baseline catalog prefix is malformed")
-    baseline_text = prefix[:-1] + "\\n]\\n"
+    baseline_text = prefix[:-1] + "\n]\n"
     value = 0xCBF29CE484222325
     prime = 0x100000001B3
     mask = 0xFFFFFFFFFFFFFFFF
