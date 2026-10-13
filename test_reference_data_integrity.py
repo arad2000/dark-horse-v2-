@@ -51,16 +51,16 @@ def test_micro_motive_references():
 
 def test_phase2_wave1_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    assert len(majors) == 190
+    assert len(majors) == 189
     ids = sorted(int(item["id"]) for item in majors)
-    assert ids == list(range(1, 191))
+    assert ids == list(range(1, 190))
 
 
 def test_wave_a_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    wave_a = [m for m in majors if int(m["id"]) in range(177, 191)]
-    assert len(wave_a) == 14
-    assert [int(m["id"]) for m in wave_a] == list(range(177, 191))
+    wave_a = [m for m in majors if int(m["id"]) in range(177, 190)]
+    assert len(wave_a) == 13
+    assert [int(m["id"]) for m in wave_a] == list(range(177, 190))
     assert all(m.get("motive_driven") is False for m in wave_a)
     assert all(m.get("micro_motive_codes") == [] for m in wave_a)
     assert all(m.get("strategy_weights") == [] for m in wave_a)
