@@ -157,7 +157,7 @@ console.log('admission_chance_ui phase3 regression: PASS');
 assert.strictEqual(catalog.majors.find(item => item.id === 170).name, 'هنر اسلامی');
 assert.strictEqual(catalog.majors.find(item => item.id === 185).name, 'نمایش عروسکی');
 assert.strictEqual(catalog.majors.find(item => item.id === 189).name, 'چاپ');
-assert.deepStrictEqual(catalog.majors.slice(-11).map(item => [item.id, item.name]), [
+assert.deepStrictEqual(catalog.majors.slice(-21).map(item => [item.id, item.name]), [
   [195, 'مهندسی حرفه‌ای کامپیوتر'],
   [196, 'علم اطلاعات و دانش‌شناسی'],
   [197, 'مهندسی حرفه‌ای معماری'],
