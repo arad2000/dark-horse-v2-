@@ -1658,36 +1658,65 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertIn(source["sanjesh_code"], {item["sanjesh_code"] for item in items})
         self.assertTrue(all(item["sanjesh_code"] for item in items))
 
-    def test_wave_c_real_exam_capacity_id195_and_id199_or_198(self):
-        candidates_195 = self._wave_c_real_capacity_candidates(195)
+    def test_wave_c_real_exam_capacity_id195_matches_real_source_row(self):
+        # The current 1405 booklet has an actual row; its OCR spelling omits
+        # the separator in "حرفه‌ای", so this test must verify mapping rather
+        # than inventing source data or silently treating a missing row as green.
+        source_spelling = _normalize_text("مهندسي حرفهاي کامپيوتر")
+        source_rows = [
+            row for row in load_exam_capacity_rows("riazi")
+            if str(row.get("admission_type") or "").strip() == EXAM_METHOD
+            and _normalize_text(row.get("major_name") or "") == source_spelling
+            and _canonical_province(str(row.get("province") or "").strip()) is not None
+            and str(row.get("period") or "").strip()
+            and str(row.get("period") or "").strip() != "نامشخص"
+            and str(row.get("sanjesh_code") or "").strip()
+        ]
         self.assertTrue(
-            candidates_195,
-            "Expected a real exam-capacity source row for major 195; do not fabricate source data.",
+            source_rows,
+            "The real 1405 math booklet row for professional computer engineering was not found; do not fabricate one.",
         )
-        second_id = next(
-            (major_id for major_id in (199, 198) if self._wave_c_real_capacity_candidates(major_id)),
+        source = source_rows[0]
+        province = _canonical_province(str(source["province"]).strip())
+        period = str(source["period"]).strip()
+        items = build_exam_capacity_results(
+            group="riazi",
+            major_ids=[195],
+            province=province,
+            periods=[period],
+            limit=100,
+        )
+        self.assertIn(
+            source["sanjesh_code"],
+            {item["sanjesh_code"] for item in items},
+            "Real row exists (e.g. major_name='مهندسي حرفهاي کامپيوتر'), but id=195 does not match the catalog spelling 'مهندسی حرفه‌ای کامپیوتر'. Do not add an unapproved alias outside the locked list.",
+        )
+
+    def test_wave_c_real_exam_capacity_id199_or_198_returns_source_rows(self):
+        chosen = next(
+            (
+                (major_id, self._wave_c_real_capacity_candidates(major_id))
+                for major_id in (199, 198)
+                if self._wave_c_real_capacity_candidates(major_id)
+            ),
             None,
         )
         self.assertIsNotNone(
-            second_id,
+            chosen,
             "Expected a real exam-capacity source row for major 199 or 198; do not fabricate source data.",
         )
-        for major_id, candidates in (
-            (195, candidates_195),
-            (second_id, self._wave_c_real_capacity_candidates(second_id)),
-        ):
-            group, source, province, period = candidates[0]
-            with self.subTest(major_id=major_id, group=group, province=province, period=period):
-                items = build_exam_capacity_results(
-                    group=group,
-                    major_ids=[major_id],
-                    province=province,
-                    periods=[period],
-                    limit=100,
-                )
-                self.assertTrue(items)
-                self.assertIn(source["sanjesh_code"], {item["sanjesh_code"] for item in items})
-                self.assertTrue(all(item["sanjesh_code"] for item in items))
+        major_id, candidates = chosen
+        group, source, province, period = candidates[0]
+        items = build_exam_capacity_results(
+            group=group,
+            major_ids=[major_id],
+            province=province,
+            periods=[period],
+            limit=100,
+        )
+        self.assertTrue(items)
+        self.assertIn(source["sanjesh_code"], {item["sanjesh_code"] for item in items})
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
 
 
 if __name__ == "__main__":
