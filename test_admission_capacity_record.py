@@ -480,5 +480,48 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
 
 
+    def test_wave_a_record_capacity_alias_187_book_arrangement(self):
+        response = self.client.post(
+            "/api/v1/admission/chance",
+            json={
+                "admission_path": "record",
+                "source": "capacity",
+                "major_ids": [187],
+                "province": "تهران",
+                "periods": ["روزانه"],
+                "target_field_group": "honar",
+                "diploma_type": "ensani",
+                "gpa_written": 18.0,
+                "special_quota": "none",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["source"], "capacity")
+        self.assertGreater(payload["count"], 0)
+        self.assertTrue(any(item["major_name"] == "کتابآرايي" for item in payload["items"]))
+        self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
+
+    def test_wave_a_record_capacity_alias_188_gold_jewelry_and_existing_graphic_regression(self):
+        items = build_record_capacity_results(
+            major_ids=[188],
+            province="آذربایجان شرقی",
+            periods=["روزانه"],
+            group="honar",
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(any(item["major_name"] == "طراحي و ساخت طال و جواهر" for item in items))
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+
+        graphic_items = build_record_capacity_results(
+            major_ids=[140],
+            province="خراسان جنوبی",
+            periods=["روزانه"],
+            group="honar",
+        )
+        self.assertGreater(len(graphic_items), 0)
+        self.assertTrue(any(item["major_name"] == "گرافيک" for item in graphic_items))
+
+
 if __name__ == "__main__":
     unittest.main()
