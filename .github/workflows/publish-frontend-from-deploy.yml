@@ -44,7 +44,7 @@ jobs:
           print(f"micro_motives_count={len(data)} sport_count={len(sport)}")
           PY
 
-      - name: Verify admission catalog 1-204
+      - name: Verify admission catalog 1-215
         shell: bash
         run: |
           set -euo pipefail
@@ -55,12 +55,12 @@ jobs:
           majors = catalog["majors"]
           ids = [int(item["id"]) for item in majors]
           names = [str(item.get("name") or "").strip() for item in majors]
-          assert len(majors) == 204, len(majors)
-          assert ids == list(range(1, 205)), (ids[:3], ids[-3:])
+          assert len(majors) == 215, len(majors)
+          assert ids == list(range(1, 216)), (ids[:3], ids[-3:])
           assert all(names), "Every UI major must have a name"
           assert len(names) == len(set(names)), "UI catalog has duplicate names"
           assert catalog["source_ref"] == "deploy/liara-commercial-sandbox"
-          assert catalog["source_sha"] == "f7ba586d1bff995ce010438e82bfa82d7c11900e"
+          assert catalog["source_sha"] == "081f24404418b10242166a16b7d912d5accfde7b"
           print(f"ui_catalog_count={len(majors)} source_sha={catalog['source_sha']}")
           PY
 

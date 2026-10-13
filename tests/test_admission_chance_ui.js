@@ -10,18 +10,18 @@ const catalog = JSON.parse(fs.readFileSync('docs/majors_catalog_ui_v1.json', 'ut
 
 assert.ok(source.includes('/api/v1/admission/chance'));
 assert.match(source, /state\.majorsResult/);
-assert.match(source, /majors_catalog_ui_v1\.json\?v=5/);
+assert.match(source, /majors_catalog_ui_v1\.json\?v=6/);
 assert.match(source, /function openHome\(mountId\)/);
 assert.match(shellSource, /انتخاب رشته با منطق سنجش/);
-assert.strictEqual(catalog.majors.length, 204);
-assert.ok(Math.max(...catalog.majors.map(item => item.id)) >= 204);
-assert.deepStrictEqual(catalog.majors.map(item => item.id), Array.from({length: 204}, (_, i) => i + 1));
+assert.strictEqual(catalog.majors.length, 215);
+assert.ok(Math.max(...catalog.majors.map(item => item.id)) >= 215);
+assert.deepStrictEqual(catalog.majors.map(item => item.id), Array.from({length: 215}, (_, i) => i + 1));
 const archaeology = catalog.majors.find(item => item.id === 166);
 assert.ok(archaeology, 'major id 166 must exist');
 assert.strictEqual(archaeology.name, 'باستان‌شناسی');
 assert.strictEqual(archaeology.group, 'علوم انسانی');
 assert.strictEqual(catalog.source_ref, 'deploy/liara-commercial-sandbox');
-assert.strictEqual(catalog.source_sha, 'f7ba586d1bff995ce010438e82bfa82d7c11900e');
+assert.strictEqual(catalog.source_sha, '081f24404418b10242166a16b7d912d5accfde7b');
 assert.match(source, /major_ids/);
 assert.match(source, /admission_path:\s*'exam'/);
 assert.match(source, /admission_path:\s*'record'/);
@@ -148,7 +148,7 @@ assert.match(css, /@media/);
 assert.match(indexSource, /shell\.css\?v=65/);
 assert.match(indexSource, /shell\.js\?v=83/);
 assert.match(indexSource, /admission_chance_ui\.css\?v=5/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=18/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=19/);
 assert.match(css, /\.dh-admission-source-limitation/);
 assert.ok(shellCss.includes('.dh-mk2-hero-sub {\n  color: #F0C040 !important;\n  font-weight: 800 !important;\n}'));
 
@@ -157,7 +157,7 @@ console.log('admission_chance_ui phase3 regression: PASS');
 assert.strictEqual(catalog.majors.find(item => item.id === 170).name, 'هنر اسلامی');
 assert.strictEqual(catalog.majors.find(item => item.id === 185).name, 'نمایش عروسکی');
 assert.strictEqual(catalog.majors.find(item => item.id === 189).name, 'چاپ');
-assert.deepStrictEqual(catalog.majors.slice(-10).map(item => [item.id, item.name]), [
+assert.deepStrictEqual(catalog.majors.slice(-21).map(item => [item.id, item.name]), [
   [195, 'مهندسی حرفه‌ای کامپیوتر'],
   [196, 'علم اطلاعات و دانش‌شناسی'],
   [197, 'مهندسی حرفه‌ای معماری'],
@@ -167,6 +167,17 @@ assert.deepStrictEqual(catalog.majors.slice(-10).map(item => [item.id, item.name
   [201, 'خلبانی بالگرد'],
   [202, 'خلبانی پهپاد'],
   [203, 'هوانوردی خلبانی'],
-  [204, 'مهندسی نگهداری و تعمیر بالگرد']
+  [204, 'مهندسی نگهداری و تعمیر بالگرد'],
+  [205, 'زبان روسی'],
+  [206, 'سیاستگذاری اجتماعی'],
+  [207, 'فقه شافعی'],
+  [208, 'علوم قضایی'],
+  [209, 'زبان و ادبیات آلمانی'],
+  [210, 'زبان و ادبیات اسپانیایی'],
+  [211, 'زبان و ادبیات ترکی استانبولی'],
+  [212, 'زبان و ادبیات ایتالیایی'],
+  [213, 'زبان و ادبیات ژاپنی'],
+  [214, 'زبان و ادبیات کردی'],
+  [215, 'کارشناسی ارشد پیوسته علوم قضایی']
 ]);
 assert.strictEqual(new Set(catalog.majors.map(item => item.name.trim())).size, catalog.majors.length);
