@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "majors_database_v2.json",
   "source_ref": "deploy/liara-commercial-sandbox",
-  "source_sha": "994422fa4aedde52f0849e79aff7a1a1784c653b",
+  "source_sha": "d3a0af8b137d2fe71f90d3a03140d688bc35e7e0",
   "majors": [
     {
       "id": 1,
@@ -926,31 +926,26 @@
     },
     {
       "id": 185,
-      "name": "هنر اسلامی",
-      "group": "هنر"
-    },
-    {
-      "id": 186,
       "name": "نمایش عروسکی",
       "group": "هنر"
     },
     {
-      "id": 187,
+      "id": 186,
       "name": "کتاب‌آرایی",
       "group": "هنر"
     },
     {
-      "id": 188,
+      "id": 187,
       "name": "طراحی و ساخت طلا و جواهر",
       "group": "هنر"
     },
     {
-      "id": 189,
+      "id": 188,
       "name": "هنرهای صناعی",
       "group": "هنر"
     },
     {
-      "id": 190,
+      "id": 189,
       "name": "چاپ",
       "group": "هنر"
     }
