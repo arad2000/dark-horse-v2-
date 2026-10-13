@@ -1423,5 +1423,38 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
 
 
+    def test_wave_a_deferred_catalog_entries_177_to_189_have_no_fabricated_weights(self):
+        majors = load_majors()
+        self.assertEqual(set(majors), {str(i) for i in range(1, 190)})
+        for major_id in range(177, 190):
+            with self.subTest(major_id=major_id):
+                major = majors[str(major_id)]
+                self.assertFalse(major["motive_driven"])
+                self.assertEqual(major["micro_motive_codes"], [])
+                self.assertEqual(major["strategy_weights"], [])
+                self.assertEqual(major["value_weights"], {})
+
+    def test_wave_a_exam_capacity_aliases_177_189_match_official_booklet_names(self):
+        cases = [
+            (178, "کارگرداني تلويزيون", "تهران"),
+            (180, "نوازندگي موسيقي ايراني", "اصفهان"),
+            (184, "طراحي و چاپ پارچه", "تهران"),
+            (140, "گرافيک", "تهران"),  # existing graphic alias regression
+        ]
+        for major_id, booklet_name, province in cases:
+            with self.subTest(major_id=major_id, province=province):
+                items = build_exam_capacity_results(
+                    group="honar",
+                    major_ids=[major_id],
+                    province=province,
+                    periods=["روزانه"],
+                    limit=50,
+                )
+                self.assertGreater(len(items), 0)
+                self.assertTrue(all(item["major_name"] == booklet_name for item in items))
+                self.assertTrue(all(item["sanjesh_code"] for item in items))
+                self.assertTrue(all(item["period"] == "روزانه" for item in items))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

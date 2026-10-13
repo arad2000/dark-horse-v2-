@@ -36,6 +36,7 @@ from models import (
 ROOT = Path(__file__).resolve().parent
 DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
+WAVE_A_DEFERRED_IDS = frozenset(range(177, 190))
 LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT = "15ce7c0ad63de857"
 LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "e0e81b6b783c1007"
 
@@ -268,8 +269,25 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         for item in major_records
         if item.get("id") is not None or item.get("major_id") is not None
     ]
-    if sorted(major_ids) != list(range(1, 177)):
-        raise ValueError("Major IDs are not exactly 1..176")
+    if sorted(major_ids) != list(range(1, 190)):
+        raise ValueError("Major IDs are not exactly 1..189")
+    wave_a_records = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_A_DEFERRED_IDS
+    ]
+    if len(wave_a_records) != len(WAVE_A_DEFERRED_IDS):
+        raise ValueError("Wave A must contain exactly 13 catalog-only rows (177..189)")
+    for item in wave_a_records:
+        if (
+            item.get("motive_driven") is not False
+            or item.get("micro_motive_codes") not in (None, [])
+            or item.get("strategy_weights") not in (None, [])
+            or item.get("value_weights") not in (None, {})
+            or item.get("weights_version") != "deferred_catalog_only_v1"
+        ):
+            raise ValueError(
+                f"Wave A major {item.get('id')} must remain a deferred catalog-only stub"
+            )
     legacy_major_records = [item for item in major_records if 1 <= int(item.get("id")) <= 160]
     if len(legacy_major_records) != 160:
         raise ValueError("Legacy major set must contain exactly 160 rows")

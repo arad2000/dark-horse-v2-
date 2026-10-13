@@ -232,7 +232,7 @@ def main() -> None:
         "value_poles": len(values),
     }
 
-    expected_counts = {"micro_motives": 1099, "majors": 160, "value_poles": 30}
+    expected_counts = {"micro_motives": 1099, "majors": 189, "value_poles": 30}
     for name, expected in expected_counts.items():
         actual = report["counts"][name]
         if actual != expected:
@@ -250,9 +250,9 @@ def main() -> None:
             report["status"] = "FAIL"
             report["errors"].append(f"duplicate_{label}:{duplicates}")
 
-    if sorted(int(x) for x in major_ids if x is not None) != list(range(1, 161)):
+    if sorted(int(x) for x in major_ids if x is not None) != list(range(1, 190)):
         report["status"] = "FAIL"
-        report["errors"].append("major_ids_not_exact_1_to_160")
+        report["errors"].append("major_ids_not_exact_1_to_189")
 
     trait_ok, trait_report, trait_errors = validate_trait_map(payloads["trait_map"])
     report["strategy_trait_map"] = trait_report

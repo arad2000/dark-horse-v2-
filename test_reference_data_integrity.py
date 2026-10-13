@@ -51,9 +51,21 @@ def test_micro_motive_references():
 
 def test_phase2_wave1_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    assert len(majors) == 176
+    assert len(majors) == 189
     ids = sorted(int(item["id"]) for item in majors)
-    assert ids == list(range(1, 177))
+    assert ids == list(range(1, 190))
+
+
+def test_wave_a_deferred_catalog_contract():
+    majors = load_json("majors_database_v2.json")
+    wave_a = [m for m in majors if int(m["id"]) in range(177, 190)]
+    assert len(wave_a) == 13
+    assert [int(m["id"]) for m in wave_a] == list(range(177, 190))
+    assert all(m.get("motive_driven") is False for m in wave_a)
+    assert all(m.get("micro_motive_codes") == [] for m in wave_a)
+    assert all(m.get("strategy_weights") == [] for m in wave_a)
+    assert all(m.get("value_weights") == {} for m in wave_a)
+    assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_a)
 
 
 def test_phase2_wave1_behavioral_contract():
@@ -75,5 +87,6 @@ def test_biotechnology_references_are_canonical():
 if __name__ == "__main__":
     test_micro_motive_references()
     test_phase2_wave1_catalog_contract()
+    test_wave_a_deferred_catalog_contract()
     test_biotechnology_references_are_canonical()
     print("REFERENCE_DATA_INTEGRITY=PASS")
