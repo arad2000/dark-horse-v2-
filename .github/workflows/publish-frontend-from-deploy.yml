@@ -44,6 +44,26 @@ jobs:
           print(f"micro_motives_count={len(data)} sport_count={len(sport)}")
           PY
 
+      - name: Verify admission major catalog contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          catalog = json.loads(Path("docs/majors_catalog_ui_v1.json").read_text(encoding="utf-8"))
+          majors = catalog["majors"]
+          ids = [int(item["id"]) for item in majors]
+          names = [str(item.get("name") or "").strip() for item in majors]
+          assert len(majors) == 204, len(majors)
+          assert ids == list(range(1, 205)), (ids[:3], ids[-3:])
+          assert all(names), "Every UI catalog major must have a name"
+          assert len(names) == len(set(names)), "UI catalog contains duplicate names"
+          assert catalog["source_ref"] == "deploy/liara-commercial-sandbox"
+          assert catalog["source_sha"] == "84d0658ff3d1990e38ba5bcfcb46eb54f7f403f7"
+          print(f"ui_catalog_count={len(majors)} source_sha={catalog['source_sha']}")
+          PY
+
       - name: Verify artifact layout
         shell: bash
         run: |
