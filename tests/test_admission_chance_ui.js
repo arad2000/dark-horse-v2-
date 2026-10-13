@@ -10,18 +10,18 @@ const catalog = JSON.parse(fs.readFileSync('docs/majors_catalog_ui_v1.json', 'ut
 
 assert.ok(source.includes('/api/v1/admission/chance'));
 assert.match(source, /state\.majorsResult/);
-assert.match(source, /majors_catalog_ui_v1\.json\?v=1/);
+assert.match(source, /majors_catalog_ui_v1\.json\?v=3/);
 assert.match(source, /function openHome\(mountId\)/);
 assert.match(shellSource, /انتخاب رشته با منطق سنجش/);
-assert.strictEqual(catalog.majors.length, 176);
+assert.strictEqual(catalog.majors.length, 189);
 assert.ok(Math.max(...catalog.majors.map(item => item.id)) >= 176);
-assert.deepStrictEqual(catalog.majors.map(item => item.id), Array.from({length: 176}, (_, i) => i + 1));
+assert.deepStrictEqual(catalog.majors.map(item => item.id), Array.from({length: 189}, (_, i) => i + 1));
 const archaeology = catalog.majors.find(item => item.id === 166);
 assert.ok(archaeology, 'major id 166 must exist');
 assert.strictEqual(archaeology.name, 'باستان‌شناسی');
 assert.strictEqual(archaeology.group, 'علوم انسانی');
 assert.strictEqual(catalog.source_ref, 'deploy/liara-commercial-sandbox');
-assert.strictEqual(catalog.source_sha, '7a66043a11dbb849ab6090889f3984c351f3457f');
+assert.strictEqual(catalog.source_sha, 'd3a0af8b137d2fe71f90d3a03140d688bc35e7e0');
 assert.match(source, /major_ids/);
 assert.match(source, /admission_path:\s*'exam'/);
 assert.match(source, /admission_path:\s*'record'/);
@@ -148,8 +148,13 @@ assert.match(css, /@media/);
 assert.match(indexSource, /shell\.css\?v=65/);
 assert.match(indexSource, /shell\.js\?v=83/);
 assert.match(indexSource, /admission_chance_ui\.css\?v=5/);
-assert.match(indexSource, /admission_chance_ui\.js\?v=14/);
+assert.match(indexSource, /admission_chance_ui\.js\?v=16/);
 assert.match(css, /\.dh-admission-source-limitation/);
 assert.ok(shellCss.includes('.dh-mk2-hero-sub {\n  color: #F0C040 !important;\n  font-weight: 800 !important;\n}'));
 
 console.log('admission_chance_ui phase3 regression: PASS');
+
+assert.strictEqual(catalog.majors.find(item => item.id === 170).name, 'هنر اسلامی');
+assert.strictEqual(catalog.majors.find(item => item.id === 185).name, 'نمایش عروسکی');
+assert.strictEqual(catalog.majors.find(item => item.id === 189).name, 'چاپ');
+assert.strictEqual(new Set(catalog.majors.map(item => item.name.trim())).size, catalog.majors.length);
