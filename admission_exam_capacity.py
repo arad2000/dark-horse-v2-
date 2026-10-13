@@ -121,6 +121,7 @@ GROUP_MAJOR_ALIASES = {
             "فقه و مبانی حقوق اسلامي",
             "فقه و مباني حقوق اسلامی",
             "فقه و مباني حقوق اسلامي",
+            "فقه و مباني حقوق اسالمي",
         },
         # Madhhab labels are scoped to 105; never attach them to law major 101.
         105: {
