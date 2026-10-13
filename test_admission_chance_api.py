@@ -1490,12 +1490,11 @@ class AdmissionChanceApiTests(unittest.TestCase):
             if str(row.get("admission_type") or "").strip() == EXAM_METHOD
             and _normalize_text(row.get("major_name") or "") in aliases
             and _canonical_province(str(row.get("province") or "").strip()) is not None
-            and str(row.get("period") or "").strip()
-            and str(row.get("period") or "").strip() != "نامشخص"
+            and str(row.get("period") or "").strip() == "روزانه"
             and str(row.get("sanjesh_code") or "").strip()
         ]
         if not matching_rows:
-            self.skipTest("No valid tajrobi exam capacity row for the requested radiology alias is present in source.")
+            self.skipTest("No valid tajrobi/daytime exam-capacity row for the requested radiology alias is present in source.")
         source = matching_rows[0]
         province = _canonical_province(str(source["province"]).strip())
         items = build_exam_capacity_results(
