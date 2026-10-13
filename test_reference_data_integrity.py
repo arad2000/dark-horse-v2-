@@ -51,9 +51,9 @@ def test_micro_motive_references():
 
 def test_phase2_wave1_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    assert len(majors) == 189
+    assert len(majors) == 194
     ids = sorted(int(item["id"]) for item in majors)
-    assert ids == list(range(1, 190))
+    assert ids == list(range(1, 195))
 
 
 def test_wave_a_deferred_catalog_contract():
@@ -79,6 +79,32 @@ def test_phase2_wave1_behavioral_contract():
 
 
 
+
+def test_wave_b_deferred_catalog_contract():
+    majors = load_json("majors_database_v2.json")
+    wave_b = [m for m in majors if int(m["id"]) in range(190, 195)]
+    assert len(wave_b) == 5
+    assert [int(m["id"]) for m in wave_b] == list(range(190, 195))
+    assert [m["name"] for m in wave_b] == [
+        "ساخت پروتزهای دندانی",
+        "بیولوژی و کنترل ناقلین بیماری‌ها",
+        "بهداشت مواد غذایی",
+        "بهداشت و بازرسی گوشت",
+        "دکتری پیوسته بیوتکنولوژی",
+    ]
+    assert all(m.get("motive_driven") is False for m in wave_b)
+    assert all(m.get("micro_motive_codes") == [] for m in wave_b)
+    assert all(m.get("strategy_weights") == [] for m in wave_b)
+    assert all(m.get("value_weights") == {} for m in wave_b)
+    assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_b)
+
+
+def test_major_names_are_unique_for_uq_major_name():
+    majors = load_json("majors_database_v2.json")
+    names = [str(item.get("name") or "").strip() for item in majors]
+    assert all(names), "Every catalog major must have a name"
+    assert len(names) == len(set(names)), "Duplicate major names conflict with uq_major_name"
+
 def test_biotechnology_references_are_canonical():
     majors = load_json("majors_database_v2.json")
     biotech = next(m for m in majors if m.get("id") == 34)
@@ -88,5 +114,7 @@ if __name__ == "__main__":
     test_micro_motive_references()
     test_phase2_wave1_catalog_contract()
     test_wave_a_deferred_catalog_contract()
+    test_wave_b_deferred_catalog_contract()
+    test_major_names_are_unique_for_uq_major_name()
     test_biotechnology_references_are_canonical()
     print("REFERENCE_DATA_INTEGRITY=PASS")
