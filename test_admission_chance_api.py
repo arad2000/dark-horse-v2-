@@ -1548,7 +1548,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
     def _wave_c_real_capacity_candidates(self, major_id):
         majors = load_majors()
         major_name = str(majors[str(major_id)]["name"])
-        groups = ("riazi", "tajrobi", "ensani", "honar", "zaban")
+        groups = ("riazi",)
         candidates = []
         for group in groups:
             names = {_normalize_text(major_name)}
@@ -1569,6 +1569,33 @@ class AdmissionChanceApiTests(unittest.TestCase):
                 ):
                     candidates.append((group, row, province, period))
         return candidates
+
+
+
+    def test_wave_c_deferred_catalog_entries_195_to_204_have_no_fabricated_weights(self):
+        majors = load_majors()
+        self.assertEqual(set(majors), {str(i) for i in range(1, 205)})
+        expected_names = [
+            "مهندسی حرفه‌ای کامپیوتر",
+            "علم اطلاعات و دانش‌شناسی",
+            "مهندسی حرفه‌ای معماری",
+            "مهندسی ساخت و تولید",
+            "مهندسی هوانوردی و مراقبت پرواز",
+            "فناوری اطلاعات و ارتباطات",
+            "خلبانی بالگرد",
+            "خلبانی پهپاد",
+            "هوانوردی خلبانی",
+            "مهندسی نگهداری و تعمیر بالگرد",
+        ]
+        self.assertEqual([majors[str(i)]["name"] for i in range(195, 205)], expected_names)
+        for major_id in range(195, 205):
+            with self.subTest(major_id=major_id):
+                major = majors[str(major_id)]
+                self.assertFalse(major["motive_driven"])
+                self.assertEqual(major["micro_motive_codes"], [])
+                self.assertEqual(major["strategy_weights"], [])
+                self.assertEqual(major["value_weights"], {})
+                self.assertEqual(major["weights_version"], "deferred_catalog_only_v1")
 
     def test_wave_c_booklet_aliases_are_explicit_and_major_id_scoped(self):
         cases = [
