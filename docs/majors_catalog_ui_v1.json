@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "majors_database_v2.json",
   "source_ref": "deploy/liara-commercial-sandbox",
-  "source_sha": "d3a0af8b137d2fe71f90d3a03140d688bc35e7e0",
+  "source_sha": "3e61145a8ca1f41c0d8cb7e55b6366a221cabb26",
   "majors": [
     {
       "id": 1,
@@ -948,6 +948,31 @@
       "id": 189,
       "name": "چاپ",
       "group": "هنر"
+    },
+    {
+      "id": 190,
+      "name": "ساخت پروتزهای دندانی",
+      "group": "علوم پزشکی"
+    },
+    {
+      "id": 191,
+      "name": "بیولوژی و کنترل ناقلین بیماری‌ها",
+      "group": "علوم پزشکی"
+    },
+    {
+      "id": 192,
+      "name": "بهداشت مواد غذایی",
+      "group": "علوم پزشکی"
+    },
+    {
+      "id": 193,
+      "name": "بهداشت و بازرسی گوشت",
+      "group": "علوم پزشکی"
+    },
+    {
+      "id": 194,
+      "name": "دکتری پیوسته بیوتکنولوژی",
+      "group": "علوم پزشکی"
     }
   ]
 }
