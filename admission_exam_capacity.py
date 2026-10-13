@@ -49,6 +49,14 @@ GROUP_MAJOR_ALIASES = {
             "مهندسي رايانه (نرم‌افزار)",
             "مهندسي رايانه (نرم افزار)",
         },
+        195: {
+            # Exact spelling variants documented in the 1405 math booklet.
+            # The source OCR joins حرفه‌ای as حرفهاي; normalization handles yeh/kaf.
+            "مهندسي حرفهاي کامپيوتر",
+            "مهندسی حرفهای کامپیوتر",
+            "مهندسی حرفه ای کامپیوتر",
+            "مهندسي حرفه اي کامپيوتر",
+        },
         69: {
             "علوم و مهندسی باغبانی",
         },
