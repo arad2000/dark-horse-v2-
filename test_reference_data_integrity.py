@@ -49,11 +49,11 @@ def test_micro_motive_references():
     assert not missing, f"Missing micro-motive references: {missing}"
 
 
-def test_phase2_wave1_catalog_contract():
+def test_major_catalog_ids_contiguous_1_to_204():
     majors = load_json("majors_database_v2.json")
-    assert len(majors) == 194
+    assert len(majors) == 204
     ids = sorted(int(item["id"]) for item in majors)
-    assert ids == list(range(1, 195))
+    assert ids == list(range(1, 205))
 
 
 def test_wave_a_deferred_catalog_contract():
@@ -99,6 +99,31 @@ def test_wave_b_deferred_catalog_contract():
     assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_b)
 
 
+def test_wave_c_deferred_catalog_contract():
+    majors = load_json("majors_database_v2.json")
+    wave_c = [m for m in majors if int(m["id"]) in range(195, 205)]
+    assert len(wave_c) == 10
+    assert [int(m["id"]) for m in wave_c] == list(range(195, 205))
+    assert [m["name"] for m in wave_c] == [
+        "مهندسی حرفه‌ای کامپیوتر",
+        "علم اطلاعات و دانش‌شناسی",
+        "مهندسی حرفه‌ای معماری",
+        "مهندسی ساخت و تولید",
+        "مهندسی هوانوردی و مراقبت پرواز",
+        "فناوری اطلاعات و ارتباطات",
+        "خلبانی بالگرد",
+        "خلبانی پهپاد",
+        "هوانوردی خلبانی",
+        "مهندسی نگهداری و تعمیر بالگرد",
+    ]
+    assert all(m.get("motive_driven") is False for m in wave_c)
+    assert all(m.get("micro_motive_codes") == [] for m in wave_c)
+    assert all(m.get("strategy_weights") == [] for m in wave_c)
+    assert all(m.get("value_weights") == {} for m in wave_c)
+    assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_c)
+    assert all(m.get("archetype") == "deferred_catalog_only" for m in wave_c)
+
+
 def test_major_names_are_unique_for_uq_major_name():
     majors = load_json("majors_database_v2.json")
     names = [str(item.get("name") or "").strip() for item in majors]
@@ -112,9 +137,10 @@ def test_biotechnology_references_are_canonical():
 
 if __name__ == "__main__":
     test_micro_motive_references()
-    test_phase2_wave1_catalog_contract()
+    test_major_catalog_ids_contiguous_1_to_204()
     test_wave_a_deferred_catalog_contract()
     test_wave_b_deferred_catalog_contract()
+    test_wave_c_deferred_catalog_contract()
     test_major_names_are_unique_for_uq_major_name()
     test_biotechnology_references_are_canonical()
     print("REFERENCE_DATA_INTEGRITY=PASS")
