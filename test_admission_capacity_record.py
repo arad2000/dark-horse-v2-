@@ -480,13 +480,13 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
 
 
-    def test_wave_a_record_capacity_alias_187_book_arrangement(self):
+    def test_wave_a_record_capacity_alias_186_book_arrangement(self):
         response = self.client.post(
             "/api/v1/admission/chance",
             json={
                 "admission_path": "record",
                 "source": "capacity",
-                "major_ids": [187],
+                "major_ids": [186],
                 "province": "تهران",
                 "periods": ["روزانه"],
                 "target_field_group": "honar",
@@ -502,9 +502,9 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertTrue(any(item["major_name"] == "کتابآرايي" for item in payload["items"]))
         self.assertTrue(any("JSON گروهی ۱۴۰۵" in note for note in payload["notes"]))
 
-    def test_wave_a_record_capacity_alias_188_gold_jewelry_and_existing_graphic_regression(self):
+    def test_wave_a_record_capacity_alias_187_gold_jewelry_and_existing_graphic_regression(self):
         items = build_record_capacity_results(
-            major_ids=[188],
+            major_ids=[187],
             province="آذربایجان شرقی",
             periods=["روزانه"],
             group="honar",
