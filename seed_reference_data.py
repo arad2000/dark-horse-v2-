@@ -186,14 +186,14 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
 
 def major_catalog_fingerprint(major_json_text: str) -> str:
     """Fingerprint the exact pre-Wave-C majors JSON, byte-for-character as decoded text."""
-    marker = '\\n  {\\n    "id": 195,'
+    marker = '\n  {\n    "id": 195,'
     prefix, found, _ = major_json_text.partition(marker)
     if not found:
         raise ValueError("Wave C baseline marker for major 195 is missing")
     prefix = prefix.rstrip()
     if not prefix.endswith(","):
         raise ValueError("Wave C baseline catalog prefix is malformed")
-    baseline_text = prefix[:-1] + "\\n]\\n"
+    baseline_text = prefix[:-1] + "\n]\n"
     value = 0xCBF29CE484222325
     prime = 0x100000001B3
     mask = 0xFFFFFFFFFFFFFFFF
