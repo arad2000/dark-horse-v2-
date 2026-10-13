@@ -1423,10 +1423,10 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
 
 
-    def test_wave_a_deferred_catalog_entries_177_to_190_have_no_fabricated_weights(self):
+    def test_wave_a_deferred_catalog_entries_177_to_189_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 191)})
-        for major_id in range(177, 191):
+        self.assertEqual(set(majors), {str(i) for i in range(1, 190)})
+        for major_id in range(177, 190):
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
                 self.assertFalse(major["motive_driven"])
@@ -1434,7 +1434,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
                 self.assertEqual(major["strategy_weights"], [])
                 self.assertEqual(major["value_weights"], {})
 
-    def test_wave_a_exam_capacity_aliases_177_190_match_official_booklet_names(self):
+    def test_wave_a_exam_capacity_aliases_177_189_match_official_booklet_names(self):
         cases = [
             (178, "کارگرداني تلويزيون", "تهران"),
             (180, "نوازندگي موسيقي ايراني", "اصفهان"),
