@@ -155,7 +155,7 @@ class AdmissionChanceUICapacityTests(unittest.TestCase):
         self.assertIn("majors_catalog_ui_v1.json?v=6", self.ui)
         self.assertEqual(len(catalog["majors"]), 215)
         self.assertGreaterEqual(max(item["id"] for item in catalog["majors"]), 215)
-        self.assertEqual([item["id"] for item in catalog["majors"]], list(range(1, 216))
+        self.assertEqual([item["id"] for item in catalog["majors"]], list(range(1, 216)))
         archaeology = next(item for item in catalog["majors"] if item["id"] == 166)
         self.assertEqual(archaeology["name"], "باستان‌شناسی")
         self.assertEqual(archaeology["group"], "علوم انسانی")
