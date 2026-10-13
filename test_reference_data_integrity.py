@@ -16,7 +16,7 @@ def load_json(name: str):
 
 
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
-BASELINE_MAJOR_1_194_FINGERPRINT = "17c9b97787919b0a"
+BASELINE_MAJOR_1_194_FINGERPRINT = "5189181b82aab0e6"
 
 
 def _is_phase2_stub_reference(major: dict, code: str) -> bool:
@@ -121,19 +121,17 @@ def _canonical_value(value):
     return str(value)
 
 
-def _catalog_fingerprint(majors, max_id=194):
-    rows = sorted(
-        (
-            item for item in majors
-            if 1 <= int(item.get("id") or item.get("major_id") or 0) <= max_id
-        ),
-        key=lambda item: int(item.get("id") or item.get("major_id") or 0),
-    )
-    payload = "\\n".join(_canonical_value(item) for item in rows)
+def _catalog_fingerprint(major_json_text):
+    marker = '\n  {\n    "id": 195,'
+    prefix, found, _ = major_json_text.partition(marker)
+    assert found, "Wave C baseline marker for major 195 is missing"
+    prefix = prefix.rstrip()
+    assert prefix.endswith(","), "Wave C baseline catalog prefix is malformed"
+    baseline_text = prefix[:-1] + "\n]\n"
     value = 0xCBF29CE484222325
     prime = 0x100000001B3
     mask = 0xFFFFFFFFFFFFFFFF
-    for char in payload:
+    for char in baseline_text:
         value ^= ord(char)
         value = (value * prime) & mask
     return f"{value:016x}"
@@ -142,7 +140,8 @@ def _catalog_fingerprint(majors, max_id=194):
 def test_wave_c_preserves_entire_existing_catalog_1_to_194():
     majors = load_json("majors_database_v2.json")
     assert len([item for item in majors if 1 <= int(item["id"]) <= 194]) == 194
-    assert _catalog_fingerprint(majors, max_id=194) == BASELINE_MAJOR_1_194_FINGERPRINT
+    catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
+    assert _catalog_fingerprint(catalog_text) == BASELINE_MAJOR_1_194_FINGERPRINT
 
 
 def test_wave_c_deferred_catalog_contract():
