@@ -97,6 +97,10 @@ class RecordCapacityDirectTests(unittest.TestCase):
             ("tajrobi", 18, "تکنولوژی پرتودرمانی"),
             ("tajrobi", 18, "تکنولوژي پرتودرماني"),
             ("ensani", 101, "کارشناسی حقوق"),
+            ("ensani", 104, "فقه و مباني حقوق اسالمي"),
+            ("ensani", 104, "فقه و مبانی حقوق اسلامي"),
+            ("ensani", 105, "فقه و حقوق امامي"),
+            ("ensani", 105, "فقه و حقوق حنفي"),
             ("ensani", 107, "مشاوره"),
         ]
         for group, major_id, booklet_name in cases:
@@ -129,6 +133,14 @@ class RecordCapacityDirectTests(unittest.TestCase):
             self.assertTrue(
                 any("alias صریح major_id" in note for note in items[0]["notes"])
             )
+
+    def test_fiqh_madhhab_aliases_do_not_collapse_into_law_major_101(self):
+        row = {"sanjesh_code":"__record-wave-d-imami-is-not-law__", "major_name":"فقه و حقوق امامي", "province":"تهران", "period":"روزانه", "admission_type":"صرفاً سوابق", "capacity":1}
+        with patch("admission_capacity_record.load_group_record_capacity_rows", return_value=(row,)), patch("admission_capacity_record.load_record_capacity_rows", return_value=()):
+            law = build_record_capacity_results(major_ids=[101], province="تهران", periods=["روزانه"], group="ensani")
+            fiqh = build_record_capacity_results(major_ids=[105], province="تهران", periods=["روزانه"], group="ensani")
+        self.assertEqual(law, [], "Madhhab labels must not map to law major 101.")
+        self.assertEqual([item["sanjesh_code"] for item in fiqh], [row["sanjesh_code"]])
 
     def test_group_source_first_then_legacy_fallback(self):
         major_id, province, period, major_name = self._approved_real_case()

@@ -1572,9 +1572,9 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
 
 
-    def test_wave_c_deferred_catalog_entries_195_to_204_have_no_fabricated_weights(self):
+    def test_loader_catalog_ids_are_exactly_1_to_215_and_wave_c_stays_unweighted(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 205)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 216)})
         expected_names = [
             "مهندسی حرفه‌ای کامپیوتر",
             "علم اطلاعات و دانش‌شناسی",
@@ -1695,6 +1695,65 @@ class AdmissionChanceApiTests(unittest.TestCase):
             {item["sanjesh_code"] for item in items},
             "Real booklet row major_name='مهندسي حرفهاي کامپيوتر' must resolve through the documented major_id=195 alias.",
         )
+
+    def _wave_d_real_capacity_candidates(self, major_id, group):
+        majors = load_majors()
+        names = {_normalize_text(majors[str(major_id)]["name"])}
+        names.update(_normalize_text(a) for a in GROUP_MAJOR_ALIASES.get(group, {}).get(major_id, set()))
+        candidates = []
+        for row in load_exam_capacity_rows(group):
+            if str(row.get("admission_type") or "").strip() != EXAM_METHOD:
+                continue
+            if _normalize_text(row.get("major_name") or "") not in names:
+                continue
+            province = _canonical_province(str(row.get("province") or "").strip())
+            period, code = str(row.get("period") or "").strip(), str(row.get("sanjesh_code") or "").strip()
+            if province is None or not period or period == "نامشخص" or not code:
+                continue
+            candidates.append((row, province, period))
+        return candidates
+
+    def test_wave_d_fiqh_aliases_are_explicit_and_major_id_scoped(self):
+        cases = [
+            ("ensani", 104, "فقه و مباني حقوق اسالمي"),
+            ("ensani", 104, "فقه و مبانی حقوق اسلامي"),
+            ("ensani", 105, "فقه و حقوق امامي"),
+            ("ensani", 105, "فقه و حقوق حنفي"),
+        ]
+        for group, major_id, booklet_name in cases:
+            with self.subTest(group=group, major_id=major_id, booklet_name=booklet_name):
+                row = {"sanjesh_code": f"__wave-d-alias-{major_id}-{len(booklet_name)}__", "major_name": booklet_name, "province": "تهران", "period": "روزانه", "admission_type": EXAM_METHOD, "capacity": 1}
+                with patch("admission_exam_capacity.load_exam_capacity_rows", return_value=(row,)):
+                    items = build_exam_capacity_results(group=group, major_ids=[major_id], province="تهران", periods=["روزانه"], limit=10)
+                self.assertEqual([x["sanjesh_code"] for x in items], [row["sanjesh_code"]])
+        self.assertNotIn(150, GROUP_MAJOR_ALIASES.get("zaban", {}))
+        row = {"sanjesh_code":"__wave-d-fiqh-imami-not-law-101__", "major_name":"فقه و حقوق امامي", "province":"تهران", "period":"روزانه", "admission_type":EXAM_METHOD, "capacity":1}
+        with patch("admission_exam_capacity.load_exam_capacity_rows", return_value=(row,)):
+            law = build_exam_capacity_results(group="ensani", major_ids=[101], province="تهران", periods=["روزانه"], limit=10)
+            fiqh = build_exam_capacity_results(group="ensani", major_ids=[105], province="تهران", periods=["روزانه"], limit=10)
+        self.assertEqual(law, [], "Imami fiqh source labels must not map to major_id=101 (حقوق).")
+        self.assertEqual([x["sanjesh_code"] for x in fiqh], [row["sanjesh_code"]])
+
+    def test_wave_d_real_exam_capacity_id205_matches_real_zaban_1405_source_row(self):
+        candidates = self._wave_d_real_capacity_candidates(205, "zaban")
+        self.assertTrue(candidates, "Expected a real 1405 zaban row for ID 205; no fake source rows.")
+        row, province, period = candidates[0]
+        items = build_exam_capacity_results(group="zaban", major_ids=[205], province=province, periods=[period], limit=100)
+        self.assertIn(row["sanjesh_code"], {x["sanjesh_code"] for x in items})
+
+    def test_wave_d_real_exam_capacity_id208_matches_real_ensani_1405_source_row(self):
+        candidates = self._wave_d_real_capacity_candidates(208, "ensani")
+        self.assertTrue(candidates, "Expected a real 1405 ensani row for ID 208; no fake source rows.")
+        row, province, period = candidates[0]
+        items = build_exam_capacity_results(group="ensani", major_ids=[208], province=province, periods=[period], limit=100)
+        self.assertIn(row["sanjesh_code"], {x["sanjesh_code"] for x in items})
+
+    def test_existing_language_id148_still_matches_real_zaban_1405_source_rows(self):
+        candidates = self._wave_d_real_capacity_candidates(148, "zaban")
+        self.assertTrue(candidates, "Existing language ID 148 must retain real 1405 source rows.")
+        row, province, period = candidates[0]
+        items = build_exam_capacity_results(group="zaban", major_ids=[148], province=province, periods=[period], limit=100)
+        self.assertIn(row["sanjesh_code"], {x["sanjesh_code"] for x in items})
 
     def test_wave_c_real_exam_capacity_id199_or_198_returns_source_rows(self):
         chosen = next(
