@@ -26,7 +26,7 @@ from admission_sanjesh_engine import (
     _normalize_text,
     _canonical_province,
 )
-from admission_exam_capacity import build_exam_capacity_results, load_exam_capacity_rows
+from admission_exam_capacity import GROUP_MAJOR_ALIASES, build_exam_capacity_results, load_exam_capacity_rows
 from main_v2 import app
 
 
@@ -1427,7 +1427,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_wave_a_deferred_catalog_entries_177_to_189_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 195)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 205)})
         for major_id in range(177, 190):
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
@@ -1460,7 +1460,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_wave_b_deferred_catalog_entries_190_to_194_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 195)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 205)})
         self.assertEqual(
             [majors[str(i)]["name"] for i in range(190, 195)],
             [
@@ -1541,6 +1541,126 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertTrue(
             all(_normalize_text(item["major_name"]) == _normalize_text(majors[str(major_id)]["name"]) for item in items)
         )
+
+
+
+
+    def _wave_c_real_capacity_candidates(self, major_id):
+        majors = load_majors()
+        major_name = str(majors[str(major_id)]["name"])
+        groups = ("riazi", "tajrobi", "ensani", "honar", "zaban")
+        candidates = []
+        for group in groups:
+            names = {_normalize_text(major_name)}
+            names.update(
+                _normalize_text(alias)
+                for alias in GROUP_MAJOR_ALIASES.get(group, {}).get(major_id, set())
+            )
+            for row in load_exam_capacity_rows(group):
+                province = _canonical_province(str(row.get("province") or "").strip())
+                period = str(row.get("period") or "").strip()
+                if (
+                    str(row.get("admission_type") or "").strip() == EXAM_METHOD
+                    and _normalize_text(row.get("major_name") or "") in names
+                    and province is not None
+                    and period
+                    and period != "نامشخص"
+                    and str(row.get("sanjesh_code") or "").strip()
+                ):
+                    candidates.append((group, row, province, period))
+        return candidates
+
+    def test_wave_c_booklet_aliases_are_explicit_and_major_id_scoped(self):
+        cases = [
+            ("tajrobi", 25, "فناوري اطالعات سالمت"),
+            ("riazi", 53, "مهندسي صنايع و سيستمها"),
+            ("riazi", 62, "مهندسي و علم مواد"),
+            ("riazi", 44, "مهندسي رايانه (نرم افزار)"),
+            ("riazi", 44, "مهندسي كامپيوتر (نرم‌افزار)"),
+        ]
+        for group, major_id, booklet_name in cases:
+            with self.subTest(group=group, major_id=major_id, booklet_name=booklet_name):
+                row = {
+                    "sanjesh_code": f"__wave-c-alias-{major_id}-{len(booklet_name)}__",
+                    "major_name": booklet_name,
+                    "province": "تهران",
+                    "period": "روزانه",
+                    "admission_type": EXAM_METHOD,
+                    "capacity": 1,
+                }
+                with patch("admission_exam_capacity.load_exam_capacity_rows", return_value=(row,)):
+                    items = build_exam_capacity_results(
+                        group=group,
+                        major_ids=[major_id],
+                        province="تهران",
+                        periods=["روزانه"],
+                        limit=10,
+                    )
+                self.assertEqual([item["sanjesh_code"] for item in items], [row["sanjesh_code"]])
+                self.assertEqual(items[0]["major_name"], booklet_name)
+
+    def test_wave_c_health_it_id25_matches_real_tajrobi_capacity_rows(self):
+        aliases = {
+            _normalize_text(alias)
+            for alias in GROUP_MAJOR_ALIASES["tajrobi"][25]
+        }
+        source_rows = [
+            row for row in load_exam_capacity_rows("tajrobi")
+            if str(row.get("admission_type") or "").strip() == EXAM_METHOD
+            and _normalize_text(row.get("major_name") or "") in aliases
+            and _canonical_province(str(row.get("province") or "").strip()) is not None
+            and str(row.get("period") or "").strip()
+            and str(row.get("period") or "").strip() != "نامشخص"
+            and str(row.get("sanjesh_code") or "").strip()
+        ]
+        self.assertTrue(
+            source_rows,
+            "Expected a real 1405 tajrobi booklet row for the recurring health-IT major name; do not fabricate source data.",
+        )
+        source = source_rows[0]
+        province = _canonical_province(str(source["province"]).strip())
+        period = str(source["period"]).strip()
+        items = build_exam_capacity_results(
+            group="tajrobi",
+            major_ids=[25],
+            province=province,
+            periods=[period],
+            limit=100,
+        )
+        self.assertTrue(items)
+        self.assertIn(source["sanjesh_code"], {item["sanjesh_code"] for item in items})
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+
+    def test_wave_c_real_exam_capacity_id195_and_id199_or_198(self):
+        candidates_195 = self._wave_c_real_capacity_candidates(195)
+        self.assertTrue(
+            candidates_195,
+            "Expected a real exam-capacity source row for major 195; do not fabricate source data.",
+        )
+        second_id = next(
+            (major_id for major_id in (199, 198) if self._wave_c_real_capacity_candidates(major_id)),
+            None,
+        )
+        self.assertIsNotNone(
+            second_id,
+            "Expected a real exam-capacity source row for major 199 or 198; do not fabricate source data.",
+        )
+        for major_id, candidates in (
+            (195, candidates_195),
+            (second_id, self._wave_c_real_capacity_candidates(second_id)),
+        ):
+            group, source, province, period = candidates[0]
+            with self.subTest(major_id=major_id, group=group, province=province, period=period):
+                items = build_exam_capacity_results(
+                    group=group,
+                    major_ids=[major_id],
+                    province=province,
+                    periods=[period],
+                    limit=100,
+                )
+                self.assertTrue(items)
+                self.assertIn(source["sanjesh_code"], {item["sanjesh_code"] for item in items})
+                self.assertTrue(all(item["sanjesh_code"] for item in items))
 
 
 if __name__ == "__main__":
