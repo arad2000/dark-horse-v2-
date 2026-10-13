@@ -92,6 +92,10 @@ class RecordCapacityDirectTests(unittest.TestCase):
     def test_phase1_explicit_aliases_match_by_major_id(self):
         cases = [
             ("tajrobi", 1, "دکتری عمومی پزشکی"),
+            ("tajrobi", 17, "تکنولوژی پرتوشناسی"),
+            ("tajrobi", 17, "تکنولوژي پرتوشناسي"),
+            ("tajrobi", 18, "تکنولوژی پرتودرمانی"),
+            ("tajrobi", 18, "تکنولوژي پرتودرماني"),
             ("ensani", 101, "کارشناسی حقوق"),
             ("ensani", 107, "مشاوره"),
         ]
@@ -108,6 +112,9 @@ class RecordCapacityDirectTests(unittest.TestCase):
                         "capacity": 1,
                     },
                 ),
+            ), patch(
+                "admission_capacity_record.load_record_capacity_rows",
+                return_value=(),
             ):
                 items = build_record_capacity_results(
                     major_ids=[major_id],

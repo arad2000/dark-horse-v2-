@@ -23,8 +23,10 @@ from admission_sanjesh_engine import (
     load_majors,
     _coefficient,
     _resolve_record_bomi,
+    _normalize_text,
+    _canonical_province,
 )
-from admission_exam_capacity import build_exam_capacity_results
+from admission_exam_capacity import build_exam_capacity_results, load_exam_capacity_rows
 from main_v2 import app
 
 
@@ -1425,7 +1427,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_wave_a_deferred_catalog_entries_177_to_189_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 190)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 195)})
         for major_id in range(177, 190):
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
@@ -1454,6 +1456,91 @@ class AdmissionChanceApiTests(unittest.TestCase):
                 self.assertTrue(all(item["major_name"] == booklet_name for item in items))
                 self.assertTrue(all(item["sanjesh_code"] for item in items))
                 self.assertTrue(all(item["period"] == "روزانه" for item in items))
+
+
+    def test_wave_b_deferred_catalog_entries_190_to_194_have_no_fabricated_weights(self):
+        majors = load_majors()
+        self.assertEqual(set(majors), {str(i) for i in range(1, 195)})
+        self.assertEqual(
+            [majors[str(i)]["name"] for i in range(190, 195)],
+            [
+                "ساخت پروتزهای دندانی",
+                "بیولوژی و کنترل ناقلین بیماری‌ها",
+                "بهداشت مواد غذایی",
+                "بهداشت و بازرسی گوشت",
+                "دکتری پیوسته بیوتکنولوژی",
+            ],
+        )
+        for major_id in range(190, 195):
+            with self.subTest(major_id=major_id):
+                major = majors[str(major_id)]
+                self.assertFalse(major["motive_driven"])
+                self.assertEqual(major["micro_motive_codes"], [])
+                self.assertEqual(major["strategy_weights"], [])
+                self.assertEqual(major["value_weights"], {})
+                self.assertEqual(major["weights_version"], "deferred_catalog_only_v1")
+
+    def test_radiology_exam_booklet_alias_id_17_when_matching_source_row_exists(self):
+        aliases = {
+            _normalize_text("تکنولوژی پرتوشناسی"),
+            _normalize_text("تکنولوژي پرتوشناسي"),
+        }
+        matching_rows = [
+            row for row in load_exam_capacity_rows("tajrobi")
+            if str(row.get("admission_type") or "").strip() == EXAM_METHOD
+            and _normalize_text(row.get("major_name") or "") in aliases
+            and _canonical_province(str(row.get("province") or "").strip()) is not None
+            and str(row.get("period") or "").strip() == "روزانه"
+            and str(row.get("sanjesh_code") or "").strip()
+        ]
+        if not matching_rows:
+            self.skipTest("No valid tajrobi/daytime exam-capacity row for the requested radiology alias is present in source.")
+        source = matching_rows[0]
+        province = _canonical_province(str(source["province"]).strip())
+        items = build_exam_capacity_results(
+            group="tajrobi",
+            major_ids=[17],
+            province=province,
+            periods=[str(source["period"]).strip()],
+            limit=50,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertTrue(any(_normalize_text(item["major_name"]) in aliases for item in items))
+
+    def test_wave_b_tajrobi_exam_capacity_id_190_or_191_returns_source_rows(self):
+        majors = load_majors()
+        name_to_id = {
+            _normalize_text(majors[str(major_id)]["name"]): major_id
+            for major_id in (190, 191)
+        }
+        candidates = [
+            row for row in load_exam_capacity_rows("tajrobi")
+            if str(row.get("admission_type") or "").strip() == EXAM_METHOD
+            and _normalize_text(row.get("major_name") or "") in name_to_id
+            and _canonical_province(str(row.get("province") or "").strip()) is not None
+            and str(row.get("period") or "").strip()
+            and str(row.get("period") or "").strip() != "نامشخص"
+            and str(row.get("sanjesh_code") or "").strip()
+        ]
+        self.assertTrue(
+            candidates,
+            "Expected a real tajrobi exam-capacity row for major 190 or 191; do not fabricate source rows.",
+        )
+        source = candidates[0]
+        major_id = name_to_id[_normalize_text(source["major_name"])]
+        items = build_exam_capacity_results(
+            group="tajrobi",
+            major_ids=[major_id],
+            province=_canonical_province(str(source["province"]).strip()),
+            periods=[str(source["period"]).strip()],
+            limit=50,
+        )
+        self.assertGreater(len(items), 0)
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertTrue(
+            all(_normalize_text(item["major_name"]) == _normalize_text(majors[str(major_id)]["name"]) for item in items)
+        )
 
 
 if __name__ == "__main__":

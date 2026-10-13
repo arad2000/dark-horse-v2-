@@ -222,6 +222,7 @@ def main() -> None:
 
     motive_codes = [str(x.get("code") or "").strip() for x in motives]
     major_ids = [x.get("id") if x.get("id") is not None else x.get("major_id") for x in majors]
+    major_names = [str(x.get("name") or x.get("major_name") or "").strip() for x in majors]
     branch_names = [str(x.get("name") or x.get("branch_name") or "").strip() for x in branches]
     value_codes = [str(x.get("code") or "").strip() for x in values]
 
@@ -232,7 +233,7 @@ def main() -> None:
         "value_poles": len(values),
     }
 
-    expected_counts = {"micro_motives": 1099, "majors": 189, "value_poles": 30}
+    expected_counts = {"micro_motives": 1099, "majors": 194, "value_poles": 30}
     for name, expected in expected_counts.items():
         actual = report["counts"][name]
         if actual != expected:
@@ -242,6 +243,7 @@ def main() -> None:
     for label, values_ in (
         ("motive_codes", motive_codes),
         ("major_ids", [str(x) for x in major_ids]),
+        ("major_names", major_names),
         ("branch_names", branch_names),
         ("value_codes", value_codes),
     ):
@@ -250,9 +252,9 @@ def main() -> None:
             report["status"] = "FAIL"
             report["errors"].append(f"duplicate_{label}:{duplicates}")
 
-    if sorted(int(x) for x in major_ids if x is not None) != list(range(1, 190)):
+    if sorted(int(x) for x in major_ids if x is not None) != list(range(1, 195)):
         report["status"] = "FAIL"
-        report["errors"].append("major_ids_not_exact_1_to_189")
+        report["errors"].append("major_ids_not_exact_1_to_194")
 
     trait_ok, trait_report, trait_errors = validate_trait_map(payloads["trait_map"])
     report["strategy_trait_map"] = trait_report
