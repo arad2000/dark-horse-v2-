@@ -16,6 +16,7 @@ def load_json(name: str):
 
 
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
+BASELINE_MAJOR_1_194_FINGERPRINT = "17c9b97787919b0a"
 
 
 def _is_phase2_stub_reference(major: dict, code: str) -> bool:
@@ -51,9 +52,9 @@ def test_micro_motive_references():
 
 def test_phase2_wave1_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    assert len(majors) == 194
+    assert len(majors) == 204
     ids = sorted(int(item["id"]) for item in majors)
-    assert ids == list(range(1, 195))
+    assert ids == list(range(1, 205))
 
 
 def test_wave_a_deferred_catalog_contract():
@@ -99,6 +100,74 @@ def test_wave_b_deferred_catalog_contract():
     assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_b)
 
 
+
+
+def _canonical_value(value):
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return f"#{int(float(value) * 1_000_000 + 0.5)}"
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(value, list):
+        return "[" + ",".join(_canonical_value(item) for item in value) + "]"
+    if isinstance(value, dict):
+        return "{" + ",".join(
+            f"{json.dumps(str(key), ensure_ascii=False)}:{_canonical_value(value[key])}"
+            for key in sorted(value)
+        ) + "}"
+    return str(value)
+
+
+def _catalog_fingerprint(majors, max_id=194):
+    rows = sorted(
+        (
+            item for item in majors
+            if 1 <= int(item.get("id") or item.get("major_id") or 0) <= max_id
+        ),
+        key=lambda item: int(item.get("id") or item.get("major_id") or 0),
+    )
+    payload = "\\n".join(_canonical_value(item) for item in rows)
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in payload:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+
+def test_wave_c_preserves_entire_existing_catalog_1_to_194():
+    majors = load_json("majors_database_v2.json")
+    assert len([item for item in majors if 1 <= int(item["id"]) <= 194]) == 194
+    assert _catalog_fingerprint(majors, max_id=194) == BASELINE_MAJOR_1_194_FINGERPRINT
+
+
+def test_wave_c_deferred_catalog_contract():
+    majors = load_json("majors_database_v2.json")
+    wave_c = [m for m in majors if int(m["id"]) in range(195, 205)]
+    assert len(wave_c) == 10
+    assert [int(m["id"]) for m in wave_c] == list(range(195, 205))
+    assert [m["name"] for m in wave_c] == [
+        "مهندسی حرفه‌ای کامپیوتر",
+        "علم اطلاعات و دانش‌شناسی",
+        "مهندسی حرفه‌ای معماری",
+        "مهندسی ساخت و تولید",
+        "مهندسی هوانوردی و مراقبت پرواز",
+        "فناوری اطلاعات و ارتباطات",
+        "خلبانی بالگرد",
+        "خلبانی پهپاد",
+        "هوانوردی خلبانی",
+        "مهندسی نگهداری و تعمیر بالگرد",
+    ]
+    assert all(m.get("motive_driven") is False for m in wave_c)
+    assert all(m.get("micro_motive_codes") == [] for m in wave_c)
+    assert all(m.get("strategy_weights") == [] for m in wave_c)
+    assert all(m.get("value_weights") == {} for m in wave_c)
+    assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_c)
+
 def test_major_names_are_unique_for_uq_major_name():
     majors = load_json("majors_database_v2.json")
     names = [str(item.get("name") or "").strip() for item in majors]
@@ -115,6 +184,8 @@ if __name__ == "__main__":
     test_phase2_wave1_catalog_contract()
     test_wave_a_deferred_catalog_contract()
     test_wave_b_deferred_catalog_contract()
+    test_wave_c_preserves_entire_existing_catalog_1_to_194()
+    test_wave_c_deferred_catalog_contract()
     test_major_names_are_unique_for_uq_major_name()
     test_biotechnology_references_are_canonical()
     print("REFERENCE_DATA_INTEGRITY=PASS")
