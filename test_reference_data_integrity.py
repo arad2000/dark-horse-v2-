@@ -18,6 +18,7 @@ def load_json(name: str):
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
 BASELINE_MAJOR_1_194_FINGERPRINT = "5189181b82aab0e6"
 BASELINE_MAJOR_1_204_FINGERPRINT = "749c599468ce116b"
+BASELINE_MAJOR_1_215_FINGERPRINT = "4a75d6d48c2b07ce"
 
 
 def _is_phase2_stub_reference(major: dict, code: str) -> bool:
@@ -51,11 +52,11 @@ def test_micro_motive_references():
     assert not missing, f"Missing micro-motive references: {missing}"
 
 
-def test_major_catalog_ids_are_contiguous_1_to_215():
+def test_major_catalog_ids_are_contiguous_1_to_230():
     majors = load_json("majors_database_v2.json")
-    assert len(majors) == 215
+    assert len(majors) == 230
     ids = sorted(int(item["id"]) for item in majors)
-    assert ids == list(range(1, 216))
+    assert ids == list(range(1, 231))
 
 
 def test_wave_a_deferred_catalog_contract():
@@ -151,6 +152,43 @@ def test_wave_d_preserves_entire_existing_catalog_1_to_204():
     assert _catalog_fingerprint(catalog_text, marker_id=205) == BASELINE_MAJOR_1_204_FINGERPRINT
 
 
+def test_wave_e_preserves_entire_existing_catalog_1_to_215():
+    majors = load_json("majors_database_v2.json")
+    assert len([item for item in majors if 1 <= int(item["id"]) <= 215]) == 215
+    catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
+    assert _catalog_fingerprint(catalog_text, marker_id=216) == BASELINE_MAJOR_1_215_FINGERPRINT
+
+
+def test_wave_e_deferred_catalog_contract():
+    majors = load_json("majors_database_v2.json")
+    wave_e = [m for m in majors if int(m["id"]) in range(216, 231)]
+    assert len(wave_e) == 15
+    assert [int(m["id"]) for m in wave_e] == list(range(216, 231))
+    assert [m["name"] for m in wave_e] == [
+        "مهندسی تولید و ژنتیک گیاهی",
+        "مهندسی طبیعت",
+        "علوم و مهندسی جنگل",
+        "مهندسی فضای سبز",
+        "مهندسی مکانیزاسیون کشاورزی",
+        "زیست‌شناسی دریا",
+        "مهندسی گیاه‌پزشکی",
+        "کاردانی معماری",
+        "کاردانی امور بانکی",
+        "کاردانی امور مالی و مالیاتی",
+        "کاردانی برق — قدرت",
+        "کاردانی بیمه",
+        "کاردانی کارهای عمومی ساختمان",
+        "کاردانی ارتباطات و فناوری اطلاعات",
+        "کاردانی نقشه‌برداری — ژئودزی",
+    ]
+    assert all(m.get("motive_driven") is False for m in wave_e)
+    assert all(m.get("handcrafted") is False for m in wave_e)
+    assert all(m.get("micro_motive_codes") == [] for m in wave_e)
+    assert all(m.get("strategy_weights") == [] for m in wave_e)
+    assert all(m.get("value_weights") == {} for m in wave_e)
+    assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_e)
+
+
 def test_wave_c_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
     wave_c = [m for m in majors if int(m["id"]) in range(195, 205)]
@@ -206,13 +244,15 @@ def test_biotechnology_references_are_canonical():
 
 if __name__ == "__main__":
     test_micro_motive_references()
-    test_major_catalog_ids_are_contiguous_1_to_215()
+    test_major_catalog_ids_are_contiguous_1_to_230()
     test_wave_a_deferred_catalog_contract()
     test_wave_b_deferred_catalog_contract()
     test_wave_c_preserves_entire_existing_catalog_1_to_194()
     test_wave_d_preserves_entire_existing_catalog_1_to_204()
+    test_wave_e_preserves_entire_existing_catalog_1_to_215()
     test_wave_c_deferred_catalog_contract()
     test_wave_d_deferred_catalog_contract()
+    test_wave_e_deferred_catalog_contract()
     test_major_names_are_unique_for_uq_major_name()
     test_biotechnology_references_are_canonical()
     print("REFERENCE_DATA_INTEGRITY=PASS")
