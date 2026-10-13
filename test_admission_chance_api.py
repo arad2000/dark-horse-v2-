@@ -1604,6 +1604,10 @@ class AdmissionChanceApiTests(unittest.TestCase):
             ("riazi", 62, "مهندسي و علم مواد"),
             ("riazi", 44, "مهندسي رايانه (نرم افزار)"),
             ("riazi", 44, "مهندسی رایانه (نرم افزار)"),
+            ("riazi", 195, "مهندسي حرفهاي کامپيوتر"),
+            ("riazi", 195, "مهندسی حرفهای کامپیوتر"),
+            ("riazi", 195, "مهندسی حرفه ای کامپیوتر"),
+            ("riazi", 195, "مهندسي حرفه اي کامپيوتر"),
         ]
         for group, major_id, booklet_name in cases:
             with self.subTest(group=group, major_id=major_id, booklet_name=booklet_name):
@@ -1689,7 +1693,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertIn(
             source["sanjesh_code"],
             {item["sanjesh_code"] for item in items},
-            "Real row exists (e.g. major_name='مهندسي حرفهاي کامپيوتر'), but id=195 does not match the catalog spelling 'مهندسی حرفه‌ای کامپیوتر'. Do not add an unapproved alias outside the locked list.",
+            "Real booklet row major_name='مهندسي حرفهاي کامپيوتر' must resolve through the documented major_id=195 alias.",
         )
 
     def test_wave_c_real_exam_capacity_id199_or_198_returns_source_rows(self):
