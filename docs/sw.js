@@ -1,7 +1,7 @@
-/* Dark Horse SW v65 — drop stale PWA caches
- * Do not precache mutable JS; HTML/JS/CSS use network-first.
+/* Dark Horse SW v66 — stale-while-revalidate for versioned assets
+ * index.html: network-first. Versioned assets (?v=): cache-first + background refresh.
  */
-const CACHE = 'darkhorse-v65';
+const CACHE = 'darkhorse-v66';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
@@ -37,21 +37,46 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  var path = url.pathname + url.search;
-  var isFresh = /\.(js|css)(\?|$)/i.test(path) ||
-    /index\.html$/i.test(url.pathname) ||
-    url.pathname === '/' ||
-    /\/docs\/?$/.test(url.pathname);
-
-  if (isFresh) {
-    e.respondWith(
-      fetch(req, { cache: 'no-store' }).catch(function () {
-        return caches.match(req);
-      })
-    );
+  // HTML shell: network-first, cache as offline fallback.
+  if (/index\.html$/i.test(url.pathname) ||
+      url.pathname === '/' ||
+      /\/docs\/?$/.test(url.pathname)) {
+    var htmlNetwork = fetch(req, { cache: 'no-store' }).then(function (res) {
+      if (res && res.status === 200) {
+        return caches.open(CACHE).then(function (c) {
+          return c.put(req, res.clone()).catch(function () {});
+        }).then(function () { return res; });
+      }
+      return res;
+    });
+    e.respondWith(htmlNetwork.catch(function () {
+      return caches.match(req).then(function (r) { return r || caches.match('./index.html'); });
+    }));
     return;
   }
 
+  // Versioned assets (?v=) and static media: stale-while-revalidate —
+  // serve cached content immediately, while keeping the background refresh alive.
+  if (/[?&]v=/.test(url.search) || /\.(png|jpe?g|svg|webp|woff2?|json)$/i.test(url.pathname)) {
+    var cachePromise = caches.open(CACHE);
+    var networkPromise = cachePromise.then(function (c) {
+      return fetch(req).then(function (res) {
+        if (res && res.status === 200 && res.type === 'basic') {
+          return c.put(req, res.clone()).catch(function () {}).then(function () { return res; });
+        }
+        return res;
+      });
+    });
+    e.waitUntil(networkPromise.then(function () {}, function () {}));
+    e.respondWith(cachePromise.then(function (c) {
+      return c.match(req).then(function (cached) {
+        return cached || networkPromise;
+      });
+    }));
+    return;
+  }
+
+  // Everything else: network-first with cache fallback.
   e.respondWith(
     fetch(req).then(function (res) {
       if (res && res.status === 200 && res.type === 'basic') {
