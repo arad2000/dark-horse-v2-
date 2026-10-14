@@ -13,10 +13,29 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="اسب سیاه — هدایت تحصیلی">
   <meta name="mobile-web-app-capable" content="yes">
-  <script src="payment_hop_boot.js?v=3"></script>
+  <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(window.location.search || '');
+        var raw = params.get('dh_pay');
+        if (!raw) return;
+        var decoded;
+        try { decoded = decodeURIComponent(raw); } catch (_) { return; }
+        var target = new URL(String(decoded), window.location.href);
+        var host = String(target.hostname || '').toLowerCase();
+        var validHost = host === 'zarinpal.com' || host === 'www.zarinpal.com' ||
+          host === 'sandbox.zarinpal.com' || host === 'payment.zarinpal.com' ||
+          host === 'www.payment.zarinpal.com';
+        if (target.protocol === 'https:' && validHost) {
+          document.documentElement.style.visibility = 'hidden';
+        }
+      } catch (_) {}
+    })();
+  </script>
+  <script defer src="payment_hop_boot.js?v=3" onerror="document.documentElement.style.visibility='';document.documentElement.style.removeProperty('visibility')"></script>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="mobile-pwa.css">
-  <link rel="stylesheet" href="shell.css?v=65">
+  <link rel="stylesheet" href="mobile-pwa.css" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="shell.css?v=65" media="print" onload="this.onload=null;this.media='all'">
   <link rel="stylesheet" href="home_update_banner_1405.css?v=1" media="print" onload="this.onload=null;this.media='all'">
   <link rel="stylesheet" href="profile_ux_v1.css?v=5" media="print" onload="this.onload=null;this.media='all'">
   <link rel="stylesheet" href="genz_results_layer.css?v=1" media="print" onload="this.onload=null;this.media='all'">
