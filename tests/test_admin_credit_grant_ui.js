@@ -137,6 +137,8 @@ async function loadAuth(fetchImpl) {
   assert.match(indexSource, /pwa-boot\.js\?v=67/);
   assert.match(swSource, /darkhorse-v67/);
   assert.match(indexSource, /id="dh-startup-home"/);
+  assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
+  assert.match(indexSource, /href="shell\.css\?v=65" media="print"/);
   assert.ok(indexSource.indexOf('id="dh-startup-home"') < indexSource.indexOf('<script defer src="data.js?'));
   assert.match(swSource, /if \(cached\) return cached;/);
   assert.match(swSource, /return htmlNetwork\.catch/);
