@@ -13,10 +13,10 @@
     for (var i = 0; i < scripts.length; i += 1) {
       var src = scripts[i].src || '';
       if (/admission_chance_ui\.js(?:\?|$)/i.test(src)) {
-        try { return new URL('majors_catalog_ui_v1.json?v=6', src).href; } catch (_) {}
+        try { return new URL('majors_catalog_ui_v1.json?v=7', src).href; } catch (_) {}
       }
     }
-    return 'majors_catalog_ui_v1.json?v=6';
+    return 'majors_catalog_ui_v1.json?v=7';
   }());
   var majorCatalogPromise = null;
 
