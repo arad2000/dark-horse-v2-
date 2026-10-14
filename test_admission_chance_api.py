@@ -1427,7 +1427,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_wave_a_deferred_catalog_entries_177_to_189_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 216)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 231)})
         for major_id in range(177, 190):
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
@@ -1460,7 +1460,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_wave_b_deferred_catalog_entries_190_to_194_have_no_fabricated_weights(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 216)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 231)})
         self.assertEqual(
             [majors[str(i)]["name"] for i in range(190, 195)],
             [
@@ -1574,7 +1574,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
     def test_loader_catalog_ids_are_exactly_1_to_215_and_wave_c_stays_unweighted(self):
         majors = load_majors()
-        self.assertEqual(set(majors), {str(i) for i in range(1, 216)})
+        self.assertEqual(set(majors), {str(i) for i in range(1, 231)})
         expected_names = [
             "مهندسی حرفه‌ای کامپیوتر",
             "علم اطلاعات و دانش‌شناسی",
@@ -1781,6 +1781,24 @@ class AdmissionChanceApiTests(unittest.TestCase):
         self.assertIn(source["sanjesh_code"], {item["sanjesh_code"] for item in items})
         self.assertTrue(all(item["sanjesh_code"] for item in items))
 
+
+    def test_wave_e_veterinary_alias_resolves_only_dvm_not_veterinary_laboratory(self):
+        vet_items = build_exam_capacity_results(
+            group="tajrobi", major_ids=[4], province="قم", periods=["روزانه"], limit=100
+        )
+        vet_codes = {str(item.get("sanjesh_code") or "").strip() for item in vet_items}
+        self.assertIn("34022", vet_codes)
+        self.assertNotIn("34027", vet_codes)
+
+        medicine_items = build_exam_capacity_results(
+            group="tajrobi", major_ids=[1], province="قم", periods=["روزانه"], limit=100
+        )
+        medicine_codes = {str(item.get("sanjesh_code") or "").strip() for item in medicine_items}
+        self.assertNotIn("34022", medicine_codes)
+        self.assertNotIn("34027", medicine_codes)
+
+        id1_aliases = GROUP_MAJOR_ALIASES.get("tajrobi", {}).get(1, set())
+        self.assertFalse(any("گیاه" in alias or "آزمایشگاهی دامپزشکی" in alias for alias in id1_aliases))
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

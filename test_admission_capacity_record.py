@@ -542,5 +542,50 @@ class RecordCapacityApiTests(unittest.TestCase):
         self.assertTrue(any(item["major_name"] == "گرافيک" for item in graphic_items))
 
 
+class WaveERealRecordCapacityTests(unittest.TestCase):
+    def _codes(self, major_id, province, group, period="روزانه"):
+        rows = build_record_capacity_results(
+            major_ids=[major_id],
+            province=province,
+            periods=[period],
+            group=group,
+        )
+        return {str(row.get("sanjesh_code") or "").strip() for row in rows}
+
+    def test_real_record_capacity_rows_match_216_and_223(self):
+        self.assertIn("10014", self._codes(216, "آذربایجان شرقی", "riazi"))
+        self.assertIn("10506", self._codes(223, "آذربایجان شرقی", "riazi"))
+
+    def test_horticulture_69_and_fisheries_71_match_official_booklet_names(self):
+        self.assertIn("10011", self._codes(69, "آذربایجان شرقی", "riazi"))
+        self.assertIn("10988", self._codes(71, "اصفهان", "riazi"))
+
+    def test_plant_pathology_and_veterinary_laboratory_never_alias_to_id_1(self):
+        plant_source_rows = load_group_record_capacity_rows("riazi")
+        self.assertTrue(
+            any(str(row.get("sanjesh_code") or "").strip() == "10017" for row in plant_source_rows),
+            "Real booklet record 10017 must remain present in the source.",
+        )
+        medicine_codes = self._codes(1, "آذربایجان شرقی", "riazi")
+        self.assertNotIn("10017", medicine_codes)
+
+        vet_lab_source_rows = load_group_record_capacity_rows("ensani")
+        self.assertTrue(
+            any(str(row.get("sanjesh_code") or "").strip() == "11749" for row in vet_lab_source_rows),
+            "Real veterinary-laboratory source record 11749 must remain present.",
+        )
+        vet_lab_codes = self._codes(1, "البرز", "ensani")
+        vet_codes = self._codes(4, "البرز", "ensani")
+        self.assertNotIn("11749", vet_lab_codes)
+        self.assertNotIn("11749", vet_codes)
+
+        id1_aliases = {
+            alias
+            for aliases_by_major in __import__("admission_exam_capacity").GROUP_MAJOR_ALIASES.values()
+            for alias in aliases_by_major.get(1, set())
+        }
+        self.assertFalse(any("گیاه" in alias or "آزمایشگاهی دامپزشکی" in alias for alias in id1_aliases))
+
+
 if __name__ == "__main__":
     unittest.main()
