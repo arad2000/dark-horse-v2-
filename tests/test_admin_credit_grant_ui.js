@@ -134,8 +134,12 @@ async function loadAuth(fetchImpl) {
   assert.match(adminSource, /class="copy-user-id"/);
   assert.match(adminSource, /api\/v1\/admin\/credits\/grant/);
   assert.match(adminSource, /user_id:userId/);
-  assert.match(indexSource, /pwa-boot\.js\?v=66/);
-  assert.match(swSource, /darkhorse-v66/);
+  assert.match(indexSource, /pwa-boot\.js\?v=67/);
+  assert.match(swSource, /darkhorse-v67/);
+  assert.match(indexSource, /id="dh-startup-home"/);
+  assert.ok(indexSource.indexOf('id="dh-startup-home"') < indexSource.indexOf('<script defer src="data.js?'));
+  assert.match(swSource, /return cached \|\| htmlNetwork/);
+  assert.match(swSource, /var networkFetch = isJson \? fetch\(req, \{ cache: 'no-store' \}\) : fetch\(req\);/);
 
 
   console.log('admin_credit_grant_ui regression: PASS');
