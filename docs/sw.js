@@ -41,9 +41,9 @@ self.addEventListener('fetch', function (e) {
 
   // HTML shell: serve the last known home immediately, then refresh it in the background.
   // Only HTML changes strategy here; JSON remains network-only with cache: 'no-store'.
-  if (/index\\.html$/i.test(url.pathname) ||
+  if (/index\.html$/i.test(url.pathname) ||
       url.pathname === '/' ||
-      /\\/docs\\/?$/.test(url.pathname)) {
+      /\/docs\/?$/.test(url.pathname)) {
     var htmlNetwork = fetch(req, { cache: 'no-store' });
     var htmlRefresh = htmlNetwork.then(function (res) {
       if (res && res.status === 200 && res.type === 'basic') {
