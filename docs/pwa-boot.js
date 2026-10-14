@@ -1,4 +1,4 @@
-/* pwa-boot.js v66 — force SW v66 cache drop + one reload */
+/* pwa-boot.js v67 — instant cached HTML shell + one reload */
 (function () {
   'use strict';
 
@@ -14,7 +14,7 @@
   if (window.__dhIsInstalled) document.documentElement.classList.add('dh-installed');
 
   if ('serviceWorker' in navigator) {
-    var SW_URL = './sw.js?v=66';
+    var SW_URL = './sw.js?v=67';
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
         try { reg.update(); } catch (e) {}
@@ -28,8 +28,8 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v66') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v66', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v67') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v67', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();
