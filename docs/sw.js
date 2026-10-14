@@ -37,6 +37,8 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
+  var isJson = /\.json$/i.test(url.pathname);
+
   // HTML shell: network-first, cache as offline fallback.
   if (/index\.html$/i.test(url.pathname) ||
       url.pathname === '/' ||
@@ -57,10 +59,10 @@ self.addEventListener('fetch', function (e) {
 
   // Versioned assets (?v=) and static media: stale-while-revalidate —
   // serve cached content immediately, while keeping the background refresh alive.
-  if (/[?&]v=/.test(url.search) || /\.(png|jpe?g|svg|webp|woff2?|json)$/i.test(url.pathname)) {
+  if (!isJson && (/[?&]v=/.test(url.search) || /\.(png|jpe?g|svg|webp|woff2?)$/i.test(url.pathname))) {
     var cachePromise = caches.open(CACHE);
     var networkPromise = cachePromise.then(function (c) {
-      return fetch(req).then(function (res) {
+      return fetch(req, { cache: 'no-store' }).then(function (res) {
         if (res && res.status === 200 && res.type === 'basic') {
           return c.put(req, res.clone()).catch(function () {}).then(function () { return res; });
         }
@@ -77,8 +79,9 @@ self.addEventListener('fetch', function (e) {
   }
 
   // Everything else: network-first with cache fallback.
+  var networkFetch = isJson ? fetch(req, { cache: 'no-store' }) : fetch(req);
   e.respondWith(
-    fetch(req).then(function (res) {
+    networkFetch.then(function (res) {
       if (res && res.status === 200 && res.type === 'basic') {
         var copy = res.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
