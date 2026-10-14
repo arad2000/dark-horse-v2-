@@ -138,7 +138,8 @@ async function loadAuth(fetchImpl) {
   assert.match(swSource, /darkhorse-v67/);
   assert.match(indexSource, /id="dh-startup-home"/);
   assert.ok(indexSource.indexOf('id="dh-startup-home"') < indexSource.indexOf('<script defer src="data.js?'));
-  assert.match(swSource, /return cached \|\| htmlNetwork/);
+  assert.match(swSource, /if \(cached\) return cached;/);
+  assert.match(swSource, /return htmlNetwork\.catch/);
   assert.match(swSource, /var networkFetch = isJson \? fetch\(req, \{ cache: 'no-store' \}\) : fetch\(req\);/);
 
 
