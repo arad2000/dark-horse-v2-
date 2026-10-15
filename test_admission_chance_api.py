@@ -1425,16 +1425,41 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
 
 
-    def test_wave_a_deferred_catalog_entries_177_to_189_have_no_fabricated_weights(self):
+    def test_wave_a_activation_is_limited_to_approved_f1_targets(self):
         majors = load_majors()
         self.assertEqual(set(majors), {str(i) for i in range(1, 231)})
+        approved_ids = {183, 184, 185, 186, 187, 189}
+        self.assertEqual(
+            {int(major_id) for major_id, major in majors.items() if major["motive_driven"] and 177 <= int(major_id) <= 189},
+            approved_ids,
+        )
         for major_id in range(177, 190):
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
-                self.assertFalse(major["motive_driven"])
-                self.assertEqual(major["micro_motive_codes"], [])
-                self.assertEqual(major["strategy_weights"], [])
-                self.assertEqual(major["value_weights"], {})
+                if major_id not in approved_ids:
+                    self.assertFalse(major["motive_driven"])
+                    self.assertFalse(major["handcrafted"])
+                    self.assertEqual(major["micro_motive_codes"], [])
+                    self.assertEqual(major["strategy_weights"], [])
+                    self.assertEqual(major["value_weights"], {})
+                    self.assertEqual(major["weights_version"], "deferred_catalog_only_v1")
+                    continue
+                self.assertTrue(major["motive_driven"])
+                self.assertTrue(major["handcrafted"])
+                self.assertEqual(len(major["micro_motive_codes"]), 7)
+                self.assertEqual(major["weights_version"], "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2")
+                self.assertEqual(len(major["strategy_weights"]), 25)
+                self.assertTrue(all(len(row) == 5 for row in major["strategy_weights"]))
+                self.assertEqual(len(major["value_weights"]), 30)
+                self.assertNotEqual(major.get("archetype"), "deferred_catalog_only")
+                self.assertTrue(major.get("fulfillment_source"))
+
+        # Explicit safety assertion: the excluded row remains empty and inactive.
+        excluded = majors["188"]
+        self.assertFalse(excluded["motive_driven"])
+        self.assertEqual(excluded["micro_motive_codes"], [])
+        self.assertEqual(excluded["strategy_weights"], [])
+        self.assertEqual(excluded["value_weights"], {})
 
     def test_wave_a_exam_capacity_aliases_177_189_match_official_booklet_names(self):
         cases = [
