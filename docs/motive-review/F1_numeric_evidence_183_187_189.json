@@ -57,13 +57,18 @@
     "value_poles": {
       "path": "value_poles_v2.json",
       "sha": "251d435d57b90e325ff671a4f8c69c530de61494"
+    },
+    "value_cue_rubric": {
+      "path": "docs/motive-review/F1_value_cue_rubric.json",
+      "sha": "pending-fetch"
     }
   },
   "method": {
     "motive_tiers": "1.0 core action/object/reward; 0.9 required operational/control step; 0.7 supporting context/sensory.",
     "strategy": "Weighted trait prevalence from explicit per-code trait tags; option score is mean prevalence of exact trait_map labels, normalized to 1; low confidence (<0.70) blends with mean same option of three neighbors.",
     "values": "Direct text cue=1, related task trait=0.5, otherwise 0; raw pole weight=0.25+0.70×weighted mean; low evidence coverage is neighbor-adjusted and work-arrangement poles confidence-capped.",
-    "separation": "Provisional: Strategy similarity = 1−mean total-variation across 25 distributions; Value similarity = 1−mean absolute difference across 30 poles; composite is mean. DH-013 states thresholds but not exact similarity formula; reviewers must approve/replace."
+    "separation": "Provisional: Strategy similarity = 1−mean total-variation across 25 distributions; Value similarity = 1−mean absolute difference across 30 poles; composite is mean. DH-013 states thresholds but not exact similarity formula; reviewers must approve/replace.",
+    "value_detail": "The exact 30-pole cue words, task traits and confidence caps are in F1_value_cue_rubric.json; each per-major evidence JSON records the code references and match class."
   },
   "separation_comparisons": [
     [
@@ -238,5 +243,8 @@
   "counts": {
     "strategy_options": 750,
     "value_poles": 180
-  }
+  },
+  "shared_rubrics": [
+    "docs/motive-review/F1_value_cue_rubric.json"
+  ]
 }
