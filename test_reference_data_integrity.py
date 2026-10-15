@@ -171,17 +171,17 @@ def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
     for major in majors:
         if int(major.get("id") or 0) in F1_OWNER_APPROVED_STAGING_IDS:
             major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
-    return json.dumps(majors, ensure_ascii=False, indent=2) + "\\n"
+    return json.dumps(majors, ensure_ascii=False, indent=2) + "\n"
 
 
 def _catalog_fingerprint(major_json_text, marker_id=195):
     normalized_text = _restore_f1_approved_rows_for_historical_fingerprint(major_json_text)
-    marker = f'\\n  {{\\n    "id": {marker_id},'
+    marker = f'\n  {{\n    "id": {marker_id},'
     prefix, found, _ = normalized_text.partition(marker)
     assert found, f"Baseline marker for major {marker_id} is missing"
     prefix = prefix.rstrip()
     assert prefix.endswith(","), "Baseline catalog prefix is malformed"
-    baseline_text = prefix[:-1] + "\\n]\\n"
+    baseline_text = prefix[:-1] + "\n]\n"
     value = 0xCBF29CE484222325
     prime = 0x100000001B3
     mask = 0xFFFFFFFFFFFFFFFF
