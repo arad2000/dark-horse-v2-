@@ -1,0 +1,698 @@
+{
+  "schema": "DH-013-F2-identity-neighbor-v1",
+  "status": "CANDIDATE_ONLY_OWNER_AND_INDEPENDENT_REVIEW_REQUIRED",
+  "axes": [
+    "core_verb",
+    "dominant_object",
+    "dominant_reward",
+    "dominant_frustration",
+    "archetype",
+    "fulfillment"
+  ],
+  "score_scale": {
+    "0": "distinct operational meaning",
+    "1": "same operational meaning",
+    "0.5": "related but distinguishable"
+  },
+  "formula": {
+    "identity": "100 × mean six explicit identity-axis ratings",
+    "strategy": "100 × mean of 25 rows, each row is sum(min(option weights))",
+    "value": "100 × mean of 30 poles of (1 − absolute weight difference)",
+    "composite": "0.30×Strategy + 0.20×Value + 0.50×Identity",
+    "threshold": "65% is a provisional review line, not statistically validated."
+  },
+  "profiles": {
+    "47": {
+      "name": "مهندسی هوافضا",
+      "identity": "مهندسی هوافضا طراحی/تحلیل آیرودینامیک، سازه و عملکرد هواگرد را انجام می‌دهد.",
+      "core_verb": "طراحی و تحلیل مهندسی هواگرد",
+      "dominant_object": "هندسهٔ بال، جریان، سازه و عملکرد پروازی",
+      "dominant_reward": "عملکرد مهندسی قابل‌اندازه‌گیری",
+      "dominant_frustration": "ناپایداری یا فاصلهٔ مدل با آزمون",
+      "archetype": "فضا-پیمای-دقیق",
+      "fulfillment": "وقتی شبیه‌سازیِ CFD یک ایرفویل را اجرا می‌کند و می‌بیند که نیرویِ برآیِ آن در سرعتِ Mach 2، دقیقاً به اندازه‌ای است که برای پروازِ مافوق‌صوت نیاز دارد."
+    },
+    "199": {
+      "name": "مهندسی هوانوردی و مراقبت پرواز",
+      "identity": "مهندسی هوانوردی و مراقبت پرواز به شبکه و جریان هواگردها می‌نگرد: تحلیل ردها و مسیرها، توالی‌دادن حرکت‌ها، هماهنگی واگذاری کنترل و نگه‌داشتن جداسازی ایمن. نقش، سامانه‌ای و شبکه‌محور است؛ با هدایت مستقیم هواگرد در کابین یا تعمیر فیزیکی آن یکی نیست.",
+      "core_verb": "هماهنگ‌سازی جریان هواگردها و حفظ جداسازی ایمن در فضای هوایی؛ شیء اصلی، ردهای راداری/ADS-B، مسیرها، مجوزها و توالی ورود و خروج است.",
+      "dominant_object": "شبکهٔ فضای هوایی، ردهای هواگرد، مسیرها، مجوزها و توالی ورود/خروج",
+      "dominant_reward": "جریان ایمن و منظم ترافیک با جداسازی پایدار و واگذاری بی‌گسست کنترل",
+      "dominant_frustration": "تعارض مسیرها، دادهٔ دیرهنگام، واگذاری ناقص یا کاهش جداسازی",
+      "archetype": "هماهنگ‌گرِ فضای پرواز",
+      "fulfillment": "وقتی ردها و مجوزها سازگارند، جداسازی معتبر برقرار است و توالی ورود/خروج بدون تعارض پایدار می‌ماند."
+    },
+    "201": {
+      "name": "خلبانی بالگرد",
+      "identity": "خلبان بالگرد خودِ هواگرد سرنشین‌دار را در سه محور هدایت می‌کند و با ویژگی روتور، هاور، حرکت جانبی/عمودی، باد و محدودیت محل فرود تصمیم می‌گیرد. موفقیت در کنترل لحظه‌ای بالگرد و اجرای مأموریت پرواز است، نه برنامه‌ریزی شبکهٔ ترافیک یا نگهداری فنی.",
+      "core_verb": "هدایت مستقیم بالگرد با کنترل گام جمعی/دوری و پدال‌ها؛ مدیریت هاور، جابه‌جایی عمودی و فرود در محل‌های محدود.",
+      "dominant_object": "بالگرد، سامانهٔ روتور و مسیر عمودی/جانبی در هاور، تقرب و فرود",
+      "dominant_reward": "کنترل پایدار و دقیق بالگرد و فرود ایمن در محل متناسب با مأموریت",
+      "dominant_frustration": "از دست‌رفتن پایداری هاور، تغییر ناگهانی باد، محدودیت دید یا محل فرود نامناسب",
+      "archetype": "خلبانِ مانور عمودی",
+      "fulfillment": "وقتی بالگرد در هاور پایدار می‌ماند، مسیر عمودی/جانبی دقیق اجرا می‌شود و فرود در محدودهٔ تعیین‌شده با حاشیهٔ ایمنی انجام می‌گیرد."
+    },
+    "202": {
+      "name": "خلبانی پهپاد",
+      "identity": "راهبر پهپاد مأموریت یک سامانهٔ بی‌سرنشین را از ایستگاه زمینی یا کنترل‌گر هدایت می‌کند. محور کار، برنامه‌ریزی مأموریت، پایش تله‌متری/لینک، محدودیت باتری و حریم پرواز، حسگر و بازیابی امن است؛ نه کنترل فیزیکی از کابین سرنشین‌دار.",
+      "core_verb": "اجرای مأموریت پهپاد از راه دور با برنامه‌ریزی مسیر، پایش لینک و تله‌متری، باتری، حسگرها و محدودیت فضای هوایی.",
+      "dominant_object": "پهپاد، ایستگاه کنترل، لینک ارتباطی، تله‌متری، باتری و محمولهٔ حسگری",
+      "dominant_reward": "اجرای دقیق مأموریت بی‌سرنشین و بازگشت/فرود امن با دادهٔ قابل‌استفاده",
+      "dominant_frustration": "قطع لینک، افت باتری، انحراف مسیر، اخلال حسگر یا نقض محدودیت فضای هوایی",
+      "archetype": "هدایت‌گرِ مأموریت بی‌سرنشین",
+      "fulfillment": "وقتی مسیر و محمولهٔ مأموریت در محدودهٔ مجاز انجام می‌شوند، تله‌متری قابل‌اعتماد است و پهپاد به نقطهٔ بازگشت می‌رسد یا طبق رویهٔ اضطراری ایمن می‌شود."
+    },
+    "203": {
+      "name": "هوانوردی خلبانی",
+      "identity": "هوانوردی خلبانی در این کاتالوگ به هدایت هواگرد سرنشین‌دار با برنامه‌ریزی مسیر، عملکرد باند، کنترل مسیر پرواز و مدیریت کابین اشاره دارد. با خلبانی بالگرد در نوع مانور/هاور و با مراقبت پرواز در مالکیت شبکه‌ای مسیرها تفاوت دارد.",
+      "core_verb": "هدایت هواگرد سرنشین‌دار در پرواز با برنامه‌ریزی مسیر، مدیریت کابین و سامانه‌ها، عملکرد باند، صعود، کروز، تقرب و فرود.",
+      "dominant_object": "هواگرد سرنشین‌دار، کابین، برنامهٔ مسیر، باند و پروفایل پرواز",
+      "dominant_reward": "پرواز کنترل‌شده از پیش‌پرواز تا تقرب/فرود با مصرف و مسیر قابل‌پیش‌بینی",
+      "dominant_frustration": "خطای محاسبهٔ سوخت/هوا، انحراف مسیر، ناپایداری تقرب یا تصمیم دیرهنگام",
+      "archetype": "خلبانِ مسیر و کابین",
+      "fulfillment": "وقتی پیش‌پرواز و محاسبات سوخت/هوا کامل‌اند، پروفایل صعود و کروز پایدار است و تقرب و فرود با رویهٔ ایمن اجرا می‌شوند."
+    },
+    "204": {
+      "name": "مهندسی نگهداری و تعمیر بالگرد",
+      "identity": "مهندسی نگهداری و تعمیر بالگرد، وضعیت فیزیکی سامانه‌های روتور، انتقال قدرت، موتور، هیدرولیک و سازه را با دستورکار فنی و بازرسی بررسی می‌کند. خروجی، رفع عیب و مستندسازی بازگشت به خدمت است، نه هدایت بالگرد در هوا.",
+      "core_verb": "بازرسی، عیب‌یابی، تعمیر و ثبت فنی بالگرد برای اطمینان از آمادگی و استمرار صلاحیت پرواز.",
+      "dominant_object": "هواگرد در تعمیرگاه، روتور، جعبه‌دنده، موتور، سامانه‌ها و سوابق فنی",
+      "dominant_reward": "رفع ریشه‌ای عیب و تأیید بازگشت ایمن و مستند هواگرد به خدمت",
+      "dominant_frustration": "عیب متناوب، یافتهٔ بازرسی مبهم، سوابق ناقص یا تکرار خرابی پس از تعمیر",
+      "archetype": "نگهدارندهٔ صلاحیت پرواز",
+      "fulfillment": "وقتی عیب تشخیص و رفع شده، آزمون‌های پساتعمیر و بازبینی کامل‌اند و بازگشت به خدمت طبق رویهٔ مصوب مستند می‌شود."
+    }
+  },
+  "neighbor_contrasts": [
+    {
+      "target_id": 199,
+      "neighbor_id": 47,
+      "neighbor_name": "مهندسی هوافضا",
+      "contrast_sentence": "۴۷ طراحی/تحلیل هندسه و عملکرد هواگرد؛ ۱۹۹ جریان و جداسازی ترافیک را در شبکه هماهنگ می‌کند.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 8.33,
+      "strategy_similarity_pct": 71.11,
+      "value_similarity_pct": 78.13,
+      "matrix_only_mean_similarity_pct": 74.62,
+      "revised_composite_similarity_pct": 41.12,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 199,
+      "neighbor_id": 201,
+      "neighbor_name": "خلبانی بالگرد",
+      "contrast_sentence": "۱۹۹ جداسازی و جریان شبکهٔ هواگردها؛ ۲۰۱ کنترل مستقیم بالگرد و فرود.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 88.86,
+      "value_similarity_pct": 91.12,
+      "matrix_only_mean_similarity_pct": 89.99,
+      "revised_composite_similarity_pct": 44.88,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 199,
+      "neighbor_id": 202,
+      "neighbor_name": "خلبانی پهپاد",
+      "contrast_sentence": "۱۹۹ مجوزها و جریان فضای هوایی؛ ۲۰۲ هدایت پهپاد مشخص از راه دور.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 25,
+      "strategy_similarity_pct": 85.49,
+      "value_similarity_pct": 93.23,
+      "matrix_only_mean_similarity_pct": 89.36,
+      "revised_composite_similarity_pct": 56.79,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 199,
+      "neighbor_id": 203,
+      "neighbor_name": "هوانوردی خلبانی",
+      "contrast_sentence": "۱۹۹ جداسازی میان هواگردها؛ ۲۰۳ کنترل هواگرد از کابین.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 87.3,
+      "value_similarity_pct": 91.34,
+      "matrix_only_mean_similarity_pct": 89.32,
+      "revised_composite_similarity_pct": 44.46,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 199,
+      "neighbor_id": 204,
+      "neighbor_name": "مهندسی نگهداری و تعمیر بالگرد",
+      "contrast_sentence": "۱۹۹ ایمنی شبکه و ترافیک؛ ۲۰۴ سلامت فیزیکی و تعمیر هواگرد.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 87.3,
+      "value_similarity_pct": 93.39,
+      "matrix_only_mean_similarity_pct": 90.34,
+      "revised_composite_similarity_pct": 44.87,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 201,
+      "neighbor_id": 47,
+      "neighbor_name": "مهندسی هوافضا",
+      "contrast_sentence": "۴۷ عملکرد مهندسی هواگرد؛ ۲۰۱ هدایت بالگرد با کنترل روتور، هاور و فرود.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 67.28,
+      "value_similarity_pct": 73.21,
+      "matrix_only_mean_similarity_pct": 70.25,
+      "revised_composite_similarity_pct": 34.83,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 201,
+      "neighbor_id": 199,
+      "neighbor_name": "مهندسی هوانوردی و مراقبت پرواز",
+      "contrast_sentence": "۱۹۹ جداسازی و جریان شبکهٔ هواگردها؛ ۲۰۱ کنترل مستقیم بالگرد و فرود.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 88.86,
+      "value_similarity_pct": 91.12,
+      "matrix_only_mean_similarity_pct": 89.99,
+      "revised_composite_similarity_pct": 44.88,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 201,
+      "neighbor_id": 202,
+      "neighbor_name": "خلبانی پهپاد",
+      "contrast_sentence": "۲۰۱ بالگرد سرنشین‌دار و کنترل روتور/هاور؛ ۲۰۲ سامانهٔ بی‌سرنشین، لینک/باتری/تله‌متری.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 33.33,
+      "strategy_similarity_pct": 90.48,
+      "value_similarity_pct": 93.12,
+      "matrix_only_mean_similarity_pct": 91.8,
+      "revised_composite_similarity_pct": 62.43,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 201,
+      "neighbor_id": 203,
+      "neighbor_name": "هوانوردی خلبانی",
+      "contrast_sentence": "۲۰۱ بالگرد با هاور و مانور عمودی؛ ۲۰۳ هواگرد سرنشین‌دار با مسیر/کابین/باند/تقرب.",
+      "axis_scores": {
+        "core_verb": 1,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0.5,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 58.33,
+      "strategy_similarity_pct": 94.57,
+      "value_similarity_pct": 95.27,
+      "matrix_only_mean_similarity_pct": 94.92,
+      "revised_composite_similarity_pct": 76.59,
+      "proposed_threshold_pct": 65,
+      "above_threshold": true,
+      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 201,
+      "neighbor_id": 204,
+      "neighbor_name": "مهندسی نگهداری و تعمیر بالگرد",
+      "contrast_sentence": "۲۰۱ عملیات پرواز بالگرد؛ ۲۰۴ بازرسی/تعمیر و ثبت بازگشت به خدمت.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 85.32,
+      "value_similarity_pct": 89.37,
+      "matrix_only_mean_similarity_pct": 87.34,
+      "revised_composite_similarity_pct": 43.47,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 202,
+      "neighbor_id": 47,
+      "neighbor_name": "مهندسی هوافضا",
+      "contrast_sentence": "۴۷ مدل‌سازی عملکرد هواگرد؛ ۲۰۲ اجرای مأموریت پهپاد از راه دور با لینک و تله‌متری.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 16.67,
+      "strategy_similarity_pct": 67.12,
+      "value_similarity_pct": 77.51,
+      "matrix_only_mean_similarity_pct": 72.31,
+      "revised_composite_similarity_pct": 43.97,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 202,
+      "neighbor_id": 199,
+      "neighbor_name": "مهندسی هوانوردی و مراقبت پرواز",
+      "contrast_sentence": "۱۹۹ مجوزها و جریان فضای هوایی؛ ۲۰۲ هدایت پهپاد مشخص از راه دور.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 25,
+      "strategy_similarity_pct": 85.49,
+      "value_similarity_pct": 93.23,
+      "matrix_only_mean_similarity_pct": 89.36,
+      "revised_composite_similarity_pct": 56.79,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 202,
+      "neighbor_id": 201,
+      "neighbor_name": "خلبانی بالگرد",
+      "contrast_sentence": "۲۰۱ بالگرد سرنشین‌دار و کنترل روتور/هاور؛ ۲۰۲ سامانهٔ بی‌سرنشین، لینک/باتری/تله‌متری.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 33.33,
+      "strategy_similarity_pct": 90.48,
+      "value_similarity_pct": 93.12,
+      "matrix_only_mean_similarity_pct": 91.8,
+      "revised_composite_similarity_pct": 62.43,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 202,
+      "neighbor_id": 203,
+      "neighbor_name": "هوانوردی خلبانی",
+      "contrast_sentence": "۲۰۲ پهپاد از راه دور؛ ۲۰۳ هواگرد سرنشین‌دار از کابین.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 33.33,
+      "strategy_similarity_pct": 93.47,
+      "value_similarity_pct": 94.23,
+      "matrix_only_mean_similarity_pct": 93.85,
+      "revised_composite_similarity_pct": 63.55,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 202,
+      "neighbor_id": 204,
+      "neighbor_name": "مهندسی نگهداری و تعمیر بالگرد",
+      "contrast_sentence": "۲۰۲ اجرای مأموریت پهپاد با سامانه و لینک؛ ۲۰۴ رفع عیب و ثبت فنی هواگرد.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 90.32,
+      "value_similarity_pct": 94.15,
+      "matrix_only_mean_similarity_pct": 92.23,
+      "revised_composite_similarity_pct": 66.76,
+      "proposed_threshold_pct": 65,
+      "above_threshold": true,
+      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 203,
+      "neighbor_id": 47,
+      "neighbor_name": "مهندسی هوافضا",
+      "contrast_sentence": "۴۷ طراحی/تحلیل مهندسی؛ ۲۰۳ هدایت هواگرد سرنشین‌دار در پرواز.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 66.88,
+      "value_similarity_pct": 74.11,
+      "matrix_only_mean_similarity_pct": 70.5,
+      "revised_composite_similarity_pct": 34.89,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 203,
+      "neighbor_id": 199,
+      "neighbor_name": "مهندسی هوانوردی و مراقبت پرواز",
+      "contrast_sentence": "۱۹۹ جداسازی میان هواگردها؛ ۲۰۳ کنترل هواگرد از کابین.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 87.3,
+      "value_similarity_pct": 91.34,
+      "matrix_only_mean_similarity_pct": 89.32,
+      "revised_composite_similarity_pct": 44.46,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 203,
+      "neighbor_id": 201,
+      "neighbor_name": "خلبانی بالگرد",
+      "contrast_sentence": "۲۰۱ بالگرد با هاور و مانور عمودی؛ ۲۰۳ هواگرد سرنشین‌دار با مسیر/کابین/باند/تقرب.",
+      "axis_scores": {
+        "core_verb": 1,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0.5,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 58.33,
+      "strategy_similarity_pct": 94.57,
+      "value_similarity_pct": 95.27,
+      "matrix_only_mean_similarity_pct": 94.92,
+      "revised_composite_similarity_pct": 76.59,
+      "proposed_threshold_pct": 65,
+      "above_threshold": true,
+      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 203,
+      "neighbor_id": 202,
+      "neighbor_name": "خلبانی پهپاد",
+      "contrast_sentence": "۲۰۲ پهپاد از راه دور؛ ۲۰۳ هواگرد سرنشین‌دار از کابین.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 33.33,
+      "strategy_similarity_pct": 93.47,
+      "value_similarity_pct": 94.23,
+      "matrix_only_mean_similarity_pct": 93.85,
+      "revised_composite_similarity_pct": 63.55,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 203,
+      "neighbor_id": 204,
+      "neighbor_name": "مهندسی نگهداری و تعمیر بالگرد",
+      "contrast_sentence": "۲۰۳ عملیات پرواز؛ ۲۰۴ عملیات نگهداری/تعمیر و آزادسازی فنی.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 87.58,
+      "value_similarity_pct": 90.63,
+      "matrix_only_mean_similarity_pct": 89.1,
+      "revised_composite_similarity_pct": 44.4,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 204,
+      "neighbor_id": 47,
+      "neighbor_name": "مهندسی هوافضا",
+      "contrast_sentence": "۴۷ طراحی/تحلیل عملکرد؛ ۲۰۴ بازرسی و تعمیر هواگرد موجود.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 8.33,
+      "strategy_similarity_pct": 70.7,
+      "value_similarity_pct": 81.32,
+      "matrix_only_mean_similarity_pct": 76.01,
+      "revised_composite_similarity_pct": 41.64,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 204,
+      "neighbor_id": 199,
+      "neighbor_name": "مهندسی هوانوردی و مراقبت پرواز",
+      "contrast_sentence": "۱۹۹ ایمنی شبکه و ترافیک؛ ۲۰۴ سلامت فیزیکی و تعمیر هواگرد.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 87.3,
+      "value_similarity_pct": 93.39,
+      "matrix_only_mean_similarity_pct": 90.34,
+      "revised_composite_similarity_pct": 44.87,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 204,
+      "neighbor_id": 201,
+      "neighbor_name": "خلبانی بالگرد",
+      "contrast_sentence": "۲۰۱ عملیات پرواز بالگرد؛ ۲۰۴ بازرسی/تعمیر و ثبت بازگشت به خدمت.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 85.32,
+      "value_similarity_pct": 89.37,
+      "matrix_only_mean_similarity_pct": 87.34,
+      "revised_composite_similarity_pct": 43.47,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 204,
+      "neighbor_id": 202,
+      "neighbor_name": "خلبانی پهپاد",
+      "contrast_sentence": "۲۰۲ اجرای مأموریت پهپاد با سامانه و لینک؛ ۲۰۴ رفع عیب و ثبت فنی هواگرد.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 90.32,
+      "value_similarity_pct": 94.15,
+      "matrix_only_mean_similarity_pct": 92.23,
+      "revised_composite_similarity_pct": 66.76,
+      "proposed_threshold_pct": 65,
+      "above_threshold": true,
+      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 204,
+      "neighbor_id": 203,
+      "neighbor_name": "هوانوردی خلبانی",
+      "contrast_sentence": "۲۰۳ عملیات پرواز؛ ۲۰۴ عملیات نگهداری/تعمیر و آزادسازی فنی.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 87.58,
+      "value_similarity_pct": 90.63,
+      "matrix_only_mean_similarity_pct": 89.1,
+      "revised_composite_similarity_pct": 44.4,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD_CANDIDATE",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    }
+  ],
+  "activation_status": {
+    "motive_driven": false,
+    "handcrafted": true,
+    "weights_version": "dh013_f2_review_v1",
+    "reviewer_A": "OPEN — not signed",
+    "reviewer_B": "OPEN — not signed",
+    "required": [
+      "Independent blind identity review",
+      "Independent Strategy/Value review",
+      "Resolution of all >65% pairs",
+      "Explicit owner activation decision"
+    ],
+    "watchlist": [
+      {
+        "target_id": 201,
+        "neighbor_id": 203,
+        "composite_pct": 76.59
+      },
+      {
+        "target_id": 202,
+        "neighbor_id": 204,
+        "composite_pct": 66.76
+      },
+      {
+        "target_id": 203,
+        "neighbor_id": 201,
+        "composite_pct": 76.59
+      },
+      {
+        "target_id": 204,
+        "neighbor_id": 202,
+        "composite_pct": 66.76
+      }
+    ]
+  }
+}
