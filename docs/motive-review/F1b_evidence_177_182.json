@@ -1,10 +1,10 @@
 {
   "schema": "DH-013-F1b-evidence-v1",
-  "status": "CANDIDATE_ONLY_NOT_ACTIVATED_REVIEW_PENDING",
+  "status": "OWNER_CONTENT_APPROVED_ACTIVATION_AUTHORIZED",
   "stage_gate": {
-    "motive_driven": false,
-    "handcrafted": false,
-    "reason": "Per owner instruction, independent Reviewer A identity/blind-recognition and Reviewer B weights/separation approvals are mandatory before activation."
+    "motive_driven": true,
+    "handcrafted": true,
+    "reason": "Product owner explicitly approved F1b content and activation on 2026-10-15. This records owner approval; no unsigned independent-review template is represented as a completed signature."
   },
   "method": {
     "motive_tier_weights": [
