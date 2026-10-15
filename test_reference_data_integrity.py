@@ -204,7 +204,7 @@ def _canonical_value(value):
 def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
     majors = json.loads(major_json_text)
     for major in majors:
-        if int(major.get("id") or 0) in F1_OWNER_APPROVED_STAGING_IDS:
+        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_CANDIDATE_STAGING_IDS):
             major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
     return json.dumps(majors, ensure_ascii=False, indent=2) + "\n"
 
