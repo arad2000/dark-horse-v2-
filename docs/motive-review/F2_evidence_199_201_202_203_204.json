@@ -7015,7 +7015,7 @@
               "index": 1,
               "text": "می‌پرسم دقیقاً کدام قسمت خوب بوده است.",
               "raw_weight": 0.3636,
-              "candidate_weight": 0.3273,
+              "candidate_weight": 0.3272,
               "evidence_confidence": 0.687,
               "trait_labels": [
                 "احتیاطی",
@@ -7091,7 +7091,7 @@
               "index": 4,
               "text": "ترجیح می‌دهم خودم بدانم کیفیت کارم چقدر بوده است.",
               "raw_weight": 0,
-              "candidate_weight": -0.0001,
+              "candidate_weight": 0,
               "evidence_confidence": 0,
               "trait_labels": [
                 "استقلال‌طلب"
@@ -11125,7 +11125,7 @@
               "index": 1,
               "text": "می‌پرسم دقیقاً کدام قسمت خوب بوده است.",
               "raw_weight": 0.317,
-              "candidate_weight": 0.308,
+              "candidate_weight": 0.3079,
               "evidence_confidence": 0.562,
               "trait_labels": [
                 "احتیاطی",
@@ -11205,7 +11205,7 @@
               "index": 4,
               "text": "ترجیح می‌دهم خودم بدانم کیفیت کارم چقدر بوده است.",
               "raw_weight": 0,
-              "candidate_weight": -0.0001,
+              "candidate_weight": 0,
               "evidence_confidence": 0,
               "trait_labels": [
                 "استقلال‌طلب"
