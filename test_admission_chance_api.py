@@ -1459,16 +1459,6 @@ class AdmissionChanceApiTests(unittest.TestCase):
                 if major_id not in approved_ids:
                     self.assertFalse(major["motive_driven"])
                     self.assertFalse(major["handcrafted"])
-                    if major_id in candidate_ids:
-                        self.assertEqual(major["micro_motive_codes"], expected_candidate_codes[major_id])
-                        self.assertEqual(major["weights_version"], "dh013_f1b_review_candidate_v1")
-                        self.assertEqual(len(major["strategy_weights"]), 25)
-                        self.assertTrue(all(len(row) == 5 for row in major["strategy_weights"]))
-                        self.assertTrue(all(abs(sum(row) - 1.0) <= 0.002 for row in major["strategy_weights"]))
-                        self.assertEqual(len(major["value_weights"]), 30)
-                        self.assertNotEqual(major.get("archetype"), "deferred_catalog_only")
-                        self.assertTrue(major.get("fulfillment_source"))
-                        continue
                     self.assertEqual(major["micro_motive_codes"], [])
                     self.assertEqual(major["strategy_weights"], [])
                     self.assertEqual(major["value_weights"], {})
