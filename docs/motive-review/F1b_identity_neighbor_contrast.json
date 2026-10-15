@@ -1,6 +1,6 @@
 {
   "schema": "DH-013-F1b-identity-neighbor-v1",
-  "status": "PROVISIONAL_FOR_INDEPENDENT_REVIEW",
+  "status": "OWNER_CONTENT_APPROVED_ACTIVATED",
   "axes": [
     "core_verb",
     "dominant_object",
@@ -540,7 +540,7 @@
     }
   ],
   "activation_status": {
-    "all_targets_motive_driven": false,
-    "reason": "Independent reviewer signatures and blind recognition have not been supplied; this matrix is not an approval."
+    "all_targets_motive_driven": true,
+    "reason": "Product owner explicitly approved content and instructed activation on 2026-10-15; this does not fabricate Reviewer A/B signatures."
   }
 }
