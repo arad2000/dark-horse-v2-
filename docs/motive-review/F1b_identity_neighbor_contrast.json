@@ -1,0 +1,546 @@
+{
+  "schema": "DH-013-F1b-identity-neighbor-v1",
+  "status": "PROVISIONAL_FOR_INDEPENDENT_REVIEW",
+  "axes": [
+    "core_verb",
+    "dominant_object",
+    "dominant_reward",
+    "dominant_frustration",
+    "archetype",
+    "fulfillment"
+  ],
+  "score_scale": {
+    "0": "distinct operational meaning",
+    "1": "same operational meaning",
+    "0.5": "related but distinguishable"
+  },
+  "formula": "Provisional composite = 0.30×Strategy similarity + 0.20×Value similarity + 0.50×Identity similarity. Within-cluster threshold 65%. Threshold and ratings require Reviewer A/B validation.",
+  "profiles": {
+    "177": {
+      "name": "کارگردانی",
+      "identity": "متن و قصد دراماتیک را به اجرا هدایت می‌کند؛ میزانسن بازیگر، زاویه و اندازهٔ نما، ریتم برش و تداوم را با هم تنظیم می‌کند تا صحنه به یک معنای دیداری واحد برسد.",
+      "core_verb": "تفسیر و هدایت اجرای روایت دیداری",
+      "object": "فیلمنامه، بازیگر، قاب و پیوستگی نماها",
+      "reward": "تبدیل ضرباهنگ و قصد دراماتیک به صحنه‌ای یکپارچه و باورپذیر",
+      "frustration": "بازی بی‌جهت، ریتم گسسته، قاب بی‌دلیل یا خطای تداوم",
+      "archetype": "روایت‌گردانِ تصویرساز",
+      "fulfillment": "وقتی قصد دراماتیک یک صحنه با بازی هدایت‌شده، قاب‌بندی و ریتم تدوین به تجربه‌ای روشن و پیوسته برای بیننده بدل می‌شود.",
+      "neighbors": [
+        178,
+        139,
+        185,
+        140
+      ]
+    },
+    "178": {
+      "name": "کارگردانی تلویزیون",
+      "identity": "برنامه را بر اساس rundown و cue sheet در قاب‌ها و زمان مشخص هدایت می‌کند؛ دوربین، مجری، گرافیک، صدا و اتاق فرمان را هماهنگ می‌کند و با تغییر زنده یا فنی، توالی پخش را حفظ می‌کند.",
+      "core_verb": "هماهنگ‌کردن اجرای برنامه در زمان‌بندی و قاب‌های پیوسته",
+      "object": "رundown، cue sheet، دوربین‌ها، مجری، گرافیک و اتاق فرمان",
+      "reward": "اجرای روان برنامه و انتقال بی‌وقفه میان قاب‌ها و بخش‌ها",
+      "frustration": "از دست‌رفتن cue، تأخیر، ناهماهنگی دوربین و صدا یا شکست زمان‌بندی",
+      "archetype": "هماهنگ‌گرِ پخش تلویزیونی",
+      "fulfillment": "وقتی cueها، تعویض دوربین، مجری و گرافیک سرِ وقت می‌نشینند و برنامه بدون مکث یا شکست قابل‌مشاهده پیش می‌رود.",
+      "neighbors": [
+        177,
+        139,
+        185,
+        140
+      ]
+    },
+    "180": {
+      "name": "نوازندگی موسیقی ایرانی",
+      "identity": "جمله‌های موسیقایی را روی ساز در منطق ردیف و دستگاه تفسیر می‌کند؛ به مسیر گوشه، انعطاف جمله، تزئینات و کیفیت فاصله‌ها گوش می‌دهد و بیان شخصی را درون سنت شکل می‌دهد.",
+      "core_verb": "نواختن و تفسیر جمله‌های موسیقی ایرانی با ساز",
+      "object": "جمله، گوشه، ردیف و ظرایف اجرایی در سنت موسیقی ایرانی",
+      "reward": "بیان اصیل و زندهٔ مسیر مدال و ظرایف اجرایی موسیقی ایرانی",
+      "frustration": "تخت‌شدن جمله، فاصلهٔ نادقیق، تزئین ناهماهنگ یا گم‌شدن حال‌وهوای دستگاه",
+      "archetype": "نوازندهٔ ردیف‌پرداز",
+      "fulfillment": "وقتی اجرای یک گوشه مسیر مدال، تزئینات و فراز احساسی آن را روشن می‌کند و در عین وفاداری به سنت، زنده و شخصی شنیده می‌شود.",
+      "neighbors": [
+        181,
+        182,
+        139,
+        185,
+        140
+      ]
+    },
+    "181": {
+      "name": "نوازندگی موسیقی جهانی",
+      "identity": "قطعهٔ موجود را با خواندن نت، مهارت سازی و توجه به سبک، آرتیکولاسیون، دینامیک و هماهنگی گروه اجرا می‌کند؛ هدف، تفسیر موسیقاییِ دقیقِ اثر نوشته‌شده است نه ساختن قطعه‌ای تازه.",
+      "core_verb": "اجرای دقیق و تفسیر یک قطعه در سنت‌های موسیقی جهانی",
+      "object": "پارتیتور، تکنیک ساز، جمله‌بندی، ضرباهنگ و هماهنگی گروه",
+      "reward": "اجرای دقیق و خوش‌بیانِ قطعه با سبک و هماهنگی صوتی منسجم",
+      "frustration": "ورود اشتباه، ریتم یا کوک نادقیق، جمله‌بندی ناهمگون یا عدم تعادل گروه",
+      "archetype": "نوازندهٔ تفسیرگرِ پارتیتور",
+      "fulfillment": "وقتی پارتیتور از ابتدا تا انتها با کوک، ریتم، دینامیک و جمله‌بندی منسجم اجرا می‌شود و هویت سبکی قطعه شنیده می‌شود.",
+      "neighbors": [
+        180,
+        182,
+        139,
+        185,
+        140
+      ]
+    },
+    "182": {
+      "name": "آهنگسازی",
+      "identity": "از ایده یا موتیف آغاز می‌کند و با سازمان‌دهی فرم، هارمونی، ریتم و رنگ‌آمیزی سازها اثری تازه می‌سازد؛ بازنویسی، سنجش توازن بخش‌ها و تبدیل قصد ذهنی به پارتیتور بخش اصلی کار است.",
+      "core_verb": "ساخت قطعهٔ تازه از موتیف و سازمان‌دهی آن در فرم موسیقایی",
+      "object": "موتیف تازه، ریتم، هارمونی، فرم، پارتیتور و رنگ‌آمیزی صوتی",
+      "reward": "شنیدن ایده‌ای اصیل که در ساختار کامل موسیقایی رشد می‌کند",
+      "frustration": "گذار بی‌منطق، بخش‌های نامتعادل، بافت گل‌آلود یا نت‌نویسی اجرا‌ناپذیر",
+      "archetype": "آهنگسازِ ساختارآفرین",
+      "fulfillment": "وقتی گروه یا ساز، ساختار و مسیر احساسیِ طراحی‌شده را همان‌طور که قصد شده به صدا درمی‌آورد و قطعه هم تازه است و هم منسجم.",
+      "neighbors": [
+        180,
+        181,
+        139,
+        185,
+        140
+      ]
+    }
+  },
+  "neighbor_contrasts": [
+    {
+      "target_id": 177,
+      "neighbor_id": 178,
+      "neighbor_name": "کارگردانی تلویزیون",
+      "contrast_sentence": "کارگردانی روایت و بازی/قاب/تدوین برای ساخت صحنه است؛ کارگردانی تلویزیون توالی cueها، چند دوربین و زمان‌بندی برنامه را هماهنگ می‌کند.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 88.84,
+      "value_similarity_pct": 94.28,
+      "matrix_only_mean_similarity_pct": 91.56,
+      "revised_composite_similarity_pct": 66.34,
+      "proposed_threshold_pct": 65,
+      "above_threshold": true,
+      "result": "ABOVE_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 177,
+      "neighbor_id": 139,
+      "neighbor_name": "طراحی صحنه",
+      "contrast_sentence": "کارگردانی قصد دراماتیک را از راه بازیگر و قاب هدایت می‌کند؛ طراحی صحنه نور، دکور و فضای فیزیکی اجرای زنده را سامان می‌دهد.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 8.33,
+      "strategy_similarity_pct": 75.25,
+      "value_similarity_pct": 83.66,
+      "matrix_only_mean_similarity_pct": 79.46,
+      "revised_composite_similarity_pct": 43.47,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 177,
+      "neighbor_id": 185,
+      "neighbor_name": "نمایش عروسکی",
+      "contrast_sentence": "کارگردانی روایت و اجرای کلی را هدایت می‌کند؛ نمایش عروسکی با سازوکار، حرکت و ریتم عروسک به شخصیت جان می‌دهد.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 80.76,
+      "value_similarity_pct": 90.56,
+      "matrix_only_mean_similarity_pct": 85.66,
+      "revised_composite_similarity_pct": 63.17,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 177,
+      "neighbor_id": 140,
+      "neighbor_name": "طراحی گرافیک",
+      "contrast_sentence": "کارگردانی معنای زمان‌مند را در بازی/نما/تدوین می‌سازد؛ طراحی گرافیک پیام یا هویت بصری را برای فهم سریع در یک قاب طراحی می‌کند.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 8.33,
+      "strategy_similarity_pct": 78.15,
+      "value_similarity_pct": 83.96,
+      "matrix_only_mean_similarity_pct": 81.06,
+      "revised_composite_similarity_pct": 44.4,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 178,
+      "neighbor_id": 139,
+      "neighbor_name": "طراحی صحنه",
+      "contrast_sentence": "کارگردانی تلویزیون cue، قاب و زمان برنامه را کنترل می‌کند؛ طراحی صحنه محیط، نور و دکور را برای عمق حس نمایشی می‌سازد.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 25,
+      "strategy_similarity_pct": 74.66,
+      "value_similarity_pct": 84.32,
+      "matrix_only_mean_similarity_pct": 79.49,
+      "revised_composite_similarity_pct": 51.76,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 178,
+      "neighbor_id": 185,
+      "neighbor_name": "نمایش عروسکی",
+      "contrast_sentence": "کارگردانی تلویزیون دوربین، برنامه، مجری و زمان پخش را هماهنگ می‌کند؛ نمایش عروسکی حرکت شخصیت عروسک و زمان‌بندی اجرایی آن را شکل می‌دهد.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 80.52,
+      "value_similarity_pct": 90.11,
+      "matrix_only_mean_similarity_pct": 85.31,
+      "revised_composite_similarity_pct": 63.01,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 178,
+      "neighbor_id": 140,
+      "neighbor_name": "طراحی گرافیک",
+      "contrast_sentence": "کارگردانی تلویزیون یک خروجی زمان‌مند چنددوربینه را سازمان می‌دهد؛ طراحی گرافیک نشانهٔ ثابت/صفحه‌ای را برای ارتباط بصری روشن می‌کند.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 8.33,
+      "strategy_similarity_pct": 74.91,
+      "value_similarity_pct": 83.16,
+      "matrix_only_mean_similarity_pct": 79.04,
+      "revised_composite_similarity_pct": 43.27,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 180,
+      "neighbor_id": 181,
+      "neighbor_name": "نوازندگی موسیقی جهانی",
+      "contrast_sentence": "نوازندگی موسیقی ایرانی جمله را در سنت ردیف، دستگاه و گوشه تفسیر می‌کند؛ نوازندگی موسیقی جهانی بر اجرای پارتیتور، بیان سبکی و هماهنگی گروه متمرکز است.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 88.44,
+      "value_similarity_pct": 93.29,
+      "matrix_only_mean_similarity_pct": 90.87,
+      "revised_composite_similarity_pct": 66.02,
+      "proposed_threshold_pct": 65,
+      "above_threshold": true,
+      "result": "ABOVE_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 180,
+      "neighbor_id": 182,
+      "neighbor_name": "آهنگسازی",
+      "contrast_sentence": "نوازندگی موسیقی ایرانی یک جمله یا قطعه را اجرا و تفسیر می‌کند؛ آهنگسازی موتیف و ساختار یک اثر تازه را می‌سازد.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 88.26,
+      "value_similarity_pct": 95.59,
+      "matrix_only_mean_similarity_pct": 91.92,
+      "revised_composite_similarity_pct": 45.6,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 181,
+      "neighbor_id": 182,
+      "neighbor_name": "آهنگسازی",
+      "contrast_sentence": "نوازندگی موسیقی جهانی اثری از پیش‌نوشته‌شده را اجرا و تفسیر می‌کند؛ آهنگسازی اثر، فرم، هارمونی و پارتیتور را ایجاد می‌کند.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 87.51,
+      "value_similarity_pct": 94.14,
+      "matrix_only_mean_similarity_pct": 90.82,
+      "revised_composite_similarity_pct": 45.08,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 180,
+      "neighbor_id": 139,
+      "neighbor_name": "طراحی صحنه",
+      "contrast_sentence": "نوازندگی بر صدا، جمله و ساز متمرکز است؛ طراحی صحنه نور، دکور و فضای فیزیکی نمایش را می‌سازد.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 68.87,
+      "value_similarity_pct": 83.5,
+      "matrix_only_mean_similarity_pct": 76.19,
+      "revised_composite_similarity_pct": 37.36,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 180,
+      "neighbor_id": 185,
+      "neighbor_name": "نمایش عروسکی",
+      "contrast_sentence": "نوازندگی موسیقی ایرانی بر جمله و ظرایف سنت موسیقی متمرکز است؛ نمایش عروسکی بر حرکت/صدا/ریتم عروسک برای ساخت شخصیت نمایشی متمرکز است.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 77.46,
+      "value_similarity_pct": 89.53,
+      "matrix_only_mean_similarity_pct": 83.49,
+      "revised_composite_similarity_pct": 61.98,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 180,
+      "neighbor_id": 140,
+      "neighbor_name": "طراحی گرافیک",
+      "contrast_sentence": "نوازندگی موسیقی ایرانی بیان موسیقایی زمان‌مند می‌سازد؛ گرافیک پیام یا هویت بصری را در سطح تصویر طراحی می‌کند.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 68.81,
+      "value_similarity_pct": 83.38,
+      "matrix_only_mean_similarity_pct": 76.1,
+      "revised_composite_similarity_pct": 37.32,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 181,
+      "neighbor_id": 139,
+      "neighbor_name": "طراحی صحنه",
+      "contrast_sentence": "نوازندگی موسیقی جهانی پارتیتور را به اجرا تبدیل می‌کند؛ طراحی صحنه فضای بصری و نور اجرا را شکل می‌دهد.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 71.98,
+      "value_similarity_pct": 83.45,
+      "matrix_only_mean_similarity_pct": 77.71,
+      "revised_composite_similarity_pct": 38.28,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 181,
+      "neighbor_id": 185,
+      "neighbor_name": "نمایش عروسکی",
+      "contrast_sentence": "نوازندگی موسیقی جهانی اجرای پارتیتور و هماهنگی سازها را محور می‌گیرد؛ نمایش عروسکی حرکت شخصیت عروسک و ارتباط صدا با حرکت را محور می‌گیرد.",
+      "axis_scores": {
+        "core_verb": 0.5,
+        "dominant_object": 0.5,
+        "dominant_reward": 0.5,
+        "dominant_frustration": 0.5,
+        "archetype": 0,
+        "fulfillment": 0.5
+      },
+      "identity_similarity_pct": 41.67,
+      "strategy_similarity_pct": 80.34,
+      "value_similarity_pct": 91.18,
+      "matrix_only_mean_similarity_pct": 85.76,
+      "revised_composite_similarity_pct": 63.17,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 181,
+      "neighbor_id": 140,
+      "neighbor_name": "طراحی گرافیک",
+      "contrast_sentence": "نوازندگی موسیقی جهانی قطعهٔ موسیقایی را اجرا می‌کند؛ گرافیک پیام بصری را برای فهم یک‌نگاهی می‌سازد.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 72.93,
+      "value_similarity_pct": 81.27,
+      "matrix_only_mean_similarity_pct": 77.1,
+      "revised_composite_similarity_pct": 38.13,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 182,
+      "neighbor_id": 139,
+      "neighbor_name": "طراحی صحنه",
+      "contrast_sentence": "آهنگسازی ساختار و صدای تازه می‌سازد؛ طراحی صحنه با نور و دکور فضای اجرای فیزیکی را سازمان می‌دهد.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 67.5,
+      "value_similarity_pct": 84.41,
+      "matrix_only_mean_similarity_pct": 75.95,
+      "revised_composite_similarity_pct": 37.13,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 182,
+      "neighbor_id": 185,
+      "neighbor_name": "نمایش عروسکی",
+      "contrast_sentence": "آهنگسازی فرم و محتوای موسیقایی می‌سازد؛ نمایش عروسکی شخصیت را با حرکت شیء، زمان‌بندی و صدا اجرا می‌کند.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 73.85,
+      "value_similarity_pct": 89.61,
+      "matrix_only_mean_similarity_pct": 81.73,
+      "revised_composite_similarity_pct": 40.08,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    },
+    {
+      "target_id": 182,
+      "neighbor_id": 140,
+      "neighbor_name": "طراحی گرافیک",
+      "contrast_sentence": "آهنگسازی موتیف و ساختار زمانی موسیقی را می‌سازد؛ گرافیک برای انتقال پیام از شکل، ترکیب و نماد بصری استفاده می‌کند.",
+      "axis_scores": {
+        "core_verb": 0,
+        "dominant_object": 0,
+        "dominant_reward": 0,
+        "dominant_frustration": 0,
+        "archetype": 0,
+        "fulfillment": 0
+      },
+      "identity_similarity_pct": 0,
+      "strategy_similarity_pct": 68.91,
+      "value_similarity_pct": 83.75,
+      "matrix_only_mean_similarity_pct": 76.33,
+      "revised_composite_similarity_pct": 37.42,
+      "proposed_threshold_pct": 65,
+      "above_threshold": false,
+      "result": "WITHIN_PROPOSED_THRESHOLD",
+      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+    }
+  ],
+  "activation_status": {
+    "all_targets_motive_driven": false,
+    "reason": "Independent reviewer signatures and blind recognition have not been supplied; this matrix is not an approval."
+  }
+}
