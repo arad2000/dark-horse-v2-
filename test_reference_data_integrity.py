@@ -21,8 +21,8 @@ BASELINE_MAJOR_1_194_FINGERPRINT = "5189181b82aab0e6"
 BASELINE_MAJOR_1_204_FINGERPRINT = "749c599468ce116b"
 BASELINE_MAJOR_1_215_FINGERPRINT = "4a75d6d48c2b07ce"
 F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
-F1B_CANDIDATE_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
-F1B_CANDIDATE_WEIGHTS_VERSION = "dh013_f1b_review_candidate_v1"
+F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
+F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
 F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
 F1_DEFERRED_STUB_FIELDS = {
     "handcrafted": False,
@@ -80,13 +80,13 @@ def test_wave_a_deferred_catalog_contract():
     assert len(wave_a) == 13
     assert [int(m["id"]) for m in wave_a] == list(range(177, 190))
     f1_active = [m for m in wave_a if int(m["id"]) in F1_OWNER_APPROVED_STAGING_IDS]
-    f1b_candidates = [m for m in wave_a if int(m["id"]) in F1B_CANDIDATE_STAGING_IDS]
+    f1b_active = [m for m in wave_a if int(m["id"]) in F1B_OWNER_APPROVED_STAGING_IDS]
     wave_a_deferred = [
         m for m in wave_a
-        if int(m["id"]) not in (F1_OWNER_APPROVED_STAGING_IDS | F1B_CANDIDATE_STAGING_IDS)
+        if int(m["id"]) not in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS)
     ]
     assert [int(m["id"]) for m in f1_active] == [183, 184, 185, 186, 187, 189]
-    assert [int(m["id"]) for m in f1b_candidates] == [177, 178, 180, 181, 182]
+    assert [int(m["id"]) for m in f1b_active] == [177, 178, 180, 181, 182]
     assert [int(m["id"]) for m in wave_a_deferred] == [179, 188]
     assert len(wave_a_deferred) == 2
     assert all(m.get("motive_driven") is False for m in wave_a_deferred)
@@ -123,13 +123,13 @@ def test_wave_a_deferred_catalog_contract():
         181: [f"MUSIC-{i:03d}" for i in range(8, 15)],
         182: [f"MUSIC-{i:03d}" for i in range(15, 22)],
     }
-    for major in f1b_candidates:
+    for major in f1b_active:
         major_id = int(major["id"])
         strategy = major.get("strategy_weights")
         values = major.get("value_weights")
-        assert major.get("motive_driven") is False
-        assert major.get("handcrafted") is False
-        assert major.get("weights_version") == F1B_CANDIDATE_WEIGHTS_VERSION
+        assert major.get("motive_driven") is True
+        assert major.get("handcrafted") is True
+        assert major.get("weights_version") == F1B_WEIGHTS_VERSION
         assert major.get("micro_motive_codes") == expected_candidate_codes[major_id]
         assert isinstance(strategy, list) and len(strategy) == 25
         assert all(isinstance(row, list) and len(row) == 5 for row in strategy)
@@ -204,7 +204,7 @@ def _canonical_value(value):
 def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
     majors = json.loads(major_json_text)
     for major in majors:
-        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_CANDIDATE_STAGING_IDS):
+        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS):
             major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
     return json.dumps(majors, ensure_ascii=False, indent=2) + "\n"
 
