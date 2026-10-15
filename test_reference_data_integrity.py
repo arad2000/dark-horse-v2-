@@ -5,6 +5,7 @@ This test validates references only; it does not alter scoring weights or rankin
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 
@@ -19,6 +20,18 @@ PHASE2_WAVE1_IDS = frozenset(range(161, 177))
 BASELINE_MAJOR_1_194_FINGERPRINT = "5189181b82aab0e6"
 BASELINE_MAJOR_1_204_FINGERPRINT = "749c599468ce116b"
 BASELINE_MAJOR_1_215_FINGERPRINT = "4a75d6d48c2b07ce"
+F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
+F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
+F1_DEFERRED_STUB_FIELDS = {
+    "handcrafted": False,
+    "motive_driven": False,
+    "weights_version": "deferred_catalog_only_v1",
+    "micro_motive_codes": [],
+    "strategy_weights": [],
+    "value_weights": {},
+    "archetype": "deferred_catalog_only",
+    "fulfillment_source": "این مدخل فعلاً فقط برای کاتالوگ و تطبیق ظرفیت سنجش است؛ داده‌های فردیت و وزن‌های امتیازدهی تدوین و اعتبارسنجی نشده‌اند.",
+}
 
 
 def _is_phase2_stub_reference(major: dict, code: str) -> bool:
@@ -64,12 +77,42 @@ def test_wave_a_deferred_catalog_contract():
     wave_a = [m for m in majors if int(m["id"]) in range(177, 190)]
     assert len(wave_a) == 13
     assert [int(m["id"]) for m in wave_a] == list(range(177, 190))
-    assert all(m.get("motive_driven") is False for m in wave_a)
-    assert all(m.get("micro_motive_codes") == [] for m in wave_a)
-    assert all(m.get("strategy_weights") == [] for m in wave_a)
-    assert all(m.get("value_weights") == {} for m in wave_a)
-    assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_a)
+    f1_active = [m for m in wave_a if int(m["id"]) in F1_OWNER_APPROVED_STAGING_IDS]
+    wave_a_deferred = [m for m in wave_a if int(m["id"]) not in F1_OWNER_APPROVED_STAGING_IDS]
+    assert [int(m["id"]) for m in f1_active] == [183, 184, 185, 186, 187, 189]
+    assert len(wave_a_deferred) == 7
+    assert all(m.get("motive_driven") is False for m in wave_a_deferred)
+    assert all(m.get("handcrafted") is False for m in wave_a_deferred)
+    assert all(m.get("micro_motive_codes") == [] for m in wave_a_deferred)
+    assert all(m.get("strategy_weights") == [] for m in wave_a_deferred)
+    assert all(m.get("value_weights") == {} for m in wave_a_deferred)
+    assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_a_deferred)
 
+    expected_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for major in f1_active:
+        strategy = major.get("strategy_weights")
+        values = major.get("value_weights")
+        assert major.get("motive_driven") is True
+        assert major.get("handcrafted") is True
+        assert len(major.get("micro_motive_codes", [])) == 7
+        assert major.get("weights_version") == F1_ART_WEIGHTS_VERSION
+        assert isinstance(strategy, list) and len(strategy) == 25
+        assert all(isinstance(row, list) and len(row) == 5 for row in strategy)
+        assert all(
+            all(isinstance(w, (int, float)) and math.isfinite(w) and 0 <= w <= 1 for w in row)
+            and abs(sum(row) - 1.0) <= 0.002
+            for row in strategy
+        )
+        assert isinstance(values, dict) and set(values) == expected_poles
+        assert all(isinstance(w, (int, float)) and math.isfinite(w) and 0 <= w <= 1 for w in values.values())
+        assert major.get("archetype") and major.get("archetype") != "deferred_catalog_only"
+        assert major.get("fulfillment_source") and major.get("fulfillment_source") != F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+
+    id188 = next(m for m in wave_a if int(m["id"]) == 188)
+    assert id188.get("motive_driven") is False
+    assert id188.get("micro_motive_codes") == []
+    assert id188.get("strategy_weights") == []
+    assert id188.get("value_weights") == {}
 
 def test_phase2_wave1_behavioral_contract():
     majors = load_json("majors_database_v2.json")
@@ -123,13 +166,22 @@ def _canonical_value(value):
     return str(value)
 
 
+def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
+    majors = json.loads(major_json_text)
+    for major in majors:
+        if int(major.get("id") or 0) in F1_OWNER_APPROVED_STAGING_IDS:
+            major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
+    return json.dumps(majors, ensure_ascii=False, indent=2) + "\\n"
+
+
 def _catalog_fingerprint(major_json_text, marker_id=195):
-    marker = f'\n  {{\n    "id": {marker_id},'
-    prefix, found, _ = major_json_text.partition(marker)
+    normalized_text = _restore_f1_approved_rows_for_historical_fingerprint(major_json_text)
+    marker = f'\\n  {{\\n    "id": {marker_id},'
+    prefix, found, _ = normalized_text.partition(marker)
     assert found, f"Baseline marker for major {marker_id} is missing"
     prefix = prefix.rstrip()
     assert prefix.endswith(","), "Baseline catalog prefix is malformed"
-    baseline_text = prefix[:-1] + "\n]\n"
+    baseline_text = prefix[:-1] + "\\n]\\n"
     value = 0xCBF29CE484222325
     prime = 0x100000001B3
     mask = 0xFFFFFFFFFFFFFFFF

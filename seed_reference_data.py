@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +37,20 @@ from models import (
 ROOT = Path(__file__).resolve().parent
 DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
-WAVE_A_DEFERRED_IDS = frozenset(range(177, 190))
+WAVE_A_IDS = frozenset(range(177, 190))
+F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
+WAVE_A_DEFERRED_IDS = WAVE_A_IDS - F1_OWNER_APPROVED_STAGING_IDS
+F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
+F1_DEFERRED_STUB_FIELDS = {
+    "handcrafted": False,
+    "motive_driven": False,
+    "weights_version": "deferred_catalog_only_v1",
+    "micro_motive_codes": [],
+    "strategy_weights": [],
+    "value_weights": {},
+    "archetype": "deferred_catalog_only",
+    "fulfillment_source": "این مدخل فعلاً فقط برای کاتالوگ و تطبیق ظرفیت سنجش است؛ داده‌های فردیت و وزن‌های امتیازدهی تدوین و اعتبارسنجی نشده‌اند.",
+}
 WAVE_B_DEFERRED_IDS = frozenset(range(190, 195))
 WAVE_C_DEFERRED_IDS = frozenset(range(195, 205))
 WAVE_D_DEFERRED_IDS = frozenset(range(205, 216))
@@ -187,6 +201,20 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
         value ^= ord(char)
         value = (value * prime) & mask
     return f"{value:016x}"
+
+def f1_staging_aware_baseline_text(major_json_text: str) -> str:
+    """Normalize only approved F1 activation fields before historical catalog fingerprints."""
+    records = json.loads(major_json_text)
+    for item in records:
+        try:
+            major_id = int(item.get("id") or item.get("major_id"))
+        except (TypeError, ValueError):
+            continue
+        if major_id in F1_OWNER_APPROVED_STAGING_IDS:
+            for key, value in F1_DEFERRED_STUB_FIELDS.items():
+                item[key] = json.loads(json.dumps(value, ensure_ascii=False))
+    return json.dumps(records, ensure_ascii=False, indent=2) + "\n"
+
 
 def major_catalog_fingerprint(major_json_text: str) -> str:
     """Fingerprint the exact pre-Wave-C majors JSON, byte-for-character as decoded text."""
@@ -340,21 +368,30 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     ]
     require_no_duplicate(major_names, "major names")
     major_json_text = majors_path.read_text(encoding="utf-8")
-    if major_catalog_fingerprint(major_json_text) != MAJOR_1_194_CATALOG_FINGERPRINT:
-        raise ValueError("Wave C must preserve the complete baseline catalog 1..194 (including weights)")
-    if major_catalog_1_204_fingerprint(major_json_text) != MAJOR_1_204_CATALOG_FINGERPRINT:
-        raise ValueError("Wave D must preserve the complete baseline catalog 1..204 (including weights)")
-    if major_catalog_1_215_fingerprint(major_json_text) != MAJOR_1_215_CATALOG_FINGERPRINT:
-        raise ValueError("Wave E must preserve the complete baseline catalog 1..215 (including weights)")
+    fingerprint_source_text = f1_staging_aware_baseline_text(major_json_text)
+    if major_catalog_fingerprint(fingerprint_source_text) != MAJOR_1_194_CATALOG_FINGERPRINT:
+        raise ValueError("Wave C baseline 1..194 changed outside the explicit F1 activation fields")
+    if major_catalog_1_204_fingerprint(fingerprint_source_text) != MAJOR_1_204_CATALOG_FINGERPRINT:
+        raise ValueError("Wave D baseline 1..204 changed outside the explicit F1 activation fields")
+    if major_catalog_1_215_fingerprint(fingerprint_source_text) != MAJOR_1_215_CATALOG_FINGERPRINT:
+        raise ValueError("Wave E baseline 1..215 changed outside the explicit F1 activation fields")
+
     wave_a_records = [
         item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_A_IDS
+    ]
+    if len(wave_a_records) != len(WAVE_A_IDS):
+        raise ValueError("Wave A must contain exactly 13 rows (177..189), including six approved F1 rows")
+    wave_a_deferred = [
+        item for item in wave_a_records
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_A_DEFERRED_IDS
     ]
-    if len(wave_a_records) != len(WAVE_A_DEFERRED_IDS):
-        raise ValueError("Wave A must contain exactly 13 catalog-only rows (177..189)")
-    for item in wave_a_records:
+    if len(wave_a_deferred) != len(WAVE_A_DEFERRED_IDS):
+        raise ValueError("Wave A deferred-row count mismatch")
+    for item in wave_a_deferred:
         if (
             item.get("motive_driven") is not False
+            or item.get("handcrafted") is not False
             or item.get("micro_motive_codes") not in (None, [])
             or item.get("strategy_weights") not in (None, [])
             or item.get("value_weights") not in (None, {})
@@ -363,6 +400,39 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
             raise ValueError(
                 f"Wave A major {item.get('id')} must remain a deferred catalog-only stub"
             )
+    f1_active = [
+        item for item in wave_a_records
+        if int(item.get("id") or item.get("major_id") or 0) in F1_OWNER_APPROVED_STAGING_IDS
+    ]
+    if len(f1_active) != len(F1_OWNER_APPROVED_STAGING_IDS):
+        raise ValueError("F1 must contain exactly the six owner-approved staged rows")
+    expected_value_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f1_active:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F1_ART_WEIGHTS_VERSION
+            or len(item.get("micro_motive_codes") or []) != 7
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_value_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F1 staged activation contract failed for major {major_id}")
     wave_b_records = [
         item for item in major_records
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_B_DEFERRED_IDS
