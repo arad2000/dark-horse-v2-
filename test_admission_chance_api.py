@@ -1429,13 +1429,33 @@ class AdmissionChanceApiTests(unittest.TestCase):
         majors = load_majors()
         self.assertEqual(set(majors), {str(i) for i in range(1, 231)})
         approved_ids = {183, 184, 185, 186, 187, 189}
+        candidate_ids = {177, 178, 180, 181, 182}
         self.assertEqual(
             {int(major_id) for major_id, major in majors.items() if major["motive_driven"] and 177 <= int(major_id) <= 189},
-            approved_ids,
+            approved_ids | candidate_ids,
         )
+        expected_candidate_codes = {
+            177: [f"DIRECT-{i:03d}" for i in range(1, 8)],
+            178: [f"DIRECT-{i:03d}" for i in range(8, 15)],
+            180: [f"MUSIC-{i:03d}" for i in range(1, 8)],
+            181: [f"MUSIC-{i:03d}" for i in range(8, 15)],
+            182: [f"MUSIC-{i:03d}" for i in range(15, 22)],
+        }
         for major_id in range(177, 190):
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
+                if major_id in candidate_ids:
+                    self.assertTrue(major["motive_driven"])
+                    self.assertTrue(major["handcrafted"])
+                    self.assertEqual(major["micro_motive_codes"], expected_candidate_codes[major_id])
+                    self.assertEqual(major["weights_version"], "dh013_f1b_review_v1")
+                    self.assertEqual(len(major["strategy_weights"]), 25)
+                    self.assertTrue(all(len(row) == 5 for row in major["strategy_weights"]))
+                    self.assertTrue(all(abs(sum(row) - 1.0) <= 0.002 for row in major["strategy_weights"]))
+                    self.assertEqual(len(major["value_weights"]), 30)
+                    self.assertNotEqual(major.get("archetype"), "deferred_catalog_only")
+                    self.assertTrue(major.get("fulfillment_source"))
+                    continue
                 if major_id not in approved_ids:
                     self.assertFalse(major["motive_driven"])
                     self.assertFalse(major["handcrafted"])
@@ -1454,7 +1474,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
                 self.assertNotEqual(major.get("archetype"), "deferred_catalog_only")
                 self.assertTrue(major.get("fulfillment_source"))
 
-        # Explicit safety assertion: the excluded row remains empty and inactive.
+        # Explicit safety assertion: excluded ID 188 remains empty and inactive.
         excluded = majors["188"]
         self.assertFalse(excluded["motive_driven"])
         self.assertEqual(excluded["micro_motive_codes"], [])

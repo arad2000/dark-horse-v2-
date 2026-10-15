@@ -39,7 +39,9 @@ DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
 WAVE_A_IDS = frozenset(range(177, 190))
 F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
-WAVE_A_DEFERRED_IDS = WAVE_A_IDS - F1_OWNER_APPROVED_STAGING_IDS
+F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
+F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
+WAVE_A_DEFERRED_IDS = WAVE_A_IDS - F1_OWNER_APPROVED_STAGING_IDS - F1B_OWNER_APPROVED_STAGING_IDS
 F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
 F1_DEFERRED_STUB_FIELDS = {
     "handcrafted": False,
@@ -210,7 +212,7 @@ def f1_staging_aware_baseline_text(major_json_text: str) -> str:
             major_id = int(item.get("id") or item.get("major_id"))
         except (TypeError, ValueError):
             continue
-        if major_id in F1_OWNER_APPROVED_STAGING_IDS:
+        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS):
             for key, value in F1_DEFERRED_STUB_FIELDS.items():
                 item[key] = json.loads(json.dumps(value, ensure_ascii=False))
     return json.dumps(records, ensure_ascii=False, indent=2) + "\n"
@@ -433,6 +435,47 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
             or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
         ):
             raise ValueError(f"F1 staged activation contract failed for major {major_id}")
+    f1b_active = [
+        item for item in wave_a_records
+        if int(item.get("id") or item.get("major_id") or 0) in F1B_OWNER_APPROVED_STAGING_IDS
+    ]
+    if len(f1b_active) != len(F1B_OWNER_APPROVED_STAGING_IDS):
+        raise ValueError("F1b must contain exactly five candidate rows (177, 178, 180, 181, 182)")
+    expected_f1b_codes = {
+        177: [f"DIRECT-{i:03d}" for i in range(1, 8)],
+        178: [f"DIRECT-{i:03d}" for i in range(8, 15)],
+        180: [f"MUSIC-{i:03d}" for i in range(1, 8)],
+        181: [f"MUSIC-{i:03d}" for i in range(8, 15)],
+        182: [f"MUSIC-{i:03d}" for i in range(15, 22)],
+    }
+    expected_f1b_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f1b_active:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F1B_WEIGHTS_VERSION
+            or item.get("micro_motive_codes") != expected_f1b_codes[major_id]
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_f1b_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F1b candidate staging contract failed for major {major_id}")
+
     wave_b_records = [
         item for item in major_records
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_B_DEFERRED_IDS
