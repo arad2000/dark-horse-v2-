@@ -1,6 +1,6 @@
 {
   "schema": "DH-013-F1-index-v1",
-  "status": "CANDIDATE_ONLY_NOT_APPROVED",
+  "status": "OWNER_CONTENT_APPROVED_STAGED_IN_DRAFT_PR_REVIEW_PENDING",
   "pr": 199,
   "branch": "f1-artist-motives-review-183-189",
   "per_major_files": [
@@ -635,7 +635,9 @@
     "reviewer_B": "PENDING_REAL_NAME_AND_SIGNATURE",
     "blind_test_complete": false,
     "formula_approved": false,
-    "activation_allowed": false
+    "activation_allowed": false,
+    "owner_directed_draft_staging": true,
+    "formal_independent_review_gate": "PENDING"
   },
   "counts": {
     "strategy_option_evidence": 750,
@@ -646,6 +648,15 @@
     "targets_exceeding_global_rule": 0,
     "targets_with_one_of_three_over_threshold": [
       184,
+      189
+    ],
+    "staged_draft_activation_ids": 6,
+    "active_on_pr_head_ids": [
+      183,
+      184,
+      185,
+      186,
+      187,
       189
     ]
   },
@@ -673,7 +684,7 @@
       "above_pct": 0,
       "global_60pct_rule": "PROVISIONAL_PASS",
       "blind_test": "PENDING",
-      "activation": "BLOCKED"
+      "activation": "STAGED_IN_DRAFT_PR_ONLY"
     },
     {
       "id": 184,
@@ -683,7 +694,7 @@
       "above_pct": 33.3,
       "global_60pct_rule": "PROVISIONAL_PASS",
       "blind_test": "PENDING",
-      "activation": "BLOCKED"
+      "activation": "STAGED_IN_DRAFT_PR_ONLY"
     },
     {
       "id": 185,
@@ -693,7 +704,7 @@
       "above_pct": 0,
       "global_60pct_rule": "PROVISIONAL_PASS",
       "blind_test": "PENDING",
-      "activation": "BLOCKED"
+      "activation": "STAGED_IN_DRAFT_PR_ONLY"
     },
     {
       "id": 186,
@@ -703,7 +714,7 @@
       "above_pct": 0,
       "global_60pct_rule": "PROVISIONAL_PASS",
       "blind_test": "PENDING",
-      "activation": "BLOCKED"
+      "activation": "STAGED_IN_DRAFT_PR_ONLY"
     },
     {
       "id": 187,
@@ -713,7 +724,7 @@
       "above_pct": 0,
       "global_60pct_rule": "PROVISIONAL_PASS",
       "blind_test": "PENDING",
-      "activation": "BLOCKED"
+      "activation": "STAGED_IN_DRAFT_PR_ONLY"
     },
     {
       "id": 189,
@@ -723,8 +734,44 @@
       "above_pct": 33.3,
       "global_60pct_rule": "PROVISIONAL_PASS",
       "blind_test": "PENDING",
-      "activation": "BLOCKED"
+      "activation": "STAGED_IN_DRAFT_PR_ONLY"
     }
   ],
-  "no_weight_fiddling": "No Strategy/Value numerical weights were changed to force separation. The revision adds identity profiles, archetype definitions, fulfillment sources and contrast sentences."
+  "no_weight_fiddling": "No Strategy/Value numerical weights were changed to force separation. The revision adds identity profiles, archetype definitions, fulfillment sources and contrast sentences.",
+  "owner_content_decision": {
+    "date": "2026-10-15",
+    "decision": "CONTENT_APPROVED_WITH_CONDITION",
+    "exact_184_vs_189_distinction": "184 طراحی و کنترل چاپ برای پارچه/نساجی؛ 189 کیفیت تیراژ چاپ عمومی غیرمختص پارچه.",
+    "target_ids": [
+      183,
+      184,
+      185,
+      186,
+      187,
+      189
+    ],
+    "staged_activation": "motive_driven=true only for these six IDs on the unmerged PR #199 head branch",
+    "excluded_id_188": {
+      "motive_driven": false,
+      "micro_motive_codes": [],
+      "strategy_weights": [],
+      "value_weights": {},
+      "status": "open domain; unchanged"
+    },
+    "derivation": {
+      "strategy_weights": "Use candidate_weight at strategy tuple index 1; 25 questions × 5 options, every row normalized to 1.",
+      "value_weights": "Use candidate_weight at value tuple index 2; 30 named poles.",
+      "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2",
+      "handcrafted": "true, consistent with the existing activated arts-cluster record."
+    },
+    "change_boundary": "No changes to IDs 1..160 or any non-target major. Hybrid, Total, cutoff, docs/data.js, and engine are untouched.",
+    "independent_review_gate": "Reviewer A/B and blind test remain pending; this branch-only staging is not represented as independent review sign-off.",
+    "deployment_state": "PR remains Draft and unmerged; live deployment remains unchanged until authorized merge."
+  },
+  "catalog_activation_derivation": {
+    "strategy_weights": "Use candidate_weight at strategy tuple index 1; 25 questions × 5 options, every row normalized to 1.",
+    "value_weights": "Use candidate_weight at value tuple index 2; 30 named poles.",
+    "weights_version": "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2",
+    "handcrafted": "true, consistent with the existing activated arts-cluster record."
+  }
 }
