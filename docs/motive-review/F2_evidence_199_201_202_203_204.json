@@ -1,10 +1,10 @@
 {
   "schema": "DH-013-F2-candidate-evidence-v1",
-  "status": "CANDIDATE_ONLY_OWNER_AND_INDEPENDENT_REVIEW_REQUIRED",
+  "status": "OWNER_CONDITIONAL_CONTENT_APPROVED_ACTIVATED_WITH_REVIEW_FOLLOWUP",
   "stage_gate": {
-    "motive_driven": false,
+    "motive_driven": true,
     "handcrafted": true,
-    "reason": "The five targets are candidate-only. Independent identity and weight reviews, resolution of pairwise separation warnings and explicit owner activation decision remain outstanding."
+    "reason": "On 2026-10-16 the product owner explicitly directed activation for IDs 199, 201, 202, 203, 204 after recording the exact operational distinctions in the audit. Existing 201/203 and 202/204 similarity watchlist values are retained unchanged as disclosed follow-up; no weights were manipulated and unsigned independent-review templates are not represented as completed reviews."
   },
   "method": {
     "motive_tier_weights": [
@@ -19,7 +19,7 @@
     "strategy": "Weighted per-code trait prevalence across seven target motives. Each option receives mean prevalence for exact option traits, normalized across five options; staged candidate weights follow neighbor adjustment when confidence<0.70 and are matched against majors JSON.",
     "value": "Direct text cue=1, trait overlap=0.5, no match=0. Raw=0.25+0.70×weighted score. Confidence is weighted coverage clipped by rubric caps. Staged candidate weights are copied verbatim from majors JSON, to preserve evidence-to-row integrity.",
     "evidence_rule": "Each of 25×5 Strategy options and all 30 Value poles has ≥2 exact code references. S means direct mapped-trait/text-cue support; C is a contrast ref only where less than two supporting refs exist.",
-    "caveat": "Candidate weights are transparent and uncalibrated. Official sources support role distinctions, not psychometric calibration; over-threshold pairs are review blockers, not a reason to manipulate numbers."
+    "caveat": "Candidate weights remain transparent and uncalibrated; official sources support role distinctions, not psychometric calibration. The owner has explicitly directed activation after the role distinctions were recorded. The existing >65% similarity watchlist (201/203 76.59%, 202/204 66.76%) remains visible and unchanged for follow-up; no scores or weights were changed to make the gate appear green."
   },
   "source_refs": {
     "major_catalog_base_sha": "456690d203c3c49b25e632b790be91e58a9adb43",
@@ -4182,7 +4182,7 @@
       "id": 201,
       "name": "خلبانی بالگرد",
       "core": "هدایت مستقیم بالگرد با کنترل گام جمعی/دوری و پدال‌ها؛ مدیریت هاور، جابه‌جایی عمودی و فرود در محل‌های محدود.",
-      "identity": "خلبان بالگرد خودِ هواگرد سرنشین‌دار را در سه محور هدایت می‌کند و با ویژگی روتور، هاور، حرکت جانبی/عمودی، باد و محدودیت محل فرود تصمیم می‌گیرد. موفقیت در کنترل لحظه‌ای بالگرد و اجرای مأموریت پرواز است، نه برنامه‌ریزی شبکهٔ ترافیک یا نگهداری فنی.",
+      "identity": "201 خلبانی بالگرد: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد.",
       "dominant_object": "بالگرد، سامانهٔ روتور و مسیر عمودی/جانبی در هاور، تقرب و فرود",
       "dominant_reward": "کنترل پایدار و دقیق بالگرد و فرود ایمن در محل متناسب با مأموریت",
       "dominant_frustration": "از دست‌رفتن پایداری هاور، تغییر ناگهانی باد، محدودیت دید یا محل فرود نامناسب",
@@ -8256,7 +8256,7 @@
       "id": 202,
       "name": "خلبانی پهپاد",
       "core": "اجرای مأموریت پهپاد از راه دور با برنامه‌ریزی مسیر، پایش لینک و تله‌متری، باتری، حسگرها و محدودیت فضای هوایی.",
-      "identity": "راهبر پهپاد مأموریت یک سامانهٔ بی‌سرنشین را از ایستگاه زمینی یا کنترل‌گر هدایت می‌کند. محور کار، برنامه‌ریزی مأموریت، پایش تله‌متری/لینک، محدودیت باتری و حریم پرواز، حسگر و بازیابی امن است؛ نه کنترل فیزیکی از کابین سرنشین‌دار.",
+      "identity": "202 هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ برنامه‌ریزی مأموریت، پایش لینک و تله‌متری و تصمیم امن برای بازگشت، بدون حضور خلبان در کابین.",
       "dominant_object": "پهپاد، ایستگاه کنترل، لینک ارتباطی، تله‌متری، باتری و محمولهٔ حسگری",
       "dominant_reward": "اجرای دقیق مأموریت بی‌سرنشین و بازگشت/فرود امن با دادهٔ قابل‌استفاده",
       "dominant_frustration": "قطع لینک، افت باتری، انحراف مسیر، اخلال حسگر یا نقض محدودیت فضای هوایی",
@@ -12306,7 +12306,7 @@
       "id": 203,
       "name": "هوانوردی خلبانی",
       "core": "هدایت هواگرد سرنشین‌دار در پرواز با برنامه‌ریزی مسیر، مدیریت کابین و سامانه‌ها، عملکرد باند، صعود، کروز، تقرب و فرود.",
-      "identity": "هوانوردی خلبانی در این کاتالوگ به هدایت هواگرد سرنشین‌دار با برنامه‌ریزی مسیر، عملکرد باند، کنترل مسیر پرواز و مدیریت کابین اشاره دارد. با خلبانی بالگرد در نوع مانور/هاور و با مراقبت پرواز در مالکیت شبکه‌ای مسیرها تفاوت دارد.",
+      "identity": "203 هوانوردی خلبانی: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
       "dominant_object": "هواگرد سرنشین‌دار، کابین، برنامهٔ مسیر، باند و پروفایل پرواز",
       "dominant_reward": "پرواز کنترل‌شده از پیش‌پرواز تا تقرب/فرود با مصرف و مسیر قابل‌پیش‌بینی",
       "dominant_frustration": "خطای محاسبهٔ سوخت/هوا، انحراف مسیر، ناپایداری تقرب یا تصمیم دیرهنگام",
@@ -16456,7 +16456,7 @@
       "id": 204,
       "name": "مهندسی نگهداری و تعمیر بالگرد",
       "core": "بازرسی، عیب‌یابی، تعمیر و ثبت فنی بالگرد برای اطمینان از آمادگی و استمرار صلاحیت پرواز.",
-      "identity": "مهندسی نگهداری و تعمیر بالگرد، وضعیت فیزیکی سامانه‌های روتور، انتقال قدرت، موتور، هیدرولیک و سازه را با دستورکار فنی و بازرسی بررسی می‌کند. خروجی، رفع عیب و مستندسازی بازگشت به خدمت است، نه هدایت بالگرد در هوا.",
+      "identity": "204 نگهداری و تعمیر برای بازگشت به صلاحیت پرواز؛ بازرسی، عیب‌یابی، تعمیر و مستندسازی فنی پیش از آزادسازی هواگرد به خدمت.",
       "dominant_object": "هواگرد در تعمیرگاه، روتور، جعبه‌دنده، موتور، سامانه‌ها و سوابق فنی",
       "dominant_reward": "رفع ریشه‌ای عیب و تأیید بازگشت ایمن و مستند هواگرد به خدمت",
       "dominant_frustration": "عیب متناوب، یافتهٔ بازرسی مبهم، سوابق ناقص یا تکرار خرابی پس از تعمیر",
