@@ -295,7 +295,7 @@ def test_wave_c_deferred_catalog_contract():
     assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_c)
 
 
-def test_wave_c_f2_candidate_contract():
+def test_wave_c_f2_owner_approved_active_contract():
     majors = load_json("majors_database_v2.json")
     f2 = [m for m in majors if int(m["id"]) in F2_CANDIDATE_STAGING_IDS]
     assert [int(m["id"]) for m in f2] == [199, 201, 202, 203, 204]
@@ -309,7 +309,7 @@ def test_wave_c_f2_candidate_contract():
     expected_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
     for m in f2:
         major_id = int(m["id"])
-        assert m.get("motive_driven") is False
+        assert m.get("motive_driven") is True
         assert m.get("handcrafted") is True
         assert m.get("weights_version") == F2_WEIGHTS_VERSION
         assert m.get("micro_motive_codes") == expected_codes[major_id]
