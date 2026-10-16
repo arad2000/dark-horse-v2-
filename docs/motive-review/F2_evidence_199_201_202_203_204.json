@@ -4,7 +4,7 @@
   "stage_gate": {
     "motive_driven": true,
     "handcrafted": true,
-    "reason": "On 2026-10-16 the product owner explicitly directed activation for IDs 199, 201, 202, 203, 204 after recording the exact operational distinctions in the audit. Existing 201/203 and 202/204 similarity watchlist values are retained unchanged as disclosed follow-up; no weights were manipulated and unsigned independent-review templates are not represented as completed reviews."
+    "reason": "On 2026-10-16 the product owner explicitly directed activation for IDs 199, 201, 202, 203, 204 after recording the three exact operational distinctions. Existing 201/203 and 202/204 similarity watchlist values remain unchanged and disclosed as follow-up; no weights were manipulated. Reviewer A/B templates remain unsigned/open."
   },
   "method": {
     "motive_tier_weights": [
@@ -20624,5 +20624,32 @@
         }
       }
     }
-  ]
+  ],
+  "owner_content_approval": {
+    "date": "2026-10-16",
+    "status": "CONDITIONALLY_APPROVED_AND_ACTIVATION_AUTHORIZED_BY_PRODUCT_OWNER",
+    "exact_distinctions_fa": [
+      "201 خلبانی بالگرد: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد.",
+      "203 هوانوردی خلبانی: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
+      "202 هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ 204 نگهداری و تعمیر برای بازگشت به صلاحیت پرواز."
+    ],
+    "scope_ids": [
+      199,
+      201,
+      202,
+      203,
+      204
+    ],
+    "reviewer_status": {
+      "reviewer_A": "OPEN — NOT SIGNED",
+      "reviewer_B": "OPEN — NOT SIGNED",
+      "note": "Independent reviews are not claimed as completed."
+    },
+    "residual_neighbor_warnings": {
+      "201-203": 76.59,
+      "202-204": 66.76,
+      "threshold_pct": 65,
+      "disposition": "Retained unchanged; accepted by the explicit conditional owner activation instruction. Not represented as recalculated or numerically resolved."
+    }
+  }
 }

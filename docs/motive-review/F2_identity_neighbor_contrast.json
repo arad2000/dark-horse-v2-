@@ -1,6 +1,6 @@
 {
   "schema": "DH-013-F2-identity-neighbor-v1",
-  "status": "CANDIDATE_ONLY_OWNER_AND_INDEPENDENT_REVIEW_REQUIRED",
+  "status": "OWNER_CONDITIONAL_CONTENT_APPROVED_ACTIVATED_WITH_REVIEW_FOLLOWUP",
   "axes": [
     "core_verb",
     "dominant_object",
@@ -288,8 +288,9 @@
       "revised_composite_similarity_pct": 76.59,
       "proposed_threshold_pct": 65,
       "above_threshold": true,
-      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
-      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+      "result": "ABOVE_PROPOSED_THRESHOLD_OWNER_ACCEPTED_WITH_EXPLICIT_ROLE_DISTINCTIONS",
+      "review_status": "OWNER_ACCEPTED_CONDITIONALLY_BY_EXPLICIT_INSTRUCTION_2026-10-16",
+      "owner_disposition": "Owner directed activation after recording the exact role distinctions; the numerical similarity score is retained unchanged."
     },
     {
       "target_id": 201,
@@ -426,8 +427,9 @@
       "revised_composite_similarity_pct": 66.76,
       "proposed_threshold_pct": 65,
       "above_threshold": true,
-      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
-      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+      "result": "ABOVE_PROPOSED_THRESHOLD_OWNER_ACCEPTED_WITH_EXPLICIT_ROLE_DISTINCTIONS",
+      "review_status": "OWNER_ACCEPTED_CONDITIONALLY_BY_EXPLICIT_INSTRUCTION_2026-10-16",
+      "owner_disposition": "Owner directed activation after recording the exact role distinctions; the numerical similarity score is retained unchanged."
     },
     {
       "target_id": 203,
@@ -495,8 +497,9 @@
       "revised_composite_similarity_pct": 76.59,
       "proposed_threshold_pct": 65,
       "above_threshold": true,
-      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
-      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+      "result": "ABOVE_PROPOSED_THRESHOLD_OWNER_ACCEPTED_WITH_EXPLICIT_ROLE_DISTINCTIONS",
+      "review_status": "OWNER_ACCEPTED_CONDITIONALLY_BY_EXPLICIT_INSTRUCTION_2026-10-16",
+      "owner_disposition": "Owner directed activation after recording the exact role distinctions; the numerical similarity score is retained unchanged."
     },
     {
       "target_id": 203,
@@ -633,8 +636,9 @@
       "revised_composite_similarity_pct": 66.76,
       "proposed_threshold_pct": 65,
       "above_threshold": true,
-      "result": "ABOVE_PROPOSED_THRESHOLD_REQUIRES_SEPARATION_REVIEW",
-      "review_status": "PENDING_INDEPENDENT_VALIDATION"
+      "result": "ABOVE_PROPOSED_THRESHOLD_OWNER_ACCEPTED_WITH_EXPLICIT_ROLE_DISTINCTIONS",
+      "review_status": "OWNER_ACCEPTED_CONDITIONALLY_BY_EXPLICIT_INSTRUCTION_2026-10-16",
+      "owner_disposition": "Owner directed activation after recording the exact role distinctions; the numerical similarity score is retained unchanged."
     },
     {
       "target_id": 204,
@@ -698,8 +702,38 @@
       "Record the three exact role-distinction statements supplied by the product owner in the F2 audit.",
       "Keep target weights, motive codes, archetypes, fulfillment and matrices matched to the audit.",
       "Leave protected IDs and engine/Hybrid/Total/cutoff data unchanged.",
-      "Merge only after CI is green."
+      "Merge only after CI is green.",
+      "Record verbatim: 201 خلبانی بالگرد: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد.",
+      "Record verbatim: 203 هوانوردی خلبانی: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
+      "Record verbatim: 202 هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ 204 نگهداری و تعمیر برای بازگشت به صلاحیت پرواز."
     ],
-    "note": "Owner explicitly directed activation after the exact role distinctions were recorded. Existing 201/203 (76.59%) and 202/204 (66.76%) values remain unchanged and visible for follow-up; activation does not represent independent review completion or numerical resolution."
+    "note": "Owner explicitly directed activation after the three exact role distinctions were recorded. Existing 201/203 (76.59%) and 202/204 (66.76%) values remain unchanged and visible for follow-up; activation does not represent independent review completion or numerical resolution."
+  },
+  "owner_content_approval": {
+    "date": "2026-10-16",
+    "status": "CONDITIONALLY_APPROVED_AND_ACTIVATION_AUTHORIZED_BY_PRODUCT_OWNER",
+    "exact_distinctions_fa": [
+      "201 خلبانی بالگرد: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد.",
+      "203 هوانوردی خلبانی: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
+      "202 هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ 204 نگهداری و تعمیر برای بازگشت به صلاحیت پرواز."
+    ],
+    "scope_ids": [
+      199,
+      201,
+      202,
+      203,
+      204
+    ],
+    "reviewer_status": {
+      "reviewer_A": "OPEN — NOT SIGNED",
+      "reviewer_B": "OPEN — NOT SIGNED",
+      "note": "Independent reviews are not claimed as completed."
+    },
+    "residual_neighbor_warnings": {
+      "201-203": 76.59,
+      "202-204": 66.76,
+      "threshold_pct": 65,
+      "disposition": "Retained unchanged; accepted by the explicit conditional owner activation instruction. Not represented as recalculated or numerically resolved."
+    }
   }
 }
