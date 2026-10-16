@@ -233,7 +233,7 @@ def main() -> None:
         "value_poles": len(values),
     }
 
-    expected_counts = {"micro_motives": 1099, "majors": 230, "value_poles": 30}
+    expected_counts = {"micro_motives": 1323, "majors": 230, "value_poles": 30}
     for name, expected in expected_counts.items():
         actual = report["counts"][name]
         if actual != expected:

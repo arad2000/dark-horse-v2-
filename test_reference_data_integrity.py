@@ -23,6 +23,8 @@ BASELINE_MAJOR_1_215_FINGERPRINT = "4a75d6d48c2b07ce"
 F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
 F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
 F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
+F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
+F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
 F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
 F1_DEFERRED_STUB_FIELDS = {
     "handcrafted": False,
@@ -204,7 +206,7 @@ def _canonical_value(value):
 def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
     majors = json.loads(major_json_text)
     for major in majors:
-        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS):
+        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS):
             major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
     return json.dumps(majors, ensure_ascii=False, indent=2) + "\n"
 
@@ -278,26 +280,49 @@ def test_wave_e_deferred_catalog_contract():
 
 def test_wave_c_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    wave_c = [m for m in majors if int(m["id"]) in range(195, 205)]
-    assert len(wave_c) == 10
-    assert [int(m["id"]) for m in wave_c] == list(range(195, 205))
+    deferred_ids = {195, 196, 197, 198, 200}
+    wave_c = [m for m in majors if int(m["id"]) in deferred_ids]
+    assert len(wave_c) == 5
+    assert [int(m["id"]) for m in wave_c] == [195, 196, 197, 198, 200]
     assert [m["name"] for m in wave_c] == [
-        "مهندسی حرفه‌ای کامپیوتر",
-        "علم اطلاعات و دانش‌شناسی",
-        "مهندسی حرفه‌ای معماری",
-        "مهندسی ساخت و تولید",
-        "مهندسی هوانوردی و مراقبت پرواز",
-        "فناوری اطلاعات و ارتباطات",
-        "خلبانی بالگرد",
-        "خلبانی پهپاد",
-        "هوانوردی خلبانی",
-        "مهندسی نگهداری و تعمیر بالگرد",
+        "مهندسی حرفه‌ای کامپیوتر", "علم اطلاعات و دانش‌شناسی", "مهندسی حرفه‌ای معماری",
+        "مهندسی ساخت و تولید", "فناوری اطلاعات و ارتباطات",
     ]
     assert all(m.get("motive_driven") is False for m in wave_c)
     assert all(m.get("micro_motive_codes") == [] for m in wave_c)
     assert all(m.get("strategy_weights") == [] for m in wave_c)
     assert all(m.get("value_weights") == {} for m in wave_c)
     assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_c)
+
+
+def test_wave_c_f2_owner_approved_active_contract():
+    majors = load_json("majors_database_v2.json")
+    f2 = [m for m in majors if int(m["id"]) in F2_CANDIDATE_STAGING_IDS]
+    assert [int(m["id"]) for m in f2] == [199, 201, 202, 203, 204]
+    expected_codes = {
+        199: [f"AVIA-{i:03d}" for i in range(1, 8)],
+        201: [f"PILOT-{i:03d}" for i in range(1, 8)],
+        202: [f"UAV-{i:03d}" for i in range(1, 8)],
+        203: [f"PILOT-{i:03d}" for i in range(8, 15)],
+        204: [f"MRO-{i:03d}" for i in range(1, 8)],
+    }
+    expected_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for m in f2:
+        major_id = int(m["id"])
+        assert m.get("motive_driven") is True
+        assert m.get("handcrafted") is True
+        assert m.get("weights_version") == F2_WEIGHTS_VERSION
+        assert m.get("micro_motive_codes") == expected_codes[major_id]
+        strategy = m.get("strategy_weights")
+        assert len(strategy) == 25
+        assert all(len(row) == 5 and all(isinstance(x,(int,float)) and 0 <= x <= 1 for x in row) for row in strategy)
+        assert all(abs(sum(row)-1.0) <= 0.002 for row in strategy)
+        values = m.get("value_weights")
+        assert set(values) == expected_poles
+        assert all(isinstance(v,(int,float)) and 0 <= v <= 1 for v in values.values())
+        assert m.get("archetype") and m.get("archetype") != "deferred_catalog_only"
+        assert m.get("fulfillment_source") and m.get("fulfillment_source") != F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+
 
 def test_wave_d_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
@@ -338,6 +363,7 @@ if __name__ == "__main__":
     test_wave_d_preserves_entire_existing_catalog_1_to_204()
     test_wave_e_preserves_entire_existing_catalog_1_to_215()
     test_wave_c_deferred_catalog_contract()
+    test_wave_c_f2_owner_approved_active_contract()
     test_wave_d_deferred_catalog_contract()
     test_wave_e_deferred_catalog_contract()
     test_major_names_are_unique_for_uq_major_name()

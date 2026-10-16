@@ -54,7 +54,9 @@ F1_DEFERRED_STUB_FIELDS = {
     "fulfillment_source": "این مدخل فعلاً فقط برای کاتالوگ و تطبیق ظرفیت سنجش است؛ داده‌های فردیت و وزن‌های امتیازدهی تدوین و اعتبارسنجی نشده‌اند.",
 }
 WAVE_B_DEFERRED_IDS = frozenset(range(190, 195))
-WAVE_C_DEFERRED_IDS = frozenset(range(195, 205))
+F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
+F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
+WAVE_C_DEFERRED_IDS = frozenset({195, 196, 197, 198, 200})
 WAVE_D_DEFERRED_IDS = frozenset(range(205, 216))
 WAVE_E_DEFERRED_IDS = frozenset(range(216, 231))
 MAJOR_1_194_CATALOG_FINGERPRINT = "5189181b82aab0e6"
@@ -212,7 +214,7 @@ def f1_staging_aware_baseline_text(major_json_text: str) -> str:
             major_id = int(item.get("id") or item.get("major_id"))
         except (TypeError, ValueError):
             continue
-        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS):
+        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS):
             for key, value in F1_DEFERRED_STUB_FIELDS.items():
                 item[key] = json.loads(json.dumps(value, ensure_ascii=False))
     return json.dumps(records, ensure_ascii=False, indent=2) + "\n"
@@ -498,7 +500,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_C_DEFERRED_IDS
     ]
     if len(wave_c_records) != len(WAVE_C_DEFERRED_IDS):
-        raise ValueError("Wave C must contain exactly 10 catalog-only rows (195..204)")
+        raise ValueError("Wave C non-F2 rows must contain exactly five catalog-only rows (195-198, 200)")
     for item in wave_c_records:
         if (
             item.get("motive_driven") is not False
@@ -507,9 +509,49 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
             or item.get("value_weights") not in (None, {})
             or item.get("weights_version") != "deferred_catalog_only_v1"
         ):
-            raise ValueError(
-                f"Wave C major {item.get('id')} must remain a deferred catalog-only stub"
+            raise ValueError(f"Wave C major {item.get('id')} must remain a deferred catalog-only stub")
+
+    f2_candidates = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in F2_CANDIDATE_STAGING_IDS
+    ]
+    if len(f2_candidates) != len(F2_CANDIDATE_STAGING_IDS):
+        raise ValueError("F2 must contain exactly five candidate rows (199, 201, 202, 203, 204)")
+    expected_f2_codes = {
+        199: [f"AVIA-{i:03d}" for i in range(1, 8)],
+        201: [f"PILOT-{i:03d}" for i in range(1, 8)],
+        202: [f"UAV-{i:03d}" for i in range(1, 8)],
+        203: [f"PILOT-{i:03d}" for i in range(8, 15)],
+        204: [f"MRO-{i:03d}" for i in range(1, 8)],
+    }
+    expected_f2_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f2_candidates:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F2_WEIGHTS_VERSION
+            or item.get("micro_motive_codes") != expected_f2_codes[major_id]
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
             )
+            or not isinstance(values, dict)
+            or set(values) != expected_f2_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F2 owner-approved activation contract failed for major {major_id}")
+
     wave_d_records = [
         item for item in major_records
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_D_DEFERRED_IDS
