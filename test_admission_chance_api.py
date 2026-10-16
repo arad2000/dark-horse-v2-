@@ -1634,8 +1634,8 @@ class AdmissionChanceApiTests(unittest.TestCase):
         ]
         self.assertEqual([majors[str(i)]["name"] for i in range(195, 205)], expected_names)
 
-        # F2 candidates at 199 and 201-204 are staged with review matrices but
-        # remain motive_driven=False. Only the non-F2 wave-C rows stay blank.
+        # F2 targets 199 and 201-204 are active by explicit owner instruction.
+        # Only the non-F2 wave-C rows 195-198 and 200 stay blank.
         deferred_ids = (195, 196, 197, 198, 200)
         for major_id in deferred_ids:
             with self.subTest(major_id=major_id):
