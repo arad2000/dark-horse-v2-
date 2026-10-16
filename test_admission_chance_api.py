@@ -1617,7 +1617,7 @@ class AdmissionChanceApiTests(unittest.TestCase):
 
 
 
-    def test_loader_catalog_ids_are_exactly_1_to_215_and_wave_c_stays_unweighted(self):
+    def test_loader_catalog_ids_are_exactly_1_to_230_and_wave_c_deferred_rows_stay_unweighted(self):
         majors = load_majors()
         self.assertEqual(set(majors), {str(i) for i in range(1, 231)})
         expected_names = [
@@ -1633,7 +1633,11 @@ class AdmissionChanceApiTests(unittest.TestCase):
             "مهندسی نگهداری و تعمیر بالگرد",
         ]
         self.assertEqual([majors[str(i)]["name"] for i in range(195, 205)], expected_names)
-        for major_id in range(195, 205):
+
+        # F2 candidates at 199 and 201-204 are staged with review matrices but
+        # remain motive_driven=False. Only the non-F2 wave-C rows stay blank.
+        deferred_ids = (195, 196, 197, 198, 200)
+        for major_id in deferred_ids:
             with self.subTest(major_id=major_id):
                 major = majors[str(major_id)]
                 self.assertFalse(major["motive_driven"])
