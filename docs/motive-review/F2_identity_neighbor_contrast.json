@@ -44,7 +44,7 @@
     },
     "201": {
       "name": "خلبانی بالگرد",
-      "identity": "خلبان بالگرد خودِ هواگرد سرنشین‌دار را در سه محور هدایت می‌کند و با ویژگی روتور، هاور، حرکت جانبی/عمودی، باد و محدودیت محل فرود تصمیم می‌گیرد. موفقیت در کنترل لحظه‌ای بالگرد و اجرای مأموریت پرواز است، نه برنامه‌ریزی شبکهٔ ترافیک یا نگهداری فنی.",
+      "identity": "201 خلبانی بالگرد: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد.",
       "core_verb": "هدایت مستقیم بالگرد با کنترل گام جمعی/دوری و پدال‌ها؛ مدیریت هاور، جابه‌جایی عمودی و فرود در محل‌های محدود.",
       "dominant_object": "بالگرد، سامانهٔ روتور و مسیر عمودی/جانبی در هاور، تقرب و فرود",
       "dominant_reward": "کنترل پایدار و دقیق بالگرد و فرود ایمن در محل متناسب با مأموریت",
@@ -54,7 +54,7 @@
     },
     "202": {
       "name": "خلبانی پهپاد",
-      "identity": "راهبر پهپاد مأموریت یک سامانهٔ بی‌سرنشین را از ایستگاه زمینی یا کنترل‌گر هدایت می‌کند. محور کار، برنامه‌ریزی مأموریت، پایش تله‌متری/لینک، محدودیت باتری و حریم پرواز، حسگر و بازیابی امن است؛ نه کنترل فیزیکی از کابین سرنشین‌دار.",
+      "identity": "202 هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ برنامه‌ریزی، لینک و تله‌متری و بازیابی امن.",
       "core_verb": "اجرای مأموریت پهپاد از راه دور با برنامه‌ریزی مسیر، پایش لینک و تله‌متری، باتری، حسگرها و محدودیت فضای هوایی.",
       "dominant_object": "پهپاد، ایستگاه کنترل، لینک ارتباطی، تله‌متری، باتری و محمولهٔ حسگری",
       "dominant_reward": "اجرای دقیق مأموریت بی‌سرنشین و بازگشت/فرود امن با دادهٔ قابل‌استفاده",
@@ -64,7 +64,7 @@
     },
     "203": {
       "name": "هوانوردی خلبانی",
-      "identity": "هوانوردی خلبانی در این کاتالوگ به هدایت هواگرد سرنشین‌دار با برنامه‌ریزی مسیر، عملکرد باند، کنترل مسیر پرواز و مدیریت کابین اشاره دارد. با خلبانی بالگرد در نوع مانور/هاور و با مراقبت پرواز در مالکیت شبکه‌ای مسیرها تفاوت دارد.",
+      "identity": "203 هوانوردی خلبانی: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
       "core_verb": "هدایت هواگرد سرنشین‌دار در پرواز با برنامه‌ریزی مسیر، مدیریت کابین و سامانه‌ها، عملکرد باند، صعود، کروز، تقرب و فرود.",
       "dominant_object": "هواگرد سرنشین‌دار، کابین، برنامهٔ مسیر، باند و پروفایل پرواز",
       "dominant_reward": "پرواز کنترل‌شده از پیش‌پرواز تا تقرب/فرود با مصرف و مسیر قابل‌پیش‌بینی",
@@ -74,7 +74,7 @@
     },
     "204": {
       "name": "مهندسی نگهداری و تعمیر بالگرد",
-      "identity": "مهندسی نگهداری و تعمیر بالگرد، وضعیت فیزیکی سامانه‌های روتور، انتقال قدرت، موتور، هیدرولیک و سازه را با دستورکار فنی و بازرسی بررسی می‌کند. خروجی، رفع عیب و مستندسازی بازگشت به خدمت است، نه هدایت بالگرد در هوا.",
+      "identity": "204 نگهداری و تعمیر برای بازگشت به صلاحیت پرواز؛ بازرسی و رفع عیب و ثبت فنی پیش از بازگشت هواگرد به خدمت.",
       "core_verb": "بازرسی، عیب‌یابی، تعمیر و ثبت فنی بالگرد برای اطمینان از آمادگی و استمرار صلاحیت پرواز.",
       "dominant_object": "هواگرد در تعمیرگاه، روتور، جعبه‌دنده، موتور، سامانه‌ها و سوابق فنی",
       "dominant_reward": "رفع ریشه‌ای عیب و تأیید بازگشت ایمن و مستند هواگرد به خدمت",
@@ -111,7 +111,7 @@
       "target_id": 199,
       "neighbor_id": 201,
       "neighbor_name": "خلبانی بالگرد",
-      "contrast_sentence": "۱۹۹ جداسازی و جریان شبکهٔ هواگردها؛ ۲۰۱ کنترل مستقیم بالگرد و فرود.",
+      "contrast_sentence": "199 هماهنگی شبکه و جداسازی ترافیک؛ 201 خلبانی بالگرد: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد.",
       "axis_scores": {
         "core_verb": 0,
         "dominant_object": 0,
@@ -134,7 +134,7 @@
       "target_id": 199,
       "neighbor_id": 202,
       "neighbor_name": "خلبانی پهپاد",
-      "contrast_sentence": "۱۹۹ مجوزها و جریان فضای هوایی؛ ۲۰۲ هدایت پهپاد مشخص از راه دور.",
+      "contrast_sentence": "199 هماهنگی شبکه و جداسازی ترافیک؛ 202 هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ برنامه‌ریزی، لینک و تله‌متری و بازیابی امن.",
       "axis_scores": {
         "core_verb": 0.5,
         "dominant_object": 0,
@@ -157,7 +157,7 @@
       "target_id": 199,
       "neighbor_id": 203,
       "neighbor_name": "هوانوردی خلبانی",
-      "contrast_sentence": "۱۹۹ جداسازی میان هواگردها؛ ۲۰۳ کنترل هواگرد از کابین.",
+      "contrast_sentence": "199 هماهنگی شبکه و جداسازی ترافیک؛ 203 هوانوردی خلبانی: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
       "axis_scores": {
         "core_verb": 0,
         "dominant_object": 0,
@@ -180,7 +180,7 @@
       "target_id": 199,
       "neighbor_id": 204,
       "neighbor_name": "مهندسی نگهداری و تعمیر بالگرد",
-      "contrast_sentence": "۱۹۹ ایمنی شبکه و ترافیک؛ ۲۰۴ سلامت فیزیکی و تعمیر هواگرد.",
+      "contrast_sentence": "199 هماهنگی شبکه و جداسازی ترافیک؛ 204 نگهداری و تعمیر برای بازگشت به صلاحیت پرواز؛ بازرسی و رفع عیب و ثبت فنی پیش از بازگشت هواگرد به خدمت.",
       "axis_scores": {
         "core_verb": 0,
         "dominant_object": 0,
@@ -272,7 +272,7 @@
       "target_id": 201,
       "neighbor_id": 203,
       "neighbor_name": "هوانوردی خلبانی",
-      "contrast_sentence": "۲۰۱ بالگرد با هاور و مانور عمودی؛ ۲۰۳ هواگرد سرنشین‌دار با مسیر/کابین/باند/تقرب.",
+      "contrast_sentence": "201: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد؛ 203: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
       "axis_scores": {
         "core_verb": 1,
         "dominant_object": 0.5,
@@ -410,7 +410,7 @@
       "target_id": 202,
       "neighbor_id": 204,
       "neighbor_name": "مهندسی نگهداری و تعمیر بالگرد",
-      "contrast_sentence": "۲۰۲ اجرای مأموریت پهپاد با سامانه و لینک؛ ۲۰۴ رفع عیب و ثبت فنی هواگرد.",
+      "contrast_sentence": "202: هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ 204: نگهداری و تعمیر برای بازگشت به صلاحیت پرواز.",
       "axis_scores": {
         "core_verb": 0.5,
         "dominant_object": 0.5,
@@ -479,7 +479,7 @@
       "target_id": 203,
       "neighbor_id": 201,
       "neighbor_name": "خلبانی بالگرد",
-      "contrast_sentence": "۲۰۱ بالگرد با هاور و مانور عمودی؛ ۲۰۳ هواگرد سرنشین‌دار با مسیر/کابین/باند/تقرب.",
+      "contrast_sentence": "201: کنترل هواگرد بال‌گردان، مانور عمودی و نشست/برخاست خاص بالگرد؛ 203: هدایت مسیر و مدیریت کابین در عملیات پروازی عمومی/ثابت‌محورتر، نه تخصص صرف بالگرد.",
       "axis_scores": {
         "core_verb": 1,
         "dominant_object": 0.5,
@@ -617,7 +617,7 @@
       "target_id": 204,
       "neighbor_id": 202,
       "neighbor_name": "خلبانی پهپاد",
-      "contrast_sentence": "۲۰۲ اجرای مأموریت پهپاد با سامانه و لینک؛ ۲۰۴ رفع عیب و ثبت فنی هواگرد.",
+      "contrast_sentence": "202: هدایت مأموریت بی‌سرنشین از ایستگاه زمینی؛ 204: نگهداری و تعمیر برای بازگشت به صلاحیت پرواز.",
       "axis_scores": {
         "core_verb": 0.5,
         "dominant_object": 0.5,
@@ -661,16 +661,15 @@
     }
   ],
   "activation_status": {
-    "motive_driven": false,
+    "motive_driven": true,
     "handcrafted": true,
     "weights_version": "dh013_f2_review_v1",
-    "reviewer_A": "OPEN — not signed",
-    "reviewer_B": "OPEN — not signed",
+    "reviewer_A": "OPEN — not signed; no independent approval claimed",
+    "reviewer_B": "OPEN — not signed; no independent approval claimed",
     "required": [
-      "Independent blind identity review",
-      "Independent Strategy/Value review",
-      "Resolution of all >65% pairs",
-      "Explicit owner activation decision"
+      "Independent blind identity review remains follow-up, not a claimed signature",
+      "Independent Strategy/Value review remains follow-up, not a claimed signature",
+      "Retain and disclose the >65% watchlist without altering its scores"
     ],
     "watchlist": [
       {
@@ -693,6 +692,14 @@
         "neighbor_id": 202,
         "composite_pct": 66.76
       }
-    ]
+    ],
+    "owner_decision": "CONDITIONAL_CONTENT_APPROVAL_AND_EXPLICIT_ACTIVATION_INSTRUCTION_RECEIVED_2026-10-16",
+    "owner_conditions": [
+      "Record the three exact role-distinction statements supplied by the product owner in the F2 audit.",
+      "Keep target weights, motive codes, archetypes, fulfillment and matrices matched to the audit.",
+      "Leave protected IDs and engine/Hybrid/Total/cutoff data unchanged.",
+      "Merge only after CI is green."
+    ],
+    "note": "Owner explicitly directed activation after the exact role distinctions were recorded. Existing 201/203 (76.59%) and 202/204 (66.76%) values remain unchanged and visible for follow-up; activation does not represent independent review completion or numerical resolution."
   }
 }
