@@ -530,7 +530,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         strategy = item.get("strategy_weights")
         values = item.get("value_weights")
         if (
-            item.get("motive_driven") is not False
+            item.get("motive_driven") is not True
             or item.get("handcrafted") is not True
             or item.get("weights_version") != F2_WEIGHTS_VERSION
             or item.get("micro_motive_codes") != expected_f2_codes[major_id]
@@ -550,7 +550,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
             or not item.get("fulfillment_source")
             or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
         ):
-            raise ValueError(f"F2 candidate staging contract failed for major {major_id}")
+            raise ValueError(f"F2 owner-approved activation contract failed for major {major_id}")
 
     wave_d_records = [
         item for item in major_records
