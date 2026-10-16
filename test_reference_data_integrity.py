@@ -363,7 +363,7 @@ if __name__ == "__main__":
     test_wave_d_preserves_entire_existing_catalog_1_to_204()
     test_wave_e_preserves_entire_existing_catalog_1_to_215()
     test_wave_c_deferred_catalog_contract()
-    test_wave_c_f2_candidate_contract()
+    test_wave_c_f2_owner_approved_active_contract()
     test_wave_d_deferred_catalog_contract()
     test_wave_e_deferred_catalog_contract()
     test_major_names_are_unique_for_uq_major_name()
