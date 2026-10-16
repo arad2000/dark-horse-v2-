@@ -43579,10 +43579,10 @@
     "high_school_branch": null,
     "exam_group": null,
     "handcrafted": true,
-    "motive_driven": false,
+    "motive_driven": true,
     "weights_version": "dh013_f2_review_v1",
     "archetype": "هماهنگ‌گرِ فضای پرواز",
-    "fulfillment_source": "وقتی ردها و مجوزها با هم سازگارند، هواگردها با جداسازی معتبر از یک بخش به بخش دیگر منتقل می‌شوند و توالی ورود/خروج بدون تعارض پایدار می‌ماند.",
+    "fulfillment_source": "وقتی ردها و مجوزها سازگارند، جداسازی معتبر برقرار است و توالی ورود/خروج بدون تعارض پایدار می‌ماند.",
     "strategy_weights": [
       [
         0.5055,
@@ -43828,7 +43828,7 @@
     "high_school_branch": null,
     "exam_group": null,
     "handcrafted": true,
-    "motive_driven": false,
+    "motive_driven": true,
     "weights_version": "dh013_f2_review_v1",
     "archetype": "خلبانِ مانور عمودی",
     "fulfillment_source": "وقتی بالگرد در هاور پایدار می‌ماند، مسیر عمودی/جانبی دقیق اجرا می‌شود و فرود در محدودهٔ تعیین‌شده با حاشیهٔ ایمنی انجام می‌گیرد.",
@@ -44060,10 +44060,10 @@
     "high_school_branch": null,
     "exam_group": null,
     "handcrafted": true,
-    "motive_driven": false,
+    "motive_driven": true,
     "weights_version": "dh013_f2_review_v1",
     "archetype": "هدایت‌گرِ مأموریت بی‌سرنشین",
-    "fulfillment_source": "وقتی مسیر و محمولهٔ مأموریت طبق محدودهٔ مجاز انجام می‌شوند، تله‌متری قابل‌اعتماد باقی می‌ماند و پهپاد یا به نقطهٔ بازگشت می‌رسد یا طبق رویهٔ اضطراری ایمن می‌شود.",
+    "fulfillment_source": "وقتی مسیر و محمولهٔ مأموریت در محدودهٔ مجاز انجام می‌شوند، تله‌متری قابل‌اعتماد است و پهپاد به نقطهٔ بازگشت می‌رسد یا طبق رویهٔ اضطراری ایمن می‌شود.",
     "strategy_weights": [
       [
         0.5778,
@@ -44292,10 +44292,10 @@
     "high_school_branch": null,
     "exam_group": null,
     "handcrafted": true,
-    "motive_driven": false,
+    "motive_driven": true,
     "weights_version": "dh013_f2_review_v1",
     "archetype": "خلبانِ مسیر و کابین",
-    "fulfillment_source": "وقتی پیش‌پرواز و محاسبات سوخت/هوا انجام شده‌اند، پروفایل صعود و کروز پایدار است و تقرب و فرود در محدودهٔ رویهٔ امن اجرا می‌شوند.",
+    "fulfillment_source": "وقتی پیش‌پرواز و محاسبات سوخت/هوا کامل‌اند، پروفایل صعود و کروز پایدار است و تقرب و فرود با رویهٔ ایمن اجرا می‌شوند.",
     "strategy_weights": [
       [
         0.5479,
@@ -44524,10 +44524,10 @@
     "high_school_branch": null,
     "exam_group": null,
     "handcrafted": true,
-    "motive_driven": false,
+    "motive_driven": true,
     "weights_version": "dh013_f2_review_v1",
     "archetype": "نگهدارندهٔ صلاحیت پرواز",
-    "fulfillment_source": "وقتی عیب با آزمون/بازرسی مشخص و رفع شده، عملیات تعمیر ثبت و بررسی پس از تعمیر کامل است و هواگرد بر اساس رویهٔ مصوب برای خدمت آزاد می‌شود.",
+    "fulfillment_source": "وقتی عیب تشخیص و رفع شده، آزمون‌های پساتعمیر و بازبینی کامل‌اند و بازگشت به خدمت طبق رویهٔ مصوب مستند می‌شود.",
     "strategy_weights": [
       [
         0.6355,
