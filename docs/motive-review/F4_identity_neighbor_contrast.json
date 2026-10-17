@@ -1,6 +1,6 @@
 {
-  "schema": "DH-013-F4-identity-neighbor-v1",
-  "status": "CONTENT_APPROVED_CANDIDATE_NO_MERGE",
+  "schema": "DH-013-F4-identity-neighbor-v2",
+  "status": "OWNER_CONTENT_CANDIDATE_REQUIRES_INDEPENDENT_REVIEW_NO_MERGE",
   "axes": [
     "core_verb",
     "dominant_object",
@@ -10,8 +10,22 @@
     "fulfillment"
   ],
   "scores_used": false,
-  "note": "Includes all directed pairs among 162, 163, 171, 208, 219, 220 plus explicit directed target/neighbour pairs. Existing records and weights for 162/163/171 are read-only and not edited.",
+  "note": "Contains directed target/neighbor identity contrasts. scores_used=false refers to numeric identity-similarity scoring only; Strategy/Value low-confidence adjustment uses existing, unmodified neighbor-major weights under the versioned F1/F2 method. IDs 162, 163 and 171 remain read-only context and are not reweighted.",
   "profiles": {
+    "46": {
+      "id": 46,
+      "name": "مهندسی مکانیک",
+      "core": "تحلیل و طراحی سامانه‌های مکانیکی",
+      "identity": "تمایز موقت بر اساس نام رشته و کهن‌الگوی کاتالوگ است؛ Reviewer A باید شرح عملیاتی را تأیید کند.",
+      "dominant_object": "سازوکارها، اجزا و عملکرد مکانیکی ماشین",
+      "dominant_reward": "عملکرد مکانیکی قابل‌اعتماد و کارآمد",
+      "dominant_frustration": "خرابی، ناکارآمدی یا نارسایی سازوکار",
+      "archetype": "حرکت‌آفرین-ساختارگر",
+      "fulfillment": "وقتی یک مکانیزم را با CAD طراحی می‌کند و سپس قطعه‌ی نمونه‌ی اولیه‌اش را در کارگاه می‌بیند که بدونِ لرزش و با صدایِ روان، حرکتِ موردِ نظر را انجام می‌دهد.",
+      "subgroup": "B2",
+      "cluster": "B",
+      "source": "Existing major catalog name/archetype/fulfillment; provisional comparator only, detailed identity requires Reviewer A validation."
+    },
     "50": {
       "id": 50,
       "name": "مهندسی ماشین‌های کشاورزی",
@@ -48,6 +62,20 @@
       "fulfillment": "وقتی یک پیوندک را روی پایه‌ای می‌زند و یک ماه بعد، جوش‌خوردنِ کاملِ آن را می‌بیند و می‌داند که یک درختِ جدید متولد شده است.",
       "source": "Existing catalog; neighbor only"
     },
+    "73": {
+      "id": 73,
+      "name": "مهندسی محیط زیست",
+      "core": "تحلیل و مدیریت سامانه‌های محیط‌زیستی",
+      "identity": "تمایز موقت بر اساس نام رشته و کهن‌الگوی کاتالوگ است؛ Reviewer A باید شرح عملیاتی را تأیید کند.",
+      "dominant_object": "کیفیت محیط، منابع و اثرات محیطی",
+      "dominant_reward": "بهبود کیفیت و پایداری محیط",
+      "dominant_frustration": "اثر محیطی کنترل‌نشده یا افت کیفیت منابع",
+      "archetype": "محیط-مهندس-سیستمی",
+      "fulfillment": "وقتی یک سیستمِ تصفیه‌ی فاضلابِ صنعتی راه‌اندازی می‌کند و پسابِ خروجی، آنقدر شفاف است که ماهی‌ها دوباره به رودخانه بازمی‌گردند.",
+      "subgroup": "B4",
+      "cluster": "B",
+      "source": "Existing major catalog name/archetype/fulfillment; provisional comparator only, detailed identity requires Reviewer A validation."
+    },
     "101": {
       "id": 101,
       "name": "حقوق",
@@ -59,6 +87,34 @@
       "archetype": "استدلال‌گر-عدالت‌خواه",
       "fulfillment": "وقتی یک ماده‌ی قانونیِ مبهم را در میانِ هزاران پرونده پیدا می‌کند که رأیِ دادگاه را به نفعِ موکلِ مظلوم تغییر می‌دهد.",
       "source": "Existing catalog; neighbor only"
+    },
+    "104": {
+      "id": 104,
+      "name": "فقه و مبانی حقوق",
+      "core": "فقه و مبانی حقوق",
+      "identity": "کاتالوگ این رشته را در زیرگروه D1 حقوقی ثبت می‌کند؛ تفصیل وظایف روزانه نیازمند اعتبارسنجی Reviewer A است.",
+      "dominant_object": "مبانی فقهی و قواعد حقوقی",
+      "dominant_reward": "پرداختن مستند به مبانی هنجاری و قواعد فقهی/حقوقی",
+      "dominant_frustration": "تعارض یا ابهام در مبانی و قواعد هنجاری",
+      "archetype": "فقه‌پژوه-قانون‌ساز",
+      "fulfillment": "وقتی یک قاعده‌ی فقهیِ قدیمی را بر یک موضوعِ مستحدثه تطبیق می‌دهد و راه‌حلی نوآورانه برای یک چالشِ حقوقیِ مدرن ارائه می‌کند.",
+      "subgroup": "D1",
+      "cluster": "D",
+      "source": "Existing major catalog name/archetype/fulfillment; provisional comparator only, detailed identity requires Reviewer A validation."
+    },
+    "105": {
+      "id": 105,
+      "name": "فقه و حقوق اسلامی",
+      "core": "فقه و حقوق اسلامی",
+      "identity": "کاتالوگ این رشته را در زیرگروه D1 حقوقی ثبت می‌کند؛ تفصیل وظایف روزانه نیازمند اعتبارسنجی Reviewer A است.",
+      "dominant_object": "فقه و قواعد حقوقی اسلامی",
+      "dominant_reward": "تطبیق مستند مبانی فقهی و قواعد حقوقی",
+      "dominant_frustration": "تعارض یا ابهام در مبانی و قواعد حقوقی/فقهی",
+      "archetype": "فقیه-عدالت‌خواه",
+      "fulfillment": "وقتی یک رساله‌ی عملیه می‌نویسد که با زبانی ساده، پاسخِ سؤالاتِ شرعیِ مردم را می‌دهد و آنها احساسِ آرامش می‌کنند.",
+      "subgroup": "D1",
+      "cluster": "D",
+      "source": "Existing major catalog name/archetype/fulfillment; provisional comparator only, detailed identity requires Reviewer A validation."
     },
     "162": {
       "id": 162,
@@ -759,6 +815,142 @@
       },
       "distinction": "دو نقش فعل/موضوع غالب متفاوت دارند؛ این ردیف مقایسهٔ کیفی است، نه blending عددی.",
       "evidence_scope": "Identity and role-task contrast; no numeric weight adjustment."
+    },
+    {
+      "left_id": 208,
+      "right_id": 104,
+      "left_name": "علوم قضایی",
+      "right_name": "فقه و مبانی حقوق",
+      "axes": {
+        "core_verb": "پیگیری و تحلیل گردش شکلی پرونده، صلاحیت و توالی مراحل دادرسی و ثبت قضایی؛ نه تفسیر و استدلال حقوقی به‌جای وکالت. ↔ فقه و مبانی حقوق",
+        "dominant_object": "پرونده، گردش کار دادرسی، صلاحیت، ابلاغ، سوابق و مهلت‌های آیینی ↔ مبانی فقهی و قواعد حقوقی",
+        "dominant_reward": "رسیدن پرونده به مرحله درست و قابل‌ردگیری با سوابق کامل و بدون نقص فرایندی ↔ پرداختن مستند به مبانی هنجاری و قواعد فقهی/حقوقی",
+        "dominant_frustration": "تأخیر ناشی از گردش ناقص، ابلاغ جاافتاده، ارجاع نادرست یا گم‌شدن ردّ اقدام ↔ تعارض یا ابهام در مبانی و قواعد هنجاری",
+        "archetype": "تحلیل‌گر-هماهنگ‌کنندهٔ فرایند دادرسی ↔ فقه‌پژوه-قانون‌ساز",
+        "fulfillment": "وقتی پرونده از ثبت و کنترل شکلی تا ارجاع و جلسه، با صلاحیت درست، مهلت‌های روشن و سابقهٔ قابل‌ردگیری پیش می‌رود. ↔ وقتی یک قاعده‌ی فقهیِ قدیمی را بر یک موضوعِ مستحدثه تطبیق می‌دهد و راه‌حلی نوآورانه برای یک چالشِ حقوقیِ مدرن ارائه می‌کند."
+      },
+      "distinction": "ID 104 فقه و مبانی حقوق؛ در همان زیرگروه D1 حقوقی، comparator موقت برای مرزبندی فرایند پرونده از مبانی هنجاری.",
+      "evidence_scope": "Provisional neighbor contrast; based on target DH-013 profile plus catalog-level neighbor name/archetype/fulfillment. Reviewer A must verify the six-axis task-level distinction; no numeric similarity score was invented.",
+      "review_status": "PENDING_INDEPENDENT_REVIEW"
+    },
+    {
+      "left_id": 208,
+      "right_id": 105,
+      "left_name": "علوم قضایی",
+      "right_name": "فقه و حقوق اسلامی",
+      "axes": {
+        "core_verb": "پیگیری و تحلیل گردش شکلی پرونده، صلاحیت و توالی مراحل دادرسی و ثبت قضایی؛ نه تفسیر و استدلال حقوقی به‌جای وکالت. ↔ فقه و حقوق اسلامی",
+        "dominant_object": "پرونده، گردش کار دادرسی، صلاحیت، ابلاغ، سوابق و مهلت‌های آیینی ↔ فقه و قواعد حقوقی اسلامی",
+        "dominant_reward": "رسیدن پرونده به مرحله درست و قابل‌ردگیری با سوابق کامل و بدون نقص فرایندی ↔ تطبیق مستند مبانی فقهی و قواعد حقوقی",
+        "dominant_frustration": "تأخیر ناشی از گردش ناقص، ابلاغ جاافتاده، ارجاع نادرست یا گم‌شدن ردّ اقدام ↔ تعارض یا ابهام در مبانی و قواعد حقوقی/فقهی",
+        "archetype": "تحلیل‌گر-هماهنگ‌کنندهٔ فرایند دادرسی ↔ فقیه-عدالت‌خواه",
+        "fulfillment": "وقتی پرونده از ثبت و کنترل شکلی تا ارجاع و جلسه، با صلاحیت درست، مهلت‌های روشن و سابقهٔ قابل‌ردگیری پیش می‌رود. ↔ وقتی یک رساله‌ی عملیه می‌نویسد که با زبانی ساده، پاسخِ سؤالاتِ شرعیِ مردم را می‌دهد و آنها احساسِ آرامش می‌کنند."
+      },
+      "distinction": "ID 105 فقه و حقوق اسلامی؛ در همان زیرگروه D1، comparator موقت برای مرزبندی آیین دادرسی از محتوای حقوقی/فقهی.",
+      "evidence_scope": "Provisional neighbor contrast; based on target DH-013 profile plus catalog-level neighbor name/archetype/fulfillment. Reviewer A must verify the six-axis task-level distinction; no numeric similarity score was invented.",
+      "review_status": "PENDING_INDEPENDENT_REVIEW"
+    },
+    {
+      "left_id": 219,
+      "right_id": 68,
+      "left_name": "مهندسی فضای سبز",
+      "right_name": "مهندسی کشاورزی",
+      "axes": {
+        "core_verb": "طراحی و سامان‌دهی فضای باز و زیرساخت سبز با تحلیل سایت، دسترسی، آب و خاک و کارکرد بوم‌شناختی؛ نه تولید و پرورش محصول گیاهی به‌عنوان محور اصلی. ↔ تحلیل سامانهٔ کشاورزی، منابع زیستی و عملکرد تولید.",
+        "dominant_object": "سایت، نقشهٔ فضای باز، مسیرها، زهکشی و رواناب، زیرساخت سبز و استفادهٔ عمومی ↔ خاک/آب/گیاه، سامانهٔ تولید و عملکرد مزرعه",
+        "dominant_reward": "فضای بیرونی قابل‌استفاده و تاب‌آور که هم‌زمان دسترسی، آب، خاک و عملکرد بوم‌شناختی را پاسخ می‌دهد ↔ بهبود پایدار سامانهٔ تولید و عملکرد زیستی",
+        "dominant_frustration": "طرح زیبا اما ناکارآمد از نظر آب/زهکشی، دسترسی، اقلیم محلی یا نگهداری ↔ محدودیت زیستی/منابع یا افت عملکرد کل سامانه",
+        "archetype": "طراح-سامان‌دهندهٔ زیرساخت سبز ↔ کشاورز-مهندس-زیستی",
+        "fulfillment": "وقتی نقشه و جزئیات فضای باز به محیطی قابل‌دسترس، کم‌مصرف در آب و سازگار با زهکشی و اکوسیستم محلی تبدیل می‌شود. ↔ وقتی در مزرعه‌ی آزمایشی، یک لاینِ جدید از گندمِ اصلاح‌شده را می‌بیند که عملکردِ ۲ برابریِ رقمِ محلی دارد."
+      },
+      "distinction": "ID 68 مهندسی کشاورزی؛ هم‌زیرگروه B4 و comparator برای سامانهٔ خاک/آب/گیاه در برابر فضای باز طراحی‌شده.",
+      "evidence_scope": "Provisional neighbor contrast; based on target DH-013 profile plus catalog-level neighbor name/archetype/fulfillment. Reviewer A must verify the six-axis task-level distinction; no numeric similarity score was invented.",
+      "review_status": "PENDING_INDEPENDENT_REVIEW"
+    },
+    {
+      "left_id": 219,
+      "right_id": 73,
+      "left_name": "مهندسی فضای سبز",
+      "right_name": "مهندسی محیط زیست",
+      "axes": {
+        "core_verb": "طراحی و سامان‌دهی فضای باز و زیرساخت سبز با تحلیل سایت، دسترسی، آب و خاک و کارکرد بوم‌شناختی؛ نه تولید و پرورش محصول گیاهی به‌عنوان محور اصلی. ↔ تحلیل و مدیریت سامانه‌های محیط‌زیستی",
+        "dominant_object": "سایت، نقشهٔ فضای باز، مسیرها، زهکشی و رواناب، زیرساخت سبز و استفادهٔ عمومی ↔ کیفیت محیط، منابع و اثرات محیطی",
+        "dominant_reward": "فضای بیرونی قابل‌استفاده و تاب‌آور که هم‌زمان دسترسی، آب، خاک و عملکرد بوم‌شناختی را پاسخ می‌دهد ↔ بهبود کیفیت و پایداری محیط",
+        "dominant_frustration": "طرح زیبا اما ناکارآمد از نظر آب/زهکشی، دسترسی، اقلیم محلی یا نگهداری ↔ اثر محیطی کنترل‌نشده یا افت کیفیت منابع",
+        "archetype": "طراح-سامان‌دهندهٔ زیرساخت سبز ↔ محیط-مهندس-سیستمی",
+        "fulfillment": "وقتی نقشه و جزئیات فضای باز به محیطی قابل‌دسترس، کم‌مصرف در آب و سازگار با زهکشی و اکوسیستم محلی تبدیل می‌شود. ↔ وقتی یک سیستمِ تصفیه‌ی فاضلابِ صنعتی راه‌اندازی می‌کند و پسابِ خروجی، آنقدر شفاف است که ماهی‌ها دوباره به رودخانه بازمی‌گردند."
+      },
+      "distinction": "ID 73 مهندسی محیط زیست؛ هم‌زیرگروه B4 و comparator مرتبط با عملکرد محیطی و منابع.",
+      "evidence_scope": "Provisional neighbor contrast; based on target DH-013 profile plus catalog-level neighbor name/archetype/fulfillment. Reviewer A must verify the six-axis task-level distinction; no numeric similarity score was invented.",
+      "review_status": "PENDING_INDEPENDENT_REVIEW"
+    },
+    {
+      "left_id": 220,
+      "right_id": 46,
+      "left_name": "مهندسی مکانیزاسیون کشاورزی",
+      "right_name": "مهندسی مکانیک",
+      "axes": {
+        "core_verb": "انتخاب، تنظیم، زمان‌بندی، بهره‌برداری و نگهداری ماشین و ادوات متناسب با عملیات مزرعه؛ نه مهندسی عمومی سامانه کشاورزی یا طراحی/ساخت خود ماشین. ↔ تحلیل و طراحی سامانه‌های مکانیکی",
+        "dominant_object": "تراکتور و ادوات، تنظیمات دستگاه، ظرفیت عملیاتی، پنجره زمانی مزرعه و عملکرد میدانی ↔ سازوکارها، اجزا و عملکرد مکانیکی ماشین",
+        "dominant_reward": "عملیات مزرعه به‌موقع، یکنواخت و ایمن با اتلاف، توقف و مصرف منابع کمتر ↔ عملکرد مکانیکی قابل‌اعتماد و کارآمد",
+        "dominant_frustration": "تطبیق نادرست ماشین با کار/خاک، کالیبراسیون ضعیف، خرابی میان عملیات یا پوشش نامنظم ↔ خرابی، ناکارآمدی یا نارسایی سازوکار",
+        "archetype": "مهندس-هماهنگ‌کنندهٔ عملیات مکانیزهٔ مزرعه ↔ حرکت‌آفرین-ساختارگر",
+        "fulfillment": "وقتی انتخاب و تنظیم ماشین و ادوات، عملیات مزرعه را در پنجرهٔ مناسب با پوشش یکنواخت و اتلاف/مصرف کمتر اجرا می‌کند. ↔ وقتی یک مکانیزم را با CAD طراحی می‌کند و سپس قطعه‌ی نمونه‌ی اولیه‌اش را در کارگاه می‌بیند که بدونِ لرزش و با صدایِ روان، حرکتِ موردِ نظر را انجام می‌دهد."
+      },
+      "distinction": "ID 46 مهندسی مکانیک؛ comparator فنی برای تفکیک بهره‌برداری میدانی از تحلیل/طراحی ماشین.",
+      "evidence_scope": "Provisional neighbor contrast; based on target DH-013 profile plus catalog-level neighbor name/archetype/fulfillment. Reviewer A must verify the six-axis task-level distinction; no numeric similarity score was invented.",
+      "review_status": "PENDING_INDEPENDENT_REVIEW"
     }
-  ]
+  ],
+  "nearest_neighbors_for_weight_adjustment": {
+    "208": {
+      "ids": [
+        101,
+        104,
+        105
+      ],
+      "reasons": [
+        "ID 101 حقوق؛ نزدیک‌ترین comparator برای جداکردن گردش آیینی پرونده از تفسیر و استدلال حقوقی.",
+        "ID 104 فقه و مبانی حقوق؛ در همان زیرگروه D1 حقوقی، comparator موقت برای مرزبندی فرایند پرونده از مبانی هنجاری.",
+        "ID 105 فقه و حقوق اسلامی؛ در همان زیرگروه D1، comparator موقت برای مرزبندی آیین دادرسی از محتوای حقوقی/فقهی."
+      ],
+      "basis_catalog_sha": "73c6a2a28665e37f3877ba6b2a58d0deef44a91d",
+      "status": "PROVISIONAL_PENDING_REVIEWER_A_CONFIRMATION"
+    },
+    "219": {
+      "ids": [
+        69,
+        68,
+        73
+      ],
+      "reasons": [
+        "ID 69 مهندسی باغبانی؛ نزدیک‌ترین comparator برای تفکیک طراحی سایت سبز از پرورش و سلامت گیاه.",
+        "ID 68 مهندسی کشاورزی؛ هم‌زیرگروه B4 و comparator برای سامانهٔ خاک/آب/گیاه در برابر فضای باز طراحی‌شده.",
+        "ID 73 مهندسی محیط زیست؛ هم‌زیرگروه B4 و comparator مرتبط با عملکرد محیطی و منابع."
+      ],
+      "basis_catalog_sha": "73c6a2a28665e37f3877ba6b2a58d0deef44a91d",
+      "status": "PROVISIONAL_PENDING_REVIEWER_A_CONFIRMATION"
+    },
+    "220": {
+      "ids": [
+        50,
+        68,
+        46
+      ],
+      "reasons": [
+        "ID 50 مهندسی ماشین‌های کشاورزی؛ ماشین/ادوات مشترک، اما تمرکز همسایه بر طراحی و ساخت تجهیز.",
+        "ID 68 مهندسی کشاورزی؛ هم‌زیرگروه B4 و comparator برای کل سامانهٔ تولید در برابر عملیات مکانیزه.",
+        "ID 46 مهندسی مکانیک؛ comparator فنی برای تفکیک بهره‌برداری میدانی از تحلیل/طراحی ماشین."
+      ],
+      "basis_catalog_sha": "73c6a2a28665e37f3877ba6b2a58d0deef44a91d",
+      "status": "PROVISIONAL_PENDING_REVIEWER_A_CONFIRMATION"
+    }
+  },
+  "global_separation": {
+    "status": "PENDING_INDEPENDENT_IDENTITY_SCORING",
+    "same_homogeneous_cluster_threshold_pct": 70,
+    "cross_cluster_threshold_pct": 50,
+    "reject_if_more_than_pct_neighbor_comparisons_exceed_threshold": 60,
+    "blind_discrimination_test": "PENDING TWO INDEPENDENT EXPERTS"
+  }
 }
