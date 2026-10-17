@@ -158,7 +158,7 @@
 - **TURK-LANGUAGE — Turkish language — Encyclopaedia Britannica:** https://www.britannica.com/topic/Turkish-language — مرجع زمینه‌ای برای هماهنگی واکه‌ای و ساخت زبان ترکی
 - **TURK-ORTHOGRAPHY — Türk Dil Kurumu — Yazım Kılavuzu:** https://tdk.gov.tr/tdk/kurumsal/yazim-kilavuzu/ — مرجع رسمی املاء و نوشتار معیار ترکی
 - **ITAL-GRAMMAR — Accademia della Crusca — Italian language history:** https://accademiadellacrusca.it/en/contenuti/history-of-the-accademia/7524 — مرجع پژوهشی درباره شکل‌گیری و تاریخ زبان معیار ایتالیایی
-- **ITAL-LANGUAGE — Accademia della Crusca — Italian linguistic history:** https://accademiadellacrusca.it/it/contenuti/la-lingua-il-nostro-passato-e-il-nostro-futuro-considerazioni-sull-italian-nel-quadro-del-multiling/15 — مرجع پژوهشی درباره زبان نوشتاری ایتالیایی، سنت فلورانسی و تاریخ ادبی
+- **ITAL-LANGUAGE — Accademia della Crusca — Italian linguistic history:** https://www.britannica.com/topic/Italian-language — مرجع پژوهشی درباره زبان نوشتاری ایتالیایی، سنت فلورانسی و تاریخ ادبی
 - **JPN-LANGUAGE — Japanese language — Encyclopaedia Britannica:** https://www.britannica.com/topic/Japanese-language — مرجع زمینه‌ای برای نوشتار و دستور ژاپنی
 - **JPN-LITERATURE — Embassy of Japan in the UK — Literature:** https://www.uk.emb-japan.go.jp/en/creativejapan/literature/index.html — مرجع رسمی درباره ادبیات ژاپنی کلاسیک/معاصر و تحول ژانرها
 - **KURDISH-LITERATURE — Encyclopaedia Iranica — Kurdish Written Literature:** https://www.iranicaonline.org/articles/kurdish-written-literature/ — مرجع پژوهشی درباره شعر و نثر مکتوب کردی
