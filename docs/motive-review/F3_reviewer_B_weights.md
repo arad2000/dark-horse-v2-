@@ -1,6 +1,6 @@
 # DH-013 F3 — Reviewer B: Strategy / Value / Evidence / Activation Gate
 
-**Status: OPEN — NOT AN APPROVAL**
+**Status: OPEN — FOLLOW-UP REVIEW; NOT AN APPROVAL**
 
 Reviewer name: [required]  
 GitHub login / professional affiliation: [required]  
@@ -14,7 +14,7 @@ Independence from Reviewer A: [confirm]
 - [ ] Verify every Strategy row normalizes and staged matrices match `majors_database_v2.json` exactly.
 - [ ] Review semantic neighbor contrasts; decide whether a versioned numeric adjustment is required. Do not accept an undocumented coefficient.
 - [ ] Confirm no question text, engine behavior, scoring formula, Hybrid, Total, cutoff, or protected major changed.
-- [ ] Keep `motive_driven=false` until both independent checklists and explicit owner approval are complete.
+- [ ] Verify that `motive_driven=true` was applied only to IDs 205, 209–214 following explicit owner content approval; this does not itself count as a signed independent review.
 
 Decision: [ ] APPROVE  [ ] APPROVE WITH CHANGES  [ ] REJECT  
 Signature and detailed review comment: [required]
