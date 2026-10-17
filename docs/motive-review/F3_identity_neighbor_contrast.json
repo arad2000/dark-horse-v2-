@@ -1,6 +1,6 @@
 {
   "schema": "DH-013-F3-identity-neighbor-v1",
-  "status": "CANDIDATE_ONLY_OWNER_AND_INDEPENDENT_REVIEW_REQUIRED",
+  "status": "OWNER_CONTENT_APPROVED_ACTIVE_REVIEW_FOLLOWUP",
   "axes": [
     "core_verb",
     "dominant_object",
@@ -1922,7 +1922,7 @@
     }
   ],
   "activation_status": {
-    "motive_driven": false,
-    "reason": "No statistical separation score is declared validated. All seven records remain inactive until independent review."
+    "motive_driven": true,
+    "reason": "The owner explicitly approved content and directed activation on 2026-10-17. Pairwise profiles remain subject to independent review follow-up; no statistical separation score is asserted validated."
   }
 }
