@@ -27,6 +27,10 @@ F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
 F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
 F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
 F3_WEIGHTS_VERSION = "dh013_f3_review_v1"
+F4_CANDIDATE_STAGING_IDS = frozenset({208, 219, 220})
+F4_WEIGHTS_VERSION = "dh013_f4_review_v1"
+WAVE_D_DEFERRED_IDS = frozenset({206, 207, 215})
+WAVE_E_DEFERRED_IDS = frozenset(range(216, 231)) - frozenset({219, 220})
 F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
 F1_DEFERRED_STUB_FIELDS = {
     "handcrafted": False,
@@ -208,7 +212,7 @@ def _canonical_value(value):
 def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
     majors = json.loads(major_json_text)
     for major in majors:
-        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS):
+        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS | F4_CANDIDATE_STAGING_IDS):
             major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
     return json.dumps(majors, ensure_ascii=False, indent=2) + "\n"
 
@@ -252,15 +256,13 @@ def test_wave_e_preserves_entire_existing_catalog_1_to_215():
 
 def test_wave_e_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    wave_e = [m for m in majors if int(m["id"]) in range(216, 231)]
-    assert len(wave_e) == 15
-    assert [int(m["id"]) for m in wave_e] == list(range(216, 231))
+    wave_e = [m for m in majors if int(m["id"]) in WAVE_E_DEFERRED_IDS]
+    assert len(wave_e) == 13
+    assert [int(m["id"]) for m in wave_e] == sorted(WAVE_E_DEFERRED_IDS)
     assert [m["name"] for m in wave_e] == [
         "مهندسی تولید و ژنتیک گیاهی",
         "مهندسی طبیعت",
         "علوم و مهندسی جنگل",
-        "مهندسی فضای سبز",
-        "مهندسی مکانیزاسیون کشاورزی",
         "زیست‌شناسی دریا",
         "مهندسی گیاه‌پزشکی",
         "کاردانی معماری",
@@ -278,7 +280,6 @@ def test_wave_e_deferred_catalog_contract():
     assert all(m.get("strategy_weights") == [] for m in wave_e)
     assert all(m.get("value_weights") == {} for m in wave_e)
     assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_e)
-
 
 def test_wave_c_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
@@ -363,12 +364,11 @@ def test_wave_d_f3_owner_approved_active_contract():
 
 def test_wave_d_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    deferred_ids = {206, 207, 208, 215}
-    wave_d = [m for m in majors if int(m["id"]) in deferred_ids]
-    assert len(wave_d) == 4
-    assert [int(m["id"]) for m in wave_d] == [206, 207, 208, 215]
+    wave_d = [m for m in majors if int(m["id"]) in WAVE_D_DEFERRED_IDS]
+    assert len(wave_d) == 3
+    assert [int(m["id"]) for m in wave_d] == [206, 207, 215]
     assert [m["name"] for m in wave_d] == [
-        "سیاستگذاری اجتماعی", "فقه شافعی", "علوم قضایی", "کارشناسی ارشد پیوسته علوم قضایی",
+        "سیاستگذاری اجتماعی", "فقه شافعی", "کارشناسی ارشد پیوسته علوم قضایی",
     ]
     assert all(m.get("motive_driven") is False for m in wave_d)
     assert all(m.get("handcrafted") is False for m in wave_d)
@@ -377,6 +377,34 @@ def test_wave_d_deferred_catalog_contract():
     assert all(m.get("value_weights") == {} for m in wave_d)
     assert all(m.get("weights_version") == "deferred_catalog_only_v1" for m in wave_d)
 
+def test_wave_f4_owner_approved_active_contract():
+    majors = load_json("majors_database_v2.json")
+    f4 = [m for m in majors if int(m["id"]) in F4_CANDIDATE_STAGING_IDS]
+    assert [int(m["id"]) for m in f4] == [208, 219, 220]
+    expected_codes = {
+        208: [f"COURT-{i:03d}" for i in range(1, 8)],
+        219: [f"LAND-{i:03d}" for i in range(1, 8)],
+        220: [f"AGMECH-{i:03d}" for i in range(1, 8)],
+    }
+    expected_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for m in f4:
+        assert m.get("motive_driven") is True
+        assert m.get("handcrafted") is True
+        assert m.get("weights_version") == F4_WEIGHTS_VERSION
+        assert m.get("micro_motive_codes") == expected_codes[int(m["id"])]
+        strategy = m.get("strategy_weights")
+        assert isinstance(strategy, list) and len(strategy) == 25
+        assert all(
+            isinstance(row, list) and len(row) == 5
+            and all(isinstance(w, (int, float)) and math.isfinite(w) and 0 <= w <= 1 for w in row)
+            and abs(sum(row) - 1.0) <= 0.002
+            for row in strategy
+        )
+        values = m.get("value_weights")
+        assert isinstance(values, dict) and set(values) == expected_poles
+        assert all(isinstance(v, (int, float)) and math.isfinite(v) and 0 <= v <= 1 for v in values.values())
+        assert m.get("archetype") and m.get("archetype") != "deferred_catalog_only"
+        assert m.get("fulfillment_source") and m.get("fulfillment_source") != F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
 
 def test_major_names_are_unique_for_uq_major_name():
     majors = load_json("majors_database_v2.json")
@@ -402,6 +430,7 @@ if __name__ == "__main__":
     test_wave_d_f3_owner_approved_active_contract()
     test_wave_d_deferred_catalog_contract()
     test_wave_e_deferred_catalog_contract()
+    test_wave_f4_owner_approved_active_contract()
     test_major_names_are_unique_for_uq_major_name()
     test_biotechnology_references_are_canonical()
     print("REFERENCE_DATA_INTEGRITY=PASS")
