@@ -19,12 +19,14 @@
     "no_empirical_calibration_claim": true
   },
   "source_refs": {
-    "major_catalog_base_sha": "f5fe257d4a3ce62d462f944d97ce0d0124ee1060",
-    "micro_motives_base_sha": "9a5c32831ed3a1f2d1371add4f29f46f35969b29",
+    "major_catalog_base_sha": "73c6a2a28665e37f3877ba6b2a58d0deef44a91d",
+    "micro_motives_base_sha": "fc4fd46ee31b0c84ffd8a8a6baa54b08e5c8cef4",
     "trait_map_sha": "466280fe517b7e6ba68e54dbe8535de7444c7f4a",
     "value_cue_rubric_sha": "08785995aab29214e2520c454f04a1beccbfe2f0",
     "value_poles_sha": "251d435d57b90e325ff671a4f8c69c530de61494",
-    "strategy_template_sha": "84cd88877a620c7f717e9d98f82ed43e81e0c4cd"
+    "strategy_template_sha": "84cd88877a620c7f717e9d98f82ed43e81e0c4cd",
+    "major_catalog_candidate_blob_sha": "f5fe257d4a3ce62d462f944d97ce0d0124ee1060",
+    "micro_motives_candidate_blob_sha": "9a5c32831ed3a1f2d1371add4f29f46f35969b29"
   },
   "role_sources": [
     {
