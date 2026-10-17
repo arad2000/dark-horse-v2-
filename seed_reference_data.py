@@ -57,7 +57,7 @@ WAVE_B_DEFERRED_IDS = frozenset(range(190, 195))
 F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
 F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
 F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
-F3_WEIGHTS_VERSION = "dh013_f3_candidate_v1"
+F3_WEIGHTS_VERSION = "dh013_f3_review_v1"
 WAVE_C_DEFERRED_IDS = frozenset({195, 196, 197, 198, 200})
 WAVE_D_DEFERRED_IDS = frozenset({206, 207, 208, 215})
 WAVE_E_DEFERRED_IDS = frozenset(range(216, 231))
@@ -209,7 +209,7 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
     return f"{value:016x}"
 
 def f1_staging_aware_baseline_text(major_json_text: str) -> str:
-    """Normalize only approved F1 activation fields before historical catalog fingerprints."""
+    """Normalize only explicitly approved staged rows before historical catalog fingerprints."""
     records = json.loads(major_json_text)
     for item in records:
         try:
@@ -559,7 +559,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         if int(item.get("id") or item.get("major_id") or 0) in F3_CANDIDATE_STAGING_IDS
     ]
     if len(f3_candidates) != len(F3_CANDIDATE_STAGING_IDS):
-        raise ValueError("F3 must contain exactly seven language/literature candidate rows (205, 209..214)")
+        raise ValueError("F3 must contain exactly seven owner-approved active language/literature rows (205, 209..214)")
     expected_f3_codes = {
         205: [f"RUS-{i:03d}" for i in range(1, 8)],
         209: [f"DEU-{i:03d}" for i in range(1, 8)],
@@ -575,7 +575,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         strategy = item.get("strategy_weights")
         values = item.get("value_weights")
         if (
-            item.get("motive_driven") is not False
+            item.get("motive_driven") is not True
             or item.get("handcrafted") is not True
             or item.get("weights_version") != F3_WEIGHTS_VERSION
             or item.get("micro_motive_codes") != expected_f3_codes[major_id]
@@ -595,7 +595,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
             or not item.get("fulfillment_source")
             or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
         ):
-            raise ValueError(f"F3 candidate contract failed for major {major_id}")
+            raise ValueError(f"F3 active contract failed for major {major_id}")
 
     wave_d_records = [
         item for item in major_records
