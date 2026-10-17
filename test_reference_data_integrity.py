@@ -26,7 +26,7 @@ F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
 F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
 F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
 F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
-F3_WEIGHTS_VERSION = "dh013_f3_candidate_v1"
+F3_WEIGHTS_VERSION = "dh013_f3_review_v1"
 F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
 F1_DEFERRED_STUB_FIELDS = {
     "handcrafted": False,
@@ -326,7 +326,7 @@ def test_wave_c_f2_owner_approved_active_contract():
         assert m.get("fulfillment_source") and m.get("fulfillment_source") != F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
 
 
-def test_wave_d_f3_candidate_contract():
+def test_wave_d_f3_owner_approved_active_contract():
     majors = load_json("majors_database_v2.json")
     f3 = [m for m in majors if int(m["id"]) in F3_CANDIDATE_STAGING_IDS]
     assert [int(m["id"]) for m in f3] == [205, 209, 210, 211, 212, 213, 214]
@@ -342,7 +342,7 @@ def test_wave_d_f3_candidate_contract():
     expected_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
     for m in f3:
         major_id = int(m["id"])
-        assert m.get("motive_driven") is False
+        assert m.get("motive_driven") is True
         assert m.get("handcrafted") is True
         assert m.get("weights_version") == F3_WEIGHTS_VERSION
         assert m.get("micro_motive_codes") == expected_codes[major_id]
@@ -399,7 +399,7 @@ if __name__ == "__main__":
     test_wave_e_preserves_entire_existing_catalog_1_to_215()
     test_wave_c_deferred_catalog_contract()
     test_wave_c_f2_owner_approved_active_contract()
-    test_wave_d_f3_candidate_contract()
+    test_wave_d_f3_owner_approved_active_contract()
     test_wave_d_deferred_catalog_contract()
     test_wave_e_deferred_catalog_contract()
     test_major_names_are_unique_for_uq_major_name()
