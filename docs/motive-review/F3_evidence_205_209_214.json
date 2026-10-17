@@ -3496,7 +3496,7 @@
         {
           "pole_code": "Q1A",
           "label": "عمق‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.39113,
           "candidate_weight": 0.3911,
           "evidence_confidence": 0.403,
@@ -3522,7 +3522,7 @@
         {
           "pole_code": "Q1B",
           "label": "گستره‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.34597,
           "candidate_weight": 0.346,
           "evidence_confidence": 0.274,
@@ -3543,7 +3543,7 @@
         {
           "pole_code": "Q2A",
           "label": "میراث‌مادی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.4871,
           "candidate_weight": 0.4871,
           "evidence_confidence": 0.419,
@@ -3569,7 +3569,7 @@
         {
           "pole_code": "Q2B",
           "label": "میراث‌انسانی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.34597,
           "candidate_weight": 0.346,
           "evidence_confidence": 0.274,
@@ -3590,7 +3590,7 @@
         {
           "pole_code": "Q3A",
           "label": "عمق‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.50968,
           "candidate_weight": 0.5097,
           "evidence_confidence": 0.742,
@@ -3626,7 +3626,7 @@
         {
           "pole_code": "Q3B",
           "label": "گستره‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.35161,
           "candidate_weight": 0.3516,
           "evidence_confidence": 0.145,
@@ -3647,7 +3647,7 @@
         {
           "pole_code": "Q4A",
           "label": "حقیقت‌جو",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.61694,
           "candidate_weight": 0.6169,
           "evidence_confidence": 0.742,
@@ -3683,7 +3683,7 @@
         {
           "pole_code": "Q4B",
           "label": "خلق‌زیبایی",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.52097,
           "candidate_weight": 0.521,
           "evidence_confidence": 0.613,
@@ -3714,7 +3714,7 @@
         {
           "pole_code": "Q5A",
           "label": "نظم‌خواه",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.60565,
           "candidate_weight": 0.6056,
           "evidence_confidence": 1,
@@ -3760,7 +3760,7 @@
         {
           "pole_code": "Q5B",
           "label": "آشوب‌پذیر",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.56613,
           "candidate_weight": 0.5661,
           "evidence_confidence": 0.452,
@@ -3786,7 +3786,7 @@
         {
           "pole_code": "Q6A",
           "label": "مسئولیت‌فردی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.43629,
           "candidate_weight": 0.4363,
           "evidence_confidence": 0.403,
@@ -3812,7 +3812,7 @@
         {
           "pole_code": "Q6B",
           "label": "مسئولیت‌سیستمی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.50968,
           "candidate_weight": 0.5097,
           "evidence_confidence": 0.742,
@@ -3848,7 +3848,7 @@
         {
           "pole_code": "Q7A",
           "label": "خالق",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.49839,
           "candidate_weight": 0.4984,
           "evidence_confidence": 0.581,
@@ -3879,7 +3879,7 @@
         {
           "pole_code": "Q7B",
           "label": "ناقل",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.44194,
           "candidate_weight": 0.4419,
           "evidence_confidence": 0.403,
@@ -3905,7 +3905,7 @@
         {
           "pole_code": "Q8A",
           "label": "آزادی‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.35161,
           "candidate_weight": 0.3516,
           "evidence_confidence": 0.145,
@@ -3926,7 +3926,7 @@
         {
           "pole_code": "Q8B",
           "label": "امنیت‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.40242,
           "candidate_weight": 0.4024,
           "evidence_confidence": 0.435,
@@ -3952,7 +3952,7 @@
         {
           "pole_code": "Q9A",
           "label": "تغییرگر",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.70161,
           "candidate_weight": 0.7016,
           "evidence_confidence": 0.71,
@@ -3988,7 +3988,7 @@
         {
           "pole_code": "Q9B",
           "label": "محافظ",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.40242,
           "candidate_weight": 0.4024,
           "evidence_confidence": 0.435,
@@ -7774,7 +7774,7 @@
         {
           "pole_code": "Q1A",
           "label": "عمق‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.44194,
           "candidate_weight": 0.4419,
           "evidence_confidence": 0.403,
@@ -7800,7 +7800,7 @@
         {
           "pole_code": "Q1B",
           "label": "گستره‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.29516,
           "candidate_weight": 0.2952,
           "evidence_confidence": 0.129,
@@ -7821,7 +7821,7 @@
         {
           "pole_code": "Q2A",
           "label": "میراث‌مادی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.70161,
           "candidate_weight": 0.7016,
           "evidence_confidence": 0.726,
@@ -7857,7 +7857,7 @@
         {
           "pole_code": "Q2B",
           "label": "میراث‌انسانی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.49839,
           "candidate_weight": 0.4984,
           "evidence_confidence": 0.419,
@@ -7883,7 +7883,7 @@
         {
           "pole_code": "Q3A",
           "label": "عمق‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.55484,
           "candidate_weight": 0.5548,
           "evidence_confidence": 0.742,
@@ -7919,7 +7919,7 @@
         {
           "pole_code": "Q3B",
           "label": "گستره‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.35161,
           "candidate_weight": 0.3516,
           "evidence_confidence": 0.29,
@@ -7940,7 +7940,7 @@
         {
           "pole_code": "Q4A",
           "label": "حقیقت‌جو",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.65645,
           "candidate_weight": 0.6565,
           "evidence_confidence": 0.871,
@@ -7981,7 +7981,7 @@
         {
           "pole_code": "Q4B",
           "label": "خلق‌زیبایی",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.40806,
           "candidate_weight": 0.4081,
           "evidence_confidence": 0.452,
@@ -8007,7 +8007,7 @@
         {
           "pole_code": "Q5A",
           "label": "نظم‌خواه",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.55484,
           "candidate_weight": 0.5548,
           "evidence_confidence": 0.871,
@@ -8048,7 +8048,7 @@
         {
           "pole_code": "Q5B",
           "label": "آشوب‌پذیر",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.49274,
           "candidate_weight": 0.4927,
           "evidence_confidence": 0.419,
@@ -8074,7 +8074,7 @@
         {
           "pole_code": "Q6A",
           "label": "مسئولیت‌فردی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.49839,
           "candidate_weight": 0.4984,
           "evidence_confidence": 0.419,
@@ -8100,7 +8100,7 @@
         {
           "pole_code": "Q6B",
           "label": "مسئولیت‌سیستمی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.50403,
           "candidate_weight": 0.504,
           "evidence_confidence": 0.726,
@@ -8136,7 +8136,7 @@
         {
           "pole_code": "Q7A",
           "label": "خالق",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.65081,
           "candidate_weight": 0.6508,
           "evidence_confidence": 0.726,
@@ -8172,7 +8172,7 @@
         {
           "pole_code": "Q7B",
           "label": "ناقل",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.49274,
           "candidate_weight": 0.4927,
           "evidence_confidence": 0.548,
@@ -8203,7 +8203,7 @@
         {
           "pole_code": "Q8A",
           "label": "آزادی‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.39113,
           "candidate_weight": 0.3911,
           "evidence_confidence": 0.274,
@@ -8224,7 +8224,7 @@
         {
           "pole_code": "Q8B",
           "label": "امنیت‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.40242,
           "candidate_weight": 0.4024,
           "evidence_confidence": 0.435,
@@ -8250,7 +8250,7 @@
         {
           "pole_code": "Q9A",
           "label": "تغییرگر",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.65081,
           "candidate_weight": 0.6508,
           "evidence_confidence": 0.726,
@@ -8286,7 +8286,7 @@
         {
           "pole_code": "Q9B",
           "label": "محافظ",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.49839,
           "candidate_weight": 0.4984,
           "evidence_confidence": 0.435,
@@ -12054,7 +12054,7 @@
         {
           "pole_code": "Q1A",
           "label": "عمق‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.65081,
           "candidate_weight": 0.6508,
           "evidence_confidence": 0.71,
@@ -12090,7 +12090,7 @@
         {
           "pole_code": "Q1B",
           "label": "گستره‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.30081,
           "candidate_weight": 0.3008,
           "evidence_confidence": 0.145,
@@ -12111,7 +12111,7 @@
         {
           "pole_code": "Q2A",
           "label": "میراث‌مادی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.39677,
           "candidate_weight": 0.3968,
           "evidence_confidence": 0.29,
@@ -12132,7 +12132,7 @@
         {
           "pole_code": "Q2B",
           "label": "میراث‌انسانی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.69597,
           "candidate_weight": 0.696,
           "evidence_confidence": 0.71,
@@ -12168,7 +12168,7 @@
         {
           "pole_code": "Q3A",
           "label": "عمق‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.55484,
           "candidate_weight": 0.5548,
           "evidence_confidence": 0.742,
@@ -12204,7 +12204,7 @@
         {
           "pole_code": "Q3B",
           "label": "گستره‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.51532,
           "candidate_weight": 0.5153,
           "evidence_confidence": 0.452,
@@ -12230,7 +12230,7 @@
         {
           "pole_code": "Q4A",
           "label": "حقیقت‌جو",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.75242,
           "candidate_weight": 0.7524,
           "evidence_confidence": 0.871,
@@ -12271,7 +12271,7 @@
         {
           "pole_code": "Q4B",
           "label": "خلق‌زیبایی",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.45323,
           "candidate_weight": 0.4532,
           "evidence_confidence": 0.581,
@@ -12302,7 +12302,7 @@
         {
           "pole_code": "Q5A",
           "label": "نظم‌خواه",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.65081,
           "candidate_weight": 0.6508,
           "evidence_confidence": 1,
@@ -12348,7 +12348,7 @@
         {
           "pole_code": "Q5B",
           "label": "آشوب‌پذیر",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.51532,
           "candidate_weight": 0.5153,
           "evidence_confidence": 0.452,
@@ -12374,7 +12374,7 @@
         {
           "pole_code": "Q6A",
           "label": "مسئولیت‌فردی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.65081,
           "candidate_weight": 0.6508,
           "evidence_confidence": 0.71,
@@ -12410,7 +12410,7 @@
         {
           "pole_code": "Q6B",
           "label": "مسئولیت‌سیستمی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.45887,
           "candidate_weight": 0.4589,
           "evidence_confidence": 0.597,
@@ -12441,7 +12441,7 @@
         {
           "pole_code": "Q7A",
           "label": "خالق",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.45323,
           "candidate_weight": 0.4532,
           "evidence_confidence": 0.581,
@@ -12472,7 +12472,7 @@
         {
           "pole_code": "Q7B",
           "label": "ناقل",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.5379,
           "candidate_weight": 0.5379,
           "evidence_confidence": 0.548,
@@ -12503,7 +12503,7 @@
         {
           "pole_code": "Q8A",
           "label": "آزادی‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.51532,
           "candidate_weight": 0.5153,
           "evidence_confidence": 0.452,
@@ -12529,7 +12529,7 @@
         {
           "pole_code": "Q8B",
           "label": "امنیت‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.35161,
           "candidate_weight": 0.3516,
           "evidence_confidence": 0.29,
@@ -12550,7 +12550,7 @@
         {
           "pole_code": "Q9A",
           "label": "تغییرگر",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.775,
           "candidate_weight": 0.775,
           "evidence_confidence": 0.887,
@@ -12591,7 +12591,7 @@
         {
           "pole_code": "Q9B",
           "label": "محافظ",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.35161,
           "candidate_weight": 0.3516,
           "evidence_confidence": 0.29,
@@ -16402,7 +16402,7 @@
         {
           "pole_code": "Q1A",
           "label": "عمق‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.43629,
           "candidate_weight": 0.4363,
           "evidence_confidence": 0.403,
@@ -16428,7 +16428,7 @@
         {
           "pole_code": "Q1B",
           "label": "گستره‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.30081,
           "candidate_weight": 0.3008,
           "evidence_confidence": 0.145,
@@ -16449,7 +16449,7 @@
         {
           "pole_code": "Q2A",
           "label": "میراث‌مادی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.58871,
           "candidate_weight": 0.5887,
           "evidence_confidence": 0.565,
@@ -16480,7 +16480,7 @@
         {
           "pole_code": "Q2B",
           "label": "میراث‌انسانی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.38548,
           "candidate_weight": 0.3855,
           "evidence_confidence": 0.258,
@@ -16501,7 +16501,7 @@
         {
           "pole_code": "Q3A",
           "label": "عمق‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.45887,
           "candidate_weight": 0.4589,
           "evidence_confidence": 0.597,
@@ -16532,7 +16532,7 @@
         {
           "pole_code": "Q3B",
           "label": "گستره‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.38548,
           "candidate_weight": 0.3855,
           "evidence_confidence": 0.258,
@@ -16553,7 +16553,7 @@
         {
           "pole_code": "Q4A",
           "label": "حقیقت‌جو",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.75806,
           "candidate_weight": 0.7581,
           "evidence_confidence": 0.887,
@@ -16594,7 +16594,7 @@
         {
           "pole_code": "Q4B",
           "label": "خلق‌زیبایی",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.50403,
           "candidate_weight": 0.504,
           "evidence_confidence": 0.435,
@@ -16620,7 +16620,7 @@
         {
           "pole_code": "Q5A",
           "label": "نظم‌خواه",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.60565,
           "candidate_weight": 0.6056,
           "evidence_confidence": 1,
@@ -16666,7 +16666,7 @@
         {
           "pole_code": "Q5B",
           "label": "آشوب‌پذیر",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.61129,
           "candidate_weight": 0.6113,
           "evidence_confidence": 0.581,
@@ -16697,7 +16697,7 @@
         {
           "pole_code": "Q6A",
           "label": "مسئولیت‌فردی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.38548,
           "candidate_weight": 0.3855,
           "evidence_confidence": 0.258,
@@ -16718,7 +16718,7 @@
         {
           "pole_code": "Q6B",
           "label": "مسئولیت‌سیستمی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.56048,
           "candidate_weight": 0.5605,
           "evidence_confidence": 0.887,
@@ -16759,7 +16759,7 @@
         {
           "pole_code": "Q7A",
           "label": "خالق",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.58871,
           "candidate_weight": 0.5887,
           "evidence_confidence": 0.565,
@@ -16790,7 +16790,7 @@
         {
           "pole_code": "Q7B",
           "label": "ناقل",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.50403,
           "candidate_weight": 0.504,
           "evidence_confidence": 0.435,
@@ -16816,7 +16816,7 @@
         {
           "pole_code": "Q8A",
           "label": "آزادی‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.38548,
           "candidate_weight": 0.3855,
           "evidence_confidence": 0.258,
@@ -16837,7 +16837,7 @@
         {
           "pole_code": "Q8B",
           "label": "امنیت‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.35726,
           "candidate_weight": 0.3573,
           "evidence_confidence": 0.306,
@@ -16858,7 +16858,7 @@
         {
           "pole_code": "Q9A",
           "label": "تغییرگر",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.75806,
           "candidate_weight": 0.7581,
           "evidence_confidence": 0.871,
@@ -16899,7 +16899,7 @@
         {
           "pole_code": "Q9B",
           "label": "محافظ",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.41371,
           "candidate_weight": 0.4137,
           "evidence_confidence": 0.306,
@@ -20685,7 +20685,7 @@
         {
           "pole_code": "Q1A",
           "label": "عمق‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.65645,
           "candidate_weight": 0.6565,
           "evidence_confidence": 0.581,
@@ -20716,7 +20716,7 @@
         {
           "pole_code": "Q1B",
           "label": "گستره‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.25,
           "candidate_weight": 0.25,
           "evidence_confidence": 0,
@@ -20737,7 +20737,7 @@
         {
           "pole_code": "Q2A",
           "label": "میراث‌مادی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.52097,
           "candidate_weight": 0.521,
           "evidence_confidence": 0.468,
@@ -20763,7 +20763,7 @@
         {
           "pole_code": "Q2B",
           "label": "میراث‌انسانی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.75806,
           "candidate_weight": 0.7581,
           "evidence_confidence": 0.726,
@@ -20799,7 +20799,7 @@
         {
           "pole_code": "Q3A",
           "label": "عمق‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.50968,
           "candidate_weight": 0.5097,
           "evidence_confidence": 0.742,
@@ -20835,7 +20835,7 @@
         {
           "pole_code": "Q3B",
           "label": "گستره‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.39677,
           "candidate_weight": 0.3968,
           "evidence_confidence": 0.274,
@@ -20856,7 +20856,7 @@
         {
           "pole_code": "Q4A",
           "label": "حقیقت‌جو",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.65645,
           "candidate_weight": 0.6565,
           "evidence_confidence": 0.742,
@@ -20892,7 +20892,7 @@
         {
           "pole_code": "Q4B",
           "label": "خلق‌زیبایی",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.50403,
           "candidate_weight": 0.504,
           "evidence_confidence": 0.581,
@@ -20923,7 +20923,7 @@
         {
           "pole_code": "Q5A",
           "label": "نظم‌خواه",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.56048,
           "candidate_weight": 0.5605,
           "evidence_confidence": 0.887,
@@ -20964,7 +20964,7 @@
         {
           "pole_code": "Q5B",
           "label": "آشوب‌پذیر",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.53226,
           "candidate_weight": 0.5323,
           "evidence_confidence": 0.403,
@@ -20990,7 +20990,7 @@
         {
           "pole_code": "Q6A",
           "label": "مسئولیت‌فردی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.65645,
           "candidate_weight": 0.6565,
           "evidence_confidence": 0.581,
@@ -21021,7 +21021,7 @@
         {
           "pole_code": "Q6B",
           "label": "مسئولیت‌سیستمی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.50968,
           "candidate_weight": 0.5097,
           "evidence_confidence": 0.742,
@@ -21057,7 +21057,7 @@
         {
           "pole_code": "Q7A",
           "label": "خالق",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.50968,
           "candidate_weight": 0.5097,
           "evidence_confidence": 0.581,
@@ -21088,7 +21088,7 @@
         {
           "pole_code": "Q7B",
           "label": "ناقل",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.49839,
           "candidate_weight": 0.4984,
           "evidence_confidence": 0.565,
@@ -21119,7 +21119,7 @@
         {
           "pole_code": "Q8A",
           "label": "آزادی‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.39677,
           "candidate_weight": 0.3968,
           "evidence_confidence": 0.274,
@@ -21140,7 +21140,7 @@
         {
           "pole_code": "Q8B",
           "label": "امنیت‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.35726,
           "candidate_weight": 0.3573,
           "evidence_confidence": 0.306,
@@ -21161,7 +21161,7 @@
         {
           "pole_code": "Q9A",
           "label": "تغییرگر",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.64516,
           "candidate_weight": 0.6452,
           "evidence_confidence": 0.565,
@@ -21192,7 +21192,7 @@
         {
           "pole_code": "Q9B",
           "label": "محافظ",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.47016,
           "candidate_weight": 0.4702,
           "evidence_confidence": 0.468,
@@ -24937,7 +24937,7 @@
         {
           "pole_code": "Q1A",
           "label": "عمق‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.54355,
           "candidate_weight": 0.5435,
           "evidence_confidence": 0.548,
@@ -24968,7 +24968,7 @@
         {
           "pole_code": "Q1B",
           "label": "گستره‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.25,
           "candidate_weight": 0.25,
           "evidence_confidence": 0,
@@ -24989,7 +24989,7 @@
         {
           "pole_code": "Q2A",
           "label": "میراث‌مادی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.61129,
           "candidate_weight": 0.6113,
           "evidence_confidence": 0.597,
@@ -25020,7 +25020,7 @@
         {
           "pole_code": "Q2B",
           "label": "میراث‌انسانی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.6,
           "candidate_weight": 0.6,
           "evidence_confidence": 0.565,
@@ -25051,7 +25051,7 @@
         {
           "pole_code": "Q3A",
           "label": "عمق‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.50968,
           "candidate_weight": 0.5097,
           "evidence_confidence": 0.742,
@@ -25087,7 +25087,7 @@
         {
           "pole_code": "Q3B",
           "label": "گستره‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.70726,
           "candidate_weight": 0.7073,
           "evidence_confidence": 0.726,
@@ -25123,7 +25123,7 @@
         {
           "pole_code": "Q4A",
           "label": "حقیقت‌جو",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.60565,
           "candidate_weight": 0.6056,
           "evidence_confidence": 0.742,
@@ -25159,7 +25159,7 @@
         {
           "pole_code": "Q4B",
           "label": "خلق‌زیبایی",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.67339,
           "candidate_weight": 0.6734,
           "evidence_confidence": 0.742,
@@ -25195,7 +25195,7 @@
         {
           "pole_code": "Q5A",
           "label": "نظم‌خواه",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.60565,
           "candidate_weight": 0.6056,
           "evidence_confidence": 1,
@@ -25241,7 +25241,7 @@
         {
           "pole_code": "Q5B",
           "label": "آشوب‌پذیر",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.41371,
           "candidate_weight": 0.4137,
           "evidence_confidence": 0.306,
@@ -25262,7 +25262,7 @@
         {
           "pole_code": "Q6A",
           "label": "مسئولیت‌فردی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.75242,
           "candidate_weight": 0.7524,
           "evidence_confidence": 0.855,
@@ -25303,7 +25303,7 @@
         {
           "pole_code": "Q6B",
           "label": "مسئولیت‌سیستمی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.50968,
           "candidate_weight": 0.5097,
           "evidence_confidence": 0.742,
@@ -25339,7 +25339,7 @@
         {
           "pole_code": "Q7A",
           "label": "خالق",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.50403,
           "candidate_weight": 0.504,
           "evidence_confidence": 0.581,
@@ -25370,7 +25370,7 @@
         {
           "pole_code": "Q7B",
           "label": "ناقل",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.54355,
           "candidate_weight": 0.5435,
           "evidence_confidence": 0.548,
@@ -25401,7 +25401,7 @@
         {
           "pole_code": "Q8A",
           "label": "آزادی‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.60565,
           "candidate_weight": 0.6056,
           "evidence_confidence": 0.55,
@@ -25432,7 +25432,7 @@
         {
           "pole_code": "Q8B",
           "label": "امنیت‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.41371,
           "candidate_weight": 0.4137,
           "evidence_confidence": 0.468,
@@ -25458,7 +25458,7 @@
         {
           "pole_code": "Q9A",
           "label": "تغییرگر",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.72984,
           "candidate_weight": 0.7298,
           "evidence_confidence": 0.758,
@@ -25494,7 +25494,7 @@
         {
           "pole_code": "Q9B",
           "label": "محافظ",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.41371,
           "candidate_weight": 0.4137,
           "evidence_confidence": 0.468,
@@ -29325,7 +29325,7 @@
         {
           "pole_code": "Q1A",
           "label": "عمق‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.48145,
           "candidate_weight": 0.4815,
           "evidence_confidence": 0.403,
@@ -29351,7 +29351,7 @@
         {
           "pole_code": "Q1B",
           "label": "گستره‌تأثیر",
-          "value_question_id": "V1",
+          "value_question_id": "V01",
           "raw_weight": 0.29516,
           "candidate_weight": 0.2952,
           "evidence_confidence": 0.129,
@@ -29372,7 +29372,7 @@
         {
           "pole_code": "Q2A",
           "label": "میراث‌مادی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.66774,
           "candidate_weight": 0.6677,
           "evidence_confidence": 0.597,
@@ -29403,7 +29403,7 @@
         {
           "pole_code": "Q2B",
           "label": "میراث‌انسانی",
-          "value_question_id": "V2",
+          "value_question_id": "V02",
           "raw_weight": 0.63387,
           "candidate_weight": 0.6339,
           "evidence_confidence": 0.548,
@@ -29434,7 +29434,7 @@
         {
           "pole_code": "Q3A",
           "label": "عمق‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.46452,
           "candidate_weight": 0.4645,
           "evidence_confidence": 0.613,
@@ -29465,7 +29465,7 @@
         {
           "pole_code": "Q3B",
           "label": "گستره‌محور",
-          "value_question_id": "V3",
+          "value_question_id": "V03",
           "raw_weight": 0.34597,
           "candidate_weight": 0.346,
           "evidence_confidence": 0.274,
@@ -29486,7 +29486,7 @@
         {
           "pole_code": "Q4A",
           "label": "حقیقت‌جو",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.70726,
           "candidate_weight": 0.7073,
           "evidence_confidence": 0.871,
@@ -29527,7 +29527,7 @@
         {
           "pole_code": "Q4B",
           "label": "خلق‌زیبایی",
-          "value_question_id": "V4",
+          "value_question_id": "V04",
           "raw_weight": 0.62258,
           "candidate_weight": 0.6226,
           "evidence_confidence": 0.758,
@@ -29563,7 +29563,7 @@
         {
           "pole_code": "Q5A",
           "label": "نظم‌خواه",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.60565,
           "candidate_weight": 0.6056,
           "evidence_confidence": 1,
@@ -29609,7 +29609,7 @@
         {
           "pole_code": "Q5B",
           "label": "آشوب‌پذیر",
-          "value_question_id": "V5",
+          "value_question_id": "V05",
           "raw_weight": 0.44194,
           "candidate_weight": 0.4419,
           "evidence_confidence": 0.274,
@@ -29630,7 +29630,7 @@
         {
           "pole_code": "Q6A",
           "label": "مسئولیت‌فردی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.59435,
           "candidate_weight": 0.5944,
           "evidence_confidence": 0.565,
@@ -29661,7 +29661,7 @@
         {
           "pole_code": "Q6B",
           "label": "مسئولیت‌سیستمی",
-          "value_question_id": "V6",
+          "value_question_id": "V06",
           "raw_weight": 0.55484,
           "candidate_weight": 0.5548,
           "evidence_confidence": 0.871,
@@ -29702,7 +29702,7 @@
         {
           "pole_code": "Q7A",
           "label": "خالق",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.7129,
           "candidate_weight": 0.7129,
           "evidence_confidence": 0.887,
@@ -29743,7 +29743,7 @@
         {
           "pole_code": "Q7B",
           "label": "ناقل",
-          "value_question_id": "V7",
+          "value_question_id": "V07",
           "raw_weight": 0.49839,
           "candidate_weight": 0.4984,
           "evidence_confidence": 0.419,
@@ -29769,7 +29769,7 @@
         {
           "pole_code": "Q8A",
           "label": "آزادی‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.29516,
           "candidate_weight": 0.2952,
           "evidence_confidence": 0.129,
@@ -29790,7 +29790,7 @@
         {
           "pole_code": "Q8B",
           "label": "امنیت‌خواه",
-          "value_question_id": "V8",
+          "value_question_id": "V08",
           "raw_weight": 0.40806,
           "candidate_weight": 0.4081,
           "evidence_confidence": 0.452,
@@ -29816,7 +29816,7 @@
         {
           "pole_code": "Q9A",
           "label": "تغییرگر",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.59435,
           "candidate_weight": 0.5944,
           "evidence_confidence": 0.565,
@@ -29847,7 +29847,7 @@
         {
           "pole_code": "Q9B",
           "label": "محافظ",
-          "value_question_id": "V9",
+          "value_question_id": "V09",
           "raw_weight": 0.40806,
           "candidate_weight": 0.4081,
           "evidence_confidence": 0.452,
