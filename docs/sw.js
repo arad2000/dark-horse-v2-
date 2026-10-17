@@ -1,7 +1,7 @@
-/* Dark Horse SW v66 — stale-while-revalidate for versioned assets
- * index.html: network-first. Versioned assets (?v=): cache-first + background refresh.
+/* Dark Horse SW v67 — instant cached HTML shell + fresh network updates.
+ * JSON stays network-only with cache: 'no-store'; versioned assets stay guarded SWR.
  */
-const CACHE = 'darkhorse-v66';
+const CACHE = 'darkhorse-v67';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
@@ -39,21 +39,35 @@ self.addEventListener('fetch', function (e) {
 
   var isJson = /\.json$/i.test(url.pathname);
 
-  // HTML shell: network-first, cache as offline fallback.
+  // HTML shell: serve the last known home immediately, then refresh it in the background.
+  // Only HTML changes strategy here; JSON remains network-only with cache: 'no-store'.
   if (/index\.html$/i.test(url.pathname) ||
       url.pathname === '/' ||
       /\/docs\/?$/.test(url.pathname)) {
-    var htmlNetwork = fetch(req, { cache: 'no-store' }).then(function (res) {
-      if (res && res.status === 200) {
+    var htmlNetwork = fetch(req, { cache: 'no-store' });
+    var htmlRefresh = htmlNetwork.then(function (res) {
+      if (res && res.status === 200 && res.type === 'basic') {
         return caches.open(CACHE).then(function (c) {
           return c.put(req, res.clone()).catch(function () {});
         }).then(function () { return res; });
       }
       return res;
     });
-    e.respondWith(htmlNetwork.catch(function () {
-      return caches.match(req).then(function (r) { return r || caches.match('./index.html'); });
-    }));
+    e.waitUntil(htmlRefresh.then(function () {}, function () {}));
+    e.respondWith(
+      caches.open(CACHE).then(function (c) {
+        return c.match(req);
+      }).then(function (cached) {
+        if (cached) return cached;
+        return htmlNetwork.catch(function () {
+          return caches.match(req).then(function (r) {
+            return r || caches.match('./index.html');
+          });
+        });
+      }).catch(function () {
+        return htmlNetwork;
+      })
+    );
     return;
   }
 
