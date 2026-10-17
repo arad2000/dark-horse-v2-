@@ -58,9 +58,11 @@ F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
 F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
 F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
 F3_WEIGHTS_VERSION = "dh013_f3_review_v1"
+F4_CANDIDATE_STAGING_IDS = frozenset({208, 219, 220})
+F4_WEIGHTS_VERSION = "dh013_f4_review_v1"
 WAVE_C_DEFERRED_IDS = frozenset({195, 196, 197, 198, 200})
-WAVE_D_DEFERRED_IDS = frozenset({206, 207, 208, 215})
-WAVE_E_DEFERRED_IDS = frozenset(range(216, 231))
+WAVE_D_DEFERRED_IDS = frozenset({206, 207, 215})
+WAVE_E_DEFERRED_IDS = frozenset(range(216, 231)) - frozenset({219, 220})
 MAJOR_1_194_CATALOG_FINGERPRINT = "5189181b82aab0e6"
 MAJOR_1_204_CATALOG_FINGERPRINT = "749c599468ce116b"
 MAJOR_1_215_CATALOG_FINGERPRINT = "4a75d6d48c2b07ce"
@@ -216,7 +218,7 @@ def f1_staging_aware_baseline_text(major_json_text: str) -> str:
             major_id = int(item.get("id") or item.get("major_id"))
         except (TypeError, ValueError):
             continue
-        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS):
+        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS | F4_CANDIDATE_STAGING_IDS):
             for key, value in F1_DEFERRED_STUB_FIELDS.items():
                 item[key] = json.loads(json.dumps(value, ensure_ascii=False))
     return json.dumps(records, ensure_ascii=False, indent=2) + "\n"
@@ -597,12 +599,51 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         ):
             raise ValueError(f"F3 active contract failed for major {major_id}")
 
+    f4_candidates = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in F4_CANDIDATE_STAGING_IDS
+    ]
+    if len(f4_candidates) != len(F4_CANDIDATE_STAGING_IDS):
+        raise ValueError("F4 must contain exactly three active rows (208, 219, 220)")
+    expected_f4_codes = {
+        208: [f"COURT-{i:03d}" for i in range(1, 8)],
+        219: [f"LAND-{i:03d}" for i in range(1, 8)],
+        220: [f"AGMECH-{i:03d}" for i in range(1, 8)],
+    }
+    expected_f4_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f4_candidates:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F4_WEIGHTS_VERSION
+            or item.get("micro_motive_codes") != expected_f4_codes[major_id]
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_f4_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F4 active contract failed for major {major_id}")
+
     wave_d_records = [
         item for item in major_records
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_D_DEFERRED_IDS
     ]
     if len(wave_d_records) != len(WAVE_D_DEFERRED_IDS):
-        raise ValueError("Wave D non-F3 rows must contain exactly four catalog-only rows (206..208, 215)")
+        raise ValueError("Wave D non-F3 rows must contain exactly three catalog-only rows (206, 207, 215)")
     for item in wave_d_records:
         if (
             item.get("motive_driven") is not False
@@ -620,7 +661,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         if int(item.get("id") or item.get("major_id") or 0) in WAVE_E_DEFERRED_IDS
     ]
     if len(wave_e_records) != len(WAVE_E_DEFERRED_IDS):
-        raise ValueError("Wave E must contain exactly 15 catalog-only rows (216..230)")
+        raise ValueError("Wave E must contain exactly 13 catalog-only rows (216..230 except active 219/220)")
     for item in wave_e_records:
         if (
             item.get("motive_driven") is not False
