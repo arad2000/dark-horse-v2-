@@ -24,7 +24,9 @@ F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
 F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
 F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
 F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
+F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
 F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
+F3_WEIGHTS_VERSION = "dh013_f3_review_v1"
 F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
 F1_DEFERRED_STUB_FIELDS = {
     "handcrafted": False,
@@ -206,7 +208,7 @@ def _canonical_value(value):
 def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
     majors = json.loads(major_json_text)
     for major in majors:
-        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS):
+        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS):
             major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
     return json.dumps(majors, ensure_ascii=False, indent=2) + "\n"
 
@@ -324,16 +326,49 @@ def test_wave_c_f2_owner_approved_active_contract():
         assert m.get("fulfillment_source") and m.get("fulfillment_source") != F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
 
 
+def test_wave_d_f3_owner_approved_active_contract():
+    majors = load_json("majors_database_v2.json")
+    f3 = [m for m in majors if int(m["id"]) in F3_CANDIDATE_STAGING_IDS]
+    assert [int(m["id"]) for m in f3] == [205, 209, 210, 211, 212, 213, 214]
+    expected_codes = {
+        205: [f"RUS-{i:03d}" for i in range(1, 8)],
+        209: [f"DEU-{i:03d}" for i in range(1, 8)],
+        210: [f"SPA-{i:03d}" for i in range(1, 8)],
+        211: [f"TURK-{i:03d}" for i in range(1, 8)],
+        212: [f"ITAL-{i:03d}" for i in range(1, 8)],
+        213: [f"JPN-{i:03d}" for i in range(1, 8)],
+        214: [f"KURD-{i:03d}" for i in range(1, 8)],
+    }
+    expected_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for m in f3:
+        major_id = int(m["id"])
+        assert m.get("motive_driven") is True
+        assert m.get("handcrafted") is True
+        assert m.get("weights_version") == F3_WEIGHTS_VERSION
+        assert m.get("micro_motive_codes") == expected_codes[major_id]
+        strategy = m.get("strategy_weights")
+        assert isinstance(strategy, list) and len(strategy) == 25
+        assert all(
+            isinstance(row, list) and len(row) == 5
+            and all(isinstance(w, (int, float)) and math.isfinite(w) and 0 <= w <= 1 for w in row)
+            and abs(sum(row) - 1.0) <= 0.002
+            for row in strategy
+        )
+        values = m.get("value_weights")
+        assert isinstance(values, dict) and set(values) == expected_poles
+        assert all(isinstance(v, (int, float)) and math.isfinite(v) and 0 <= v <= 1 for v in values.values())
+        assert m.get("archetype") and m.get("archetype") != "deferred_catalog_only"
+        assert m.get("fulfillment_source") and m.get("fulfillment_source") != F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+
+
 def test_wave_d_deferred_catalog_contract():
     majors = load_json("majors_database_v2.json")
-    wave_d = [m for m in majors if int(m["id"]) in range(205, 216)]
-    assert len(wave_d) == 11
-    assert [int(m["id"]) for m in wave_d] == list(range(205, 216))
+    deferred_ids = {206, 207, 208, 215}
+    wave_d = [m for m in majors if int(m["id"]) in deferred_ids]
+    assert len(wave_d) == 4
+    assert [int(m["id"]) for m in wave_d] == [206, 207, 208, 215]
     assert [m["name"] for m in wave_d] == [
-        "زبان روسی", "سیاستگذاری اجتماعی", "فقه شافعی", "علوم قضایی",
-        "زبان و ادبیات آلمانی", "زبان و ادبیات اسپانیایی", "زبان و ادبیات ترکی استانبولی",
-        "زبان و ادبیات ایتالیایی", "زبان و ادبیات ژاپنی", "زبان و ادبیات کردی",
-        "کارشناسی ارشد پیوسته علوم قضایی",
+        "سیاستگذاری اجتماعی", "فقه شافعی", "علوم قضایی", "کارشناسی ارشد پیوسته علوم قضایی",
     ]
     assert all(m.get("motive_driven") is False for m in wave_d)
     assert all(m.get("handcrafted") is False for m in wave_d)
@@ -364,6 +399,7 @@ if __name__ == "__main__":
     test_wave_e_preserves_entire_existing_catalog_1_to_215()
     test_wave_c_deferred_catalog_contract()
     test_wave_c_f2_owner_approved_active_contract()
+    test_wave_d_f3_owner_approved_active_contract()
     test_wave_d_deferred_catalog_contract()
     test_wave_e_deferred_catalog_contract()
     test_major_names_are_unique_for_uq_major_name()
