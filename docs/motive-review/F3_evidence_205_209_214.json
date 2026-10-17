@@ -1,10 +1,10 @@
 {
   "schema": "DH-013-F3-speaker-word-evidence-v1",
-  "status": "CANDIDATE_ONLY_NOT_APPROVED",
+  "status": "OWNER_CONTENT_APPROVED_ACTIVE_REVIEW_FOLLOWUP",
   "stage_gate": {
     "handcrafted": true,
-    "motive_driven": false,
-    "reason": "The seven F3 records are staged as review candidates only. motive_driven must stay false until independent Reviewer A and Reviewer B checklists are signed and the owner approves activation."
+    "motive_driven": true,
+    "reason": "The product owner explicitly approved F3 content and directed activation on 2026-10-17. Independent Reviewer A/B checklists remain open as follow-up; their signatures are not claimed."
   },
   "method": {
     "strategy_encoding": "25 unchanged question rows × 5 options. Option labels and question wording come from the versioned F2 template and trait_map_v3.json. Candidate weights are normalized weighted exact-trait overlaps across the seven role-task Motives; this is a transparent draft rubric, not empirical calibration.",
@@ -4373,8 +4373,8 @@
         175
       ],
       "stage_gate": {
-        "motive_driven": false,
-        "activation_requires": "Signed Reviewer A + signed Reviewer B + explicit owner approval"
+        "motive_driven": true,
+        "activation_requires": "Activated by explicit owner content approval on 2026-10-17; independent Reviewer A/B review remains open as follow-up and is not represented as signed."
       }
     },
     {
@@ -8661,8 +8661,8 @@
         175
       ],
       "stage_gate": {
-        "motive_driven": false,
-        "activation_requires": "Signed Reviewer A + signed Reviewer B + explicit owner approval"
+        "motive_driven": true,
+        "activation_requires": "Activated by explicit owner content approval on 2026-10-17; independent Reviewer A/B review remains open as follow-up and is not represented as signed."
       }
     },
     {
@@ -12981,8 +12981,8 @@
         175
       ],
       "stage_gate": {
-        "motive_driven": false,
-        "activation_requires": "Signed Reviewer A + signed Reviewer B + explicit owner approval"
+        "motive_driven": true,
+        "activation_requires": "Activated by explicit owner content approval on 2026-10-17; independent Reviewer A/B review remains open as follow-up and is not represented as signed."
       }
     },
     {
@@ -17264,8 +17264,8 @@
         175
       ],
       "stage_gate": {
-        "motive_driven": false,
-        "activation_requires": "Signed Reviewer A + signed Reviewer B + explicit owner approval"
+        "motive_driven": true,
+        "activation_requires": "Activated by explicit owner content approval on 2026-10-17; independent Reviewer A/B review remains open as follow-up and is not represented as signed."
       }
     },
     {
@@ -21572,8 +21572,8 @@
         175
       ],
       "stage_gate": {
-        "motive_driven": false,
-        "activation_requires": "Signed Reviewer A + signed Reviewer B + explicit owner approval"
+        "motive_driven": true,
+        "activation_requires": "Activated by explicit owner content approval on 2026-10-17; independent Reviewer A/B review remains open as follow-up and is not represented as signed."
       }
     },
     {
@@ -25884,8 +25884,8 @@
         175
       ],
       "stage_gate": {
-        "motive_driven": false,
-        "activation_requires": "Signed Reviewer A + signed Reviewer B + explicit owner approval"
+        "motive_driven": true,
+        "activation_requires": "Activated by explicit owner content approval on 2026-10-17; independent Reviewer A/B review remains open as follow-up and is not represented as signed."
       }
     },
     {
@@ -30222,8 +30222,8 @@
         175
       ],
       "stage_gate": {
-        "motive_driven": false,
-        "activation_requires": "Signed Reviewer A + signed Reviewer B + explicit owner approval"
+        "motive_driven": true,
+        "activation_requires": "Activated by explicit owner content approval on 2026-10-17; independent Reviewer A/B review remains open as follow-up and is not represented as signed."
       }
     }
   ]
