@@ -24,6 +24,7 @@ F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
 F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
 F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
 F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
+F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
 F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
 F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
 F1_DEFERRED_STUB_FIELDS = {
@@ -206,7 +207,7 @@ def _canonical_value(value):
 def _restore_f1_approved_rows_for_historical_fingerprint(major_json_text):
     majors = json.loads(major_json_text)
     for major in majors:
-        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS):
+        if int(major.get("id") or 0) in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS):
             major.update(json.loads(json.dumps(F1_DEFERRED_STUB_FIELDS, ensure_ascii=False)))
     return json.dumps(majors, ensure_ascii=False, indent=2) + "\n"
 
