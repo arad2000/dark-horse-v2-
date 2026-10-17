@@ -55,6 +55,7 @@ F1_DEFERRED_STUB_FIELDS = {
 }
 WAVE_B_DEFERRED_IDS = frozenset(range(190, 195))
 F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
+F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
 F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
 WAVE_C_DEFERRED_IDS = frozenset({195, 196, 197, 198, 200})
 WAVE_D_DEFERRED_IDS = frozenset(range(205, 216))
@@ -214,7 +215,7 @@ def f1_staging_aware_baseline_text(major_json_text: str) -> str:
             major_id = int(item.get("id") or item.get("major_id"))
         except (TypeError, ValueError):
             continue
-        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS):
+        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS):
             for key, value in F1_DEFERRED_STUB_FIELDS.items():
                 item[key] = json.loads(json.dumps(value, ensure_ascii=False))
     return json.dumps(records, ensure_ascii=False, indent=2) + "\n"
