@@ -121,9 +121,6 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const expectedIntent =
     'intent://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123&dh_chrome=1' +
     '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
-  const expectedDirectIntent =
-    'intent://sandbox.zarinpal.com/pg/StartPay/ABC123' +
-    '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
 
   const journeyCalls = [];
   const desktop = await runPurchase({ delay: 50, journeyCalls });
@@ -139,7 +136,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
     userAgent: 'Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Mobile Safari/537.36'
   });
   webView.button.onclick({ preventDefault() {}, stopPropagation() {} });
-  assert.strictEqual(webView.location.href, expectedDirectIntent);
+  assert.strictEqual(webView.location.href, expectedIntent);
   assert.deepStrictEqual(webView.bridgeCalls, []);
 
   const chrome = commercialHop(
