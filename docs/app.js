@@ -343,7 +343,7 @@ function resumeJourney() {
 // ==================== بارگذاری داده‌ها ====================
 async function loadMicroMotivesMap() {
   try {
-    const res = await fetch(DATA_BASE + 'micro_motives.json?v=phase3-161-176-1');
+    const res = await fetch(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
     const all = await res.json();
     all.forEach(m => { state.microMotivesMap[m.code] = m.description_fa; });
     state.motivesReady = true;
@@ -572,7 +572,7 @@ function renderGuide() {
         <p style="color:#c9b896;line-height:2.2;">
           <strong style="color:#f0c040;">۱) خرده‌انگیزه‌ها — پایهٔ اصلی</strong><br>
           وارد «شهر رؤیاها» می‌شوی: چند حوزه و داخل هر کدام، فعالیت‌های ملموس.
-          از میان <strong>بیش از ۱۱۰۰ خرده‌انگیزه</strong>، آن‌هایی را که واقعاً به تو انرژی می‌دهند ❤️ بزن.
+          از میان <strong>بیش از ۱۳۰۰ جرقه</strong>، آن‌هایی را که واقعاً به تو انرژی می‌دهند ❤️ بزن.
           پیشنهاد: حدود <strong>۲۰ تا ۸۰</strong> مورد را انتخاب کن تا تصویر دقیق‌تری از خودت ساخته شود.
         </p>
 
@@ -638,7 +638,7 @@ function renderSplash() {
   app.innerHTML = progressHTML('splash') + `
     <div style="text-align:center;padding:20px 10px;">
       <h1 style="color:#f0c040;font-size:1.8rem;margin:12px 0 6px;">شهر رؤیاها</h1>
-      <p style="color:#c9b896;font-size:0.9rem;margin-bottom:18px;">شش محله · بیش از ۱۱۰۰ جرقه</p>
+      <p style="color:#c9b896;font-size:0.9rem;margin-bottom:18px;">شش محله · بیش از ۱۳۰۰ جرقه</p>
       <div class="card" style="text-align:right;">
         <p class="quote">«شهر رؤیاها، جایی که هر کودکی قبل از خواب به آن سفر می‌کرد...»</p>
         <p>یادت می‌آید بچه که بودی، چشمانت را می‌بستی و خودت را جای یک نفر دیگر تصور می‌کردی؟ یک روز دکتر بودی، یک روز خلبان، یک روز نقاش، یک روز هم کاشف سیارات دور. آن تصویرها، آن حس‌ها، هنوز هم جایی در عمق وجودت زنده‌اند.</p>
@@ -828,7 +828,7 @@ async function loadSwipeCards() {
     if (state.cachedMotives) {
       all = state.cachedMotives;
     } else {
-      const res = await fetch(DATA_BASE + 'micro_motives.json?v=phase3-161-176-1');
+      const res = await fetch(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
       all = await res.json();
       state.cachedMotives = all;
     }
