@@ -108,23 +108,24 @@
       try{window.location.replace(raw);return true;}catch(_){}
       return false;
     }
-    // Fallback/retry in Android WebView follows the same one-hop payment contract.
-    var chromeHop=chromeHopUrl(raw);
-    try{window.location.href=chromeIntent(chromeHop,chromeHop);return true;}catch(_){}
+    // Android embedded: open the raw Zarinpal URL directly; use the legacy site hop only as fallback.
+    var fallback=chromeHopUrl(raw);
+    try{window.location.href=chromeIntent(raw,fallback);return true;}catch(_){}
+    try{window.location.href=fallback;return true;}catch(_){}
     return false;
   }
 
   function showPayFallback(url){
     var e=el('dh-buy-err');
     if(!e)return;
-    var hop=isZarinpalPaymentUrl(url)?siteHopPayUrl(url):String(url);
+    var hop=String(url);
     e.style.color='#f0c040';
     e.innerHTML=
       '<div style="text-align:center;line-height:1.7;margin-bottom:6px">انتقال به درگاه انجام نشد؛ دوباره تلاش کنید:</div>'+
       '<button type="button" id="dh-pay-retry" class="btn btn-primary" style="width:100%;margin-top:8px;padding:14px;font-weight:800">باز کردن درگاه</button>'+
       '<button type="button" id="dh-pay-copy" class="btn" style="width:100%;margin-top:8px;padding:12px">کپی لینک پرداخت</button>'+
       '<textarea id="dh-pay-url" readonly style="width:100%;margin-top:10px;min-height:70px;font-size:11px;direction:ltr;text-align:left;padding:8px;border-radius:10px;background:#0d0d14;color:#d7caa9;border:1px solid rgba(212,175,55,.35)"></textarea>'+
-      '<div style="margin-top:6px;font-size:.78rem;color:#b7ad98;text-align:center">از همین صفحه به درگاه امن می‌روید.</div>';
+      '<div style="margin-top:6px;font-size:.78rem;color:#b7ad98;text-align:center">در صورت باز نشدن درگاه، لینک مستقیم زرین‌پال را کپی کنید.</div>';
     var ta=el('dh-pay-url');
     if(ta)ta.value=hop;
     var retry=el('dh-pay-retry');if(retry)retry.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}openExternalPay(url);};
