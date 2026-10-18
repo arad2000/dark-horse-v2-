@@ -60,7 +60,6 @@
     .dh-startup-word{font-size:.7rem;letter-spacing:.28em;color:#a89254;font-weight:700}
     .dh-startup-brand h1{margin:7px 0 5px;font-size:1.55rem}
     .dh-startup-subtitle{font-size:.9rem;color:#c7b98c;line-height:1.8;margin:0 auto 7px}
-    .dh-startup-pill{display:inline-block;padding:5px 10px;border:1px solid rgba(240,192,64,.23);border-radius:999px;background:rgba(240,192,64,.07);color:#d6bf76;font-size:.75rem}
     .dh-startup-card{padding:17px 15px;margin:8px 0 12px;text-align:right;background:linear-gradient(145deg,#1b1a29,#121119);border:1px solid rgba(212,175,55,.28);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
     .dh-startup-card-title{font-size:1.05rem;color:#f0c040;font-weight:700;margin-bottom:5px}
     .dh-startup-card p{font-size:.86rem;color:#bdb095;line-height:1.8;margin:0 0 12px}
@@ -69,7 +68,7 @@
     .dh-startup-sanj{padding:14px 15px;margin:10px 0;text-align:right;background:#13131e;border:1px solid rgba(212,175,55,.16);border-radius:16px}
     .dh-startup-sanj strong{display:block;color:#e2c66d;margin-bottom:4px}
     .dh-startup-sanj p{font-size:.82rem;line-height:1.8;color:#a99d7d;margin:0}
-    .dh-startup-status{font-size:.7rem;color:#736a51;text-align:center;margin-top:12px}
+    .dh-startup-sanj-cta{width:100%;min-height:44px;padding:10px 14px;margin-top:12px;border:1px solid rgba(212,175,55,.42);border-radius:12px;background:#1a1a2a;color:#e2c66d;font:inherit;font-weight:700;cursor:pointer}
   </style>
   <script>
     (function () {
@@ -95,6 +94,34 @@
           launchAfterBoot();
         }
       };
+      window.__dhRequestStartupSanjesh = function () {
+        window.__dhStartupSanjeshQueued = true;
+        var button = document.getElementById('dh-startup-open-sanjesh');
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'در حال آماده‌سازی بخش سنجش…';
+        }
+        function openAfterBoot() {
+          setTimeout(function () {
+            if (!window.__dhStartupSanjeshQueued) return;
+            if (!window.DHShell || typeof window.DHShell.openSanjesh !== 'function') {
+              if (button) {
+                button.disabled = false;
+                button.textContent = 'ورود به بخش سنجش';
+              }
+              window.__dhStartupSanjeshQueued = false;
+              return;
+            }
+            window.__dhStartupSanjeshQueued = false;
+            window.DHShell.openSanjesh();
+          }, 0);
+        }
+        if (document.readyState !== 'complete') {
+          document.addEventListener('DOMContentLoaded', openAfterBoot, { once: true });
+        } else {
+          openAfterBoot();
+        }
+      };
     })();
   </script>
 </head>
@@ -106,7 +133,6 @@
         <div class="dh-startup-word">DARK HORSE</div>
         <h1>اسب سیاه</h1>
         <p class="dh-startup-subtitle">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</p>
-        <span class="dh-startup-pill">کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد</span>
       </header>
       <section class="dh-startup-card" aria-label="سفر اکتشافی">
         <div class="dh-startup-card-title">🧭 سفر اکتشافی</div>
@@ -116,8 +142,8 @@
       <section class="dh-startup-sanj" aria-label="انتخاب رشته با منطق سنجش">
         <strong>🎓 انتخاب رشته با منطق سنجش</strong>
         <p>بررسی مستقل با داده‌های سنجش؛ بدون نیاز به تکمیل سفر اکتشافی.</p>
+        <button type="button" class="dh-startup-sanj-cta" id="dh-startup-open-sanjesh" onclick="window.__dhRequestStartupSanjesh()">ورود به بخش سنجش</button>
       </section>
-      <div class="dh-startup-status" aria-live="polite">فضای اصلی در حال آماده‌سازی است…</div>
     </main>
   </div>
   <script defer src="data.js?v=motives-1393-catalog-230-v1&narrow-fix=1"></script>
