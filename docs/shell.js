@@ -400,6 +400,14 @@
     }, 4000);
   }
 
+  function openSanjeshFromShell() {
+    try { renderHome(); } catch (e) { return false; }
+    var button = $('dh-open-sanjesh');
+    if (!button) return false;
+    button.click();
+    return true;
+  }
+
   function renderHome() {
     try { shellScrollTop(); } catch (eS) {}
 
@@ -1153,6 +1161,7 @@
     renderHome: renderHome,
     renderProfile: renderProfile,
     startJourney: startJourneyFromShell,
+    openSanjesh: openSanjeshFromShell,
     setActiveTab: setActiveTab
   };
 

@@ -5,6 +5,7 @@ const assert = require('assert');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const bootSource = fs.readFileSync('docs/pwa-boot.js', 'utf8');
 const swSource = fs.readFileSync('docs/sw.js', 'utf8');
+const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
 
 function response(body, status = 200, type = 'basic') {
   return { body, status, type, clone() { return response(this.body, this.status, this.type); } };
@@ -77,6 +78,12 @@ async function testStartupMarkup() {
   assert.match(indexSource, /id="dh-startup-home"/);
   assert.match(indexSource, /id="dh-startup-start"/);
   assert.match(indexSource, /__dhRequestStartupJourney/);
+  assert.match(indexSource, /کشف رشته و شاخه بر اساس فردیت/);
+  assert.match(indexSource, /id="dh-startup-open-sanjesh"/);
+  assert.match(indexSource, /__dhRequestStartupSanjesh/);
+  assert.doesNotMatch(indexSource, /dh-startup-pill|منطق هاروارد/);
+  assert.ok(shellSource.includes('کشف رشته و شاخه بر اساس فردیت'));
+  assert.ok(shellSource.includes('openSanjesh: openSanjeshFromShell'));
   assert.ok(indexSource.indexOf('id="dh-startup-home"') < indexSource.indexOf('data.js?v='),
     'startup shell must be present before deferred data/app scripts');
   assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1/);
@@ -119,6 +126,36 @@ async function testStartupButtonQueue() {
   await new Promise(resolve => setTimeout(resolve, 5));
   assert.strictEqual(starts, 1, 'queued CTA should launch when app shell is ready');
   console.log('startup CTA queued until app boot: PASS');
+}
+
+async function testSanjeshButtonQueue() {
+  const marker = 'window.__dhRequestStartupSanjesh = function ()';
+  const at = indexSource.indexOf(marker);
+  assert.ok(at >= 0, 'startup Sanjesh click handler not found');
+  const start = indexSource.lastIndexOf('  <script>', at);
+  const close = indexSource.indexOf('  </script>', at);
+  assert.ok(start >= 0 && close > at, 'startup script bounds not found');
+  const source = indexSource.slice(start, close + '  </script>'.length)
+    .replace(/^  <script>\s*/, '').replace(/\s*  <\/script>$/, '');
+  const listeners = {};
+  const button = { disabled: false, textContent: 'ورود به بخش سنجش' };
+  const document = {
+    readyState: 'loading',
+    getElementById(id) { return id === 'dh-startup-open-sanjesh' ? button : null; },
+    addEventListener(name, callback) { listeners[name] = callback; }
+  };
+  let opens = 0;
+  const context = { document, setTimeout, Promise };
+  context.window = context;
+  vm.runInNewContext(source, context);
+  context.__dhRequestStartupSanjesh();
+  assert.strictEqual(button.disabled, true);
+  assert.match(button.textContent, /در حال آماده‌سازی/);
+  context.DHShell = { openSanjesh() { opens += 1; } };
+  listeners.DOMContentLoaded();
+  await new Promise(resolve => setTimeout(resolve, 5));
+  assert.strictEqual(opens, 1, 'queued Sanjesh CTA should open after scripts are ready');
+  console.log('startup Sanjesh CTA queued until app boot: PASS');
 }
 
 async function testPwaRegistrationAndSingleReload() {
@@ -212,6 +249,7 @@ async function testColdWarmOfflineOnline() {
 (async () => {
   await testStartupMarkup();
   await testStartupButtonQueue();
+  await testSanjeshButtonQueue();
   await testPwaRegistrationAndSingleReload();
   await testColdWarmOfflineOnline();
 })().catch(error => {
