@@ -219,7 +219,9 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(chromeHop,\s*chromeHop\)/);
   assert.match(indexSource, /commercial_ui\.js\?v=42/);
   assert.match(indexSource, /purchase_ui_fix.js\?v=9/);
-  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=2') < indexSource.indexOf('app.js?v=68'), 'payment hop boot must execute before app.js');
+  const paymentHopPosition = indexSource.indexOf('payment_hop_boot.js?v=3');
+  const appScriptPosition = indexSource.indexOf('app.js?v=');
+  assert.ok(paymentHopPosition >= 0 && appScriptPosition > paymentHopPosition, 'payment hop boot must execute before app.js');
   assert.match(hopBootSource, /pageshow/);
   assert.match(hopBootSource, /visibility = ''/);
   assert.match(externalLinksSource, /target', '_blank'/);
