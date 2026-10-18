@@ -13,15 +13,34 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="اسب سیاه — هدایت تحصیلی">
   <meta name="mobile-web-app-capable" content="yes">
-  <script src="payment_hop_boot.js?v=3"></script>
+  <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(window.location.search || '');
+        var raw = params.get('dh_pay');
+        if (!raw) return;
+        var decoded;
+        try { decoded = decodeURIComponent(raw); } catch (_) { return; }
+        var target = new URL(String(decoded), window.location.href);
+        var host = String(target.hostname || '').toLowerCase();
+        var validHost = host === 'zarinpal.com' || host === 'www.zarinpal.com' ||
+          host === 'sandbox.zarinpal.com' || host === 'payment.zarinpal.com' ||
+          host === 'www.payment.zarinpal.com';
+        if (target.protocol === 'https:' && validHost) {
+          document.documentElement.style.visibility = 'hidden';
+        }
+      } catch (_) {}
+    })();
+  </script>
+  <script defer src="payment_hop_boot.js?v=3" onerror="document.documentElement.style.visibility='';document.documentElement.style.removeProperty('visibility')"></script>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="mobile-pwa.css">
-  <link rel="stylesheet" href="shell.css?v=65">
-  <link rel="stylesheet" href="home_update_banner_1405.css?v=1">
-  <link rel="stylesheet" href="profile_ux_v1.css?v=5">
-  <link rel="stylesheet" href="genz_results_layer.css?v=1">
-  <link rel="stylesheet" href="admission_chance_ui.css?v=5">
-  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="mobile-pwa.css" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="shell.css?v=65" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="home_update_banner_1405.css?v=1" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="profile_ux_v1.css?v=5" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="genz_results_layer.css?v=1" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="admission_chance_ui.css?v=5" media="print" onload="this.onload=null;this.media='all'">
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" media="print" onload="this.onload=null;this.media='all'" />
   <style>
     :root { --bg-primary:#0a0a0f; --bg-card:#1a1a2e; --accent:#f0c040; --accent-dim:#d4af37; --text-primary:#e0e0e0; --text-secondary:#b0a080; --font-main:'Vazirmatn',sans-serif; --radius-sm:8px; --radius-md:12px; --shadow-card:0 4px 20px rgba(0,0,0,.4); --shadow-glow:0 0 20px rgba(240,192,64,.3); }
     *{box-sizing:border-box;margin:0;padding:0} body{font-family:var(--font-main);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow-x:hidden;user-select:none;-webkit-tap-highlight-color:transparent}
@@ -34,10 +53,73 @@
     .warning{background:rgba(240,192,64,.05);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:12px;margin-top:12px;color:var(--accent);font-size:.85rem}.hidden{display:none!important}
     .btn-heart.dh-pulse,.btn-skip.dh-pulse{animation:dhBtnPulse .38s ease;pointer-events:none}@keyframes dhBtnPulse{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}.swipe-card.dh-card-swap{animation:dhCardFade .28s ease}@keyframes dhCardFade{0%{opacity:.4;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
     .dh-motive-count{display:inline-block;margin:8px 0 4px;padding:5px 12px;border-radius:999px;font-size:.8rem;background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.35);color:#f0c040}
+    /* Fast first paint: show a useful home surface before deferred JS executes. */
+    .dh-startup-home{width:100%;padding:14px 0 26px;text-align:center;color:#e8e0d0}
+    .dh-startup-brand{padding:12px 8px 20px}
+    .dh-startup-mark{width:54px;height:54px;margin:0 auto 10px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(240,192,64,.65);background:radial-gradient(circle at 35% 25%,#332a16,#111018 68%);color:#f0c040;font-size:1.75rem;box-shadow:0 0 22px rgba(240,192,64,.12)}
+    .dh-startup-word{font-size:.7rem;letter-spacing:.28em;color:#a89254;font-weight:700}
+    .dh-startup-brand h1{margin:7px 0 5px;font-size:1.55rem}
+    .dh-startup-subtitle{font-size:.9rem;color:#c7b98c;line-height:1.8;margin:0 auto 7px}
+    .dh-startup-pill{display:inline-block;padding:5px 10px;border:1px solid rgba(240,192,64,.23);border-radius:999px;background:rgba(240,192,64,.07);color:#d6bf76;font-size:.75rem}
+    .dh-startup-card{padding:17px 15px;margin:8px 0 12px;text-align:right;background:linear-gradient(145deg,#1b1a29,#121119);border:1px solid rgba(212,175,55,.28);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .dh-startup-card-title{font-size:1.05rem;color:#f0c040;font-weight:700;margin-bottom:5px}
+    .dh-startup-card p{font-size:.86rem;color:#bdb095;line-height:1.8;margin:0 0 12px}
+    .dh-startup-cta{width:100%;min-height:48px;padding:12px 18px;border:0;border-radius:12px;background:linear-gradient(135deg,#f0c040,#d4af37);color:#15130b;font:inherit;font-weight:800;cursor:pointer}
+    .dh-startup-cta:disabled{opacity:.8;cursor:wait}
+    .dh-startup-sanj{padding:14px 15px;margin:10px 0;text-align:right;background:#13131e;border:1px solid rgba(212,175,55,.16);border-radius:16px}
+    .dh-startup-sanj strong{display:block;color:#e2c66d;margin-bottom:4px}
+    .dh-startup-sanj p{font-size:.82rem;line-height:1.8;color:#a99d7d;margin:0}
+    .dh-startup-status{font-size:.7rem;color:#736a51;text-align:center;margin-top:12px}
   </style>
+  <script>
+    (function () {
+      'use strict';
+      window.__dhRequestStartupJourney = function () {
+        window.__dhStartupLaunchQueued = true;
+        var button = document.getElementById('dh-startup-start');
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'در حال آماده‌سازی سفر…';
+        }
+        function launchAfterBoot() {
+          setTimeout(function () {
+            if (!window.__dhStartupLaunchQueued) return;
+            if (!window.DHShell || typeof window.DHShell.startJourney !== 'function') return;
+            window.__dhStartupLaunchQueued = false;
+            window.DHShell.startJourney();
+          }, 0);
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', launchAfterBoot, { once: true });
+        } else {
+          launchAfterBoot();
+        }
+      };
+    })();
+  </script>
 </head>
 <body>
-  <div class="container" id="app"></div>
+  <div class="container" id="app">
+    <main class="dh-startup-home" id="dh-startup-home" aria-label="صفحه اصلی اسب سیاه">
+      <header class="dh-startup-brand">
+        <div class="dh-startup-mark" aria-hidden="true">♞</div>
+        <div class="dh-startup-word">DARK HORSE</div>
+        <h1>اسب سیاه</h1>
+        <p class="dh-startup-subtitle">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</p>
+        <span class="dh-startup-pill">کشف شاخهٔ دبیرستان و رشتهٔ دانشگاه با منطق هاروارد</span>
+      </header>
+      <section class="dh-startup-card" aria-label="سفر اکتشافی">
+        <div class="dh-startup-card-title">🧭 سفر اکتشافی</div>
+        <p>کشف رشته و شاخه بر اساس فردیت</p>
+        <button type="button" class="dh-startup-cta" id="dh-startup-start" onclick="window.__dhRequestStartupJourney()">شروع سفر</button>
+      </section>
+      <section class="dh-startup-sanj" aria-label="انتخاب رشته با منطق سنجش">
+        <strong>🎓 انتخاب رشته با منطق سنجش</strong>
+        <p>بررسی مستقل با داده‌های سنجش؛ بدون نیاز به تکمیل سفر اکتشافی.</p>
+      </section>
+      <div class="dh-startup-status" aria-live="polite">فضای اصلی در حال آماده‌سازی است…</div>
+    </main>
+  </div>
   <script defer src="data.js?v=motives-1393-catalog-230-v1&narrow-fix=1"></script>
   <script defer src="app.js?v=69"></script>
   <script defer src="feedback_bridge.js?v=2"></script>
@@ -60,7 +142,7 @@
   <script defer src="poems.js"></script>
   <script defer src="payment_return_reconcile.js?v=1"></script>
   <script defer src="post_auth_flow_policy.js?v=3"></script>
-  <script defer src="pwa-boot.js?v=66"></script>
+  <script defer src="pwa-boot.js?v=68"></script>
   <script defer src="genz_results_enhance.js?v=1"></script>
   <script defer src="admission_chance_ui.js?v=20"></script>
   <script defer src="home_update_banner_1405.js?v=2"></script>

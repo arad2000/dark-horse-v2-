@@ -21,6 +21,9 @@ jobs:
           node-version: 20
       - name: Run purchase UI regression
         run: node tests/test_purchase_ui_fix.js
+
+      - name: Run PWA immediate home startup regression
+        run: node tests/test_pwa_boot_startup.js
       - name: Run quota double-consumption regression
         run: node tests/test_quota_enforcement_bridge.js
       - name: Run admin credit grant UI regression
