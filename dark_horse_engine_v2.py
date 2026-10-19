@@ -533,11 +533,13 @@ class DarkHorseEngineV2:
 
     @staticmethod
     def _get_fit_level(score: float) -> str:
-        if score >= 80:
+        # P1.1: labels are calibrated separately from the Total score.
+        # Very high is reserved for the top decile-like band; Total weights are unchanged.
+        if score >= 90:
             return "همخوانی بسیار بالا"
-        elif score >= 60:
+        elif score >= 80:
             return "همخوانی بالا"
-        elif score >= 40:
+        elif score >= 50:
             return "همخوانی متوسط"
         else:
             return "همخوانی پایین"
@@ -651,9 +653,11 @@ class DarkHorseEngineV2:
 
         discovered.sort(key=lambda x: x["individuality_fit"]["score"], reverse=True)
 
+        # The aggregate buckets follow the recalibrated display bands.
+        # high_compatibility intentionally includes both "high" and "very high".
         high = sum(1 for m in discovered if m["individuality_fit"]["score"] >= 80)
-        med = sum(1 for m in discovered if 60 <= m["individuality_fit"]["score"] < 80)
-        low = sum(1 for m in discovered if m["individuality_fit"]["score"] < 60)
+        med = sum(1 for m in discovered if 50 <= m["individuality_fit"]["score"] < 80)
+        low = sum(1 for m in discovered if m["individuality_fit"]["score"] < 50)
 
         return {
             "discovered_majors": discovered,
