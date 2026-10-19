@@ -224,7 +224,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [], replaceTh
   assert.match(commercialFunction, /!isEmbeddedAndroid\(\)/);
   assert.match(commercialFunction, /location\.replace\(raw\)/);
   assert.match(commercialFunction, /chromeHopUrl\(raw\)/);
-  assert.match(hopFunction, /dh_chrome.*===.*['"]1['"]/);
+  assert.match(hopFunction, /dh_chrome.*(?:===|!==).*['"]1['"]/);
   assert.match(hopFunction, /window\.location\.replace\(decoded\)/);
   assert.match(commercialSource, /payment\.zarinpal\.com/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
