@@ -203,8 +203,11 @@ class DarkHorseEngineV2:
             return 0.0, []
 
         total_score = 0.0
-        valid = 0
         highlights = []
+
+        # Keep the denominator fixed to the full S-question protocol.
+        # Unanswered/invalid items contribute zero instead of shrinking the denominator.
+        question_count = len(strategy_weights)
 
         for i, row in enumerate(strategy_weights):
             if i >= len(strategy_answers):
@@ -218,7 +221,6 @@ class DarkHorseEngineV2:
             normalized = chosen_w / max_w if max_w > 0 else 0.0
 
             total_score += normalized
-            valid += 1
 
             if normalized >= 0.7:
                 q_num = i + 1
@@ -230,7 +232,7 @@ class DarkHorseEngineV2:
                 else:
                     highlights.append(f"گزینه {idx+1} با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
 
-        final_score = (total_score / valid) if valid > 0 else 0.0
+        final_score = (total_score / question_count) if question_count > 0 else 0.0
         return final_score, highlights
 
     # ── V-Score ──
