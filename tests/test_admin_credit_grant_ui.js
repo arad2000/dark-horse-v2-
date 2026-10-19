@@ -120,7 +120,7 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /showAuthModal failed/);
   assert.match(commercialSource, /__dhCommercialUIReady/);
   assert.match(indexSource, /shell\.js\?v=/);
-  assert.match(indexSource, /commercial_ui\.js\?v=43/);
+  assert.match(indexSource, /commercial_ui\.js\?v=44/);
   assert.match(indexSource, /profile_ux_v1\.js\?v=7/);
   assert.match(profileSource, /function adminUserId\(user\)/);
   assert.match(profileSource, /user\.user_id \|\| user\.id \|\| user\.userId/);
