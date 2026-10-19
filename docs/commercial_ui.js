@@ -255,6 +255,9 @@
         if(!handoffStarted){
           unlock();
           showPayFallback(payUrl);
+        }else if(!isEmbeddedAndroid()){
+          // Preserve normal desktop/browser cleanup while direct navigation leaves the page.
+          unlock();
         }
       }catch(x){if(e)e.textContent=paymentErrorText(x);if(s)s.hidden=true;unlock();}
     };
