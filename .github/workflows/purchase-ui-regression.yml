@@ -30,3 +30,17 @@ jobs:
         run: node tests/test_admin_credit_grant_ui.js
       - name: Run admission chance UI regression
         run: node tests/test_admission_chance_ui.js
+
+  catalog-motive-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enforce catalog alignment contract
+        run: node tests/test_catalog_alignment.js
+      - name: Enforce narrow-path and motive-code contracts
+        run: node tests/test_motive_route_contracts.js
