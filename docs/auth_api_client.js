@@ -173,8 +173,13 @@
       return data;
     },
 
-    async consumeTest() {
-      const data = await req('/api/v1/me/consume-test', { method: 'POST', body: '{}' });
+    async consumeTest(sessionId) {
+      const id = String(sessionId || currentJourneySessionId() || '').trim();
+      if (!id) throw new Error('شناسه سفر کاربر پیدا نشد؛ ابتدا سفر را آغاز کنید.');
+      const data = await req('/api/v1/me/consume-test', {
+        method: 'POST',
+        body: JSON.stringify({ session_uuid: id })
+      });
       const s = load() || {};
       if (data.user) { s.user = data.user; save(s); }
       persistSuccessfulConsume(data);
