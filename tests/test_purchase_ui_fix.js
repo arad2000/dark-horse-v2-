@@ -119,6 +119,9 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const expectedChromeHop = expectedHop + '&dh_chrome=1';
   const expectedFallback = encodeURIComponent(expectedChromeHop);
   const expectedIntent =
+    'intent://sandbox.zarinpal.com/pg/StartPay/ABC123' +
+    '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
+  const expectedLegacyIntent =
     'intent://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123&dh_chrome=1' +
     '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
 
@@ -150,7 +153,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
     '?dh_pay=' + encodeURIComponent(paymentUrl),
     'Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Mobile Safari/537.36'
   );
-  assert.deepStrictEqual(embeddedNoFlag.href, [expectedIntent]);
+  assert.deepStrictEqual(embeddedNoFlag.href, [expectedLegacyIntent]);
   assert.deepStrictEqual(embeddedNoFlag.replace, []);
 
   const embeddedFlag = commercialHop(
@@ -214,12 +217,14 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(externalLinksSource, /category=android\.intent\.category\.BROWSABLE/);
   assert.match(externalLinksSource, /package=com\.android\.chrome/);
   assert.match(externalLinksSource, /location\.assign\(target\)/);
-  assert.match(source, /function openPayment\(url\)[\s\S]*?chromeIntent\(chromeHop, chromeHop\)/);
+  assert.match(source, /function openPayment\(url\)[\s\S]*?chromeIntent\(target, chromeHop\)/);
+  assert.match(source, /function openPayment\(url\)[\s\S]*?location\.href = chromeHop/);
+  assert.doesNotMatch(source, /chromeIntent\(chromeHop, chromeHop\)/);
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl\(chromeHopUrl/);
   assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(raw,\s*fallback\)/);
   assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?window\.location\.href=fallback/);
   assert.match(indexSource, /commercial_ui\.js\?v=43/);
-  assert.match(indexSource, /purchase_ui_fix.js\?v=9/);
+  assert.match(indexSource, /purchase_ui_fix.js\?v=10/);
   const paymentHopPosition = indexSource.indexOf('payment_hop_boot.js?v=3');
   const appScriptPosition = indexSource.indexOf('app.js?v=');
   assert.ok(paymentHopPosition >= 0 && appScriptPosition > paymentHopPosition, 'payment hop boot must execute before app.js');
