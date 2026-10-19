@@ -1,10 +1,8 @@
-/* purchase_ui_fix.js v10 — explicit payment readiness + APK hop contract */
+/* purchase_ui_fix.js v9 — explicit payment readiness + APK hop contract */
 (function (global) {
   'use strict';
 
   var PREPARE_TIMEOUT_MS = 2000;
-  var DIRECT_GATEWAY_TIMEOUT_MS = 2200;
-  var CHROME_INTENT_TIMEOUT_MS = 1800;
   var patchSerial = 0;
 
   function byId(id) { return document.getElementById(id); }
@@ -109,95 +107,24 @@
       try { global.location.replace(target); return true; } catch (_) {}
       return false;
     }
-
     var overlay = byId('dh-commercial-overlay');
-    var hop = chromeHopUrl(target);
+    try { if (overlay) overlay.remove(); } catch (_) {}
     try {
       global.__dhInJourney = false;
       global.__dhJourneyStarting = false;
       global.__dhPaymentHandoff = true;
     } catch (_) {}
-    setStatus('loading', 'در حال اتصال به درگاه امن…');
-
-    var stopped = false;
-    var stage = 'raw';
-    var timer = null;
-
-    function clearTimer() {
-      if (timer === null) return;
-      try { global.clearTimeout(timer); } catch (_) {}
-      timer = null;
-    }
-    function cleanup() {
-      if (stopped) return;
-      stopped = true;
-      clearTimer();
-      try { global.removeEventListener('pagehide', onPageHide); } catch (_) {}
-      try { document.removeEventListener('visibilitychange', onVisibilityChange); } catch (_) {}
-    }
-    function onPageHide() { cleanup(); }
-    function onVisibilityChange() {
-      try { if (document.visibilityState === 'hidden') cleanup(); } catch (_) {}
-    }
-    function schedule(fn, delay) {
-      if (stopped) return;
-      clearTimer();
-      try {
-        timer = global.setTimeout(function () {
-          timer = null;
-          if (!stopped) fn();
-        }, delay);
-      } catch (_) {}
-    }
-    function revealFailure() {
-      if (stopped) return;
-      cleanup();
-      setStatus('error', 'اتصال به درگاه انجام نشد؛ دوباره تلاش کنید.');
-      setError('در صورت نیاز، دوباره تلاش کنید.');
-      setButton(byId('dh-buy-now'), 'تلاش دوباره', false);
-    }
-    function goToSiteHop() {
-      if (stopped) return false;
-      stage = 'hop';
-      clearTimer();
-      try {
-        global.location.replace(hop);
-        schedule(revealFailure, CHROME_INTENT_TIMEOUT_MS);
-        return true;
-      } catch (_) {}
-      try {
-        global.location.href = hop;
-        schedule(revealFailure, CHROME_INTENT_TIMEOUT_MS);
-        return true;
-      } catch (_) {}
-      revealFailure();
-      return false;
-    }
-    function goToChrome() {
-      if (stopped || stage !== 'raw') return false;
-      stage = 'chrome';
-      clearTimer();
-      try {
-        global.location.href = chromeIntent(target, hop);
-        schedule(goToSiteHop, CHROME_INTENT_TIMEOUT_MS);
-        return true;
-      } catch (_) {}
-      return goToSiteHop();
-    }
-
+    // WebView/PWA: open the raw Zarinpal URL in Chrome. The site hop is only a fallback.
+    var chromeHop = chromeHopUrl(target);
     try {
-      global.addEventListener('pagehide', onPageHide);
-      document.addEventListener('visibilitychange', onVisibilityChange);
+      global.location.href = chromeIntent(target, chromeHop);
+      return true;
     } catch (_) {}
     try {
-      // Preferred path: let Android WebView/PWA navigate to Zarinpal in-place.
-      global.location.replace(target);
-      schedule(goToChrome, DIRECT_GATEWAY_TIMEOUT_MS);
+      global.location.href = chromeHop;
       return true;
-    } catch (_) {
-      // Only invoke Chrome immediately when direct navigation actually throws.
-      return goToChrome();
-    }
+    } catch (_) {}
+    return false;
   }
 
   function waitForPayment(payload, serial) {
