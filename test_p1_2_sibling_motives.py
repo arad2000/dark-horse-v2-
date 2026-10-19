@@ -53,8 +53,8 @@ class SiblingMotiveSeparationTests(unittest.TestCase):
             value_choices, candidate.get("value_weights", {})
         )
         total = round(
-            (0.55 * m_score) + (0.30 * v_score) + (0.15 * s_score), 1
-        ) * 100
+            ((0.55 * m_score) + (0.30 * v_score) + (0.15 * s_score)) * 100, 1
+        )
         return {
             "M": m_score,
             "S": s_score,
