@@ -235,7 +235,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [], replaceTh
   assert.match(hopBootSource, /package=com\.android\.chrome/);
   assert.match(hopBootSource, /window\.location\.replace\(decoded\)/);
   assert.match(hopBootSource, /dh_chrome.*===.*['\"]1['\"]/);
-  assert.match(indexSource, /payment_hop_boot.js\?v=3/);
+  assert.match(indexSource, /payment_hop_boot\\.js\\?v=4/);
   assert.match(indexSource, /external_links_fix_v1\.js\?v=6/);
   assert.match(externalLinksSource, /function openExternal\(url\)/);
   assert.match(externalLinksSource, /AndroidBridge &&[\s\S]*openExternalUrl/);
