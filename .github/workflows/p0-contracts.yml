@@ -18,16 +18,16 @@ jobs:
       matrix:
         include:
           - label: "P0.4 S-score denominator"
-            source_ref: p0/p04-s-score-fixed-denominator-20261019
+            source_ref: deploy/liara-commercial-sandbox
             test_file: test_p0_s_score.py
           - label: "P0.2 motive-code contracts"
-            source_ref: p0/p02-motive-code-contract-tests-20261019
+            source_ref: deploy/liara-commercial-sandbox
             test_file: test_p0_data_contract.py
           - label: "P0.1 result catalog flow"
-            source_ref: p0/p01-backend-catalog-result-contract-20261019
+            source_ref: deploy/liara-commercial-sandbox
             test_file: test_p0_result_catalog.py
           - label: "P0.3 authenticated quota and endpoint guardrails"
-            source_ref: p0/p03-discover-counsel-payload-quota-20261019
+            source_ref: deploy/liara-commercial-sandbox
             test_file: test_p0_api_guardrails.py
 
     steps:
