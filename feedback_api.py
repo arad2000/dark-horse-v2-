@@ -33,6 +33,39 @@ class FeedbackRequest(BaseModel):
     contact_for_research: bool = False
 
 
+MAX_FEEDBACK_PAYLOAD_BYTES = 32 * 1024
+
+
+async def _read_feedback_json_limited(request: Request) -> dict[str, Any]:
+    """Read bounded JSON for both feedback routes before parsing/normalizing it."""
+    declared_length = request.headers.get("content-length")
+    if declared_length is not None:
+        try:
+            declared_bytes = int(declared_length)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="invalid feedback content length") from exc
+        if declared_bytes < 0:
+            raise HTTPException(status_code=400, detail="invalid feedback content length")
+        if declared_bytes > MAX_FEEDBACK_PAYLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="feedback payload exceeds the 32 KiB limit")
+
+    raw = bytearray()
+    try:
+        async for chunk in request.stream():
+            raw.extend(chunk)
+            if len(raw) > MAX_FEEDBACK_PAYLOAD_BYTES:
+                raise HTTPException(status_code=413, detail="feedback payload exceeds the 32 KiB limit")
+        body = json.loads(bytes(raw))
+    except HTTPException:
+        raise
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise HTTPException(status_code=400, detail="invalid feedback JSON") from exc
+
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="invalid feedback body")
+    return body
+
+
 def _clamp_1_5(value: int | None) -> int | None:
     if value is None:
         return None
@@ -154,7 +187,7 @@ def persist_feedback(req: FeedbackRequest) -> dict[str, Any]:
 async def submit_feedback(request: Request) -> dict[str, Any]:
     """Store feedback for later analysis / system optimization."""
     try:
-        body = await request.json()
+        body = await _read_feedback_json_limited(request)
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="invalid feedback body")
         req = normalize_feedback_body(body)
@@ -177,7 +210,7 @@ legacy_router = APIRouter(tags=["feedback-legacy"])
 @legacy_router.post("/api/feedback/submit")
 async def legacy_submit_feedback(request: Request) -> dict[str, Any]:
     try:
-        body = await request.json()
+        body = await _read_feedback_json_limited(request)
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="invalid feedback body")
         req = normalize_feedback_body(body)
