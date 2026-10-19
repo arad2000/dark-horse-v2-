@@ -1,0 +1,45 @@
+name: P1.3 S-vs-V Rank Harness
+
+on:
+  push:
+    branches:
+      - "p1/**"
+  pull_request:
+    branches:
+      - deploy/liara-commercial-sandbox
+    paths:
+      - p1_3_sv_rank_harness.py
+      - test_p1_3_sv_rank_harness.py
+      - docs/audits/P1-3-sv-rank-report.md
+      - .github/workflows/p1-3-sv-rank-harness.yml
+
+permissions:
+  contents: read
+
+jobs:
+  sv-rank-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Unit tests for the rank report
+        run: python -m unittest test_p1_3_sv_rank_harness.py
+      - name: Reproduce S-only, V-only and current-Total ranks
+        run: python p1_3_sv_rank_harness.py --target-id 42 > /tmp/p1-3-rank.json
+      - name: Verify reported numeric invariants
+        run: |
+          python - <<'PY'
+          import json
+          with open("/tmp/p1-3-rank.json", encoding="utf-8") as f:
+              report = json.load(f)
+          assert report["target_components_pct"]["S"] == 100.0
+          assert report["target_components_pct"]["V"] == 75.6
+          assert report["target_components_pct"]["Total"] == 92.7
+          rank = report["rank"]
+          assert (rank["S_only"]["rank"], rank["S_only"]["universe_size"]) == (1, 202)
+          assert (rank["V_only"]["rank"], rank["V_only"]["universe_size"]) == (8, 202)
+          assert (rank["current_Total"]["rank"], rank["current_Total"]["universe_size"]) == (1, 2)
+          print("P1.3 numeric rank harness checks passed.")
+          PY
