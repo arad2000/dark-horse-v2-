@@ -424,7 +424,16 @@
   }
 
   function startJourneyFromShell() {
-    if (!canRunTest()) {
+    var serverAuthorizedStart = false;
+    try {
+      serverAuthorizedStart = !!(
+        localStorage.getItem('dh_pending_journey_session_id') &&
+        window.DHAuth &&
+        typeof window.DHAuth.isLoggedIn === 'function' &&
+        window.DHAuth.isLoggedIn()
+      );
+    } catch (_) {}
+    if (!canRunTest() && !serverAuthorizedStart) {
       switchTab('profile');
       setTimeout(function () { alert('سهمیه رایگان تمام شده. از پروفایل اشتراک تستی را فعال کن.'); }, 150);
       return;
