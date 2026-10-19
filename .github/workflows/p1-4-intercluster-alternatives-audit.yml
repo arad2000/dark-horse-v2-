@@ -1,0 +1,48 @@
+name: P1.4 Intercluster Alternatives Audit
+
+on:
+  push:
+    branches:
+      - "p1/**"
+  pull_request:
+    branches:
+      - deploy/liara-commercial-sandbox
+    paths:
+      - dark_horse_engine_v2.py
+      - majors_database_v2.json
+      - p1_4_intercluster_audit.py
+      - test_p1_4_intercluster_audit.py
+      - docs/audits/P1-4-intercluster-alternatives.md
+      - .github/workflows/p1-4-intercluster-alternatives-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  intercluster-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Unit test the reproducible audit
+        run: python -m unittest test_p1_4_intercluster_audit.py
+      - name: Generate the audit output
+        run: python p1_4_intercluster_audit.py > /tmp/p1-4-intercluster.json
+      - name: Verify audit invariants
+        run: |
+          python - <<'PY'
+          import json
+          with open("/tmp/p1-4-intercluster.json", encoding="utf-8") as f:
+              report = json.load(f)
+          s = report["summary"]
+          assert s["active_target_count"] == 202
+          assert s["known_cluster_target_count"] == 187
+          assert s["cross_cluster_slots"] == 224
+          assert s["unknown_cluster_slots"] == 5
+          assert s["unassigned_source_cluster_slots"] == 45
+          assert s["inactive_candidates_in_top3"] == 0
+          assert len(report["sample_cross_cluster_paths"]) == 5
+          print("P1.4 audit invariants passed.")
+          PY
