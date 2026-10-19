@@ -96,6 +96,7 @@
     function restorePage() {
       try { document.documentElement.style.visibility = ''; } catch (_) {}
       try { document.documentElement.style.removeProperty('visibility'); } catch (_) {}
+      cleanup();
     }
     function cleanup() {
       if (stopped) return;
@@ -151,7 +152,8 @@
       window.location.replace(decoded);
       if (embedded && !dhChrome) {
         schedule(launchChrome, 2200);
-      } else if (embedded && dhChrome) {
+      } else {
+        // Never leave a stuck blank page if a WebView/browser silently blocks navigation.
         schedule(restorePage, 2200);
       }
     } catch (_) {
