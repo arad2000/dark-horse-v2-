@@ -180,6 +180,15 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [], replaceTh
   assert.deepStrictEqual(embeddedFlag.href, []);
   assert.deepStrictEqual(embeddedFlag.replace, [paymentUrl]);
 
+  const embeddedDirectFailure = commercialHop(
+    '?dh_pay=' + encodeURIComponent(paymentUrl),
+    'Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Mobile Safari/537.36',
+    true
+  );
+  assert.deepStrictEqual(embeddedDirectFailure.replace, []);
+  assert.deepStrictEqual(embeddedDirectFailure.href, [expectedIntent], 'Chrome intent is permitted after a synchronous in-WebView navigation failure');
+
+
   const extraOfficialHost = commercialHop(
     '?dh_pay=' + encodeURIComponent('https://payment.zarinpal.com/pg/StartPay/XYZ789') + '&dh_chrome=1',
     'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/140.0 Mobile Safari/537.36'
@@ -246,7 +255,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [], replaceTh
   assert.match(indexSource, /commercial_ui\.js\?v=44/);
   assert.match(indexSource, /purchase_ui_fix\.js\?v=11/);
   assert.match(indexSource, /payment_hop_boot\.js\?v=4/);
-  const paymentHopPosition = indexSource.indexOf('payment_hop_boot.js?v=3');
+  const paymentHopPosition = indexSource.indexOf('payment_hop_boot.js?v=4');
   const appScriptPosition = indexSource.indexOf('app.js?v=');
   assert.ok(paymentHopPosition >= 0 && appScriptPosition > paymentHopPosition, 'payment hop boot must execute before app.js');
   assert.match(hopBootSource, /pageshow/);
