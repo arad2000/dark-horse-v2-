@@ -7670,7 +7670,8 @@
       "BIOT-004",
       "BIOT-005",
       "BIOT-006",
-      "BIOT-007"
+      "BIOT-007",
+      "GEN-002"
     ],
     "strategy_weights": [
       [
@@ -9525,8 +9526,8 @@
       "CS-003",
       "CS-004",
       "CS-005",
-      "CS-006",
-      "CS-009"
+      "CS-009",
+      "EE-003"
     ],
     "strategy_weights": [
       [
@@ -21354,7 +21355,7 @@
       "BIOT-004",
       "BIOT-005",
       "BIOT-006",
-      "BIOT-007"
+      "BIOINF-002"
     ],
     "strategy_weights": [
       [
