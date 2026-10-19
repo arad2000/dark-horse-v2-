@@ -353,6 +353,46 @@ def _authenticated_user_id(req: Request) -> int | None:
         return None
 
 
+def _journey_charge_exists(user_id: int, session_uuid: str) -> bool:
+    """Fail closed unless commercial billing records a charge for this user/session."""
+    db = None
+    try:
+        from billing_models import JourneyCreditConsumption
+        from database import SessionLocal
+        from sqlalchemy import select
+
+        db = SessionLocal()
+        return db.scalar(
+            select(JourneyCreditConsumption.session_uuid)
+            .where(
+                JourneyCreditConsumption.user_id == user_id,
+                JourneyCreditConsumption.session_uuid == session_uuid,
+            )
+            .limit(1)
+        ) is not None
+    except Exception as exc:
+        logger.warning("Journey charge lookup failed closed: %s", exc)
+        return False
+    finally:
+        if db is not None:
+            db.close()
+
+
+def _require_charged_journey(req: Request, session_uuid: str | None) -> int:
+    """Require both a valid commercial session and an idempotently charged journey."""
+    user_id = _authenticated_user_id(req)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="برای دریافت نتیجه، وارد حساب کاربری شوید.")
+    if not session_uuid or not (8 <= len(str(session_uuid)) <= 64):
+        raise HTTPException(status_code=400, detail="شناسهٔ سفر معتبر نیست.")
+    if not _journey_charge_exists(user_id, str(session_uuid)):
+        raise HTTPException(
+            status_code=402,
+            detail="برای این سفر اعتبار تجاری تأییدشده‌ای ثبت نشده است.",
+        )
+    return user_id
+
+
 def _persist_discovery_session(
     req: Request,
     request: DarkHorseDiscoverRequest,
@@ -470,7 +510,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
     if engine is None:
         raise HTTPException(503, detail="موتور امتیازدهی V2.0 در دسترس نیست")
     try:
-        user_id = _authenticated_user_id(req)
+        user_id = _require_charged_journey(req, request.session_id)
         session_uuid, persisted_session_id = _persist_discovery_session(req, request, user_id=user_id)
 
         discovery = await asyncio.to_thread(
@@ -539,7 +579,7 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
     if engine is None:
         raise HTTPException(503, detail="موتور شاخه‌ها V2.0 در دسترس نیست")
     try:
-        user_id = _authenticated_user_id(req)
+        user_id = _require_charged_journey(req, request.session_id)
         session_uuid, persisted_session_id = _persist_discovery_session(req, request, user_id=user_id)
         result = await asyncio.to_thread(
             engine.recommend_school_branch,
@@ -603,6 +643,12 @@ async def darkhorse_counsel(request: dict, req: Request):
     )
 
     profile = request.get("profile") or {}
+    session_uuid = (
+        request.get("session_id")
+        or request.get("session_uuid")
+        or (profile.get("session_id") if isinstance(profile, dict) else None)
+    )
+    _require_charged_journey(req, session_uuid)
     top_results = request.get("top_results") or request.get("results") or []
     journey_type = request.get("journey_type") or profile.get("kind") or "majors"
     mode = request.get("mode") or "main"
