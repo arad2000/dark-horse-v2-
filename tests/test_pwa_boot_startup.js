@@ -92,7 +92,7 @@ async function testStartupMarkup() {
   assert.match(shellSource, /commercial_ui\.js\?v=43/);
   assert.match(indexSource, /pwa-boot\.js\?v=68/);
   assert.match(indexSource, /shell\.css\?v=65" media="print"/);
-  assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
+  assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=4"/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=4') < indexSource.indexOf('app.js?v=69'),
     'payment hop bootstrap must precede app.js');
   assert.doesNotMatch(indexSource, /phase3-161-176-1|۱۱۰۰|1100/);
