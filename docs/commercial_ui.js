@@ -1,4 +1,4 @@
-/* commercial_ui.js v42 — server-authoritative auth + OTP + credit gate + payment UI + admin feedback */
+/* commercial_ui.js v43 — server-authoritative auth + OTP + credit gate + payment UI + admin feedback */
 (function (global) {
   'use strict';
   if (global.__dhCommercialUIReady) return;
@@ -79,16 +79,16 @@
   }
   function handlePaymentHop(){
     try{
+      if(window.__dhPaymentHopBootHandled)return true;
       var params=new URLSearchParams(window.location.search||'');
       var raw=params.get('dh_pay');
       if(!raw)return false;
       var decoded;
       try{decoded=decodeURIComponent(raw);}catch(_){return false;}
       if(!isZarinpalPaymentUrl(decoded))return false;
-      var dhChrome=params.get('dh_chrome')==='1';
-      if(isEmbeddedAndroid()&&!dhChrome){
-        var chromeHop=chromeHopUrl(decoded);
-        try{window.location.href=chromeIntent(chromeHop,chromeHop);return true;}catch(_){}
+      // The pre-SPA boot owns a valid hop when it is present; otherwise preserve raw-first behavior here.
+      if(isEmbeddedAndroid()&&params.get('dh_chrome')!=='1'){
+        return openExternalPay(decoded);
       }
       window.location.replace(decoded);
       return true;
@@ -108,11 +108,82 @@
       try{window.location.replace(raw);return true;}catch(_){}
       return false;
     }
-    // Android embedded: open the raw Zarinpal URL directly; use the legacy site hop only as fallback.
-    var fallback=chromeHopUrl(raw);
-    try{window.location.href=chromeIntent(raw,fallback);return true;}catch(_){}
-    try{window.location.href=fallback;return true;}catch(_){}
-    return false;
+
+    var hop=chromeHopUrl(raw);
+    var status=el('dh-buy-status');
+    var statusText=el('dh-buy-status-text');
+    var spin=el('dh-buy-spin');
+    var error=el('dh-buy-err');
+    try{
+      if(status){status.hidden=false;status.style.color='#9f957f';}
+      if(statusText)statusText.textContent='در حال اتصال به درگاه امن…';
+      if(spin)spin.hidden=false;
+      if(error)error.textContent='';
+      var button=el('dh-buy-now');
+      if(button)setBusy(button,'در حال اتصال…','پرداخت',true);
+    }catch(_){}
+
+    var stopped=false;
+    var stage='raw';
+    var timer=null;
+    function clearTimer(){
+      if(timer===null)return;
+      try{window.clearTimeout(timer);}catch(_){}
+      timer=null;
+    }
+    function cleanup(){
+      if(stopped)return;
+      stopped=true;
+      clearTimer();
+      try{window.removeEventListener('pagehide',onPageHide);}catch(_){}
+      try{document.removeEventListener('visibilitychange',onVisibilityChange);}catch(_){}
+    }
+    function onPageHide(){cleanup();}
+    function onVisibilityChange(){
+      try{if(document.visibilityState==='hidden')cleanup();}catch(_){}
+    }
+    function schedule(fn,delay){
+      if(stopped)return;
+      clearTimer();
+      try{
+        timer=window.setTimeout(function(){timer=null;if(!stopped)fn();},delay);
+      }catch(_){}
+    }
+    function goToSiteHop(){
+      if(stopped)return false;
+      stage='hop';
+      clearTimer();
+      try{window.location.replace(hop);return true;}catch(_){}
+      try{window.location.href=hop;return true;}catch(_){}
+      BUSY=false;
+      try{var b=el('dh-buy-now');if(b)setBusy(b,'','پرداخت',false);}catch(_){}
+      try{showPayFallback(raw);}catch(_){}
+      return false;
+    }
+    function goToChrome(){
+      if(stopped||stage!=='raw')return false;
+      stage='chrome';
+      clearTimer();
+      try{
+        window.location.href=chromeIntent(raw,hop);
+        schedule(goToSiteHop,1800);
+        return true;
+      }catch(_){}
+      return goToSiteHop();
+    }
+    try{
+      window.addEventListener('pagehide',onPageHide);
+      document.addEventListener('visibilitychange',onVisibilityChange);
+    }catch(_){}
+    try{
+      // Prefer the current WebView/PWA: navigate directly to the raw Zarinpal URL first.
+      window.location.replace(raw);
+      schedule(goToChrome,2200);
+      return true;
+    }catch(_){
+      // Use Chrome only when in-place navigation throws or fails to leave the page.
+      return goToChrome();
+    }
   }
 
   function showPayFallback(url){
@@ -167,9 +238,11 @@
         payUrl=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
         if(!payUrl)throw new Error('آدرس درگاه از سرور نیامد.');
         if(s)s.hidden=true;
-        openExternalPay(payUrl);
-        unlock();
-        showPayFallback(payUrl);
+        var handoffStarted=openExternalPay(payUrl);
+        if(!handoffStarted){
+          unlock();
+          showPayFallback(payUrl);
+        }
       }catch(x){if(e)e.textContent=paymentErrorText(x);if(s)s.hidden=true;unlock();}
     };
   }
