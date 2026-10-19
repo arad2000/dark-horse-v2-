@@ -413,6 +413,16 @@
     on('dh-open-guide', function () { openSystemGuide(); });
   }
 
+  function applyPendingJourneySessionId() {
+    try {
+      var pending = localStorage.getItem('dh_pending_journey_session_id');
+      if (!pending) return;
+      if (typeof state !== 'undefined' && state) state.sessionId = String(pending);
+      localStorage.removeItem('dh_pending_journey_session_id');
+      if (typeof saveSession === 'function') saveSession();
+    } catch (_) {}
+  }
+
   function startJourneyFromShell() {
     if (!canRunTest()) {
       switchTab('profile');
@@ -446,6 +456,7 @@
           dhResumeFromSplash();
           return;
         }
+        applyPendingJourneySessionId();
         if (typeof state !== 'undefined') {
           if (!state.stage || ['splash', 'manifesto', 'guide', 'results'].indexOf(state.stage) >= 0) {
             state.stage = data.stage || 'realm';
@@ -469,6 +480,7 @@
         state.history = [];
         state.journeyFinished = false;
       }
+      applyPendingJourneySessionId();
       if (typeof saveSession === 'function') {
         try { saveSession(); } catch (e4) {}
       }
