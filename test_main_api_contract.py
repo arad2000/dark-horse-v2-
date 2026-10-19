@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -100,8 +101,10 @@ class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
             micro_motives=["MOT-001"],
             sjt_answers={"S01": 2},
             conjoint_choices={"Q1": "A"},
+            session_id="p0-session-0001",
         )
-        result = await discover_v2(request, request_for(engine))
+        with patch("main_v2._require_charged_journey", return_value=7):
+            result = await discover_v2(request, request_for(engine))
 
         self.assertEqual(engine.discover_calls, 1)
         self.assertEqual(result["discovery_result"]["total_matches"], 2)
@@ -118,8 +121,10 @@ class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
             micro_motives=["MOT-001"],
             sjt_answers={},
             conjoint_choices={},
+            session_id="p0-session-0002",
         )
-        result = await branch_discovery_v2(request, request_for(engine))
+        with patch("main_v2._require_charged_journey", return_value=7):
+            result = await branch_discovery_v2(request, request_for(engine))
 
         self.assertEqual(engine.branch_calls, 1)
         branch_result = result["branch_discovery_result"]
