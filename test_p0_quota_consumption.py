@@ -85,6 +85,42 @@ class P0QuotaConsumptionTests(unittest.TestCase):
             )
             db.commit()
 
+    def test_charged_journey_can_reach_discovery_results(self):
+        """End-to-end smoke: same Bearer + UUID charges one journey and reaches results."""
+        session_uuid = str(uuid4())
+        headers = {"Authorization": f"Bearer {self.token}"}
+
+        # Lifespan initializes the real DarkHorse engine from deploy's reference data.
+        with TestClient(app) as smoke_client:
+            charge = smoke_client.post(
+                "/api/v1/me/consume-test",
+                headers=headers,
+                json={"session_uuid": session_uuid},
+            )
+            self.assertEqual(charge.status_code, 200, charge.text)
+            self.assertEqual(charge.json()["session_uuid"], session_uuid)
+            self.assertEqual(charge.json()["consumed"], 1)
+
+            result = smoke_client.post(
+                "/api/v2/darkhorse/discover",
+                headers=headers,
+                json={
+                    "session_id": session_uuid,
+                    "micro_motives": [f"MED-{i:03d}" for i in range(1, 8)],
+                    "sjt_answers": {"sjt_1": "A"},
+                    "conjoint_choices": {},
+                },
+            )
+            self.assertEqual(result.status_code, 200, result.text)
+            body = result.json()
+            self.assertEqual(body["session_id"], session_uuid)
+            self.assertIn("discovery_result", body)
+            self.assertIsInstance(body["discovery_result"], dict)
+            self.assertIn("recommendations", body["discovery_result"])
+            self.assertIsInstance(body["discovery_result"]["recommendations"], list)
+            self.assertGreater(len(body["discovery_result"]["recommendations"]), 0)
+
+
     def test_missing_session_is_provisioned_and_each_journey_charges_once(self):
         headers = {"Authorization": f"Bearer {self.token}"}
         first_uuid = str(uuid4())

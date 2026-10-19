@@ -2,6 +2,7 @@
 Dark Horse API V2.0 — نسخه اصلاح‌شده با پشتیبانی کامل از فیلدهای جدید
 """
 
+import json
 import asyncio
 import hashlib
 import logging
@@ -20,7 +21,7 @@ from commercial_api import router as commercial_router
 from dark_horse_engine_v2 import DarkHorseEngineV2
 from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
 from ai_counsel_service import generate_counseling
-from ai_rate_limit import COUNSEL_RATE_LIMITER
+from ai_rate_limit import COUNSEL_RATE_LIMITER, DISCOVERY_RATE_LIMITER
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("darkhorse_api_v2")
@@ -172,10 +173,61 @@ def _runtime_module_diagnostics() -> dict:
 
 
 class DarkHorseDiscoverRequest(BaseModel):
-    micro_motives: list = Field(default_factory=list)
-    sjt_answers: dict = Field(default_factory=dict)
-    conjoint_choices: dict = Field(default_factory=dict)
+    micro_motives: list = Field(default_factory=list, max_length=100)
+    sjt_answers: dict = Field(default_factory=dict, max_length=25)
+    conjoint_choices: dict = Field(default_factory=dict, max_length=15)
     session_id: str | None = Field(default=None, min_length=8, max_length=64)
+
+
+MAX_DISCOVERY_PAYLOAD_BYTES = 16 * 1024
+MAX_COUNSEL_PAYLOAD_BYTES = 32 * 1024
+
+
+def _enforce_payload_limit(
+    req: Request,
+    payload: BaseModel | dict,
+    *,
+    max_bytes: int,
+    endpoint_label: str,
+) -> None:
+    """Bound discover/counsel JSON payloads before expensive processing."""
+    declared_length = req.headers.get("content-length")
+    if declared_length is not None:
+        try:
+            declared_bytes = int(declared_length)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="طول درخواست نامعتبر است") from exc
+        if declared_bytes < 0 or declared_bytes > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"حجم درخواست {endpoint_label} از سقف مجاز بیشتر است.",
+            )
+
+    serializable = payload.model_dump(mode="json") if isinstance(payload, BaseModel) else payload
+    try:
+        actual_bytes = len(
+            json.dumps(serializable, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        )
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="محتوای درخواست نامعتبر است") from exc
+    if actual_bytes > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"حجم درخواست {endpoint_label} از سقف مجاز بیشتر است.",
+        )
+
+
+def _enforce_public_rate_limit(req: Request, limiter, endpoint_label: str) -> None:
+    """Rate-limit intentionally public endpoints by client address."""
+    client = getattr(req, "client", None)
+    client_key = client.host if client else "unknown"
+    allowed, retry_after = limiter.allow(client_key)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"تعداد درخواست‌های {endpoint_label} بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید.",
+            headers={"Retry-After": str(retry_after)},
+        )
 
 
 @asynccontextmanager
@@ -301,6 +353,46 @@ def _authenticated_user_id(req: Request) -> int | None:
         return None
 
 
+def _journey_charge_exists(user_id: int, session_uuid: str) -> bool:
+    """Fail closed unless commercial billing records a charge for this user/session."""
+    db = None
+    try:
+        from billing_models import JourneyCreditConsumption
+        from database import SessionLocal
+        from sqlalchemy import select
+
+        db = SessionLocal()
+        return db.scalar(
+            select(JourneyCreditConsumption.session_uuid)
+            .where(
+                JourneyCreditConsumption.user_id == user_id,
+                JourneyCreditConsumption.session_uuid == session_uuid,
+            )
+            .limit(1)
+        ) is not None
+    except Exception as exc:
+        logger.warning("Journey charge lookup failed closed: %s", exc)
+        return False
+    finally:
+        if db is not None:
+            db.close()
+
+
+def _require_charged_journey(req: Request, session_uuid: str | None) -> int:
+    """Require both a valid commercial session and an idempotently charged journey."""
+    user_id = _authenticated_user_id(req)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="برای دریافت نتیجه، وارد حساب کاربری شوید.")
+    if not session_uuid or not (8 <= len(str(session_uuid)) <= 64):
+        raise HTTPException(status_code=400, detail="شناسهٔ سفر معتبر نیست.")
+    if not _journey_charge_exists(user_id, str(session_uuid)):
+        raise HTTPException(
+            status_code=402,
+            detail="برای این سفر اعتبار تجاری تأییدشده‌ای ثبت نشده است.",
+        )
+    return user_id
+
+
 def _persist_discovery_session(
     req: Request,
     request: DarkHorseDiscoverRequest,
@@ -410,11 +502,15 @@ def _persist_branch_results(session_id: int | None, branches: list[dict]) -> boo
 
 @app.post("/api/v2/darkhorse/discover")
 async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
+    _enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER, "کشف رشته")
+    _enforce_payload_limit(
+        req, request, max_bytes=MAX_DISCOVERY_PAYLOAD_BYTES, endpoint_label="کشف رشته"
+    )
     engine = req.app.state.engine
     if engine is None:
         raise HTTPException(503, detail="موتور امتیازدهی V2.0 در دسترس نیست")
     try:
-        user_id = _authenticated_user_id(req)
+        user_id = _require_charged_journey(req, request.session_id)
         session_uuid, persisted_session_id = _persist_discovery_session(req, request, user_id=user_id)
 
         discovery = await asyncio.to_thread(
@@ -475,11 +571,15 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
 
 @app.post("/api/v2/darkhorse/branch-discovery")
 async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
+    _enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER, "هدایت تحصیلی")
+    _enforce_payload_limit(
+        req, request, max_bytes=MAX_DISCOVERY_PAYLOAD_BYTES, endpoint_label="هدایت تحصیلی"
+    )
     engine = req.app.state.branch_engine
     if engine is None:
         raise HTTPException(503, detail="موتور شاخه‌ها V2.0 در دسترس نیست")
     try:
-        user_id = _authenticated_user_id(req)
+        user_id = _require_charged_journey(req, request.session_id)
         session_uuid, persisted_session_id = _persist_discovery_session(req, request, user_id=user_id)
         result = await asyncio.to_thread(
             engine.recommend_school_branch,
@@ -529,7 +629,8 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
 @app.post("/api/v2/darkhorse/counsel")
 async def darkhorse_counsel(request: dict, req: Request):
     """Personalized counseling text for discovery results (Dark Horse philosophy)."""
-    client_key = req.client.host if req.client else "unknown"
+    client = getattr(req, "client", None)
+    client_key = client.host if client else "unknown"
     allowed, retry_after = COUNSEL_RATE_LIMITER.allow(client_key)
     if not allowed:
         raise HTTPException(
@@ -537,8 +638,17 @@ async def darkhorse_counsel(request: dict, req: Request):
             detail="تعداد درخواست‌های مشاوره هوش مصنوعی بیش از حد مجاز است؛ لطفاً کمی بعد دوباره تلاش کنید.",
             headers={"Retry-After": str(retry_after)},
         )
+    _enforce_payload_limit(
+        req, request, max_bytes=MAX_COUNSEL_PAYLOAD_BYTES, endpoint_label="مشاوره"
+    )
 
     profile = request.get("profile") or {}
+    session_uuid = (
+        request.get("session_id")
+        or request.get("session_uuid")
+        or (profile.get("session_id") if isinstance(profile, dict) else None)
+    )
+    _require_charged_journey(req, session_uuid)
     top_results = request.get("top_results") or request.get("results") or []
     journey_type = request.get("journey_type") or profile.get("kind") or "majors"
     mode = request.get("mode") or "main"

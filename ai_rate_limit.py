@@ -89,3 +89,9 @@ COUNSEL_RATE_LIMITER = SlidingWindowRateLimiter(
     window_seconds=_positive_float("AI_COUNSEL_RATE_WINDOW_SECONDS", 60.0),
     max_clients=_positive_int("AI_COUNSEL_MAX_TRACKED_CLIENTS", 10_000),
 )
+
+DISCOVERY_RATE_LIMITER = SlidingWindowRateLimiter(
+    limit=_positive_int("DARK_HORSE_DISCOVERY_RATE_LIMIT", 10),
+    window_seconds=_positive_float("DARK_HORSE_DISCOVERY_RATE_WINDOW_SECONDS", 60.0),
+    max_clients=_positive_int("DARK_HORSE_DISCOVERY_MAX_TRACKED_CLIENTS", 10_000),
+)

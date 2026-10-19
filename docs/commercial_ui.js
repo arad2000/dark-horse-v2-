@@ -253,28 +253,79 @@
     };
   }
 
+  function readJourneyForCommercialGate() {
+    try { return JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); }
+    catch (_) { return null; }
+  }
+
+  function isResumableCommercialJourney() {
+    var journey = readJourneyForCommercialGate();
+    var stages = ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+      'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
+    return !!(journey && !journey.journeyFinished && stages.indexOf(journey.stage) >= 0);
+  }
+
+  function createCommercialJourneyId() {
+    try {
+      if (global.crypto && typeof global.crypto.randomUUID === 'function') {
+        return global.crypto.randomUUID();
+      }
+    } catch (_) {}
+    return 'dh-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 18);
+  }
+
+  function prepareCommercialJourneyId() {
+    var journey = readJourneyForCommercialGate();
+    var stages = ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+      'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
+    var resumable = !!(journey && !journey.journeyFinished && stages.indexOf(journey.stage) >= 0);
+    var sessionId = resumable && journey.sessionId ? String(journey.sessionId) : createCommercialJourneyId();
+    try { localStorage.setItem('dh_pending_journey_session_id', sessionId); } catch (_) {}
+    return sessionId;
+  }
+
   async function continueAfterAuth() {
     if (!global.DHAuth || !global.DHAuth.isLoggedIn || !global.DHAuth.isLoggedIn()) {
       showAuthModal('login');
       return;
     }
+    var sessionId = null;
+    var chargeSucceeded = false;
     try {
       var quota = await global.DHAuth.quota();
       var remaining = Number(quota && quota.credits_remaining || 0);
       setLocalQuota(remaining);
-      if (remaining <= 0) {
+      var resumable = isResumableCommercialJourney();
+      if (remaining <= 0 && !resumable) {
         openPurchaseModal();
         return;
       }
-      await global.DHAuth.consumeTest();
-      setLocalQuota(remaining - 1);
+
+      sessionId = prepareCommercialJourneyId();
+      var charge = await global.DHAuth.consumeTest(sessionId);
+      chargeSucceeded = true;
+      var serverRemaining = Number(charge && charge.credits_remaining);
+      setLocalQuota(Number.isFinite(serverRemaining) && serverRemaining >= 0
+        ? serverRemaining
+        : Math.max(0, remaining - (charge && charge.already_consumed ? 0 : 1)));
       closeModal();
       if (global.DHShell && typeof global.DHShell.startJourney === 'function') global.DHShell.startJourney();
     } catch (e) {
+      if (sessionId && !chargeSucceeded) {
+        try {
+          if (localStorage.getItem('dh_pending_journey_session_id') === sessionId) {
+            localStorage.removeItem('dh_pending_journey_session_id');
+          }
+        } catch (_) {}
+      }
       var msg = text(e && e.message ? e.message : e);
       if (/401|authentication/i.test(msg)) {
         doLogout(false);
         showAuthModal('login');
+        return;
+      }
+      if (/402|insufficient|quota|credit|سهمیه|اعتبار/i.test(msg)) {
+        openPurchaseModal();
         return;
       }
       showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">' + escapeHtml(msg) + '</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');
@@ -335,9 +386,7 @@
           if (e) { e.preventDefault(); e.stopPropagation(); }
           try {
             if (global.DHAuth && typeof global.DHAuth.isLoggedIn === 'function' && global.DHAuth.isLoggedIn()) {
-              if (global.DHShell && typeof global.DHShell.startJourney === 'function') {
-                global.DHShell.startJourney();
-              }
+              continueAfterAuth();
               return;
             }
           } catch (_) {}
@@ -428,14 +477,29 @@
       var url = '';
       try { url = typeof input === 'string' ? input : String(input && input.url || ''); } catch (_) {}
       var isDiscovery = /\/api\/v2\/darkhorse\/(discover|branch-discovery)(?:\?|$)/.test(url);
+      var isCounsel = /\/api\/v2\/darkhorse\/counsel(?:\?|$)/.test(url);
+      var requiresCommercialAuth = isDiscovery || isCounsel;
       var nextInit = init;
-      if (isDiscovery && init && typeof init.body === 'string') {
+      if (requiresCommercialAuth && init && typeof init.body === 'string') {
         try {
           var payload = JSON.parse(init.body);
           var sessionId = currentJourneySessionId();
           if (sessionId && !payload.session_id) {
             payload.session_id = sessionId;
             nextInit = Object.assign({}, init, { body: JSON.stringify(payload) });
+          }
+        } catch (_) {}
+      }
+      if (requiresCommercialAuth) {
+        try {
+          var authState = global.DHAuth && typeof global.DHAuth.getSession === 'function'
+            ? global.DHAuth.getSession() : null;
+          var token = authState && authState.token;
+          if (token) {
+            var requestInit = nextInit || {};
+            var headers = new Headers(requestInit.headers || {});
+            headers.set('Authorization', 'Bearer ' + token);
+            nextInit = Object.assign({}, requestInit, { headers: headers });
           }
         } catch (_) {}
       }
