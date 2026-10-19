@@ -16,6 +16,7 @@ function storage() {
 async function run() {
   const localStorage = storage();
   let consumeCalls = 0;
+  const fetchCalls = [];
 
   const responses = [
     {
@@ -47,9 +48,20 @@ async function run() {
     },
     crypto: { randomUUID: () => 'journey-uuid-1' },
     API_BASE: 'https://staging.example',
-    fetch: async () => {
-      consumeCalls += 1;
-      return responses[0];
+    Headers,
+    fetch: async (url, init = {}) => {
+      const urlText = String(url);
+      fetchCalls.push({ url: urlText, init });
+      if (urlText.includes('/api/v1/me/consume-test')) {
+        consumeCalls += 1;
+        return responses[0];
+      }
+      const data = { session_id: 'journey-uuid-1' };
+      return {
+        ok: true,
+        json: async () => data,
+        clone() { return { json: async () => data }; }
+      };
     },
     Date,
     Promise,
@@ -66,7 +78,10 @@ async function run() {
   vm.runInContext(source, context);
 
   const indexSource = fs.readFileSync('docs/index.html', 'utf8');
-  assert.match(indexSource, /quota_runtime\.js\?v=1/);
+const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
+const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
+const postAuthSource = fs.readFileSync('docs/post_auth_flow_policy.js', 'utf8');
+  assert.match(indexSource, /quota_runtime\.js\?v=2/);
   assert.doesNotMatch(indexSource, /journey_session_boot\.js/);
   assert.doesNotMatch(indexSource, /quota_enforcement_bridge\.js/);
   assert.doesNotMatch(indexSource, /quota_charge_failure_ui\.js/);
@@ -86,12 +101,37 @@ async function run() {
   assert.strictEqual(consumeCalls, 1);
   assert.strictEqual(localStorage.getItem('dh_quota_charged_session_v1'), 'journey-uuid-1');
 
-  // A discovery response must not replace the persisted billing identity.
-  localStorage.setItem('darkhorse_session_v2', JSON.stringify({ sessionId: 'journey-uuid-1' }));
-  context.DHQuotaEnforcement.ensureJourneySession();
-  assert.strictEqual(localStorage.getItem('darkhorse_session_v2'), JSON.stringify({ sessionId: 'journey-uuid-1' }));
+  // Discovery and counsel must carry the authenticated, already-charged journey identity.
+  localStorage.setItem('darkhorse_session_v2', JSON.stringify({ sessionId: 'journey-uuid-1', stage: 'choice' }));
+  await context.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/discover', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ micro_motives: [], sjt_answers: {}, conjoint_choices: {} })
+  });
+  await context.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/counsel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profile: {}, top_results: [] })
+  });
+  for (const path of ['/api/v2/darkhorse/discover', '/api/v2/darkhorse/counsel']) {
+    const request = fetchCalls.find(call => call.url.includes(path));
+    assert.ok(request, 'expected protected journey request ' + path);
+    assert.strictEqual(request.init.headers.get('Authorization'), 'Bearer test-token');
+    assert.strictEqual(JSON.parse(request.init.body).session_id, 'journey-uuid-1');
+  }
+  assert.strictEqual(consumeCalls, 1, 'discovery/counsel must not consume a second credit');
 
-  console.log('quota_runtime consolidation regression: PASS');
+  const continueMatch = commercialSource.match(/async function continueAfterAuth\(\)\s*\{[\s\S]*?\n  \}/);
+  assert.ok(continueMatch, 'commercial continuation gate not found');
+  assert.ok(continueMatch[0].includes('consumeForJourney(sessionId)'));
+  assert.ok(continueMatch[0].indexOf('consumeForJourney(sessionId)') < continueMatch[0].indexOf('DHShell.startJourney()'),
+    'server charge must succeed before the journey begins');
+  assert.match(commercialSource, /dh_pending_journey_session_id/);
+  assert.match(shellSource, /dh_pending_journey_session_id/);
+  assert.match(indexSource, /window\.DHCommercialUI\.startServerAuthorizedJourney\(\)/);
+  assert.match(postAuthSource, /#dh-startup-start/);
+
+  console.log('quota runtime + authenticated journey contract regression: PASS');
 }
 
 run().catch((error) => {
