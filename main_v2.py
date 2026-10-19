@@ -40,6 +40,11 @@ _ADMISSION_RUNTIME_FINGERPRINT_FILES = (
     "admission_chance_api.py",
 )
 
+_RUNTIME_CODE_FINGERPRINT_FILES = (
+    "main_v2.py",
+    "admission_chance_api.py",
+)
+
 
 def _runtime_env_commit() -> str | None:
     return (
@@ -88,6 +93,7 @@ def _runtime_build_fingerprint() -> dict:
         "engine_file_sha": files.get("dark_horse_engine_v2.py", {}).get("sha256"),
         "cutover": str(os.getenv("POSTGRES_RUNTIME_CUTOVER_APPROVED", "false")).strip().lower() == "true",
         "admission_runtime_files": _runtime_file_fingerprints(root, _ADMISSION_RUNTIME_FINGERPRINT_FILES),
+        "runtime_code_files": _runtime_file_fingerprints(root, _RUNTIME_CODE_FINGERPRINT_FILES),
     }
 
 
@@ -252,6 +258,7 @@ async def runtime_fingerprint():
         "fingerprint_algorithm": build["algorithm"],
         "scoring_fingerprinted_files": build["files"],
         "admission_runtime_files": build["admission_runtime_files"],
+        "runtime_code_files": build["runtime_code_files"],
         # Check the route by its FastAPI name/path resolution and OpenAPI method.
         # A direct app.routes path scan can be false-negative for included routers.
         "admission_chance_route_mounted": (
