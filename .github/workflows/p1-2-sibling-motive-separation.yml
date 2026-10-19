@@ -1,0 +1,29 @@
+name: P1.2 Sibling Motive Separation
+
+on:
+  push:
+    branches:
+      - "p1/**"
+  pull_request:
+    branches:
+      - deploy/liara-commercial-sandbox
+    paths:
+      - majors_database_v2.json
+      - micro_motives.json
+      - test_p1_2_sibling_motives.py
+      - docs/audits/P1-2-sibling-motive-separation.md
+      - .github/workflows/p1-2-sibling-motive-separation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  sibling-motive-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test sourced sibling differentiation and target-profile rankings
+        run: python -m unittest test_p1_2_sibling_motives.py
