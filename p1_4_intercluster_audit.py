@@ -39,6 +39,7 @@ def build_audit(engine=None):
     source_cluster_summary = {}
 
     same_slots = cross_slots = unknown_slots = 0
+    unassigned_source_slots = 0
     known_cluster_targets = 0
     targets_with_cross = 0
     inactive_candidates_in_top3 = 0
