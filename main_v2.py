@@ -252,10 +252,13 @@ async def runtime_fingerprint():
         "fingerprint_algorithm": build["algorithm"],
         "scoring_fingerprinted_files": build["files"],
         "admission_runtime_files": build["admission_runtime_files"],
-        "admission_chance_route_mounted": any(
-            getattr(route, "path", None) == "/api/v1/admission/chance"
-            and "POST" in (getattr(route, "methods", None) or set())
-            for route in app.routes
+        # Check the route by its FastAPI name/path resolution and OpenAPI method.
+        # A direct app.routes path scan can be false-negative for included routers.
+        "admission_chance_route_mounted": (
+            _runtime_admission_route_probe().get("registered") is True
+            and "post" in (
+                app.openapi().get("paths", {}).get("/api/v1/admission/chance", {}) or {}
+            )
         ),
         "runtime_module_diagnostics": _runtime_module_diagnostics(),
         "admission_route_probe": _runtime_admission_route_probe(),
