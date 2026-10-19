@@ -1,0 +1,48 @@
+name: P1.1 Fit-level Calibration
+
+on:
+  push:
+    branches:
+      - "p1/**"
+  pull_request:
+    branches:
+      - deploy/liara-commercial-sandbox
+    paths:
+      - dark_horse_engine_v2.py
+      - test_p1_fit_level.py
+      - p1_1_fit_level_calibration.py
+      - docs/audits/P1-1-fit-level-calibration.md
+      - .github/workflows/p1-1-label-calibration.yml
+
+permissions:
+  contents: read
+
+jobs:
+  label-calibration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Unit tests for fit-level boundaries
+        run: python -m unittest test_p1_fit_level.py
+      - name: Reproduce fixed calibration fixtures
+        run: python p1_1_fit_level_calibration.py > /tmp/p1-1-calibration.json
+      - name: Verify before-after report invariants
+        run: |
+          python - <<'PY'
+          import json
+          with open("/tmp/p1-1-calibration.json", encoding="utf-8") as f:
+              report = json.load(f)
+          s = report["summary"]
+          random = s["random_sv_given_target_motives"]
+          low = s["low_spark_random_sv"]
+          aligned = s["full_aligned_target"]
+          assert random["n"] == 600, random["n"]
+          assert random["before"]["very_high"]["pct"] == 58.0, random["before"]
+          assert random["after"]["very_high"]["pct"] == 0.0, random["after"]
+          assert low["after"]["low"]["pct"] == 100.0, low["after"]
+          assert any(x["major_id"] == 42 and x["score"] == 92.7 for x in report["full_aligned_records"])
+          print("P1.1 calibration checks passed: before/after buckets are reproducible.")
+          PY
