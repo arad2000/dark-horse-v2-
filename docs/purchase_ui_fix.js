@@ -114,11 +114,14 @@
       global.__dhJourneyStarting = false;
       global.__dhPaymentHandoff = true;
     } catch (_) {}
-    // WebView/PWA payment contract: exactly one intent to the Dark Horse
-    // site-hop. The site-hop then redirects once to ZarinPal with dh_chrome=1.
+    // WebView/PWA: open the raw Zarinpal URL in Chrome. The site hop is only a fallback.
     var chromeHop = chromeHopUrl(target);
     try {
-      global.location.href = chromeIntent(chromeHop, chromeHop);
+      global.location.href = chromeIntent(target, chromeHop);
+      return true;
+    } catch (_) {}
+    try {
+      global.location.href = chromeHop;
       return true;
     } catch (_) {}
     return false;
