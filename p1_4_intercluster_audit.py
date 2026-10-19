@@ -75,11 +75,13 @@ def build_audit(engine=None):
             if not active:
                 inactive_candidates_in_top3 += 1
 
-            if not target_cluster or not alt_cluster:
+            if not target_cluster:
+                relation = "unknown_cluster"
+                unassigned_source_slots += 1
+            elif not alt_cluster:
                 relation = "unknown_cluster"
                 unknown_slots += 1
-                if target_cluster:
-                    source_cluster_summary[target_cluster]["unknown_destination_cluster"] += 1
+                source_cluster_summary[target_cluster]["unknown_destination_cluster"] += 1
             elif target_cluster == alt_cluster:
                 relation = "same_cluster"
                 same_slots += 1
@@ -145,6 +147,7 @@ def build_audit(engine=None):
         "same_cluster_slots": same_slots,
         "cross_cluster_slots": cross_slots,
         "unknown_cluster_slots": unknown_slots,
+        "unassigned_source_cluster_slots": unassigned_source_slots,
         "cross_pct_of_known_source_slots": round(100 * cross_slots / known_source_slots, 2)
         if known_source_slots else 0.0,
         "cross_pct_of_classifiable_slots": round(100 * cross_slots / classifiable, 2)
