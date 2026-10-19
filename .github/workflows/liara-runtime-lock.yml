@@ -60,6 +60,17 @@ jobs:
           expected = aggregate.hexdigest()
           print("expected scoring_build_fingerprint:", expected)
 
+          runtime_code_files = (
+              "main_v2.py",
+              "admission_chance_api.py",
+          )
+          expected_runtime_code_files = {}
+          for relative_path in runtime_code_files:
+              with open(relative_path, "rb") as fh:
+                  payload = fh.read()
+              expected_runtime_code_files[relative_path] = hashlib.sha256(payload).hexdigest()
+          print("expected runtime-code file hashes:", expected_runtime_code_files)
+
           last_payload = None
           for attempt in range(1, 31):
               try:
@@ -86,9 +97,24 @@ jobs:
                               "fingerprint aggregate matched but per-file hashes differ: "
                               + repr(missing)
                           )
-                      print("LIVE_RUNTIME_LOCK=PASS")
-                      print("live scoring build is hash-equivalent to the deployed Git build")
-                      raise SystemExit(0)
+                      remote_code_files = payload.get("runtime_code_files") or {}
+                      code_mismatches = [
+                          path for path in runtime_code_files
+                          if remote_code_files.get(path, {}).get("sha256")
+                          != expected_runtime_code_files[path]
+                      ]
+                      if code_mismatches:
+                          print(
+                              "runtime code hashes not yet matched; waiting for deployment:",
+                              repr(code_mismatches),
+                          )
+                      else:
+                          print("LIVE_RUNTIME_LOCK=PASS")
+                          print(
+                              "live scoring build and runtime diagnostic files are "
+                              "hash-equivalent to the checked-out Git commit"
+                          )
+                          raise SystemExit(0)
               except Exception as exc:
                   print("probe error:", exc)
               time.sleep(10)
