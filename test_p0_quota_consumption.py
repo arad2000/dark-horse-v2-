@@ -106,7 +106,7 @@ class P0QuotaConsumptionTests(unittest.TestCase):
                 headers=headers,
                 json={
                     "session_id": session_uuid,
-                    "micro_motives": ["MED-001"],
+                    "micro_motives": [f"MED-{i:03d}" for i in range(1, 8)],
                     "sjt_answers": {"sjt_1": "A"},
                     "conjoint_choices": {},
                 },
