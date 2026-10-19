@@ -96,6 +96,9 @@
     function restorePage() {
       try { document.documentElement.style.visibility = ''; } catch (_) {}
       try { document.documentElement.style.removeProperty('visibility'); } catch (_) {}
+    }
+    function restoreAndStop() {
+      restorePage();
       cleanup();
     }
     function cleanup() {
@@ -123,9 +126,17 @@
       if (stopped) return;
       stage = 'hop';
       clearTimer();
-      try { window.location.replace(hop); return; } catch (_) {}
-      try { window.location.href = hop; return; } catch (_) {}
-      restorePage();
+      try {
+        window.location.replace(hop);
+        schedule(restoreAndStop, 1800);
+        return;
+      } catch (_) {}
+      try {
+        window.location.href = hop;
+        schedule(restoreAndStop, 1800);
+        return;
+      } catch (_) {}
+      restoreAndStop();
     }
     function launchChrome() {
       if (stopped || stage !== 'raw') return;
@@ -154,7 +165,7 @@
         schedule(launchChrome, 2200);
       } else {
         // Never leave a stuck blank page if a WebView/browser silently blocks navigation.
-        schedule(restorePage, 2200);
+        schedule(restoreAndStop, 2200);
       }
     } catch (_) {
       if (embedded && !dhChrome) {
