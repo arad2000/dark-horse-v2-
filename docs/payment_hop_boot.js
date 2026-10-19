@@ -1,4 +1,4 @@
-/* payment_hop_boot.js v3 — handle gateway hop before SPA + recover on bfcache Back */
+/* payment_hop_boot.js v2 — handle gateway hop before SPA + recover on bfcache Back */
 (function () {
   'use strict';
 
@@ -78,105 +78,24 @@
     }
     if (!isZarinpalPaymentUrl(decoded)) return;
 
-    // Prevent commercial_ui.js from starting a second, concurrent handoff.
-    window.__dhPaymentHopBootHandled = true;
-    var dhChrome = params.get('dh_chrome') === '1';
-    var embedded = isEmbeddedAndroid();
-    var hop = 'https://asbe-siah.ir/?dh_pay=' +
-      encodeURIComponent(decoded) + '&dh_chrome=1';
-    var stopped = false;
-    var stage = 'raw';
-    var timer = null;
-
-    function clearTimer() {
-      if (timer === null) return;
-      try { window.clearTimeout(timer); } catch (_) {}
-      timer = null;
-    }
-    function restorePage() {
-      try { document.documentElement.style.visibility = ''; } catch (_) {}
-      try { document.documentElement.style.removeProperty('visibility'); } catch (_) {}
-    }
-    function restoreAndStop() {
-      restorePage();
-      cleanup();
-    }
-    function cleanup() {
-      if (stopped) return;
-      stopped = true;
-      clearTimer();
-      try { window.removeEventListener('pagehide', onPageHide); } catch (_) {}
-      try { document.removeEventListener('visibilitychange', onVisibilityChange); } catch (_) {}
-    }
-    function onPageHide() { cleanup(); }
-    function onVisibilityChange() {
-      try { if (document.visibilityState === 'hidden') cleanup(); } catch (_) {}
-    }
-    function schedule(fn, delay) {
-      if (stopped) return;
-      clearTimer();
-      try {
-        timer = window.setTimeout(function () {
-          timer = null;
-          if (!stopped) fn();
-        }, delay);
-      } catch (_) {}
-    }
-    function finalSiteHop() {
-      if (stopped) return;
-      stage = 'hop';
-      clearTimer();
-      try {
-        window.location.replace(hop);
-        schedule(restoreAndStop, 1800);
-        return;
-      } catch (_) {}
-      try {
-        window.location.href = hop;
-        schedule(restoreAndStop, 1800);
-        return;
-      } catch (_) {}
-      restoreAndStop();
-    }
-    function launchChrome() {
-      if (stopped || stage !== 'raw') return;
-      stage = 'chrome';
-      clearTimer();
-      try {
-        window.location.href = chromeIntent(decoded, hop);
-        schedule(finalSiteHop, 1800);
-      } catch (_) {
-        finalSiteHop();
-      }
-    }
-
-    try {
-      window.addEventListener('pagehide', onPageHide);
-      document.addEventListener('visibilitychange', onVisibilityChange);
-    } catch (_) {}
-
-    // Keep the hop page quiet while the first, in-place gateway navigation starts.
     try { document.documentElement.style.visibility = 'hidden'; } catch (_) {}
-    try {
-      // First attempt is always the raw Zarinpal URL. dh_chrome=1 is a terminal
-      // fallback marker: attempt raw once, but never recursively launch Chrome again.
-      window.location.replace(decoded);
-      if (embedded && !dhChrome) {
-        schedule(launchChrome, 2200);
-      } else {
-        // Never leave a stuck blank page if a WebView/browser silently blocks navigation.
-        schedule(restoreAndStop, 2200);
-      }
-    } catch (_) {
-      if (embedded && !dhChrome) {
-        restorePage();
-        launchChrome();
-      } else {
-        clearTimer();
-        restorePage();
-      }
+
+    var dhChrome = params.get('dh_chrome') === '1';
+
+    // This script runs before app.js/shell.js. Therefore a payment hop
+    // cannot render the SPA splash/Journey UI before redirecting away.
+    if (isEmbeddedAndroid() && !dhChrome) {
+      window.location.replace(
+        chromeIntent(
+          'https://asbe-siah.ir/?dh_pay=' +
+            encodeURIComponent(decoded) + '&dh_chrome=1',
+          'https://asbe-siah.ir/?dh_pay=' +
+            encodeURIComponent(decoded) + '&dh_chrome=1'
+        )
+      );
+      return;
     }
-  } catch (_) {
-    try { document.documentElement.style.visibility = ''; } catch (_) {}
-  }
+
+    window.location.replace(decoded);
+  } catch (_) {}
 })();
