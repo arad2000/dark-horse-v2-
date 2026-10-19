@@ -57,7 +57,7 @@
 
 ## فایل‌ها و قفل‌ها
 
-- فقط micro_motive_codes در چهار رکورد 42، 44، 34 و 93 در majors_database_v2.json تغییر کرده‌اند.
+- فقط فیلد micro_motive_codes در سه رکورد 42، 34 و 93 در majors_database_v2.json تغییر کرده است؛ رکورد 44 دست‌نخورده است و CS-006 آن معیار مقایسهٔ رشتهٔ نرم‌افزار باقی می‌ماند.
 - توضیحات و تعریف کدها در micro_motives.json دست‌نخورده‌اند؛ school_branches_v2.json و وزن‌های strategy/value دست‌نخورده‌اند.
 - فرمول Total همچنان 0.55M + 0.30V + 0.15S است.
 - بدون Hybrid/cutover، تغییر env یا عملیات Pages/Liara.
