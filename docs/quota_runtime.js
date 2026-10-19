@@ -188,28 +188,30 @@
     var wrappedFetch = function (input, init) {
       var url = '';
       try { url = typeof input === 'string' ? input : (input && input.url) || ''; } catch (_) {}
-      var isDiscovery = /\/api\/v2\/darkhorse\/(discover|branch-discovery)(?:\?|$)/.test(url);
-      if (isDiscovery && loggedIn()) {
+      var isProtectedJourney = /\/api\/v2\/darkhorse\/(discover|branch-discovery|counsel)(?:\?|$)/.test(url);
+      if (isProtectedJourney && loggedIn()) {
         var sid = ensureJourneySession();
-        if (sid) {
-          var nextInit = Object.assign({}, init || {});
-          var body = nextInit.body;
-          if (typeof body === 'string') {
-            try {
-              var parsed = JSON.parse(body);
-              if (!parsed.session_id) { parsed.session_id = sid; nextInit.body = JSON.stringify(parsed); }
-            } catch (_) {}
-          }
-          return originalFetch.call(global, input, nextInit).then(function (res) {
-            try {
-              var clone = res.clone();
-              clone.json().then(function (data) {
-                if (data && data.session_id) setJourneySession(data.session_id);
-              }).catch(function () {});
-            } catch (_) {}
-            return res;
-          });
+        var authState = auth();
+        var nextInit = Object.assign({}, init || {});
+        var headers = new Headers(nextInit.headers || {});
+        if (authState && authState.token) headers.set('Authorization', 'Bearer ' + authState.token);
+        nextInit.headers = headers;
+        var body = nextInit.body;
+        if (sid && typeof body === 'string') {
+          try {
+            var parsed = JSON.parse(body);
+            if (!parsed.session_id) { parsed.session_id = sid; nextInit.body = JSON.stringify(parsed); }
+          } catch (_) {}
         }
+        return originalFetch.call(global, input, nextInit).then(function (res) {
+          try {
+            var clone = res.clone();
+            clone.json().then(function (data) {
+              if (data && data.session_id) setJourneySession(data.session_id);
+            }).catch(function () {});
+          } catch (_) {}
+          return res;
+        });
       }
       return originalFetch.apply(global, arguments);
     };

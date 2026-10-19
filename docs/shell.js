@@ -675,6 +675,16 @@
          'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(data.stage) >= 0;
 
       if (unfinished) {
+        // A paid/resumed journey must use the exact UUID charged by the server.
+        var pendingResumeSessionId = null;
+        try {
+          pendingResumeSessionId = localStorage.getItem('dh_pending_journey_session_id');
+          if (pendingResumeSessionId) {
+            data.sessionId = String(pendingResumeSessionId);
+            localStorage.setItem('darkhorse_session_v2', JSON.stringify(data));
+            localStorage.removeItem('dh_pending_journey_session_id');
+          }
+        } catch (_) {}
         if (typeof loadSession === 'function') {
           loadSession();
         } else if (typeof dhResumeFromSplash === 'function') {
@@ -699,6 +709,13 @@
         fullResetState(true);
       } else {
         try { localStorage.removeItem('darkhorse_session_v2'); } catch (e3) {}
+      }
+      // Fresh journey starts with the UUID already charged by the commercial gate.
+      var pendingFreshSessionId = null;
+      try { pendingFreshSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
+      if (pendingFreshSessionId && typeof state !== 'undefined' && state) {
+        state.sessionId = String(pendingFreshSessionId);
+        try { localStorage.removeItem('dh_pending_journey_session_id'); } catch (_) {}
       }
       window.__dhHasSavedSession = false;
       window.__dhJourneyFinished = false;
@@ -857,7 +874,7 @@
           };
           script.id = 'dh-commercial-ui-loader';
           script.async = false;
-          script.src = 'commercial_ui.js?v=40';
+          script.src = 'commercial_ui.js?v=43';
           script.setAttribute('data-dh-load-state', 'loading');
           window.addEventListener('error', onWindowError, true);
           function cleanup() {

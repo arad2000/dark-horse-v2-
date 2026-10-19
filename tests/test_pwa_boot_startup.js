@@ -88,7 +88,8 @@ async function testStartupMarkup() {
     'startup shell must be present before deferred data/app scripts');
   assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1/);
   assert.match(indexSource, /app\.js\?v=69/);
-  assert.match(indexSource, /shell\.js\?v=84/);
+  assert.match(indexSource, /shell\.js\?v=85/);
+  assert.match(shellSource, /commercial_ui\.js\?v=43/);
   assert.match(indexSource, /pwa-boot\.js\?v=68/);
   assert.match(indexSource, /shell\.css\?v=65" media="print"/);
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
@@ -114,17 +115,20 @@ async function testStartupButtonQueue() {
     getElementById(id) { return id === 'dh-startup-start' ? button : null; },
     addEventListener(name, callback) { listeners[name] = callback; }
   };
-  let starts = 0;
+  let authorizedStarts = 0;
+  let directShellStarts = 0;
   const context = { document, setTimeout, Promise };
   context.window = context;
   vm.runInNewContext(source, context);
   context.__dhRequestStartupJourney();
   assert.strictEqual(button.disabled, true);
   assert.match(button.textContent, /در حال آماده‌سازی/);
-  context.DHShell = { startJourney() { starts += 1; } };
+  context.DHShell = { startJourney() { directShellStarts += 1; } };
+  context.DHCommercialUI = { startServerAuthorizedJourney() { authorizedStarts += 1; } };
   listeners.DOMContentLoaded();
   await new Promise(resolve => setTimeout(resolve, 5));
-  assert.strictEqual(starts, 1, 'queued CTA should launch when app shell is ready');
+  assert.strictEqual(authorizedStarts, 1, 'queued CTA must pass through commercial auth/quota gate');
+  assert.strictEqual(directShellStarts, 0, 'startup CTA must not bypass commercial auth/quota gate');
   console.log('startup CTA queued until app boot: PASS');
 }
 

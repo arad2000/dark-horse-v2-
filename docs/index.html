@@ -83,9 +83,16 @@
         function launchAfterBoot() {
           setTimeout(function () {
             if (!window.__dhStartupLaunchQueued) return;
-            if (!window.DHShell || typeof window.DHShell.startJourney !== 'function') return;
+            if (!window.DHCommercialUI || typeof window.DHCommercialUI.startServerAuthorizedJourney !== 'function') {
+              if (button) {
+                button.disabled = false;
+                button.textContent = 'شروع سفر';
+              }
+              window.__dhStartupLaunchQueued = false;
+              return;
+            }
             window.__dhStartupLaunchQueued = false;
-            window.DHShell.startJourney();
+            window.DHCommercialUI.startServerAuthorizedJourney();
           }, 0);
         }
         if (document.readyState === 'loading') {
@@ -154,11 +161,11 @@
   <script defer src="auth_api_client.js?v=10"></script>
   <script defer src="quota_state_reconciler.js?v=4"></script>
   <script defer src="shell_runtime_fix.js?v=1"></script>
-  <script defer src="shell.js?v=84"></script>
-  <script defer src="quota_runtime.js?v=1"></script>
+  <script defer src="shell.js?v=85"></script>
+  <script defer src="quota_runtime.js?v=2"></script>
   <script defer src="profile_ux_v1.js?v=7"></script>
   <script defer src="admin_feedback_ui_v1.js?v=2"></script>
-  <script defer src="commercial_ui.js?v=42"></script>
+  <script defer src="commercial_ui.js?v=43"></script>
   <script defer src="external_links_fix_v1.js?v=6"></script>
   <script defer src="purchase_ui_fix.js?v=9"></script>
   <script defer src="password_reset_ui.js?v=1"></script>

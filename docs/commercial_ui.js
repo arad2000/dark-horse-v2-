@@ -174,15 +174,74 @@
     };
   }
 
+  function readCommercialJourney() {
+    try { return JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); }
+    catch (_) { return null; }
+  }
+
+  function isResumableCommercialJourney() {
+    var journey = readCommercialJourney();
+    var stages = ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+      'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
+    return !!(journey && !journey.journeyFinished && stages.indexOf(journey.stage) >= 0);
+  }
+
+  function createCommercialJourneyId() {
+    try {
+      if (global.crypto && typeof global.crypto.randomUUID === 'function') return global.crypto.randomUUID();
+    } catch (_) {}
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0;
+      var v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  function prepareCommercialJourneyId() {
+    var journey = readCommercialJourney();
+    var resumable = !!(journey && !journey.journeyFinished &&
+      ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+       'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(journey.stage) >= 0);
+    var sessionId = resumable && journey.sessionId ? String(journey.sessionId) : createCommercialJourneyId();
+    try { localStorage.setItem('dh_pending_journey_session_id', sessionId); } catch (_) {}
+    return sessionId;
+  }
+
   async function continueAfterAuth(){
     if(!global.DHAuth||!global.DHAuth.isLoggedIn()){showAuthModal('login');return;}
+    var sessionId = null;
+    var chargeSucceeded = false;
     try{
-      var q=await global.DHAuth.quota(),r=Number(q&&q.credits_remaining||0);
-      if(r<=0){await openPurchaseModal();return;}
-      try{if(global.DHQuotaEnforcement&&typeof global.DHQuotaEnforcement.ensureJourneySession==='function')global.DHQuotaEnforcement.ensureJourneySession();}catch(_){}
+      var q = await global.DHAuth.quota();
+      var remaining = Number(q && q.credits_remaining || 0);
+      var resumable = isResumableCommercialJourney();
+      if(remaining <= 0 && !resumable){await openPurchaseModal();return;}
+      if(!global.DHShell || typeof global.DHShell.startJourney !== 'function') {
+        throw new Error('رابط سفر هنوز آماده نیست؛ دوباره تلاش کنید.');
+      }
+      if(!global.DHQuotaEnforcement || typeof global.DHQuotaEnforcement.consumeForJourney !== 'function') {
+        throw new Error('اتصال ایمن سهمیه آماده نیست؛ سفر آغاز نشد.');
+      }
+      sessionId = prepareCommercialJourneyId();
+      var charge = await global.DHQuotaEnforcement.consumeForJourney(sessionId);
+      if(!charge || !(charge.consumed === 1 || charge.already_consumed === true || charge.local_guard === true)) {
+        throw new Error('ثبت مصرف اعتبار در سرور تأیید نشد؛ سفر آغاز نشد.');
+      }
+      chargeSucceeded = true;
+      var serverRemaining = Number(charge.credits_remaining);
+      if(Number.isFinite(serverRemaining) && serverRemaining >= 0) setLocalQuota(serverRemaining);
       closeModal();
-      if(global.DHShell&&typeof global.DHShell.startJourney==='function')global.DHShell.startJourney();
-    }catch(e){var m=text(e&&e.message?e.message:e);if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">'+escapeHtml(m)+'</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');el('dh-error-close').onclick=closeModal;}
+      global.DHShell.startJourney();
+    }catch(e){
+      if(sessionId && !chargeSucceeded) {
+        try { if(localStorage.getItem('dh_pending_journey_session_id') === sessionId) localStorage.removeItem('dh_pending_journey_session_id'); } catch(_) {}
+      }
+      var m=text(e&&e.message?e.message:e);
+      if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}
+      if(/402|insufficient|quota|credit|سهمیه|اعتبار/i.test(m)){await openPurchaseModal();return;}
+      showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">'+escapeHtml(m)+'</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');
+      el('dh-error-close').onclick=closeModal;
+    }
   }
 
   function doLogout(){
