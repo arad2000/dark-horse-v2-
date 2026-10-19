@@ -3,6 +3,7 @@ import re
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from fastapi import HTTPException
 from pydantic import ValidationError
@@ -14,6 +15,7 @@ from main_v2 import (
     DarkHorseDiscoverRequest,
     _enforce_payload_limit,
     _enforce_public_rate_limit,
+    _require_charged_journey,
 )
 
 
@@ -64,6 +66,33 @@ class PublicRateLimitTests(unittest.TestCase):
         self.assertEqual(caught.exception.headers["Retry-After"], "60")
 
 
+class CommercialEntitlementTests(unittest.TestCase):
+    def setUp(self):
+        self.request = SimpleNamespace(headers={})
+        self.session_id = "p0-charged-session-001"
+
+    def test_anonymous_discovery_is_rejected(self):
+        with patch("main_v2._authenticated_user_id", return_value=None):
+            with self.assertRaises(HTTPException) as caught:
+                _require_charged_journey(self.request, self.session_id)
+        self.assertEqual(caught.exception.status_code, 401)
+
+    def test_authenticated_but_unconsumed_journey_is_rejected(self):
+        with patch("main_v2._authenticated_user_id", return_value=42), patch(
+            "main_v2._journey_charge_exists", return_value=False
+        ):
+            with self.assertRaises(HTTPException) as caught:
+                _require_charged_journey(self.request, self.session_id)
+        self.assertEqual(caught.exception.status_code, 402)
+
+    def test_charged_journey_for_authenticated_user_is_allowed(self):
+        with patch("main_v2._authenticated_user_id", return_value=42), patch(
+            "main_v2._journey_charge_exists", return_value=True
+        ):
+            result = _require_charged_journey(self.request, self.session_id)
+        self.assertEqual(result, 42)
+
+
 class EndpointWiringTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -75,7 +104,18 @@ class EndpointWiringTests(unittest.TestCase):
             2,
         )
         self.assertGreaterEqual(self.api_source.count("_enforce_payload_limit("), 4)
+        self.assertEqual(self.api_source.count("_require_charged_journey(req, request.session_id)"), 2)
+        self.assertIn("_require_charged_journey(req, session_uuid)", self.api_source)
         self.assertIn("MAX_COUNSEL_PAYLOAD_BYTES", self.api_source)
+
+    def test_commercial_frontend_sends_bearer_and_charged_session(self):
+        commercial_ui = (ROOT / "docs" / "commercial_ui.js").read_text(encoding="utf-8")
+        auth_client = (ROOT / "docs" / "auth_api_client.js").read_text(encoding="utf-8")
+        shell = (ROOT / "docs" / "shell.js").read_text(encoding="utf-8")
+        self.assertIn("headers.set('Authorization', 'Bearer ' + token)", commercial_ui)
+        self.assertIn("global.DHAuth.consumeTest(sessionId)", commercial_ui)
+        self.assertIn("session_uuid: id", auth_client)
+        self.assertIn("dh_pending_journey_session_id", shell)
 
     def test_cors_origin_is_explicit_not_wildcard(self):
         self.assertIn('allow_origins=["https://asbe-siah.ir"]', self.api_source)
