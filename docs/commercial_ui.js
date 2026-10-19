@@ -149,15 +149,28 @@
         timer=window.setTimeout(function(){timer=null;if(!stopped)fn();},delay);
       }catch(_){}
     }
+    function revealFallback(){
+      if(stopped)return;
+      cleanup();
+      BUSY=false;
+      try{var b=el('dh-buy-now');if(b)setBusy(b,'','پرداخت',false);}catch(_){}
+      try{showPayFallback(raw);}catch(_){}
+    }
     function goToSiteHop(){
       if(stopped)return false;
       stage='hop';
       clearTimer();
-      try{window.location.replace(hop);return true;}catch(_){}
-      try{window.location.href=hop;return true;}catch(_){}
-      BUSY=false;
-      try{var b=el('dh-buy-now');if(b)setBusy(b,'','پرداخت',false);}catch(_){}
-      try{showPayFallback(raw);}catch(_){}
+      try{
+        window.location.replace(hop);
+        schedule(revealFallback,1800);
+        return true;
+      }catch(_){}
+      try{
+        window.location.href=hop;
+        schedule(revealFallback,1800);
+        return true;
+      }catch(_){}
+      revealFallback();
       return false;
     }
     function goToChrome(){
