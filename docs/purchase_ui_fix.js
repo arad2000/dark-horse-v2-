@@ -1,4 +1,4 @@
-/* purchase_ui_fix.js v9 — explicit payment readiness + APK hop contract */
+/* purchase_ui_fix.js v10 — explicit payment readiness + same-origin gateway hop */
 (function (global) {
   'use strict';
 
@@ -114,10 +114,11 @@
       global.__dhJourneyStarting = false;
       global.__dhPaymentHandoff = true;
     } catch (_) {}
-    // WebView/PWA: open the raw Zarinpal URL in Chrome. The site hop is only a fallback.
+    // Android: open the same-origin site hop first so ZarinPal receives the site's referrer.
+    // The hop page then redirects to the gateway; never launch the raw gateway as the primary Intent.
     var chromeHop = chromeHopUrl(target);
     try {
-      global.location.href = chromeIntent(target, chromeHop);
+      global.location.href = chromeIntent(chromeHop, chromeHop);
       return true;
     } catch (_) {}
     try {
