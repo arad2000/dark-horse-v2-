@@ -2,6 +2,7 @@
 Dark Horse API V2.0 — نسخه اصلاح‌شده با پشتیبانی کامل از فیلدهای جدید
 """
 
+import json
 import asyncio
 import hashlib
 import logging
