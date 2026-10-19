@@ -172,9 +172,9 @@ def _runtime_module_diagnostics() -> dict:
 
 
 class DarkHorseDiscoverRequest(BaseModel):
-    micro_motives: list[str] = Field(default_factory=list, max_length=100)
-    sjt_answers: dict[str, str] = Field(default_factory=dict, max_length=25)
-    conjoint_choices: dict[str, str] = Field(default_factory=dict, max_length=15)
+    micro_motives: list = Field(default_factory=list, max_length=100)
+    sjt_answers: dict = Field(default_factory=dict, max_length=25)
+    conjoint_choices: dict = Field(default_factory=dict, max_length=15)
     session_id: str | None = Field(default=None, min_length=8, max_length=64)
 
 
@@ -218,7 +218,8 @@ def _enforce_payload_limit(
 
 def _enforce_public_rate_limit(req: Request, limiter, endpoint_label: str) -> None:
     """Rate-limit intentionally public endpoints by client address."""
-    client_key = req.client.host if req.client else "unknown"
+    client = getattr(req, "client", None)
+    client_key = client.host if client else "unknown"
     allowed, retry_after = limiter.allow(client_key)
     if not allowed:
         raise HTTPException(
@@ -587,7 +588,8 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
 @app.post("/api/v2/darkhorse/counsel")
 async def darkhorse_counsel(request: dict, req: Request):
     """Personalized counseling text for discovery results (Dark Horse philosophy)."""
-    client_key = req.client.host if req.client else "unknown"
+    client = getattr(req, "client", None)
+    client_key = client.host if client else "unknown"
     allowed, retry_after = COUNSEL_RATE_LIMITER.allow(client_key)
     if not allowed:
         raise HTTPException(
