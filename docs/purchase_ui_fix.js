@@ -149,13 +149,28 @@
         }, delay);
       } catch (_) {}
     }
+    function revealFailure() {
+      if (stopped) return;
+      cleanup();
+      setStatus('error', 'اتصال به درگاه انجام نشد؛ دوباره تلاش کنید.');
+      setError('در صورت نیاز، دوباره تلاش کنید.');
+      setButton(byId('dh-buy-now'), 'تلاش دوباره', false);
+    }
     function goToSiteHop() {
       if (stopped) return false;
       stage = 'hop';
       clearTimer();
-      try { global.location.replace(hop); return true; } catch (_) {}
-      try { global.location.href = hop; return true; } catch (_) {}
-      setStatus('error', 'اتصال به درگاه انجام نشد؛ دوباره تلاش کنید.');
+      try {
+        global.location.replace(hop);
+        schedule(revealFailure, CHROME_INTENT_TIMEOUT_MS);
+        return true;
+      } catch (_) {}
+      try {
+        global.location.href = hop;
+        schedule(revealFailure, CHROME_INTENT_TIMEOUT_MS);
+        return true;
+      } catch (_) {}
+      revealFailure();
       return false;
     }
     function goToChrome() {
