@@ -218,7 +218,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl\(chromeHopUrl/);
   assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(raw,\s*fallback\)/);
   assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?window\.location\.href=fallback/);
-  assert.match(indexSource, /commercial_ui\.js\?v=42/);
+  assert.match(indexSource, /commercial_ui\.js\?v=43/);
   assert.match(indexSource, /purchase_ui_fix.js\?v=9/);
   const paymentHopPosition = indexSource.indexOf('payment_hop_boot.js?v=3');
   const appScriptPosition = indexSource.indexOf('app.js?v=');
