@@ -26,7 +26,7 @@ jobs:
           - label: "P0.1 result catalog flow"
             source_ref: p0/p01-backend-catalog-result-contract-20261019
             test_file: test_p0_result_catalog.py
-          - label: "P0.3 endpoint guardrails"
+          - label: "P0.3 authenticated quota and endpoint guardrails"
             source_ref: p0/p03-discover-counsel-payload-quota-20261019
             test_file: test_p0_api_guardrails.py
 
