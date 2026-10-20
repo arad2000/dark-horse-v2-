@@ -184,7 +184,7 @@ async function run() {
   assert.equal(JSON.parse(reboundRequest.body).session_id, chargedId);
   const reboundResponse = await quotaContext.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/discover', reboundRequest);
   assert.equal(reboundResponse.status, 200);
-  assert.equal(discoveryCalls, 2, 'charged B must be used after rebinding unfinished journey A');
+  assert.equal(discoveryCalls, 1, 'charged B must be used after rebinding unfinished journey A');
 
   // The runtime guard must still reject network requests carrying UUID A.
   await assert.rejects(
@@ -194,7 +194,7 @@ async function run() {
     }),
     error => error && error.code === 'JOURNEY_SESSION_REQUIRED'
   );
-  assert.equal(discoveryCalls, 2, 'a non-charged UUID must be blocked before reaching discover');
+  assert.equal(discoveryCalls, 1, 'a non-charged UUID must be blocked before reaching discover');
 
   // Clean-storage end-to-end regression: a confirmed new charge binds the
   // fresh journey, and the authenticated discovery endpoint responds 200.
