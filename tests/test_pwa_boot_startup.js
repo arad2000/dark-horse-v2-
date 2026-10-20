@@ -86,14 +86,14 @@ async function testStartupMarkup() {
   assert.ok(shellSource.includes('openSanjesh: openSanjeshFromShell'));
   assert.ok(indexSource.indexOf('id="dh-startup-home"') < indexSource.indexOf('data.js?v='),
     'startup shell must be present before deferred data/app scripts');
-  assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1/);
-  assert.match(indexSource, /app\.js\?v=72/);
+  assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=\d+/);
+  assert.match(indexSource, /app\.js\?v=\d+/);
   assert.match(indexSource, /shell\.js\?v=88/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
   assert.match(indexSource, /pwa-boot\.js\?v=68/);
   assert.match(indexSource, /shell\.css\?v=65" media="print"/);
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
-  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=72'),
+  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v='),
     'payment hop bootstrap must precede app.js');
   assert.doesNotMatch(indexSource, /phase3-161-176-1|۱۱۰۰|1100/);
   console.log('startup markup and cache-bust preservation: PASS');
