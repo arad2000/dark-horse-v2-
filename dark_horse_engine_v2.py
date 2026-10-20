@@ -413,7 +413,27 @@ class DarkHorseEngineV2:
         return distances[:top_n]
 
     # ── استخراج ویژگی‌های ناهمسو ──
-    def _extract_s_misaligned_traits(self, strategy_answers, strategy_weights):
+    def _extract_s_misaligned_traits(
+        self,
+        strategy_answers,
+        strategy_weights,
+        threshold: float = 0.35,
+        dominant_threshold: float = 0.70
+    ):
+        # همان مقیاس S-Score: وزن انتخاب‌شده تقسیم بر بیشینهٔ همان سطر.
+        # صفاتی که دست‌کم در یک پاسخ به آستانهٔ غالب می‌رسند، در فهرست ناهمسو تکرار نمی‌شوند.
+        dominant_traits = set()
+        for i, row in enumerate(strategy_weights):
+            if i >= len(strategy_answers):
+                continue
+            idx = strategy_answers[i]
+            if idx < 0 or idx >= len(row):
+                continue
+            normalized = self._normalized_strategy_weight(row, idx)
+            if normalized >= dominant_threshold:
+                question_key = f"S{str(i + 1).zfill(2)}"
+                dominant_traits.update(self.trait_map.get(question_key, {}).get(idx, []))
+
         traits = []
         for i, row in enumerate(strategy_weights):
             if i >= len(strategy_answers):
@@ -421,14 +441,16 @@ class DarkHorseEngineV2:
             idx = strategy_answers[i]
             if idx < 0 or idx >= len(row):
                 continue
-            if row[idx] < 0.3:
-                q_num = i + 1
-                question_key = f"S{str(q_num).zfill(2)}"
+            normalized = self._normalized_strategy_weight(row, idx)
+            if normalized <= threshold:
+                question_key = f"S{str(i + 1).zfill(2)}"
                 trait_list = self.trait_map.get(question_key, {}).get(idx, [])
                 if trait_list:
-                    traits.extend(trait_list)
+                    traits.extend(t for t in trait_list if t not in dominant_traits)
                 else:
-                    traits.append(f"گزینه {idx+1}")
+                    fallback = f"گزینه {idx+1}"
+                    if fallback not in dominant_traits:
+                        traits.append(fallback)
         return list(dict.fromkeys(traits))[:3]
 
     def _extract_v_misaligned_poles(self, value_choices, value_weights):
@@ -492,11 +514,22 @@ class DarkHorseEngineV2:
 
         return desc
 
+    @staticmethod
+    def _normalized_strategy_weight(row, idx: int) -> float:
+        """Normalize a selected strategy weight by the maximum in the same question row."""
+        if idx < 0 or idx >= len(row) or not row:
+            return 0.0
+        try:
+            max_w = max(float(value) for value in row)
+            chosen_w = float(row[idx])
+        except (TypeError, ValueError):
+            return 0.0
+        return chosen_w / max_w if max_w > 0 else 0.0
+
     # ── استخراج ویژگی‌ها و ارزش‌های غالب (برای archetype_info) ──
     def _extract_dominant_traits(self, strategy_answers: List[int], strategy_weights: List[List[float]],
-                                  threshold: float = 0.7, top_n: int = 2) -> List[str]:
-        # به‌جای برگرداندن هر صفتی که از آستانه رد شود (که تا ۸ مورد می‌شد و شلوغ بود)،
-        # صفات را بر اساس قدرت واقعی (normalized) رتبه‌بندی می‌کنیم و فقط قوی‌ترین‌ها را نگه می‌داریم.
+                                  threshold: float = 0.70, top_n: int = 2) -> List[str]:
+        # غالب و ناهمسو هر دو از یک نسبت نرمال‌شده استفاده می‌کنند: انتخاب‌شده / بیشینهٔ سطر.
         trait_strength: Dict[str, float] = {}
         for i, row in enumerate(strategy_weights):
             if i >= len(strategy_answers):
@@ -504,18 +537,15 @@ class DarkHorseEngineV2:
             idx = strategy_answers[i]
             if idx < 0 or idx >= len(row):
                 continue
-            max_w = max(row) if row else 1.0
-            chosen_w = row[idx]
-            normalized = chosen_w / max_w if max_w > 0 else 0.0
+            normalized = self._normalized_strategy_weight(row, idx)
             if normalized >= threshold:
-                q_num = i + 1
-                question_key = f"S{str(q_num).zfill(2)}"
+                question_key = f"S{str(i + 1).zfill(2)}"
                 traits = self.trait_map.get(question_key, {}).get(idx, [])
-                for t in traits:
-                    trait_strength[t] = max(trait_strength.get(t, 0.0), normalized)
+                for trait in traits:
+                    trait_strength[trait] = max(trait_strength.get(trait, 0.0), normalized)
 
-        ranked = sorted(trait_strength.items(), key=lambda x: -x[1])
-        return [t for t, _ in ranked[:top_n]]
+        ranked = sorted(trait_strength.items(), key=lambda item: -item[1])
+        return [trait for trait, _ in ranked[:top_n]]
 
     def _extract_dominant_values(self, value_choices: List[str], value_weights: Dict[str, float],
                                   threshold: float = 0.7, top_n: int = 2) -> List[str]:
