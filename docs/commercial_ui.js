@@ -1,4 +1,4 @@
-/* commercial_ui.js v42 — server-authoritative auth + OTP + credit gate + payment UI + admin feedback */
+/* commercial_ui.js v43 — server-authoritative auth + same-origin payment hop */
 (function (global) {
   'use strict';
   if (global.__dhCommercialUIReady) return;
@@ -108,9 +108,9 @@
       try{window.location.replace(raw);return true;}catch(_){}
       return false;
     }
-    // Android embedded: open the raw Zarinpal URL directly; use the legacy site hop only as fallback.
+    // Android embedded: Chrome must open the same-origin site hop first; do not launch ZarinPal directly from the app.
     var fallback=chromeHopUrl(raw);
-    try{window.location.href=chromeIntent(raw,fallback);return true;}catch(_){}
+    try{window.location.href=chromeIntent(fallback,fallback);return true;}catch(_){}
     try{window.location.href=fallback;return true;}catch(_){}
     return false;
   }
