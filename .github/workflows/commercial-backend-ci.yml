@@ -59,6 +59,9 @@ jobs:
       - name: Import application
         run: python -c "from main_v2 import app; assert app.title == 'Dark Horse API V2.0'; print('APP_IMPORT=PASS')"
 
+      - name: Run request body limit contracts
+        run: python -m unittest -v test_request_body_limit_middleware.py
+
       - name: Apply Alembic schema
         run: alembic upgrade head
 
