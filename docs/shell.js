@@ -898,7 +898,7 @@
           };
           script.id = 'dh-commercial-ui-loader';
           script.async = false;
-          script.src = 'commercial_ui.js?v=45';
+          script.src = 'commercial_ui.js?v=46';
           script.setAttribute('data-dh-load-state', 'loading');
           window.addEventListener('error', onWindowError, true);
           function cleanup() {
