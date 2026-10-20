@@ -339,6 +339,21 @@ function fullResetState(force) {
 
 function startNewJourney() {
   try {
+    // A signed-in commercial journey may not enter the question flow unless
+    // its live UUID matches the server-confirmed local charge marker.
+    var commercialAuth = null;
+    var commercialChargedId = '';
+    try { commercialAuth = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
+    try { commercialChargedId = String(localStorage.getItem('dh_quota_charged_session_v1') || ''); } catch (_) {}
+    if (commercialAuth && commercialAuth.token &&
+        (!commercialChargedId || String(state.sessionId || '') !== commercialChargedId)) {
+      app.innerHTML = '<div class="card" style="margin:20px;text-align:right;">' +
+        '<h2 style="color:#f0c040">شروع سفر نیاز به تأیید اعتبار دارد</h2>' +
+        '<p style="color:#c9b896;line-height:1.9">تا زمانی که شارژ سرور برای همین شناسه تأیید نشود، ادامهٔ سفر آغاز نمی‌شود. به خانه برگردید و از مسیر تجاری سفر تازه را شروع کنید.</p>' +
+        '<button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="if(window.DHShell&&window.DHShell.switchTab){window.DHShell.switchTab(\'home\')}else{location.reload()}">بازگشت به خانه</button>' +
+        '</div>';
+      return;
+    }
     if (isPreResultsInProgress()) {
       if (!confirm('سفر هنوز به نتیجه نرسیده. اگر از نو شروع کنی، پیشرفت فعلی پاک می‌شود. مطمئنی؟')) {
         try { if (typeof loadSession === 'function') loadSession(); } catch (e) {}
@@ -1356,6 +1371,88 @@ function buildPayload() {
 }
 
 
+async function ensureChargedJourneySessionForResult() {
+  var authState = null;
+  var journey = null;
+  var token = '';
+  var chargedId = '';
+  var pendingId = '';
+  try { authState = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
+  token = authState && typeof authState.token === 'string' ? authState.token.trim() : '';
+  if (!token) {
+    var authError = new Error('ورود تجاری معتبر نیست یا نشست ورود پایان یافته است.');
+    authError.code = 'AUTH_REQUIRED';
+    throw authError;
+  }
+  try { journey = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
+  try { chargedId = String(localStorage.getItem('dh_quota_charged_session_v1') || ''); } catch (_) {}
+  try { pendingId = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
+
+  // A confirmed charged UUID is authoritative over a stale in-memory or saved
+  // journey UUID. If no charge marker exists, preserve the current journey UUID
+  // and charge that exact UUID before any discovery request is constructed.
+  var sessionId = chargedId || (state && state.sessionId ? String(state.sessionId) : '') ||
+    (journey && journey.sessionId ? String(journey.sessionId) : '') || pendingId;
+  if (!sessionId) {
+    try {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') sessionId = window.crypto.randomUUID();
+    } catch (_) {}
+    if (!sessionId) sessionId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  if (chargedId !== sessionId) {
+    if (!window.DHQuotaEnforcement || typeof window.DHQuotaEnforcement.consumeForJourney !== 'function') {
+      var unavailable = new Error('اتصال تأیید شارژ آماده نیست؛ نتیجه تا تأیید سرور ارسال نمی‌شود.');
+      unavailable.code = 'JOURNEY_CHARGE_REQUIRED';
+      throw unavailable;
+    }
+    var charge;
+    try {
+      charge = await window.DHQuotaEnforcement.consumeForJourney(sessionId);
+    } catch (chargeError) {
+      var failed = new Error('شارژ این سفر در سرور تأیید نشد؛ درخواست نتیجه ارسال نشد. دوباره تلاش کنید.');
+      failed.code = 'JOURNEY_CHARGE_REQUIRED';
+      failed.cause = chargeError;
+      throw failed;
+    }
+    if (!charge || !(charge.consumed === 1 || charge.already_consumed === true || charge.local_guard === true)) {
+      var notConfirmed = new Error('شارژ این سفر در سرور تأیید نشد؛ درخواست نتیجه ارسال نشد.');
+      notConfirmed.code = 'JOURNEY_CHARGE_REQUIRED';
+      throw notConfirmed;
+    }
+    // The bridge should write this marker, but after an affirmative server
+    // response explicitly persist it too so result submission cannot race it.
+    try { localStorage.setItem('dh_quota_charged_session_v1', sessionId); } catch (_) {}
+  }
+
+  // Reconcile every client-side representation to the one UUID being charged.
+  if (!journey || typeof journey !== 'object') journey = {};
+  journey.sessionId = sessionId;
+  if (state) state.sessionId = sessionId;
+  try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
+  try { localStorage.setItem('dh_quota_charged_session_v1', sessionId); } catch (_) {}
+  try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
+
+  var savedAfterCharge = null;
+  try { savedAfterCharge = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
+  if (String(localStorage.getItem('dh_quota_charged_session_v1') || '') !== sessionId ||
+      !savedAfterCharge || String(savedAfterCharge.sessionId || '') !== sessionId ||
+      !state || String(state.sessionId || '') !== sessionId) {
+    var persistenceError = new Error('شناسهٔ شارژشده در حافظه و ذخیره‌سازی همسان نشد؛ نتیجه ارسال نشد.');
+    persistenceError.code = 'JOURNEY_CHARGE_REQUIRED';
+    throw persistenceError;
+  }
+  return sessionId;
+}
+
+async function buildChargedJourneyAnalysisRequest(payload) {
+  await ensureChargedJourneySessionForResult();
+  return buildJourneyAnalysisRequest(payload);
+}
+
 function buildJourneyAnalysisRequest(payload) {
   var authState = null;
   var journey = null;
@@ -1385,36 +1482,27 @@ function buildJourneyAnalysisRequest(payload) {
     });
   } catch (_) {}
 
-  var sessionId = '';
-  if (chargedSessionId) {
-    if (pendingChargedId) {
-      // Pending+charged is the explicit hand-off window: attach this UUID to
-      // the in-flight journey before discover, even if a stale record existed.
-      sessionId = pendingChargedId;
-      if (!journey) journey = {};
-      journey.sessionId = sessionId;
-      try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
-    } else if (journeySessionId && journeySessionId === String(chargedSessionId)) {
-      sessionId = journeySessionId;
-    } else if (!journeySessionId) {
-      // Recover a missing journey UUID from the server-confirmed local charge.
-      sessionId = String(chargedSessionId);
-      if (!journey) journey = {};
-      journey.sessionId = sessionId;
-      try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
-    } else {
-      // Never silently continue a saved journey charged under another UUID.
-      sessionId = stateSessionId || journeySessionId;
-    }
-  }
-  if (!sessionId || String(chargedSessionId || '') !== String(sessionId) ||
-      (journey && journey.sessionId && String(journey.sessionId) !== String(sessionId))) {
-    var journeyError = new Error('شناسهٔ سفر شارژشده با سفر ذخیره‌شده تطبیق ندارد؛ از خانه سفر را از مسیر تجاری شروع کنید.');
+  // A confirmed charge wins over every stale client-side UUID. Reconcile the
+  // saved journey even when it previously belonged to a different session.
+  var sessionId = chargedSessionId ? String(chargedSessionId) : '';
+  if (!sessionId) {
+    var journeyError = new Error('شارژ معتبر برای این سفر ثبت نشده است؛ نتیجه ارسال نشد.');
     journeyError.code = 'JOURNEY_SESSION_REQUIRED';
     throw journeyError;
   }
+  if (!journey || typeof journey !== 'object') journey = {};
+  journey.sessionId = sessionId;
+  try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
   if (state && String(state.sessionId || '') !== String(sessionId)) state.sessionId = String(sessionId);
   try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
+  var persistedJourney = null;
+  try { persistedJourney = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
+  if (!persistedJourney || String(persistedJourney.sessionId || '') !== sessionId ||
+      String(state && state.sessionId || '') !== sessionId) {
+    var persistenceError = new Error('شناسهٔ شارژشده با سفر جاری همسان نشد.');
+    persistenceError.code = 'JOURNEY_SESSION_REQUIRED';
+    throw persistenceError;
+  }
   var requestPayload = Object.assign({}, payload || {}, { session_id: sessionId });
   return {
     method: 'POST',
@@ -1438,8 +1526,11 @@ function journeyAnalysisErrorHTML(error, journeyType) {
     actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود به حساب</button>";
   } else if (error && error.code === 'JOURNEY_SESSION_REQUIRED' && !status) {
     title = 'شناسهٔ سفر آماده نیست';
-    message = 'اعتبار حساب فقط سهمیهٔ شما را نشان می‌دهد و جای شناسهٔ اختصاصی همین سفر را نمی‌گیرد؛ هیچ درخواست نتیجه‌ای به سرور ارسال نشد. از خانه، سفر را از مسیر تجاری دوباره شروع کنید.';
+    message = 'شارژ تأییدشده‌ای برای همین شناسه پیدا نشد؛ هیچ درخواست نتیجه‌ای به سرور ارسال نشد.';
     actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">شروع مجدد از خانه</button>";
+  } else if (error && error.code === 'JOURNEY_CHARGE_REQUIRED' && !status) {
+    title = 'تأیید شارژ سفر ناموفق بود';
+    message = 'نتیجه ارسال نشد، چون شارژ این سفر از سرور تأیید نشد. وضعیت اعتبار را بررسی و دوباره تلاش کنید؛ سفر تا تأیید شارژ جلو نمی‌رود.';
   } else if (status === 401) {
     title = 'ورود دوباره لازم است (HTTP 401)';
     message = 'سرور نشست ورود را نامعتبر یا منقضی تشخیص داد. با همان حساب تجاری دوباره وارد شوید؛ این خطا به معنی قطع شبکه نیست.';
@@ -1461,12 +1552,15 @@ function journeyAnalysisErrorHTML(error, journeyType) {
 
 // ==================== توابع تحلیل (جدید/تغییر نام) ====================
 async function analyzeMajors() {
-  state.stage = 'results';
   const payload = buildPayload();
   state.lastPayload = payload;
-  app.innerHTML = progressHTML('results') + loadingHTML('داره جرقه‌هات رو به رشته‌ها وصل می‌کنه...');
+  app.innerHTML = progressHTML(state.stage || 'choice') + loadingHTML('در حال تأیید سفر و آماده‌سازی نتیجه...');
   try {
-    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', buildJourneyAnalysisRequest(payload));
+    const request = await buildChargedJourneyAnalysisRequest(payload);
+    state.stage = 'results';
+    try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
+    app.innerHTML = progressHTML('results') + loadingHTML('داره جرقه‌هات رو به رشته‌ها وصل می‌کنه...');
+    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', request);
     const data = await res.json();
     state.majorsResult = data;
     displayResults(data, 'majors');
@@ -1477,12 +1571,15 @@ async function analyzeMajors() {
 }
 
 async function analyzeBranches() {
-  state.stage = 'results';
   const payload = buildPayload();
   state.lastPayload = payload;
-  app.innerHTML = progressHTML('results') + loadingHTML('داره نقشهٔ شاخه‌ها رو با انگیزه‌هات میزان می‌کنه...');
+  app.innerHTML = progressHTML(state.stage || 'choice') + loadingHTML('در حال تأیید سفر و آماده‌سازی نتیجه...');
   try {
-    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', buildJourneyAnalysisRequest(payload));
+    const request = await buildChargedJourneyAnalysisRequest(payload);
+    state.stage = 'results';
+    try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
+    app.innerHTML = progressHTML('results') + loadingHTML('داره نقشهٔ شاخه‌ها رو با انگیزه‌هات میزان می‌کنه...');
+    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', request);
     const data = await res.json();
     state.branchesResult = data;
     displayResults(data, 'branches');
