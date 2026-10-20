@@ -30,6 +30,7 @@ const state = {
   completedSubRealms: new Set(),
   strategyQuestions: [],
   valueQuestions: [],
+  valuePoles: {},
   lastPayload: null,
   microMotivesMap: {},
   cachedMotives: null,
@@ -399,10 +400,22 @@ async function loadMicroMotivesMap() {
 
 async function loadQuestions() {
   try {
-    const res = await fetch(DATA_BASE + 'questions_v2.json');
-    const data = await res.json();
+    const [questionsRes, polesRes] = await Promise.all([
+      fetch(DATA_BASE + 'questions_v2.json'),
+      fetch(DATA_BASE + 'value_poles_v2.json')
+    ]);
+    if (!questionsRes.ok || !polesRes.ok) {
+      throw new Error('سوالات یا قطب‌های ارزش V2 بارگذاری نشدند.');
+    }
+    const data = await questionsRes.json();
+    const poles = await polesRes.json();
+    if (!data.layers?.strategies?.questions || !data.layers?.values?.questions ||
+        !poles || Object.keys(poles).length < 30) {
+      throw new Error('ساختار داده‌های ارزش V2 معتبر نیست.');
+    }
     state.strategyQuestions = data.layers.strategies.questions;
     state.valueQuestions = data.layers.values.questions;
+    state.valuePoles = poles;
     state.questionsReady = true;
   } catch (e) {
     console.error('خطا در بارگذاری سوالات V2:', e);
@@ -2030,39 +2043,28 @@ function analyzeStrategyStyle(answers) {
 }
 
 function analyzeValueStyle(answers) {
-  const map = {
-    'Q1A': { label: 'تأثیر فوری بر انسان', icon: '❤️' },
-    'Q1B': { label: 'بهینه‌سازی سیستم‌ها', icon: '⚙️' },
-    'Q2A': { label: 'ساختن ماندگار', icon: '🏗️' },
-    'Q2B': { label: 'تکثیر ایده در ذهن‌ها', icon: '🌱' },
-    'Q3A': { label: 'تنوع و چالش روزانه', icon: '🎢' },
-    'Q3B': { label: 'عمق و تخصص مرجع', icon: '🎯' },
-    'Q4A': { label: 'مسئولیت فردی', icon: '🫂' },
-    'Q4B': { label: 'مسئولیت سیستمی', icon: '🌐' },
-    'Q5A': { label: 'تقدیر از دقت و نظم', icon: '🏅' },
-    'Q5B': { label: 'تقدیر از خلاقیت', icon: '🎨' },
-    'Q6A': { label: 'انرژی از تعامل', icon: '💬' },
-    'Q6B': { label: 'انرژی از تمرکز تنهایی', icon: '🧘' },
-    'Q7A': { label: 'نوآوری و اختراع', icon: '🚀' },
-    'Q7B': { label: 'مربی‌گری و پرورش', icon: '👨‍🏫' },
-    'Q8A': { label: 'ثبات و امنیت', icon: '🏰' },
-    'Q8B': { label: 'آزادی و انعطاف', icon: '🕊️' },
-    'Q9A': { label: 'کاهش رنج انسان', icon: '🕯️' },
-    'Q9B': { label: 'خلق زیبایی و دانش', icon: '✨' },
-    'Q10A': { label: 'رهبری و تعیین مسیر', icon: '🧭' },
-    'Q10B': { label: 'همدلی و وفاق‌سازی', icon: '🕊️' },
-    'Q11A': { label: 'کار با داده‌ها', icon: '📊' },
-    'Q11B': { label: 'کار با انسان‌ها', icon: '👥' },
-    'Q12A': { label: 'خطرپذیری', icon: '🎲' },
-    'Q12B': { label: 'ثبات‌طلبی', icon: '🛡️' },
-    'Q13A': { label: 'نتیجهٔ فوری', icon: '⚡' },
-    'Q13B': { label: 'اثر ماندگار', icon: '🏛️' },
-    'Q14A': { label: 'استقلال کامل', icon: '🦅' },
-    'Q14B': { label: 'تعلق سازمانی', icon: '🏢' },
-    'Q15A': { label: 'تسلط بر یک حوزه', icon: '🎯' },
-    'Q15B': { label: 'کنجکاوی بی‌پایان', icon: '🌌' }
+  const icons = {
+    'Q1A': '❤️', 'Q1B': '🌍',
+    'Q2A': '🏗️', 'Q2B': '🌱',
+    'Q3A': '🎯', 'Q3B': '🌌',
+    'Q4A': '🔍', 'Q4B': '🎨',
+    'Q5A': '📏', 'Q5B': '🎲',
+    'Q6A': '🫂', 'Q6B': '🌐',
+    'Q7A': '🚀', 'Q7B': '📚',
+    'Q8A': '🕊️', 'Q8B': '🏰',
+    'Q9A': '🔧', 'Q9B': '🛡️',
+    'Q10A': '🧭', 'Q10B': '✨',
+    'Q11A': '📊', 'Q11B': '👥',
+    'Q12A': '🎲', 'Q12B': '🛡️',
+    'Q13A': '⚡', 'Q13B': '🏛️',
+    'Q14A': '🏢', 'Q14B': '🦅',
+    'Q15A': '🎯', 'Q15B': '🌌'
   };
-  const selected = answers.map(a => map[a] || { label: a, icon: '❓' });
+  const poles = state.valuePoles || {};
+  const selected = (Array.isArray(answers) ? answers : []).map(code => ({
+    label: poles[code] || code,
+    icon: icons[code] || '❓'
+  }));
   const unique = [...new Set(selected.map(s => s.label))];
   return {
     values: selected.slice(0, 5),
