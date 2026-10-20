@@ -1476,9 +1476,9 @@ function buildJourneyAnalysisRequest(payload) {
   try {
     if (typeof console !== 'undefined' && console.debug) console.debug('[DarkHorse][session-diagnostic]', {
       hasToken: !!token,
-      chargedIdPrefix: prefix(chargedSessionId),
-      stateSessionPrefix: prefix(stateSessionId),
-      journeySessionPrefix: prefix(journeySessionId)
+      chargedPrefix: prefix(chargedSessionId),
+      statePrefix: prefix(stateSessionId),
+      journeyPrefix: prefix(journeySessionId)
     });
   } catch (_) {}
 
