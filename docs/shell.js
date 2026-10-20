@@ -694,9 +694,11 @@
         if (raw) data = JSON.parse(raw);
       } catch (e2) { data = null; }
 
+      var storedResumeSessionId = data && data.sessionId ? String(data.sessionId) : '';
       var unfinished = data && !data.journeyFinished && data.stage &&
         ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
-         'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(data.stage) >= 0;
+         'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(data.stage) >= 0 &&
+        (!storedResumeSessionId || storedResumeSessionId === authorizedSessionId);
 
       if (unfinished) {
         // A paid/resumed journey must use the exact UUID charged by the server.
@@ -896,7 +898,7 @@
           };
           script.id = 'dh-commercial-ui-loader';
           script.async = false;
-          script.src = 'commercial_ui.js?v=45';
+          script.src = 'commercial_ui.js?v=46';
           script.setAttribute('data-dh-load-state', 'loading');
           window.addEventListener('error', onWindowError, true);
           function cleanup() {
