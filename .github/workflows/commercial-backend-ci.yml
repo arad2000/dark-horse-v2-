@@ -56,6 +56,9 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q .
 
+      - name: P0 normalized trait alignment regression
+        run: python -m pytest -q test_engine_trait_alignment.py
+
       - name: Import application
         run: python -c "from main_v2 import app; assert app.title == 'Dark Horse API V2.0'; print('APP_IMPORT=PASS')"
 
