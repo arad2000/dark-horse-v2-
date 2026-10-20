@@ -633,7 +633,8 @@
     }
 
     try {
-      var allowed = canRunTest();
+      // The commercial path already consumed and confirmed this exact UUID; do not gate that same journey a second time.
+      var allowed = !!authorizedSessionId || canRunTest();
       var u = getDisplayUser();
 
       // Quota refresh must never block the Journey UI indefinitely.
