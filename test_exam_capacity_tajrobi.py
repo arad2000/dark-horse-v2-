@@ -24,7 +24,7 @@ class TajrobiExamCapacityLoaderTests(unittest.TestCase):
         items = build_exam_capacity_results(
             group="tajrobi",
             major_ids=[1],
-            province="هرمزگان",
+            province="ایلام",
             periods=["روزانه"],
         )
         self.assertEqual(items, [])
@@ -32,7 +32,7 @@ class TajrobiExamCapacityLoaderTests(unittest.TestCase):
     def test_unrelated_major_stays_empty(self):
         items = build_exam_capacity_results(
             group="tajrobi",
-            major_ids=[41],  # مهندسی برق؛ بی‌ربط به دفترچه تجربی
+            major_ids=[140],  # مهندسی برق؛ بی‌ربط به دفترچه تجربی
             province="تهران",
             periods=["روزانه"],
         )

@@ -13,12 +13,22 @@ const motiveCodes = new Set(motives.map((item) => item.code));
 
 const sandbox = {};
 vm.runInNewContext(
-  dataSource + '\nthis.__testNarrowPaths = NARROW_PATHS;',
+  dataSource + '\nthis.__testSubRealms = SUB_REALMS;\nthis.__testNarrowPaths = NARROW_PATHS;',
   sandbox,
   { filename: 'docs/data.js' }
 );
+const subRealms = sandbox.__testSubRealms;
 const narrowPaths = sandbox.__testNarrowPaths;
+assert.ok(subRealms && typeof subRealms === 'object', 'SUB_REALMS must load from docs/data.js');
 assert.ok(narrowPaths && typeof narrowPaths === 'object', 'NARROW_PATHS must load from docs/data.js');
+
+const subRealmPrefixes = [];
+for (const [realmId, items] of Object.entries(subRealms)) {
+  assert.ok(Array.isArray(items), `SUB_REALMS[${realmId}] must be an array`);
+  for (const item of items) {
+    for (const prefix of item.majorCodes || []) subRealmPrefixes.push({ realmId, subRealmId: item.id, prefix });
+  }
+}
 
 const prefixes = [];
 for (const [pathId, items] of Object.entries(narrowPaths)) {
@@ -39,6 +49,8 @@ assert.deepEqual(
 );
 
 const invalidActiveMajors = [];
+const unreachableSubRealmMajors = [];
+const unreachableNarrowPathMajors = [];
 for (const major of majors) {
   if (major.motive_driven !== true) continue;
   const codes = major.micro_motive_codes;
@@ -49,11 +61,25 @@ for (const major of majors) {
   for (const code of codes) {
     if (!motiveCodes.has(code)) invalidActiveMajors.push({ id: major.id, code, reason: 'code absent from micro_motives.json' });
   }
+  const hasSubRealm = codes.some((code) => subRealmPrefixes.some(({ prefix }) => code.startsWith(prefix)));
+  const hasNarrowPath = codes.some((code) => prefixes.some(({ prefix }) => code.startsWith(prefix)));
+  if (!hasSubRealm) unreachableSubRealmMajors.push({ id: major.id, name: major.name, codes });
+  if (!hasNarrowPath) unreachableNarrowPathMajors.push({ id: major.id, name: major.name, codes });
 }
 assert.deepEqual(
   invalidActiveMajors,
   [],
   'every motive_driven=true major must reference existing micro-motive codes'
 );
+assert.deepEqual(
+  unreachableSubRealmMajors,
+  [],
+  'every motive_driven=true major must be reachable from at least one SUB_REALMS majorCodes prefix'
+);
+assert.deepEqual(
+  unreachableNarrowPathMajors,
+  [],
+  'every motive_driven=true major must be reachable from at least one NARROW_PATHS majorCodes prefix'
+);
 
-console.log(`R2 motive-route contract: PASS (${prefixes.length} route-prefix occurrences, ${new Set(prefixes.map((item) => item.prefix)).size} unique prefixes, all active-major codes resolved)`);
+console.log(`R2 motive-route contract: PASS (${prefixes.length} route-prefix occurrences, ${new Set(prefixes.map((item) => item.prefix)).size} unique prefixes, all 202 active-major codes resolved & reachable)`);

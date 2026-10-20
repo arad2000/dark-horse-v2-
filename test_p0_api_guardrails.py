@@ -1,0 +1,133 @@
+"""P0.3 public discover/counsel payload and quota guard tests."""
+import re
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from fastapi import HTTPException
+from pydantic import ValidationError
+
+from ai_rate_limit import SlidingWindowRateLimiter
+from main_v2 import (
+    MAX_COUNSEL_PAYLOAD_BYTES,
+    MAX_DISCOVERY_PAYLOAD_BYTES,
+    DarkHorseDiscoverRequest,
+    _enforce_payload_limit,
+    _enforce_public_rate_limit,
+    _require_charged_journey,
+)
+
+
+ROOT = Path(__file__).resolve().parent
+
+
+class PayloadLimitTests(unittest.TestCase):
+    def make_request(self, headers=None):
+        return SimpleNamespace(headers=headers or {})
+
+    def test_declared_oversized_payload_is_rejected(self):
+        req = self.make_request({"content-length": str(MAX_DISCOVERY_PAYLOAD_BYTES + 1)})
+        with self.assertRaises(HTTPException) as caught:
+            _enforce_payload_limit(
+                req, {"micro_motives": []},
+                max_bytes=MAX_DISCOVERY_PAYLOAD_BYTES, endpoint_label="test",
+            )
+        self.assertEqual(caught.exception.status_code, 413)
+
+    def test_actual_payload_size_is_checked_without_content_length(self):
+        req = self.make_request()
+        with self.assertRaises(HTTPException) as caught:
+            _enforce_payload_limit(
+                req, {"profile": {"text": "x" * (MAX_COUNSEL_PAYLOAD_BYTES + 10)}},
+                max_bytes=MAX_COUNSEL_PAYLOAD_BYTES, endpoint_label="test",
+            )
+        self.assertEqual(caught.exception.status_code, 413)
+
+    def test_discovery_collections_have_protocol_sized_caps(self):
+        with self.assertRaises(ValidationError):
+            DarkHorseDiscoverRequest(micro_motives=["MED-001"] * 101)
+        with self.assertRaises(ValidationError):
+            DarkHorseDiscoverRequest(sjt_answers={f"sjt_{i}": "A" for i in range(1, 27)})
+        with self.assertRaises(ValidationError):
+            DarkHorseDiscoverRequest(conjoint_choices={f"conj_{i}": "Q1A" for i in range(1, 17)})
+
+
+class PublicRateLimitTests(unittest.TestCase):
+    def test_rate_limiter_returns_429_and_retry_after(self):
+        limiter = SlidingWindowRateLimiter(
+            limit=1, window_seconds=60, max_clients=10, clock=lambda: 100.0
+        )
+        req = SimpleNamespace(client=SimpleNamespace(host="test-client"))
+        _enforce_public_rate_limit(req, limiter, "test")
+        with self.assertRaises(HTTPException) as caught:
+            _enforce_public_rate_limit(req, limiter, "test")
+        self.assertEqual(caught.exception.status_code, 429)
+        self.assertEqual(caught.exception.headers["Retry-After"], "60")
+
+
+class CommercialEntitlementTests(unittest.TestCase):
+    def setUp(self):
+        self.request = SimpleNamespace(headers={})
+        self.session_id = "p0-charged-session-001"
+
+    def test_anonymous_discovery_is_rejected(self):
+        with patch("main_v2._authenticated_user_id", return_value=None):
+            with self.assertRaises(HTTPException) as caught:
+                _require_charged_journey(self.request, self.session_id)
+        self.assertEqual(caught.exception.status_code, 401)
+
+    def test_authenticated_but_unconsumed_journey_is_rejected(self):
+        with patch("main_v2._authenticated_user_id", return_value=42), patch(
+            "main_v2._journey_charge_exists", return_value=False
+        ):
+            with self.assertRaises(HTTPException) as caught:
+                _require_charged_journey(self.request, self.session_id)
+        self.assertEqual(caught.exception.status_code, 402)
+
+    def test_charged_journey_for_authenticated_user_is_allowed(self):
+        with patch("main_v2._authenticated_user_id", return_value=42), patch(
+            "main_v2._journey_charge_exists", return_value=True
+        ):
+            result = _require_charged_journey(self.request, self.session_id)
+        self.assertEqual(result, 42)
+
+
+class EndpointWiringTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.api_source = (ROOT / "main_v2.py").read_text(encoding="utf-8")
+
+    def test_discovery_and_counsel_endpoints_apply_guards(self):
+        self.assertEqual(
+            self.api_source.count("_enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER"),
+            2,
+        )
+        self.assertGreaterEqual(self.api_source.count("_enforce_payload_limit("), 4)
+        self.assertEqual(self.api_source.count("_require_charged_journey(req, request.session_id)"), 2)
+        self.assertIn("_require_charged_journey(req, session_uuid)", self.api_source)
+        self.assertIn("MAX_COUNSEL_PAYLOAD_BYTES", self.api_source)
+
+    def test_commercial_frontend_sends_bearer_and_charged_session(self):
+        app_js = (ROOT / "docs" / "app.js").read_text(encoding="utf-8")
+        quota_runtime = (ROOT / "docs" / "quota_runtime.js").read_text(encoding="utf-8")
+        commercial_ui = (ROOT / "docs" / "commercial_ui.js").read_text(encoding="utf-8")
+        auth_client = (ROOT / "docs" / "auth_api_client.js").read_text(encoding="utf-8")
+        shell = (ROOT / "docs" / "shell.js").read_text(encoding="utf-8")
+        self.assertIn("Authorization", app_js)
+        self.assertIn("Bearer ", app_js)
+        self.assertIn(".consumeTest(", quota_runtime)
+        self.assertIn("DHQuotaEnforcement.consumeForJourney", commercial_ui)
+        self.assertIn("session_uuid:", auth_client)
+        self.assertIn("dh_pending_journey_session_id", shell)
+
+    def test_cors_origin_is_explicit_not_wildcard(self):
+        self.assertIn('allow_origins=["https://asbe-siah.ir"]', self.api_source)
+        self.assertNotRegex(
+            self.api_source,
+            re.compile(r"""allow_origins\s*=\s*\[\s*["']\*["']"""),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

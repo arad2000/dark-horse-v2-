@@ -2031,43 +2031,74 @@ function analyzeStrategyStyle(answers) {
 
 function analyzeValueStyle(answers) {
   const map = {
-    'Q1A': { label: 'تأثیر فوری بر انسان', icon: '❤️' },
-    'Q1B': { label: 'بهینه‌سازی سیستم‌ها', icon: '⚙️' },
-    'Q2A': { label: 'ساختن ماندگار', icon: '🏗️' },
-    'Q2B': { label: 'تکثیر ایده در ذهن‌ها', icon: '🌱' },
-    'Q3A': { label: 'تنوع و چالش روزانه', icon: '🎢' },
-    'Q3B': { label: 'عمق و تخصص مرجع', icon: '🎯' },
-    'Q4A': { label: 'مسئولیت فردی', icon: '🫂' },
-    'Q4B': { label: 'مسئولیت سیستمی', icon: '🌐' },
-    'Q5A': { label: 'تقدیر از دقت و نظم', icon: '🏅' },
-    'Q5B': { label: 'تقدیر از خلاقیت', icon: '🎨' },
-    'Q6A': { label: 'انرژی از تعامل', icon: '💬' },
-    'Q6B': { label: 'انرژی از تمرکز تنهایی', icon: '🧘' },
-    'Q7A': { label: 'نوآوری و اختراع', icon: '🚀' },
-    'Q7B': { label: 'مربی‌گری و پرورش', icon: '👨‍🏫' },
-    'Q8A': { label: 'ثبات و امنیت', icon: '🏰' },
-    'Q8B': { label: 'آزادی و انعطاف', icon: '🕊️' },
-    'Q9A': { label: 'کاهش رنج انسان', icon: '🕯️' },
-    'Q9B': { label: 'خلق زیبایی و دانش', icon: '✨' },
-    'Q10A': { label: 'رهبری و تعیین مسیر', icon: '🧭' },
-    'Q10B': { label: 'همدلی و وفاق‌سازی', icon: '🕊️' },
-    'Q11A': { label: 'کار با داده‌ها', icon: '📊' },
-    'Q11B': { label: 'کار با انسان‌ها', icon: '👥' },
-    'Q12A': { label: 'خطرپذیری', icon: '🎲' },
-    'Q12B': { label: 'ثبات‌طلبی', icon: '🛡️' },
-    'Q13A': { label: 'نتیجهٔ فوری', icon: '⚡' },
-    'Q13B': { label: 'اثر ماندگار', icon: '🏛️' },
-    'Q14A': { label: 'استقلال کامل', icon: '🦅' },
-    'Q14B': { label: 'تعلق سازمانی', icon: '🏢' },
-    'Q15A': { label: 'تسلط بر یک حوزه', icon: '🎯' },
-    'Q15B': { label: 'کنجکاوی بی‌پایان', icon: '🌌' }
+    'Q1A':  { pole: 'عمق‌تأثیر',       label: 'عمق‌تأثیر (کمک مستقیم به انسان)',      dim: 'خدمت‌محور و انسانی', icon: '❤️' },
+    'Q1B':  { pole: 'گستره‌تأثیر',     label: 'گستره‌تأثیر (اثرگذاری کلان)',           dim: 'رهبر و اثرگذار',      icon: '🌐' },
+    'Q2A':  { pole: 'میراث‌مادی',      label: 'میراث‌مادی (خلق اثر ماندگار)',          dim: 'خلاق و نوآور',        icon: '🏗️' },
+    'Q2B':  { pole: 'میراث‌انسانی',    label: 'میراث‌انسانی (پرورش و رشد انسان‌ها)',   dim: 'خدمت‌محور و انسانی', icon: '🌱' },
+    'Q3A':  { pole: 'عمق‌محور',        label: 'عمق‌محور (تخصص عمیق و مرجعیت)',         dim: 'علم‌گرا و کاشف',      icon: '🎯' },
+    'Q3B':  { pole: 'گستره‌محور',      label: 'گستره‌محور (تنوع و یادگیری پیوسته)',    dim: 'خلاق و نوآور',        icon: '🎢' },
+    'Q4A':  { pole: 'حقیقت‌جو',        label: 'حقیقت‌جو (کشف دانش ناشناخته)',          dim: 'علم‌گرا و کاشف',      icon: '🔬' },
+    'Q4B':  { pole: 'خلق‌زیبایی',      label: 'خلق‌زیبایی (آفرینش هنر و الهام)',       dim: 'خلاق و نوآور',        icon: '🎨' },
+    'Q5A':  { pole: 'نظم‌خواه',        label: 'نظم‌خواه (ساختار و برنامهٔ روشن)',      dim: 'پایدار و امنیت‌گرا',  icon: '📐' },
+    'Q5B':  { pole: 'آشوب‌پذیر',       label: 'آشوب‌پذیر (پویایی و موقعیت‌های تازه)',  dim: 'مستقل و عمل‌گرا',     icon: '⚡' },
+    'Q6A':  { pole: 'مسئولیت‌فردی',    label: 'مسئولیت‌فردی (حمایت از انسان مشخص)',    dim: 'خدمت‌محور و انسانی', icon: '🫂' },
+    'Q6B':  { pole: 'مسئولیت‌سیستمی',  label: 'مسئولیت‌سیستمی (هدایت سیستم بزرگ)',     dim: 'رهبر و اثرگذار',      icon: '⚙️' },
+    'Q7A':  { pole: 'خالق',            label: 'خالق (ابداع و نوآوری)',                 dim: 'خلاق و نوآور',        icon: '🚀' },
+    'Q7B':  { pole: 'ناقل',            label: 'ناقل (انتقال اثربخش دانش)',             dim: 'خدمت‌محور و انسانی', icon: '👨‍🏫' },
+    'Q8A':  { pole: 'آزادی‌خواه',      label: 'آزادی‌خواه (آزادی عمل و انعطاف)',       dim: 'مستقل و عمل‌گرا',     icon: '🕊️' },
+    'Q8B':  { pole: 'امنیت‌خواه',      label: 'امنیت‌خواه (امنیت و ثبات شغلی)',        dim: 'پایدار و امنیت‌گرا',  icon: '🛡️' },
+    'Q9A':  { pole: 'تغییرگر',         label: 'تغییرگر (اصلاح و تحول‌آفرینی)',         dim: 'رهبر و اثرگذار',      icon: '🔥' },
+    'Q9B':  { pole: 'محافظ',           label: 'محافظ (پاسداشت ارزش‌های ماندگار)',      dim: 'پایدار و امنیت‌گرا',  icon: '🏰' },
+    'Q10A': { pole: 'دیده‌شدن',        label: 'دیده‌شدن (رهبری و تصمیم‌گیری محوری)',   dim: 'رهبر و اثرگذار',      icon: '🧭' },
+    'Q10B': { pole: 'بی‌نام‌تأثیرگذار', label: 'بی‌نام‌تأثیرگذار (اثر عمیق بی‌ادعا)',    dim: 'خدمت‌محور و انسانی', icon: '🕯️' },
+    'Q11A': { pole: 'داده‌نگر',        label: 'داده‌نگر (تحلیل الگوها و داده‌ها)',     dim: 'علم‌گرا و کاشف',      icon: '📊' },
+    'Q11B': { pole: 'انسان‌نگر',       label: 'انسان‌نگر (درک احساس و انگیزهٔ انسان)', dim: 'خدمت‌محور و انسانی', icon: '👥' },
+    'Q12A': { pole: 'ریسک‌پذیر',       label: 'ریسک‌پذیر (جسارت برای دستاورد بزرگ)',   dim: 'مستقل و عمل‌گرا',     icon: '🎲' },
+    'Q12B': { pole: 'ثبات‌خواه',       label: 'ثبات‌خواه (پیشرفت مطمئن و پایدار)',     dim: 'پایدار و امنیت‌گرا',  icon: '⚓' },
+    'Q13A': { pole: 'نتیجه‌فوری',      label: 'نتیجه‌فوری (مشاهدهٔ سریع ثمرهٔ کار)',   dim: 'مستقل و عمل‌گرا',     icon: '⏱️' },
+    'Q13B': { pole: 'اثر‌بلندمدت',     label: 'اثر‌بلندمدت (ماندگاری در افق سال‌ها)',  dim: 'رهبر و اثرگذار',      icon: '🏛️' },
+    'Q14A': { pole: 'تعلق‌خواه',       label: 'تعلق‌خواه (هم‌افزایی در تیم و سازمان)', dim: 'پایدار و امنیت‌گرا',  icon: '🏢' },
+    'Q14B': { pole: 'استقلال‌طلب',     label: 'استقلال‌طلب (خودآیینی و مسیر مستقل)',   dim: 'مستقل و عمل‌گرا',     icon: '🦅' },
+    'Q15A': { pole: 'تسلط‌گرا',        label: 'تسلط‌گرا (چیرگی کامل در یک حوزه)',      dim: 'علم‌گرا و کاشف',      icon: '🏆' },
+    'Q15B': { pole: 'کنجکاوی‌گرا',     label: 'کنجکاوی‌گرا (کشف و یادگیری بی‌پایان)',   dim: 'علم‌گرا و کاشف',      icon: '🌌' }
   };
-  const selected = answers.map(a => map[a] || { label: a, icon: '❓' });
-  const unique = [...new Set(selected.map(s => s.label))];
+
+  let normalizedCodes = [];
+  if (Array.isArray(answers)) {
+    normalizedCodes = answers
+      .map(a => String(a || '').trim().toUpperCase())
+      .filter(Boolean);
+  } else if (answers && typeof answers === 'object') {
+    Object.entries(answers).forEach(([k, v]) => {
+      const rawKey = String(k || '').trim().toUpperCase();
+      const rawVal = String(v || '').trim().toUpperCase();
+      if (!rawVal) return;
+      if (rawVal.startsWith('Q')) {
+        normalizedCodes.push(rawVal);
+      } else if (rawKey.startsWith('Q') && (rawVal === 'A' || rawVal === 'B')) {
+        normalizedCodes.push(rawKey + rawVal);
+      }
+    });
+  }
+
+  const selected = normalizedCodes.map(code => map[code] || { pole: code, label: code, dim: 'متعادل', icon: '✨' });
+  const uniquePoles = [...new Set(selected.map(s => s.pole))];
+  const dimCounts = {};
+  selected.forEach(s => {
+    if (s.dim) dimCounts[s.dim] = (dimCounts[s.dim] || 0) + 1;
+  });
+  const sortedDims = Object.entries(dimCounts).sort((a, b) => b[1] - a[1]);
+  const topDims = sortedDims.slice(0, 2).map(([d]) => d);
+  const dominantStyle = topDims.length ? topDims.join(' · ') : 'متعادل';
+
   return {
+    style: dominantStyle,
+    dimension: dominantStyle,
     values: selected.slice(0, 5),
-    summary: unique.slice(0, 4).join('، '),
-    description: 'ارزش‌های بنیادین شما نشان می‌دهد که چه چیزی به کارتان معنا می‌بخشد.'
+    summary: uniquePoles.slice(0, 4).join('، '),
+    description: topDims.length
+      ? `جهت‌گیری ارزشی غالب شما «${dominantStyle}» است که نشان می‌دهد چه نوع معنا و رضایتی برایتان اصالت دارد.`
+      : 'ارزش‌های بنیادین شما نشان می‌دهد که چه چیزی به کارتان معنا می‌بخشد.'
   };
 }
 

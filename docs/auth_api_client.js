@@ -78,11 +78,29 @@
     persistQuotaSnapshot(data || {});
   }
 
+  const REQUEST_TIMEOUT_MS = 15000;
+
   async function req(path, opts = {}) {
     const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
     const auth = load();
     if (auth && auth.token) headers['Authorization'] = 'Bearer ' + auth.token;
-    const res = await fetch(API + path, Object.assign({}, opts, { headers }));
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = controller ? setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS) : null;
+    let res;
+    try {
+      const fetchOpts = Object.assign({}, opts, { headers });
+      if (controller && !fetchOpts.signal) fetchOpts.signal = controller.signal;
+      res = await fetch(API + path, fetchOpts);
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        const timeoutErr = new Error('زمان پاسخ سرور تمام شد. اتصال اینترنت را بررسی کنید.');
+        timeoutErr.code = 'TIMEOUT';
+        throw timeoutErr;
+      }
+      throw err;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     let body = null;
     try { body = await res.json(); } catch (_) {}
     if (!res.ok) {

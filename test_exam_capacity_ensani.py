@@ -24,7 +24,7 @@ class EnsaniExamCapacityLoaderTests(unittest.TestCase):
         items = build_exam_capacity_results(
             group="ensani",
             major_ids=[101],
-            province="هرمزگان",
+            province="ایلام",
             periods=["روزانه"],
         )
         self.assertEqual(items, [])

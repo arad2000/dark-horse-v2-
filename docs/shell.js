@@ -1027,7 +1027,7 @@
       (last && last.tops && last.tops.length ? '<button class="btn" style="width:100%;margin-top:8px;border-color:rgba(212,175,55,0.45);color:#f0c040;" id="dh-p-share">اشتراک‌گذاری نتیجه</button>' : '') +
       '<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="dh-p-buy">خرید بسته ۳ تست</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-prem">' +
-        (premium ? 'خاموش کردن اشتراک محلی' : 'اشتراک محلی آفلاین (تست)') + '</button>' +
+        (premium ? 'خاموش کردن اشتراک محلی' : 'حالت آزمایشی توسعه') + '</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;color:#c08080;border-color:#543;" id="dh-p-exit">خروج از اپ</button>' +

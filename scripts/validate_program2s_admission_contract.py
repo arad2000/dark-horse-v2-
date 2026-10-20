@@ -92,6 +92,12 @@ def audit(records: list[dict[str, Any]], majors: list[dict[str, Any]]) -> dict[s
         bomi_types[admission.get("bomi_type") or ""] += 1
 
         for path in CORE_MISSING_PATHS:
+            if (
+                path == "admission_info.bomi_type"
+                and admission.get("bomi_type") is None
+                and admission.get("bomi_type_rule") == "unresolved_table5"
+            ):
+                continue
             if not has_nonempty(get_path(program, path)):
                 core_missing[path] += 1
 
