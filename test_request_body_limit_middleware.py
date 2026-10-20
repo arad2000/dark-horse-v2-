@@ -14,6 +14,7 @@ class RequestBodyLimitMiddlewareTests(unittest.TestCase):
         body_chunks: list[bytes],
         limit: int = 4,
         path: str = "/api/v1/auth/login",
+        limit_path: str = "/api/v1/auth/login",
         headers: list[tuple[bytes, bytes]] | None = None,
     ):
         messages = [
@@ -65,7 +66,7 @@ class RequestBodyLimitMiddlewareTests(unittest.TestCase):
 
         middleware = RequestBodyLimitMiddleware(
             app,
-            limits={("POST", path): limit},
+            limits={("POST", limit_path): limit},
         )
         scope = {
             "type": "http",
