@@ -121,7 +121,7 @@ async function loadAuth(fetchImpl) {
   assert.match(commercialSource, /__dhCommercialUIReady/);
   assert.match(indexSource, /shell\.js\?v=/);
   // Keep index's commercial UI cache-bust aligned with shell.js.
-  assert.match(indexSource, /commercial_ui\.js\?v=45/);
+  assert.match(indexSource, /commercial_ui\.js\?v=46/);
   assert.match(indexSource, /profile_ux_v1\.js\?v=7/);
   assert.match(profileSource, /function adminUserId\(user\)/);
   assert.match(profileSource, /user\.user_id \|\| user\.id \|\| user\.userId/);
