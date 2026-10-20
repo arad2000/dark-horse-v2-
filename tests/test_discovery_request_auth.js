@@ -70,7 +70,16 @@ async function run() {
   assert.deepEqual(requestBody.micro_motives, ['MOTIVE-001']);
   assert.equal(requestBody.sjt_answers.S01, 'A');
 
-  // Never generate a new UUID at result time if the charged journey identity is missing.
+  // A confirmed charge repairs a missing UUID; state and saved journey must converge.
+  sandbox.state.sessionId = null;
+  localStorage.setItem('darkhorse_session_v2', JSON.stringify({ stage: 'choice' }));
+  const recoveredRequest = sandbox.buildJourneyAnalysisRequest({});
+  assert.equal(JSON.parse(recoveredRequest.body).session_id, 'charged-journey-uuid');
+  assert.equal(sandbox.state.sessionId, 'charged-journey-uuid');
+  assert.equal(JSON.parse(localStorage.getItem('darkhorse_session_v2')).sessionId, 'charged-journey-uuid');
+
+  // Never invent a UUID at result time when there is no confirmed charge marker.
+  localStorage.removeItem('dh_quota_charged_session_v1');
   sandbox.state.sessionId = null;
   localStorage.setItem('darkhorse_session_v2', JSON.stringify({ stage: 'choice' }));
   let missingSessionError;
