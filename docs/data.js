@@ -119,7 +119,7 @@ const SUB_REALMS = {
  icon:'🏗️',
  motto:'رؤیاهایت، بر زمین استوار می‌شوند.',
  description:'از طراحی برجی که زلزله را تاب می‌آورد و ساخت پلی که یک رودخانه را فتح می‌کند، تا برنامه‌ریزی یک شهر و ترسیم نقشه‌های دقیق از زمین—تو ردپایت را برای دهه‌ها روی سیاره حک می‌کنی.',
- majorCodes: ['CE-','ARCHA-','SUR-','URB-','WOOD-','GEO-']
+ majorCodes: ['CE-','ARCHA-','SUR-','URB-','GEO-']
  },
  {
  id:'builder-transform',
@@ -127,7 +127,7 @@ const SUB_REALMS = {
  icon:'🧪',
  motto:'ماده، اینجا هویت تازه می‌گیرد.',
  description:'از تبدیل نفت خام به بنزین و پلاستیک، و استخراج گاز از اعماق زمین، تا ساخت فلزی که در ۲۰۰۰ درجه هم ذوب نمی‌شود یا پلیمری سبک‌تر از فولاد—تو کیمیاگر دنیای مدرنی.',
- majorCodes: ['CHE-','PE-','GAS-','POLY-','MAT-','CER-']
+ majorCodes: ['CHE-','PE-','GAS-','POLY-','MAT-','CER-','WOOD-']
  },
  {
  id:'builder-optimize',
@@ -143,7 +143,7 @@ const SUB_REALMS = {
  icon:'🌾',
  motto:'طبیعت، همکار و دوست توست.',
  description:'از اصلاح نژاد گندم و پرورش ماهی در استخرهای بزرگ، تا احیای یک تالاب خشک‌شده، طراحی گلخانهٔ هوشمند و محافظت از جنگل‌ها—تو با ریتم طبیعت کار می‌کنی و همزمان از آن محافظت می‌کنی.',
- majorCodes: ['AGR-','HORT-','ANIS-','FISH-','NR-','ENV-','RAN-','BIOS-','LAND-','AGMECH-']
+ majorCodes: ['AGR-','HORT-','ANIS-','FISH-','NR-','ENV-','RAN-','BIOS-','LAND-','AGMECH-','WATER-','WW-']
  },
  {
  id:'builder-weave',
