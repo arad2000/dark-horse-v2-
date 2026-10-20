@@ -343,10 +343,16 @@ function startNewJourney() {
     // its live UUID matches the server-confirmed local charge marker.
     var commercialAuth = null;
     var commercialChargedId = '';
+    var commercialLaunchAuthorizedId = '';
+    var savedCommercialJourney = null;
     try { commercialAuth = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
     try { commercialChargedId = String(localStorage.getItem('dh_quota_charged_session_v1') || ''); } catch (_) {}
+    try { commercialLaunchAuthorizedId = String(window.__dhCommercialJourneyStartedSessionId || ''); } catch (_) {}
+    try { savedCommercialJourney = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
     if (commercialAuth && commercialAuth.token &&
-        (!commercialChargedId || String(state.sessionId || '') !== commercialChargedId)) {
+        (!commercialChargedId || String(state.sessionId || '') !== commercialChargedId ||
+         commercialLaunchAuthorizedId !== commercialChargedId || !!state.journeyFinished ||
+         !!(savedCommercialJourney && savedCommercialJourney.journeyFinished))) {
       app.innerHTML = '<div class="card" style="margin:20px;text-align:right;">' +
         '<h2 style="color:#f0c040">شروع سفر نیاز به تأیید اعتبار دارد</h2>' +
         '<p style="color:#c9b896;line-height:1.9">تا زمانی که شارژ سرور برای همین شناسه تأیید نشود، ادامهٔ سفر آغاز نمی‌شود. به خانه برگردید و از مسیر تجاری سفر تازه را شروع کنید.</p>' +
@@ -354,6 +360,9 @@ function startNewJourney() {
         '</div>';
       return;
     }
+    // Shell provides a one-shot authorization only after the commercial flow
+    // confirms a successful charge and starts this exact journey UUID.
+    if (commercialAuth && commercialAuth.token) window.__dhCommercialJourneyStartedSessionId = '';
     if (isPreResultsInProgress()) {
       if (!confirm('سفر هنوز به نتیجه نرسیده. اگر از نو شروع کنی، پیشرفت فعلی پاک می‌شود. مطمئنی؟')) {
         try { if (typeof loadSession === 'function') loadSession(); } catch (e) {}
