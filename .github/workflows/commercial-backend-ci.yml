@@ -81,6 +81,9 @@ jobs:
       - name: Reference-data integrity
         run: python test_reference_data_integrity.py
 
+      - name: P0 eligible-major summary regression
+        run: python -m pytest -q test_engine_catalog_summary.py
+
       - name: Save-result API contract
         run: python -m pytest -q test_save_result_contract.py
 
