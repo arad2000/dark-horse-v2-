@@ -1311,6 +1311,72 @@ function buildPayload() {
   };
 }
 
+
+function buildJourneyAnalysisRequest(payload) {
+  var authState = null;
+  var journey = null;
+  var pendingSessionId = null;
+  try { authState = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
+  var token = authState && typeof authState.token === 'string' ? authState.token.trim() : '';
+  if (!token) {
+    var authError = new Error('ورود تجاری معتبر نیست یا نشست ورود پایان یافته است.');
+    authError.code = 'AUTH_REQUIRED';
+    throw authError;
+  }
+  try { journey = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
+  try { pendingSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
+  var sessionId = state && state.sessionId
+    ? String(state.sessionId)
+    : (journey && journey.sessionId ? String(journey.sessionId) : (pendingSessionId ? String(pendingSessionId) : ''));
+  if (!sessionId) {
+    var journeyError = new Error('شناسهٔ سفر آماده نیست؛ سفر را از خانه با حساب تجاری ادامه دهید.');
+    journeyError.code = 'JOURNEY_SESSION_REQUIRED';
+    throw journeyError;
+  }
+  var requestPayload = Object.assign({}, payload || {}, { session_id: sessionId });
+  return {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify(requestPayload)
+  };
+}
+
+function journeyAnalysisErrorHTML(error, journeyType) {
+  var status = Number(error && error.status || 0);
+  var retryCall = journeyType === 'branches' ? 'analyzeBranches()' : 'analyzeMajors()';
+  var title = 'خطا در آماده‌سازی نتیجه';
+  var message = 'در دریافت نتیجه مشکلی رخ داد. وضعیت سفر حفظ شده است؛ دوباره تلاش کنید یا به مرحلهٔ قبل برگردید.';
+  var actions = '<button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="' + retryCall + '">🔄 تلاش دوباره</button>';
+  if (error && error.code === 'AUTH_REQUIRED' && !status) {
+    title = 'ورود به حساب تجاری لازم است';
+    message = 'نشست تجاری در این دستگاه موجود نیست؛ درخواست نتیجه ارسال نشد. وارد حساب شوید و سفر را از خانه ادامه دهید.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود به حساب</button>";
+  } else if (error && error.code === 'JOURNEY_SESSION_REQUIRED' && !status) {
+    title = 'شناسهٔ سفر آماده نیست';
+    message = 'شناسهٔ سفر شارژشده در این دستگاه پیدا نشد؛ هیچ درخواست نتیجه‌ای به سرور ارسال نشد. از خانه، سفر را با همان حساب تجاری ادامه دهید.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">بازگشت به خانه</button>";
+  } else if (status === 401) {
+    title = 'ورود دوباره لازم است (HTTP 401)';
+    message = 'سرور نشست ورود را نامعتبر یا منقضی تشخیص داد. با همان حساب تجاری دوباره وارد شوید؛ این خطا به معنی قطع شبکه نیست.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود دوباره</button>";
+  } else if (status === 403) {
+    title = 'دسترسی به سفر تأیید نشد (HTTP 403)';
+    message = 'سرور این شناسهٔ سفر را برای دریافت نتیجه مجاز ندانست. سفر فعلی را از خانه و با حساب تجاری ادامه دهید؛ این یک خطای مجوز/سشن است، نه خطای شبکه.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">بازگشت به خانه</button>";
+  } else if (status >= 400) {
+    title = 'سرور پاسخ خطا داد (HTTP ' + status + ')';
+    message = 'درخواست به سرور رسید، اما سرور نتیجه را نپذیرفت یا نتوانست پردازش کند. وضعیت HTTP بالا را برای بررسی ثبت کنید.';
+  } else if (error && (error.name === 'AbortError' || error.name === 'TypeError')) {
+    title = 'ارتباط شبکه با سرور برقرار نشد';
+    message = 'پاسخی از سرور دریافت نشد یا مهلت انتظار پایان یافت. اتصال اینترنت را بررسی و دوباره تلاش کنید.';
+  }
+  return progressHTML('results') + '<div class="card" role="alert"><h2>' + title + '</h2><p>' + message + '</p>' + actions +
+    '<button class="btn" style="width:100%;margin-top:8px;" onclick="goTo(&quot;choice&quot;)">⬅️ بازگشت به انتخاب</button></div>';
+}
+
 // ==================== توابع تحلیل (جدید/تغییر نام) ====================
 async function analyzeMajors() {
   state.stage = 'results';
@@ -1318,20 +1384,13 @@ async function analyzeMajors() {
   state.lastPayload = payload;
   app.innerHTML = progressHTML('results') + loadingHTML('داره جرقه‌هات رو به رشته‌ها وصل می‌کنه...');
   try {
-    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', buildJourneyAnalysisRequest(payload));
     const data = await res.json();
     state.majorsResult = data;
     displayResults(data, 'majors');
   } catch (e) {
     console.error(e);
-    app.innerHTML = progressHTML('results') + `<h2>❌ ارتباط با سرور برقرار نشد</h2>
-      <div class="card"><p>نتوانستیم با سرور ارتباط برقرار کنیم.</p>
-      <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="analyzeMajors()">🔄 تلاش دوباره</button>
-      <button class="btn" style="width:100%;margin-top:8px;" onclick="goTo('choice')">⬅️ بازگشت به انتخاب</button></div>`;
+    app.innerHTML = journeyAnalysisErrorHTML(e, 'majors');
   }
 }
 
@@ -1341,20 +1400,13 @@ async function analyzeBranches() {
   state.lastPayload = payload;
   app.innerHTML = progressHTML('results') + loadingHTML('داره نقشهٔ شاخه‌ها رو با انگیزه‌هات میزان می‌کنه...');
   try {
-    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', buildJourneyAnalysisRequest(payload));
     const data = await res.json();
     state.branchesResult = data;
     displayResults(data, 'branches');
   } catch (e) {
     console.error(e);
-    app.innerHTML = `<h2>❌ خطا در دریافت نتایج هدایت تحصیلی</h2>
-      <div class="card"><p>نتوانستیم با سرور ارتباط برقرار کنیم.</p>
-      <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="analyzeBranches()">🔄 تلاش دوباره</button>
-      <button class="btn" style="width:100%;margin-top:8px;" onclick="goTo('choice')">⬅️ بازگشت به انتخاب</button></div>`;
+    app.innerHTML = journeyAnalysisErrorHTML(e, 'branches');
   }
 }
 
@@ -1363,11 +1415,22 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 90000);
-      const res = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(timeout);
-      if (!res.ok) throw new Error(`Status ${res.status}`);
+      let res;
+      try {
+        res = await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!res.ok) {
+        const error = new Error('HTTP ' + res.status);
+        error.status = Number(res.status) || 0;
+        throw error;
+      }
       return res;
     } catch (e) {
+      const status = Number(e && e.status || 0);
+      // Authentication/authorization and other non-transient client errors are not network failures.
+      if ((status >= 400 && status < 500) && status !== 408 && status !== 429) throw e;
       if (i === maxRetries - 1) throw e;
       await new Promise(r => setTimeout(r, 1000 * (i + 1)));
     }
