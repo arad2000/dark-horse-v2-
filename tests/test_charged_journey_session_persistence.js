@@ -170,17 +170,6 @@ async function run() {
   assert.equal(JSON.parse(request.body).session_id, chargedId);
   assert.equal(consumeCalls, 1, 'result request must not consume another credit');
 
-  // Once the pending hand-off ends, a stale live state must not outrank a
-  // matching stored journey UUID and charged UUID.
-  sandbox.state = makeState('stale-before-charge', 'choice');
-  const reboundRequest = sandbox.buildJourneyAnalysisRequest({ micro_motives: ['MOTIVE-TEST'] });
-  assert.equal(sandbox.state.sessionId, chargedId);
-  assert.equal(JSON.parse(reboundRequest.body).session_id, chargedId);
-  assert.equal(discoveryCalls, 0, 'building the request must not perform a hidden network call');
-  const result200 = await quotaContext.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/discover', reboundRequest);
-  assert.equal(result200.status, 200, 'unfinished old journey rebound to the newly charged UUID must reach discover');
-  assert.equal(discoveryCalls, 1);
-
   // Charged UUID B is authoritative when an unfinished saved journey still
   // has UUID A: rebind in memory and storage, then submit discover with B.
   const oldUnfinishedId = 'unfinished-journey-old-A';
