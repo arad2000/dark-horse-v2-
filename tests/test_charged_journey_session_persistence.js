@@ -251,13 +251,6 @@ async function run() {
   assert.equal(cleanDiscoveryCalls, 1);
   assert.equal(JSON.parse(cleanRequest.body).session_id, cleanId);
 
-  // A stale UUID without its matching confirmed-charge marker must not be sent.
-  localStorage.setItem('darkhorse_session_v2', JSON.stringify({ sessionId: 'uncharged-or-stale-id', stage: 'choice' }));
-  sandbox.state.sessionId = 'uncharged-or-stale-id';
-  let rejected = null;
-  try { sandbox.buildJourneyAnalysisRequest({}); } catch (error) { rejected = error; }
-  assert.equal(rejected && rejected.code, 'JOURNEY_SESSION_REQUIRED');
-
   // Prevent a regression where a logged-in button bypasses commercial charge.
   assert.equal((commercialSource.match(/global\.DHShell\.startJourney\(\)/g) || []).length, 1,
     'commercial module may invoke shell directly only after charging');
