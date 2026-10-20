@@ -119,13 +119,19 @@
     var pending = '';
     var charged = chargedSessionId() || '';
     try { pending = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
-    // A confirmed charged pending UUID wins over stale local state until the
-    // commercial entry path verifies that the journey has actually started.
-    if (pending && pending === String(charged)) {
-      SESSION_MEMORY = pending;
+    // A matching pending+charged UUID authorizes an explicit rebind; a missing
+    // persisted UUID can be recovered from the confirmed charge. A conflicting
+    // non-empty saved UUID is not resumable once the hand-off window is gone.
+    if (charged && (pending === String(charged) || !j.sessionId || String(j.sessionId) === String(charged))) {
+      SESSION_MEMORY = String(charged);
       j.sessionId = SESSION_MEMORY;
       try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}
+      try { if (typeof state !== 'undefined' && state) state.sessionId = SESSION_MEMORY; } catch (_) {}
       return SESSION_MEMORY;
+    }
+    if (charged && j.sessionId && String(j.sessionId) !== String(charged)) {
+      SESSION_MEMORY = null;
+      return null;
     }
     if (j.sessionId) {
       SESSION_MEMORY = String(j.sessionId);
@@ -135,8 +141,6 @@
       SESSION_MEMORY = null;
       return null;
     }
-    // No persisted session means a deliberate/new journey. Never reuse the
-    // in-memory UUID from a previous journey in the same page lifetime.
     SESSION_MEMORY = uuid();
     j.sessionId = SESSION_MEMORY;
     try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}
@@ -202,17 +206,31 @@
       var isProtectedJourney = /\/api\/v2\/darkhorse\/(discover|branch-discovery|counsel)(?:\?|$)/.test(url);
       if (isProtectedJourney && loggedIn()) {
         var sid = ensureJourneySession();
+        var charged = chargedSessionId() || '';
+        if (!sid || !charged || String(sid) !== String(charged)) {
+          var guardError = new Error('شناسهٔ سفر شارژشده با سفر جاری تطبیق ندارد.');
+          guardError.code = 'JOURNEY_SESSION_REQUIRED';
+          return Promise.reject(guardError);
+        }
         var authState = auth();
         var nextInit = Object.assign({}, init || {});
         var headers = new Headers(nextInit.headers || {});
         if (authState && authState.token) headers.set('Authorization', 'Bearer ' + authState.token);
         nextInit.headers = headers;
         var body = nextInit.body;
-        if (sid && typeof body === 'string') {
+        if (typeof body === 'string') {
           try {
             var parsed = JSON.parse(body);
-            if (!parsed.session_id) { parsed.session_id = sid; nextInit.body = JSON.stringify(parsed); }
-          } catch (_) {}
+            if (parsed.session_id && String(parsed.session_id) !== String(sid)) {
+              var mismatchError = new Error('درخواست کشف با شناسهٔ شارژشده هم‌خوان نیست.');
+              mismatchError.code = 'JOURNEY_SESSION_REQUIRED';
+              return Promise.reject(mismatchError);
+            }
+            parsed.session_id = sid;
+            nextInit.body = JSON.stringify(parsed);
+          } catch (parseError) {
+            if (parseError && parseError.code === 'JOURNEY_SESSION_REQUIRED') return Promise.reject(parseError);
+          }
         }
         return originalFetch.call(global, input, nextInit).then(function (res) {
           try {
@@ -233,7 +251,14 @@
   async function consumeForJourney(sessionId) {
     if (!loggedIn() || !sessionId) return null;
     sessionId = String(sessionId);
-    if (chargedSessionId() === sessionId) return { consumed: 0, already_consumed: true, local_guard: true, session_uuid: sessionId };
+    if (chargedSessionId() === sessionId) {
+      var existingJourney = readJourney();
+      existingJourney.sessionId = sessionId;
+      try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(existingJourney)); } catch (_) {}
+      SESSION_MEMORY = sessionId;
+      try { if (typeof state !== 'undefined' && state) state.sessionId = sessionId; } catch (_) {}
+      return { consumed: 0, already_consumed: true, local_guard: true, session_uuid: sessionId };
+    }
     var a = auth();
     var headers = { 'Content-Type': 'application/json' };
     if (a && a.token) headers.Authorization = 'Bearer ' + a.token;
@@ -251,14 +276,13 @@
     persistQuota(body);
     if (body && (body.consumed === 1 || body.already_consumed === true)) {
       markCharged(sessionId);
+      // A confirmed charge defines the active journey identity. Persist it even
+      // when the prior unfinished record had a different or missing UUID.
       var journey = readJourney();
-      var pendingId = '';
-      try { pendingId = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
-      if (!journey.sessionId || String(journey.sessionId) === sessionId || pendingId === sessionId) {
-        journey.sessionId = sessionId;
-        try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey)); } catch (_) {}
-      }
-      if (pendingId === sessionId) SESSION_MEMORY = sessionId;
+      journey.sessionId = sessionId;
+      try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey)); } catch (_) {}
+      SESSION_MEMORY = sessionId;
+      try { if (typeof state !== 'undefined' && state) state.sessionId = sessionId; } catch (_) {}
     }
     return body;
   }
