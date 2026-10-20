@@ -36,6 +36,7 @@ async function run() {
 
   const localStorage = storage({
     dh_auth_v1: JSON.stringify({ token: 'commercial-token-123' }),
+    dh_quota_charged_session_v1: 'charged-journey-uuid',
     darkhorse_session_v2: JSON.stringify({ sessionId: 'charged-journey-uuid', stage: 'choice' })
   });
   const sandbox = {
