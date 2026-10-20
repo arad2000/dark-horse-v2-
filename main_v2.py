@@ -22,6 +22,7 @@ from dark_horse_engine_v2 import DarkHorseEngineV2
 from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
 from ai_counsel_service import generate_counseling
 from ai_rate_limit import COUNSEL_RATE_LIMITER, DISCOVERY_RATE_LIMITER
+from request_body_limit_middleware import RequestBodyLimitMiddleware
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("darkhorse_api_v2")
@@ -271,6 +272,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Dark Horse API V2.0", version="2.0", lifespan=lifespan)
+
+# Byte limits apply before JSON parsing on request paths that had no transport-level cap.
+# Feedback routes already stream and enforce their own 32 KiB cap.
+# Billing create-payment and the gateway callback are deliberately excluded from this change.
+REQUEST_BODY_LIMITS = {
+    ("POST", "/api/v1/auth/register"): 8 * 1024,
+    ("POST", "/api/v1/auth/register/verify"): 4 * 1024,
+    ("POST", "/api/v1/auth/login"): 8 * 1024,
+    ("POST", "/api/v1/admission/chance"): 32 * 1024,
+    ("POST", "/api/v1/me/consume-test"): 4 * 1024,
+    ("POST", "/api/v1/me/save-result"): 128 * 1024,
+    ("POST", "/api/v2/darkhorse/discover"): 16 * 1024,
+    ("POST", "/api/v2/darkhorse/branch-discovery"): 16 * 1024,
+    ("POST", "/api/v2/darkhorse/counsel"): 32 * 1024,
+}
+# Register this first so CORS middleware remains outside and keeps its existing policy.
+app.add_middleware(RequestBodyLimitMiddleware, limits=REQUEST_BODY_LIMITS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://asbe-siah.ir"],
