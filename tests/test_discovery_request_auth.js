@@ -30,9 +30,10 @@ async function run() {
   const requestHelper = extractBetween(appSource, 'function buildJourneyAnalysisRequest(', '\nfunction journeyAnalysisErrorHTML(');
   const errorHelper = extractBetween(appSource, 'function journeyAnalysisErrorHTML(', '\n// ==================== توابع تحلیل (جدید/تغییر نام)');
   const retryHelper = extractBetween(appSource, 'async function fetchWithRetry(', '\n// ==================== DISPLAY RESULTS');
-  assert.ok(appSource.includes("fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', buildJourneyAnalysisRequest(payload))"));
-  assert.ok(appSource.includes("fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', buildJourneyAnalysisRequest(payload))"));
-  assert.ok(indexSource.includes('app.js?v=72'));
+  assert.ok(appSource.includes("const request = await buildChargedJourneyAnalysisRequest(payload);"));
+  assert.ok(appSource.includes("fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', request)"));
+  assert.ok(appSource.includes("fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', request)"));
+  assert.ok(indexSource.includes('app.js?v=73'));
 
   const localStorage = storage({
     dh_auth_v1: JSON.stringify({ token: 'commercial-token-123' }),
