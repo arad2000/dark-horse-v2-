@@ -205,19 +205,26 @@ function durableJourneySessionIdForSave() {
   var pendingSessionId = null;
   var chargedSessionId = null;
   var savedSessionId = null;
-  try { pendingSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
-  try { chargedSessionId = localStorage.getItem('dh_quota_charged_session_v1'); } catch (_) {}
-  if (pendingSessionId && chargedSessionId === pendingSessionId) {
-    state.sessionId = String(pendingSessionId);
-    return state.sessionId;
-  }
-  if (state && state.sessionId) return String(state.sessionId);
+  try { pendingSessionId = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
+  try { chargedSessionId = String(localStorage.getItem('dh_quota_charged_session_v1') || ''); } catch (_) {}
   try {
     var persisted = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
-    savedSessionId = persisted && persisted.sessionId ? String(persisted.sessionId) : null;
+    savedSessionId = persisted && persisted.sessionId ? String(persisted.sessionId) : '';
   } catch (_) {}
+  // During confirmed charge recovery, the matching pending UUID intentionally
+  // rebinds the unfinished journey. Without that marker, never rewrite a
+  // different, non-empty persisted UUID merely because in-memory state differs.
+  if (chargedSessionId && (pendingSessionId === chargedSessionId || !savedSessionId || savedSessionId === chargedSessionId)) {
+    state.sessionId = chargedSessionId;
+    return chargedSessionId;
+  }
+  if (chargedSessionId && savedSessionId && savedSessionId !== chargedSessionId) {
+    state.sessionId = savedSessionId;
+    return savedSessionId;
+  }
+  if (state && state.sessionId) return String(state.sessionId);
   if (savedSessionId) state.sessionId = savedSessionId;
-  return savedSessionId;
+  return savedSessionId || null;
 }
 
 function saveSession() {
@@ -252,9 +259,16 @@ function loadSession() {
     var chargedSessionId = null;
     try { pendingSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
     try { chargedSessionId = localStorage.getItem('dh_quota_charged_session_v1'); } catch (_) {}
+    var storedSessionId = data.sessionId ? String(data.sessionId) : '';
     var pendingChargedId = pendingSessionId && chargedSessionId === pendingSessionId
       ? String(pendingSessionId) : '';
-    state.sessionId = pendingChargedId || (data.sessionId ? String(data.sessionId) : null);
+    // An explicit pending+charged pair marks a just-confirmed rebind. Otherwise
+    // an unfinished journey with a conflicting UUID must not be resumed.
+    if (chargedSessionId && storedSessionId && storedSessionId !== String(chargedSessionId) && !pendingChargedId) {
+      return false;
+    }
+    var recoveredChargedId = pendingChargedId || (chargedSessionId && !storedSessionId ? String(chargedSessionId) : '');
+    state.sessionId = recoveredChargedId || (storedSessionId || null);
     if (state.sessionId && String(data.sessionId || '') !== String(state.sessionId)) {
       data.sessionId = String(state.sessionId);
       try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(data)); } catch (_) {}
@@ -1359,11 +1373,43 @@ function buildJourneyAnalysisRequest(payload) {
   try { chargedSessionId = localStorage.getItem('dh_quota_charged_session_v1'); } catch (_) {}
   var pendingChargedId = pendingSessionId && chargedSessionId === pendingSessionId
     ? String(pendingSessionId) : '';
-  var sessionId = pendingChargedId || (state && state.sessionId
-    ? String(state.sessionId)
-    : (journey && journey.sessionId ? String(journey.sessionId) : (pendingSessionId ? String(pendingSessionId) : '')));
-  if (!sessionId || String(chargedSessionId || '') !== String(sessionId)) {
-    var journeyError = new Error('شناسهٔ سفر شارژشده در این دستگاه پیدا نشد؛ اعتبار حساب به‌تنهایی شناسهٔ این سفر نیست. از خانه سفر را از مسیر تجاری شروع کنید.');
+  var journeySessionId = journey && journey.sessionId ? String(journey.sessionId) : '';
+  var stateSessionId = state && state.sessionId ? String(state.sessionId) : '';
+  var prefix = function (value) { return value ? String(value).slice(0, 8) : null; };
+  try {
+    if (typeof console !== 'undefined' && console.debug) console.debug('[DarkHorse][session-diagnostic]', {
+      hasToken: !!token,
+      chargedIdPrefix: prefix(chargedSessionId),
+      stateSessionPrefix: prefix(stateSessionId),
+      journeySessionPrefix: prefix(journeySessionId)
+    });
+  } catch (_) {}
+
+  var sessionId = '';
+  if (chargedSessionId) {
+    if (pendingChargedId) {
+      // Pending+charged is the explicit hand-off window: attach this UUID to
+      // the in-flight journey before discover, even if a stale record existed.
+      sessionId = pendingChargedId;
+      if (!journey) journey = {};
+      journey.sessionId = sessionId;
+      try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
+    } else if (journeySessionId && journeySessionId === String(chargedSessionId)) {
+      sessionId = journeySessionId;
+    } else if (!journeySessionId) {
+      // Recover a missing journey UUID from the server-confirmed local charge.
+      sessionId = String(chargedSessionId);
+      if (!journey) journey = {};
+      journey.sessionId = sessionId;
+      try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(journey)); } catch (_) {}
+    } else {
+      // Never silently continue a saved journey charged under another UUID.
+      sessionId = stateSessionId || journeySessionId;
+    }
+  }
+  if (!sessionId || String(chargedSessionId || '') !== String(sessionId) ||
+      (journey && journey.sessionId && String(journey.sessionId) !== String(sessionId))) {
+    var journeyError = new Error('شناسهٔ سفر شارژشده با سفر ذخیره‌شده تطبیق ندارد؛ از خانه سفر را از مسیر تجاری شروع کنید.');
     journeyError.code = 'JOURNEY_SESSION_REQUIRED';
     throw journeyError;
   }
