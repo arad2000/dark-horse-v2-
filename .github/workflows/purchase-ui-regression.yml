@@ -46,5 +46,8 @@ jobs:
           node-version: 20
       - name: Enforce catalog alignment contract
         run: node tests/test_catalog_alignment.js
+
+      - name: Enforce V2 value-pole UI contract
+        run: node tests/test_value_style_contract.js
       - name: Enforce narrow-path and motive-code contracts
         run: node tests/test_motive_route_contracts.js
