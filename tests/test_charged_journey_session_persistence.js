@@ -244,7 +244,7 @@ async function run() {
     progressHTML: () => '<progress></progress>'
   };
   vm.createContext(cleanSandbox);
-  vm.runInContext(persistence + '\\n' + requestBuilder, cleanSandbox);
+  vm.runInContext(persistence + '\n' + requestBuilder, cleanSandbox);
   const cleanRequest = cleanSandbox.buildJourneyAnalysisRequest({ micro_motives: ['MOTIVE-CLEAN'] });
   const cleanResponse = await cleanContext.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/discover', cleanRequest);
   assert.equal(cleanResponse.status, 200, 'clean storage + completed journey must reach discover successfully');
