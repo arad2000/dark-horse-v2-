@@ -93,7 +93,7 @@ async function testStartupMarkup() {
   assert.match(indexSource, /pwa-boot\.js\?v=68/);
   assert.match(indexSource, /shell\.css\?v=65" media="print"/);
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
-  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=69'),
+  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=70'),
     'payment hop bootstrap must precede app.js');
   assert.doesNotMatch(indexSource, /phase3-161-176-1|۱۱۰۰|1100/);
   console.log('startup markup and cache-bust preservation: PASS');
