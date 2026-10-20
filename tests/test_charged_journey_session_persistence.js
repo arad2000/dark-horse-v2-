@@ -118,14 +118,18 @@ async function run() {
     'confirmed charge must replace the live in-memory UUID even when an unfinished journey previously had another UUID');
 
   const persistence = extractBetween(appSource, 'function durableJourneySessionIdForSave()', '\nfunction clearSession()');
+  const resultSessionHelper = extractBetween(appSource, 'async function ensureChargedJourneySessionForResult()', '\nfunction buildJourneyAnalysisRequest(');
   const requestBuilder = extractBetween(appSource, 'function buildJourneyAnalysisRequest(', '\nfunction journeyAnalysisErrorHTML(');
   const sandbox = {
     localStorage,
     state: makeState('stale-before-charge', 'splash'),
-    progressHTML: () => '<progress></progress>'
+    progressHTML: () => '<progress></progress>',
+    console
   };
+  sandbox.window = sandbox;
+  sandbox.DHQuotaEnforcement = quotaContext.DHQuotaEnforcement;
   vm.createContext(sandbox);
-  vm.runInContext(persistence + '\n' + requestBuilder, sandbox);
+  vm.runInContext(persistence + '\n' + resultSessionHelper + '\n' + requestBuilder, sandbox);
 
   // Confirmed charge: saveSession must adopt that exact charged UUID, not stale state.
   sandbox.saveSession();
@@ -177,33 +181,45 @@ async function run() {
   assert.equal(result200.status, 200, 'unfinished old journey rebound to the newly charged UUID must reach discover');
   assert.equal(discoveryCalls, 1);
 
-  // A conflict after the hand-off window is a hard stop; do not send a
-  // discovery request using a non-charged UUID.
-  localStorage.setItem('darkhorse_session_v2', JSON.stringify({ sessionId: 'uncharged-or-stale-id', stage: 'choice' }));
-  sandbox.state.sessionId = 'uncharged-or-stale-id';
-  let rejected = null;
-  try { sandbox.buildJourneyAnalysisRequest({}); } catch (error) { rejected = error; }
-  assert.equal(rejected && rejected.code, 'JOURNEY_SESSION_REQUIRED');
+  // Charged UUID B is authoritative when an unfinished saved journey still
+  // has UUID A: rebind in memory and storage, then submit discover with B.
+  const oldUnfinishedId = 'unfinished-journey-old-A';
+  localStorage.setItem('darkhorse_session_v2', JSON.stringify({ sessionId: oldUnfinishedId, stage: 'choice' }));
+  sandbox.state.sessionId = oldUnfinishedId;
+  const recoveredId = await sandbox.ensureChargedJourneySessionForResult();
+  assert.equal(recoveredId, chargedId);
+  assert.equal(sandbox.state.sessionId, chargedId);
+  assert.equal(JSON.parse(localStorage.getItem('darkhorse_session_v2')).sessionId, chargedId);
+  assert.equal(localStorage.getItem('dh_quota_charged_session_v1'), chargedId);
+  const reboundRequest = sandbox.buildJourneyAnalysisRequest({ micro_motives: ['MOTIVE-REBIND'] });
+  assert.equal(JSON.parse(reboundRequest.body).session_id, chargedId);
+  const reboundResponse = await quotaContext.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/discover', reboundRequest);
+  assert.equal(reboundResponse.status, 200);
+  assert.equal(discoveryCalls, 2, 'charged B must be used after rebinding unfinished journey A');
+
+  // The runtime guard must still reject network requests carrying UUID A.
   await assert.rejects(
     () => quotaContext.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/discover', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: 'uncharged-or-stale-id' })
+      body: JSON.stringify({ session_id: oldUnfinishedId })
     }),
     error => error && error.code === 'JOURNEY_SESSION_REQUIRED'
   );
-  assert.equal(discoveryCalls, 1, 'mismatched UUID must be blocked before reaching discover');
+  assert.equal(discoveryCalls, 2, 'a non-charged UUID must be blocked before reaching discover');
 
   // Clean-storage end-to-end regression: a confirmed new charge binds the
   // fresh journey, and the authenticated discovery endpoint responds 200.
-  const cleanId = 'journey-uuid-clean-999';
+  const cleanId = 'journey-uuid-new-charge-999';
+  const priorJourneyId = 'unfinished-journey-old-clean-A';
+  const cleanState = makeState(cleanId, 'choice');
   const cleanStorage = storage({
     dh_auth_v1: JSON.stringify({ token: 'commercial-token-clean', user: { public_id: 'user-clean' } }),
-    dh_pending_journey_session_id: cleanId
+    darkhorse_session_v2: JSON.stringify({ sessionId: priorJourneyId, stage: 'choice', likedCodes: ['MOTIVE-OLD'] })
   });
   let cleanDiscoveryCalls = 0;
   let cleanConsumeCalls = 0;
   const cleanContext = {
-    console, localStorage: cleanStorage, state: makeState(null, 'splash'), Storage,
+    console, localStorage: cleanStorage, state: cleanState, Storage,
     Headers, Date, Promise, Object, Number, String, JSON, Error, API_BASE: 'https://api.asbe-siah.ir',
     document: { readyState: 'complete', addEventListener() {} },
     crypto: { randomUUID: () => 'should-not-replace-clean-charge' },
@@ -233,18 +249,24 @@ async function run() {
   cleanContext.window = cleanContext;
   vm.createContext(cleanContext);
   vm.runInContext(quotaSource, cleanContext);
-  const cleanCharge = await cleanContext.DHQuotaEnforcement.consumeForJourney(cleanId);
-  assert.equal(cleanCharge.consumed, 1);
-  assert.equal(cleanConsumeCalls, 1);
-  assert.equal(cleanStorage.getItem('dh_quota_charged_session_v1'), cleanId);
-  assert.equal(JSON.parse(cleanStorage.getItem('darkhorse_session_v2')).sessionId, cleanId);
 
   const cleanSandbox = {
-    localStorage: cleanStorage, state: makeState(cleanId, 'results'), console,
-    progressHTML: () => '<progress></progress>'
+    localStorage: cleanStorage, state: cleanState, console,
+    progressHTML: () => '<progress></progress>',
+    DHQuotaEnforcement: null
   };
+  cleanSandbox.window = cleanSandbox;
   vm.createContext(cleanSandbox);
-  vm.runInContext(persistence + '\n' + requestBuilder, cleanSandbox);
+  // The VM helper calls the actual quota bridge running against the mocked
+  // server; this simulates result-time charging when no marker exists.
+  cleanSandbox.DHQuotaEnforcement = cleanContext.DHQuotaEnforcement;
+  vm.runInContext(persistence + '\n' + resultSessionHelper + '\n' + requestBuilder, cleanSandbox);
+  const recoveredCleanId = await cleanSandbox.ensureChargedJourneySessionForResult();
+  assert.equal(recoveredCleanId, cleanId);
+  assert.equal(cleanConsumeCalls, 1, 'result flow must consume once when the stable session lacks a charge marker');
+  assert.equal(cleanStorage.getItem('dh_quota_charged_session_v1'), cleanId);
+  assert.equal(cleanState.sessionId, cleanId);
+  assert.equal(JSON.parse(cleanStorage.getItem('darkhorse_session_v2')).sessionId, cleanId);
   const cleanRequest = cleanSandbox.buildJourneyAnalysisRequest({ micro_motives: ['MOTIVE-CLEAN'] });
   const cleanResponse = await cleanContext.fetch('https://api.asbe-siah.ir/api/v2/darkhorse/discover', cleanRequest);
   assert.equal(cleanResponse.status, 200, 'clean storage + completed journey must reach discover successfully');
@@ -259,6 +281,11 @@ async function run() {
   assert.match(shellSource, /authorizedCommercialJourneySessionId/);
   assert.match(shellSource, /dh_quota_charged_session_v1/);
   assert.match(quotaSource, /pending && pending === String\(charged\)/);
+  assert.match(appSource, /await window\.DHQuotaEnforcement\.consumeForJourney\(sessionId\)/);
+  assert.match(appSource, /commercialChargedId/);
+  assert.match(appSource, /chargedPrefix: prefix\(chargedSessionId\)/);
+  assert.match(appSource, /journeyPrefix: prefix\(journeySessionId\)/);
+  assert.match(appSource, /statePrefix: prefix\(stateSessionId\)/);
 
   console.log('Charged journey session persistence: PASS (old journey + new charge rebind, strict discover guard, clean journey HTTP 200)');
 }
