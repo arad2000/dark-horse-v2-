@@ -1,8 +1,8 @@
-/* commercial_ui.js v43 — server-authoritative auth + same-origin payment hop */
+/* commercial_ui.js v45 — charged journey UUID persistence + enforced commercial entry */
 (function (global) {
   'use strict';
   if (global.__dhCommercialUIReady) return;
-  var USER_KEY='dh_local_user_v1',QUOTA_KEY='dh_local_quota_v1',BUSY=false;
+  var USER_KEY='dh_local_user_v1',QUOTA_KEY='dh_local_quota_v1',PENDING_SESSION_KEY='dh_pending_journey_session_id',CHARGED_SESSION_KEY='dh_quota_charged_session_v1',JOURNEY_KEY='darkhorse_session_v2',BUSY=false;
   function el(id){return document.getElementById(id);} function text(v){return String(v==null?'':v);} function digits(v){return text(v).replace(/[۰-۹]/g,function(d){return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d));});} function escapeHtml(v){return text(v).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');}
   function saveLocalUser(u){try{localStorage.setItem(USER_KEY,JSON.stringify(u||null));}catch(_){}} function clearLocalUser(){try{localStorage.removeItem(USER_KEY);}catch(_){}} function setLocalQuota(q){try{localStorage.setItem(QUOTA_KEY,JSON.stringify(q||{}));}catch(_){} }
   function setBusy(b,t,n,x){if(!b)return;b.disabled=!!x;b.textContent=x?t:n;b.style.opacity=x?'.72':'';}
@@ -198,13 +198,44 @@
   }
 
   function prepareCommercialJourneyId() {
+    var pendingSessionId = '';
+    var chargedSessionId = '';
+    try { pendingSessionId = String(localStorage.getItem(PENDING_SESSION_KEY) || ''); } catch (_) {}
+    try { chargedSessionId = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
+    // Reuse a previously charged session if the earlier shell entry was interrupted.
+    if (pendingSessionId && pendingSessionId === chargedSessionId) return pendingSessionId;
+
     var journey = readCommercialJourney();
     var resumable = !!(journey && !journey.journeyFinished &&
       ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
        'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(journey.stage) >= 0);
     var sessionId = resumable && journey.sessionId ? String(journey.sessionId) : createCommercialJourneyId();
-    try { localStorage.setItem('dh_pending_journey_session_id', sessionId); } catch (_) {}
+    try { localStorage.setItem(PENDING_SESSION_KEY, sessionId); } catch (_) {}
     return sessionId;
+  }
+
+  function persistChargedJourneySession(sessionId) {
+    var stableId = String(sessionId || '');
+    if (!stableId) throw new Error('شناسهٔ سفر شارژشده خالی است.');
+    if (typeof state === 'undefined' || !state) {
+      throw new Error('وضعیت سفر هنوز آماده نیست؛ شناسهٔ شارژشده حفظ شد و شروع تأیید نشد.');
+    }
+    var journey = readCommercialJourney() || {};
+    journey.sessionId = stableId;
+    state.sessionId = stableId;
+    try {
+      localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey));
+      localStorage.setItem(PENDING_SESSION_KEY, stableId);
+    } catch (_) {
+      throw new Error('ذخیرهٔ شناسهٔ سفر شارژشده ناموفق بود؛ سفر هنوز شروع نشده است.');
+    }
+    var persisted = readCommercialJourney();
+    if (!persisted || String(persisted.sessionId || '') !== stableId ||
+        String(state.sessionId || '') !== stableId ||
+        String(localStorage.getItem(PENDING_SESSION_KEY) || '') !== stableId) {
+      throw new Error('تطبیق شناسهٔ شارژشده در حافظه و ذخیره‌سازی تأیید نشد.');
+    }
+    return stableId;
   }
 
   async function continueAfterAuth(){
@@ -214,8 +245,13 @@
     try{
       var q = await global.DHAuth.quota();
       var remaining = Number(q && q.credits_remaining || 0);
+      var pendingBeforeGate = '';
+      var chargedBeforeGate = '';
+      try { pendingBeforeGate = String(localStorage.getItem(PENDING_SESSION_KEY) || ''); } catch (_) {}
+      try { chargedBeforeGate = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
+      var recoverChargedStart = !!pendingBeforeGate && pendingBeforeGate === chargedBeforeGate;
       var resumable = isResumableCommercialJourney();
-      if(remaining <= 0 && !resumable){await openPurchaseModal();return;}
+      if(remaining <= 0 && !resumable && !recoverChargedStart){await openPurchaseModal();return;}
       if(!global.DHShell || typeof global.DHShell.startJourney !== 'function') {
         throw new Error('رابط سفر هنوز آماده نیست؛ دوباره تلاش کنید.');
       }
@@ -230,11 +266,31 @@
       chargeSucceeded = true;
       var serverRemaining = Number(charge.credits_remaining);
       if(Number.isFinite(serverRemaining) && serverRemaining >= 0) setLocalQuota(serverRemaining);
+
+      // Keep the exact confirmed UUID in memory/storage while shell entry is in progress.
+      persistChargedJourneySession(sessionId);
+      global.__dhCommercialJourneyAuthorizedSessionId = sessionId;
       closeModal();
-      global.DHShell.startJourney();
+      await global.DHShell.startJourney();
+
+      var persistedAfterStart = readCommercialJourney();
+      var liveSessionId = typeof state !== 'undefined' && state && state.sessionId ? String(state.sessionId) : '';
+      var storedSessionId = persistedAfterStart && persistedAfterStart.sessionId ? String(persistedAfterStart.sessionId) : '';
+      var pendingAfterStart = String(localStorage.getItem(PENDING_SESSION_KEY) || '');
+      var validStages = ['splash', 'realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+        'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
+      var stageAfterStart = typeof state !== 'undefined' && state && state.stage ? String(state.stage) : '';
+      if (!global.__dhInJourney || validStages.indexOf(stageAfterStart) < 0 ||
+          liveSessionId !== sessionId || storedSessionId !== sessionId || pendingAfterStart !== sessionId ||
+          String(localStorage.getItem(CHARGED_SESSION_KEY) || '') !== sessionId) {
+        throw new Error('شارژ انجام شده، اما شروع سفر با همان شناسه تأیید نشد. از همین مسیر تجاری دوباره تلاش کنید؛ شناسهٔ شارژشده حفظ شده است.');
+      }
+      localStorage.removeItem(PENDING_SESSION_KEY);
+      global.__dhCommercialJourneyStartedSessionId = sessionId;
+      global.__dhCommercialJourneyAuthorizedSessionId = '';
     }catch(e){
       if(sessionId && !chargeSucceeded) {
-        try { if(localStorage.getItem('dh_pending_journey_session_id') === sessionId) localStorage.removeItem('dh_pending_journey_session_id'); } catch(_) {}
+        try { if(localStorage.getItem(PENDING_SESSION_KEY) === sessionId) localStorage.removeItem(PENDING_SESSION_KEY); } catch(_) {}
       }
       var m=text(e&&e.message?e.message:e);
       if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}
@@ -365,13 +421,8 @@
       if(b.__dhCommercialHooked)return;b.__dhCommercialHooked=true;
       b.onclick=function(e){
         if(e){e.preventDefault();e.stopPropagation();}
-        try{
-          if(global.DHAuth && typeof global.DHAuth.isLoggedIn === 'function' && global.DHAuth.isLoggedIn()){
-            if(global.DHShell && typeof global.DHShell.startJourney === 'function') global.DHShell.startJourney();
-            return;
-          }
-        }catch(_){}
-        showAuthModal('login');
+        // Every entry uses the commercial authentication and server-charge path.
+        continueAfterAuth();
       };
     });
     var buy=el('dh-p-buy');
