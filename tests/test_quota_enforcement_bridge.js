@@ -81,7 +81,7 @@ async function run() {
 const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const shellSource = fs.readFileSync('docs/shell.js', 'utf8');
 const postAuthSource = fs.readFileSync('docs/post_auth_flow_policy.js', 'utf8');
-  assert.match(indexSource, /quota_runtime\.js\?v=2/);
+  assert.match(indexSource, /quota_runtime\.js\?v=3/);
   assert.doesNotMatch(indexSource, /journey_session_boot\.js/);
   assert.doesNotMatch(indexSource, /quota_enforcement_bridge\.js/);
   assert.doesNotMatch(indexSource, /quota_charge_failure_ui\.js/);
