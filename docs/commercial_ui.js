@@ -209,7 +209,10 @@
     var resumable = !!(journey && !journey.journeyFinished &&
       ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
        'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(journey.stage) >= 0);
-    var sessionId = resumable && journey.sessionId ? String(journey.sessionId) : createCommercialJourneyId();
+    var resumableSessionId = resumable && journey.sessionId ? String(journey.sessionId) : '';
+    var sessionId = resumable && chargedSessionId &&
+      (!resumableSessionId || resumableSessionId === chargedSessionId)
+      ? String(chargedSessionId) : createCommercialJourneyId();
     try { localStorage.setItem(PENDING_SESSION_KEY, sessionId); } catch (_) {}
     return sessionId;
   }
