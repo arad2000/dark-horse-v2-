@@ -91,11 +91,54 @@ class DarkHorseEngineV2:
             return {item[key_field]: item for item in data if key_field in item}
         return data
 
+    @staticmethod
+    def _has_complete_motive_weights(major_data: Dict) -> bool:
+        """True only for countable records with a complete, numeric S/V profile."""
+        if major_data.get("motive_driven") is False:
+            return False
+
+        raw_codes = major_data.get("micro_motive_codes")
+        if isinstance(raw_codes, dict):
+            motive_codes = list(raw_codes.keys())
+        elif isinstance(raw_codes, list):
+            motive_codes = raw_codes
+        else:
+            return False
+        if not motive_codes:
+            return False
+
+        strategy_weights = major_data.get("strategy_weights")
+        if not isinstance(strategy_weights, list) or len(strategy_weights) != 25:
+            return False
+        for row in strategy_weights:
+            if not isinstance(row, list) or len(row) != 5:
+                return False
+            if any(not isinstance(value, (int, float)) for value in row):
+                return False
+
+        value_weights = major_data.get("value_weights")
+        if not isinstance(value_weights, dict):
+            return False
+        expected_value_codes = {
+            f"Q{question}{option}"
+            for question in range(1, 16)
+            for option in ("A", "B")
+        }
+        return all(
+            code in value_weights and isinstance(value_weights[code], (int, float))
+            for code in expected_value_codes
+        )
+
+    def _count_eligible_major_records(self) -> int:
+        return sum(
+            1 for major_data in self.majors_db.values()
+            if self._has_complete_motive_weights(major_data)
+        )
+
     def _validate_schema_consistency(self) -> None:
         """
-        اعتبارسنجی هم‌ترازی موقعیتی بین strategy_weights (majors_database) و trait_map_v3.
-        این دو فایل با فرض ترتیب یکسان S01..S25 به‌هم متصل می‌شوند، بدون شناسهٔ صریح مشترک.
-        هرگونه ناهماهنگی اینجا لاگ می‌شود تا به‌جای خطای خاموش در runtime، در بارگذاری دیده شود.
+        Validate trait-map alignment and aggregate catalog diagnostics.
+        Disabled/legacy records are excluded from per-record warning noise.
         """
         expected_keys = {f"S{i:02d}" for i in range(1, 26)}
         trait_keys = set(self.trait_map.keys())
@@ -107,25 +150,41 @@ class DarkHorseEngineV2:
                 f"موارد گم‌شده: {sorted(missing) or '—'} | موارد اضافه: {sorted(extra) or '—'}"
             )
 
-        bad_rows = 0
+        disabled_count = 0
+        incomplete_records = []
         no_prestige = 0
         for major_id, major_data in self.majors_db.items():
-            sw = major_data.get("strategy_weights", [])
-            if len(sw) != 25:
-                bad_rows += 1
-                logger.warning(
-                    f"⚠️ رشته/شاخه '{major_data.get('name', major_id)}' به‌جای ۲۵ سطر strategy_weights، "
-                    f"{len(sw)} سطر دارد — احتمال جابه‌جایی نگاشت با trait_map."
-                )
             if "prestige_level" not in major_data:
                 no_prestige += 1
+
+            if major_data.get("motive_driven") is False:
+                disabled_count += 1
+                continue
+
+            if not self._has_complete_motive_weights(major_data):
+                incomplete_records.append(
+                    f"{major_data.get('name', major_id)} (id={major_id})"
+                )
+
+        if incomplete_records:
+            examples = "، ".join(incomplete_records[:5])
+            logger.warning(
+                f"⚠️ {len(incomplete_records)} رکوردِ فعال/نامشخص وزن کامل S/V ندارد؛ "
+                f"از شمارش رشته‌های قابل تحلیل کنار گذاشته شد. نمونه: {examples}"
+            )
+
+        logger.info(
+            f"📊 کاتالوگ فردیت: {self._count_eligible_major_records()} رشته با وزن کامل؛ "
+            f"{disabled_count} رکورد motive_driven=false؛ "
+            f"{len(incomplete_records)} رکورد فاقد وزن کامل."
+        )
 
         if no_prestige and no_prestige == len(self.majors_db):
             logger.warning(
                 f"⚠️ هیچ‌کدام از {len(self.majors_db)} رشته فیلد 'prestige_level' ندارند؛ "
                 f"market_demand_level برای همه None خواهد بود."
             )
-
+        
     def _get_branch_denom_limit(self, branch_name: str) -> Optional[int]:
         if branch_name in self.school_branches:
             return self.school_branches[branch_name].get("m_score_denom_limit")
@@ -658,7 +717,7 @@ class DarkHorseEngineV2:
         return {
             "discovered_majors": discovered,
             "summary": {
-                "total_majors_analyzed": len(self.majors_db),
+                "total_majors_analyzed": self._count_eligible_major_records(),
                 "total_matches": len(discovered),
                 "high_compatibility": high,
                 "medium_compatibility": med,
@@ -745,7 +804,7 @@ class DarkHorseEngineV2:
             "recommended_branches": branch_scores,
             "best_branch": best_branch,
             "summary": {
-                "total_majors_analyzed": len(self.majors_db),
+                "total_majors_analyzed": self._count_eligible_major_records(),
                 "branches_analyzed": len(branch_scores)
             },
             "method": {
