@@ -74,15 +74,21 @@ async function run() {
   localStorage.setItem('darkhorse_session_v2', JSON.stringify({ stage: 'choice' }));
   let missingSessionError;
   try { sandbox.buildJourneyAnalysisRequest({}); } catch (error) { missingSessionError = error; }
-  assert.equal(missingSessionError && missingSessionError.status, 403);
+  assert.equal(missingSessionError && missingSessionError.status, undefined);
   assert.equal(missingSessionError && missingSessionError.code, 'JOURNEY_SESSION_REQUIRED');
+  const missingSessionHtml = sandbox.journeyAnalysisErrorHTML(missingSessionError, 'majors');
+  assert.ok(missingSessionHtml.includes('شناسهٔ سفر آماده نیست'));
+  assert.ok(!missingSessionHtml.includes('HTTP 403'), 'local missing session must not masquerade as an HTTP response');
 
   // Missing/expired commercial auth is reported as 401 before any request is sent.
   localStorage.removeItem('dh_auth_v1');
   let missingAuthError;
   try { sandbox.buildJourneyAnalysisRequest({}); } catch (error) { missingAuthError = error; }
-  assert.equal(missingAuthError && missingAuthError.status, 401);
+  assert.equal(missingAuthError && missingAuthError.status, undefined);
   assert.equal(missingAuthError && missingAuthError.code, 'AUTH_REQUIRED');
+  const missingAuthHtml = sandbox.journeyAnalysisErrorHTML(missingAuthError, 'majors');
+  assert.ok(missingAuthHtml.includes('ورود به حساب تجاری لازم است'));
+  assert.ok(!missingAuthHtml.includes('HTTP 401'), 'local missing token must not masquerade as an HTTP response');
 
   const unauthorizedHtml = sandbox.journeyAnalysisErrorHTML({ status: 401 }, 'majors');
   const forbiddenHtml = sandbox.journeyAnalysisErrorHTML({ status: 403 }, 'branches');

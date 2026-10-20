@@ -1320,7 +1320,6 @@ function buildJourneyAnalysisRequest(payload) {
   var token = authState && typeof authState.token === 'string' ? authState.token.trim() : '';
   if (!token) {
     var authError = new Error('ورود تجاری معتبر نیست یا نشست ورود پایان یافته است.');
-    authError.status = 401;
     authError.code = 'AUTH_REQUIRED';
     throw authError;
   }
@@ -1331,7 +1330,6 @@ function buildJourneyAnalysisRequest(payload) {
     : (journey && journey.sessionId ? String(journey.sessionId) : (pendingSessionId ? String(pendingSessionId) : ''));
   if (!sessionId) {
     var journeyError = new Error('شناسهٔ سفر آماده نیست؛ سفر را از خانه با حساب تجاری ادامه دهید.');
-    journeyError.status = 403;
     journeyError.code = 'JOURNEY_SESSION_REQUIRED';
     throw journeyError;
   }
@@ -1352,9 +1350,17 @@ function journeyAnalysisErrorHTML(error, journeyType) {
   var title = 'خطا در آماده‌سازی نتیجه';
   var message = 'در دریافت نتیجه مشکلی رخ داد. وضعیت سفر حفظ شده است؛ دوباره تلاش کنید یا به مرحلهٔ قبل برگردید.';
   var actions = '<button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="' + retryCall + '">🔄 تلاش دوباره</button>';
-  if (status === 401) {
+  if (error && error.code === 'AUTH_REQUIRED' && !status) {
+    title = 'ورود به حساب تجاری لازم است';
+    message = 'نشست تجاری در این دستگاه موجود نیست؛ درخواست نتیجه ارسال نشد. وارد حساب شوید و سفر را از خانه ادامه دهید.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود به حساب</button>";
+  } else if (error && error.code === 'JOURNEY_SESSION_REQUIRED' && !status) {
+    title = 'شناسهٔ سفر آماده نیست';
+    message = 'شناسهٔ سفر شارژشده در این دستگاه پیدا نشد؛ هیچ درخواست نتیجه‌ای به سرور ارسال نشد. از خانه، سفر را با همان حساب تجاری ادامه دهید.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">بازگشت به خانه</button>";
+  } else if (status === 401) {
     title = 'ورود دوباره لازم است (HTTP 401)';
-    message = 'نشست ورود معتبر نیست یا منقضی شده است. با همان حساب تجاری دوباره وارد شوید؛ این خطا به معنی قطع شبکه نیست.';
+    message = 'سرور نشست ورود را نامعتبر یا منقضی تشخیص داد. با همان حساب تجاری دوباره وارد شوید؛ این خطا به معنی قطع شبکه نیست.';
     actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود دوباره</button>";
   } else if (status === 403) {
     title = 'دسترسی به سفر تأیید نشد (HTTP 403)';
