@@ -13,11 +13,14 @@ const motiveCodes = new Set(motives.map((item) => item.code));
 
 const sandbox = {};
 vm.runInNewContext(
-  dataSource + '\nthis.__testNarrowPaths = NARROW_PATHS;',
+  dataSource + '\nthis.__testData = { REALMS, SUB_REALMS, NARROW_PATHS };',
   sandbox,
   { filename: 'docs/data.js' }
 );
-const narrowPaths = sandbox.__testNarrowPaths;
+const routeData = sandbox.__testData;
+const realms = routeData && routeData.REALMS;
+const subRealms = routeData && routeData.SUB_REALMS;
+const narrowPaths = routeData && routeData.NARROW_PATHS;
 assert.ok(narrowPaths && typeof narrowPaths === 'object', 'NARROW_PATHS must load from docs/data.js');
 
 const prefixes = [];
@@ -56,4 +59,46 @@ assert.deepEqual(
   'every motive_driven=true major must reference existing micro-motive codes'
 );
 
-console.log(`R2 motive-route contract: PASS (${prefixes.length} route-prefix occurrences, ${new Set(prefixes.map((item) => item.prefix)).size} unique prefixes, all active-major codes resolved)`);
+assert.ok(Array.isArray(realms), 'REALMS must load from docs/data.js');
+assert.ok(subRealms && typeof subRealms === 'object', 'SUB_REALMS must load from docs/data.js');
+const realmIds = new Set(realms.map((realm) => realm.id));
+const reachableRoutes = [];
+const unreachableSubRealms = [];
+for (const realm of realms) {
+  const subRealmItems = subRealms[realm.id] || [];
+  assert.ok(Array.isArray(subRealmItems), `SUB_REALMS[${realm.id}] must be an array`);
+  for (const subRealm of subRealmItems) {
+    const paths = narrowPaths[subRealm.id];
+    if (!Array.isArray(paths)) {
+      unreachableSubRealms.push({ realm: realm.id, subRealm: subRealm.id });
+      continue;
+    }
+    for (const path of paths) reachableRoutes.push({ realm: realm.id, subRealm: subRealm.id, path });
+  }
+}
+assert.deepEqual(unreachableSubRealms, [], 'every SUB_REALMS node must expose its NARROW_PATHS routes');
+const orphanRealmGroups = Object.keys(subRealms).filter((realmId) => !realmIds.has(realmId));
+assert.deepEqual(orphanRealmGroups, [], 'SUB_REALMS keys must resolve to REALMS');
+
+const missingMajorRoutes = [];
+for (const major of majors) {
+  if (major.motive_driven !== true) continue;
+  const codes = Array.isArray(major.micro_motive_codes) ? major.micro_motive_codes : [];
+  const hasDiscoverableRoute = reachableRoutes.some(({ path }) =>
+    (path.majorCodes || []).some((prefix) =>
+      typeof prefix === 'string' && codes.some((code) =>
+        typeof code === 'string' && code.startsWith(prefix)
+      )
+    )
+  );
+  if (!hasDiscoverableRoute) {
+    missingMajorRoutes.push({ id: major.id, name: major.name, reason: 'no REALMS -> SUB_REALMS -> NARROW_PATHS prefix match' });
+  }
+}
+assert.deepEqual(
+  missingMajorRoutes,
+  [],
+  'every motive_driven=true major must be discoverable through REALMS -> SUB_REALMS -> NARROW_PATHS'
+);
+
+console.log(`R2 motive-route contract: PASS (${prefixes.length} route-prefix occurrences, ${new Set(prefixes.map((item) => item.prefix)).size} unique prefixes, ${reachableRoutes.length} reachable routes, all active-major codes and routes resolved)`);
