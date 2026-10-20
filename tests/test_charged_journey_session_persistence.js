@@ -283,6 +283,8 @@ async function run() {
   assert.match(quotaSource, /pending && pending === String\(charged\)/);
   assert.match(appSource, /await window\.DHQuotaEnforcement\.consumeForJourney\(sessionId\)/);
   assert.match(appSource, /commercialChargedId/);
+  assert.match(appSource, /commercialLaunchAuthorizedId !== commercialChargedId/);
+  assert.match(appSource, /window\.__dhCommercialJourneyStartedSessionId = ''/);
   assert.match(appSource, /chargedPrefix: prefix\(chargedSessionId\)/);
   assert.match(appSource, /journeyPrefix: prefix\(journeySessionId\)/);
   assert.match(appSource, /statePrefix: prefix\(stateSessionId\)/);
