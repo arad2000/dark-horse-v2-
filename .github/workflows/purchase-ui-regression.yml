@@ -28,6 +28,8 @@ jobs:
         run: node tests/test_quota_enforcement_bridge.js
       - name: Run authenticated discovery request contract regression
         run: node tests/test_discovery_request_auth.js
+      - name: Run charged journey session persistence regression
+        run: node tests/test_charged_journey_session_persistence.js
       - name: Run admin credit grant UI regression
         run: node tests/test_admin_credit_grant_ui.js
       - name: Run admission chance UI regression

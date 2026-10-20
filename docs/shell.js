@@ -1,5 +1,5 @@
 /**
- * shell.js v24 — UI ماکت حرفه‌ای — خانه زنده‌تر + پروفایل + تب‌ها
+ * shell.js v25 — commercial charge gate + stable charged journey session
  */
 (function () {
   'use strict';
@@ -588,8 +588,31 @@
     on('dh-open-guide', function () { try { shellScrollTop(); } catch (eS) {} openSystemGuide(); try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {} });
   }
 
+  function authorizedCommercialJourneySessionId() {
+    var authorized = '';
+    var pending = '';
+    var charged = '';
+    try { authorized = String(window.__dhCommercialJourneyAuthorizedSessionId || ''); } catch (_) {}
+    try { pending = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
+    try { charged = String(localStorage.getItem('dh_quota_charged_session_v1') || ''); } catch (_) {}
+    return authorized && authorized === pending && authorized === charged ? authorized : '';
+  }
+
   async function startJourneyFromShell() {
     if (window.__dhJourneyStarting) return;
+    var authorizedSessionId = authorizedCommercialJourneySessionId();
+    if (!authorizedSessionId) {
+      try {
+        if (window.DHCommercialUI &&
+            typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
+          return window.DHCommercialUI.startServerAuthorizedJourney();
+        }
+      } catch (eGate) { console.warn('[DarkHorse][Journey] commercial start gate failed', eGate); }
+      window.__dhInJourney = false;
+      try { setActiveTab('home'); renderHome(); } catch (_) {}
+      return;
+    }
+    if (typeof state !== 'undefined' && state) state.sessionId = authorizedSessionId;
     window.__dhJourneyStarting = true;
 
     try { shellScrollTop(); } catch (eS) {}
@@ -610,7 +633,8 @@
     }
 
     try {
-      var allowed = canRunTest();
+      // The commercial path already consumed and confirmed this exact UUID; do not gate that same journey a second time.
+      var allowed = !!authorizedSessionId || canRunTest();
       var u = getDisplayUser();
 
       // Quota refresh must never block the Journey UI indefinitely.
@@ -681,8 +705,8 @@
           pendingResumeSessionId = localStorage.getItem('dh_pending_journey_session_id');
           if (pendingResumeSessionId) {
             data.sessionId = String(pendingResumeSessionId);
+            if (typeof state !== 'undefined' && state) state.sessionId = String(pendingResumeSessionId);
             localStorage.setItem('darkhorse_session_v2', JSON.stringify(data));
-            localStorage.removeItem('dh_pending_journey_session_id');
           }
         } catch (_) {}
         if (typeof loadSession === 'function') {
@@ -711,11 +735,9 @@
         try { localStorage.removeItem('darkhorse_session_v2'); } catch (e3) {}
       }
       // Fresh journey starts with the UUID already charged by the commercial gate.
-      var pendingFreshSessionId = null;
-      try { pendingFreshSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
+      var pendingFreshSessionId = authorizedSessionId;
       if (pendingFreshSessionId && typeof state !== 'undefined' && state) {
         state.sessionId = String(pendingFreshSessionId);
-        try { localStorage.removeItem('dh_pending_journey_session_id'); } catch (_) {}
       }
       window.__dhHasSavedSession = false;
       window.__dhJourneyFinished = false;
@@ -874,7 +896,7 @@
           };
           script.id = 'dh-commercial-ui-loader';
           script.async = false;
-          script.src = 'commercial_ui.js?v=44';
+          script.src = 'commercial_ui.js?v=45';
           script.setAttribute('data-dh-load-state', 'loading');
           window.addEventListener('error', onWindowError, true);
           function cleanup() {

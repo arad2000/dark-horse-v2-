@@ -1,8 +1,6 @@
-/* quota_runtime.js v1 — Phase 1 safe quota consolidation
- * The four legacy quota/session layers below are intentionally preserved in
- * their historical load order. No public API, request shape, scoring/ranking,
- * journey entry, result display, consume semantics, or failure UX is changed.
- * This module is a source-level consolidation only.
+/* quota_runtime.js v3 — preserve charged journey UUID across reload and request adapters.
+ * Server remains authoritative for charging; the client carries the same
+ * confirmed UUID through state, persisted journey data, and result requests.
  */
 
 /* journey_session_boot.js v1
@@ -118,6 +116,17 @@
 
   function ensureJourneySession() {
     var j = readJourney();
+    var pending = '';
+    var charged = chargedSessionId() || '';
+    try { pending = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
+    // A confirmed charged pending UUID wins over stale local state until the
+    // commercial entry path verifies that the journey has actually started.
+    if (pending && pending === String(charged)) {
+      SESSION_MEMORY = pending;
+      j.sessionId = SESSION_MEMORY;
+      try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}
+      return SESSION_MEMORY;
+    }
     if (j.sessionId) {
       SESSION_MEMORY = String(j.sessionId);
       return SESSION_MEMORY;
@@ -137,11 +146,13 @@
   function setJourneySession(sessionId) {
     if (!sessionId) return;
     var candidate = String(sessionId);
+    var pending = '';
+    var charged = chargedSessionId() || '';
+    try { pending = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
+    if (pending && pending === String(charged)) candidate = pending;
     var j = readJourney();
-    // The client creates the journey UUID before the first discovery request.
-    // Discovery responses must never replace it: doing so can turn one journey
-    // into two billing identities and charge the same completed test twice.
-    if (j.sessionId && String(j.sessionId) !== candidate) {
+    // Uncharged discovery response IDs cannot replace the existing identity.
+    if (j.sessionId && String(j.sessionId) !== candidate && String(charged) !== candidate) {
       SESSION_MEMORY = String(j.sessionId);
       return SESSION_MEMORY;
     }
@@ -238,7 +249,17 @@
       throw new Error(typeof msg === 'string' ? msg : ('خطا در ثبت مصرف اعتبار (' + res.status + ')'));
     }
     persistQuota(body);
-    if (body && (body.consumed === 1 || body.already_consumed === true)) markCharged(sessionId);
+    if (body && (body.consumed === 1 || body.already_consumed === true)) {
+      markCharged(sessionId);
+      var journey = readJourney();
+      var pendingId = '';
+      try { pendingId = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
+      if (!journey.sessionId || String(journey.sessionId) === sessionId || pendingId === sessionId) {
+        journey.sessionId = sessionId;
+        try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey)); } catch (_) {}
+      }
+      if (pendingId === sessionId) SESSION_MEMORY = sessionId;
+    }
     return body;
   }
 

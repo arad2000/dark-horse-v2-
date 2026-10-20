@@ -201,9 +201,29 @@ async function dhCopyShare() {
 
 
 
+function durableJourneySessionIdForSave() {
+  var pendingSessionId = null;
+  var chargedSessionId = null;
+  var savedSessionId = null;
+  try { pendingSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
+  try { chargedSessionId = localStorage.getItem('dh_quota_charged_session_v1'); } catch (_) {}
+  if (pendingSessionId && chargedSessionId === pendingSessionId) {
+    state.sessionId = String(pendingSessionId);
+    return state.sessionId;
+  }
+  if (state && state.sessionId) return String(state.sessionId);
+  try {
+    var persisted = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
+    savedSessionId = persisted && persisted.sessionId ? String(persisted.sessionId) : null;
+  } catch (_) {}
+  if (savedSessionId) state.sessionId = savedSessionId;
+  return savedSessionId;
+}
+
 function saveSession() {
+  const stableSessionId = durableJourneySessionIdForSave();
   const sessionData = {
-    sessionId: state.sessionId,
+    sessionId: stableSessionId,
     selectedRealms: state.selectedRealms,
     selectedSubRealms: state.selectedSubRealms,
     selectedNarrowPaths: state.selectedNarrowPaths,
@@ -228,7 +248,17 @@ function loadSession() {
   if (!saved) return false;
   try {
     const data = JSON.parse(saved);
-    state.sessionId = data.sessionId || null;
+    var pendingSessionId = null;
+    var chargedSessionId = null;
+    try { pendingSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
+    try { chargedSessionId = localStorage.getItem('dh_quota_charged_session_v1'); } catch (_) {}
+    var pendingChargedId = pendingSessionId && chargedSessionId === pendingSessionId
+      ? String(pendingSessionId) : '';
+    state.sessionId = pendingChargedId || (data.sessionId ? String(data.sessionId) : null);
+    if (state.sessionId && String(data.sessionId || '') !== String(state.sessionId)) {
+      data.sessionId = String(state.sessionId);
+      try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(data)); } catch (_) {}
+    }
     state.selectedRealms = data.selectedRealms || [];
     state.selectedSubRealms = data.selectedSubRealms || [];
     state.selectedNarrowPaths = data.selectedNarrowPaths || [];
@@ -1316,6 +1346,7 @@ function buildJourneyAnalysisRequest(payload) {
   var authState = null;
   var journey = null;
   var pendingSessionId = null;
+  var chargedSessionId = null;
   try { authState = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
   var token = authState && typeof authState.token === 'string' ? authState.token.trim() : '';
   if (!token) {
@@ -1325,14 +1356,19 @@ function buildJourneyAnalysisRequest(payload) {
   }
   try { journey = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
   try { pendingSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
-  var sessionId = state && state.sessionId
+  try { chargedSessionId = localStorage.getItem('dh_quota_charged_session_v1'); } catch (_) {}
+  var pendingChargedId = pendingSessionId && chargedSessionId === pendingSessionId
+    ? String(pendingSessionId) : '';
+  var sessionId = pendingChargedId || (state && state.sessionId
     ? String(state.sessionId)
-    : (journey && journey.sessionId ? String(journey.sessionId) : (pendingSessionId ? String(pendingSessionId) : ''));
-  if (!sessionId) {
-    var journeyError = new Error('شناسهٔ سفر آماده نیست؛ سفر را از خانه با حساب تجاری ادامه دهید.');
+    : (journey && journey.sessionId ? String(journey.sessionId) : (pendingSessionId ? String(pendingSessionId) : '')));
+  if (!sessionId || String(chargedSessionId || '') !== String(sessionId)) {
+    var journeyError = new Error('شناسهٔ سفر شارژشده در این دستگاه پیدا نشد؛ اعتبار حساب به‌تنهایی شناسهٔ این سفر نیست. از خانه سفر را از مسیر تجاری شروع کنید.');
     journeyError.code = 'JOURNEY_SESSION_REQUIRED';
     throw journeyError;
   }
+  if (state && String(state.sessionId || '') !== String(sessionId)) state.sessionId = String(sessionId);
+  try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
   var requestPayload = Object.assign({}, payload || {}, { session_id: sessionId });
   return {
     method: 'POST',
@@ -1356,8 +1392,8 @@ function journeyAnalysisErrorHTML(error, journeyType) {
     actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود به حساب</button>";
   } else if (error && error.code === 'JOURNEY_SESSION_REQUIRED' && !status) {
     title = 'شناسهٔ سفر آماده نیست';
-    message = 'شناسهٔ سفر شارژشده در این دستگاه پیدا نشد؛ هیچ درخواست نتیجه‌ای به سرور ارسال نشد. از خانه، سفر را با همان حساب تجاری ادامه دهید.';
-    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">بازگشت به خانه</button>";
+    message = 'اعتبار حساب فقط سهمیهٔ شما را نشان می‌دهد و جای شناسهٔ اختصاصی همین سفر را نمی‌گیرد؛ هیچ درخواست نتیجه‌ای به سرور ارسال نشد. از خانه، سفر را از مسیر تجاری دوباره شروع کنید.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">شروع مجدد از خانه</button>";
   } else if (status === 401) {
     title = 'ورود دوباره لازم است (HTTP 401)';
     message = 'سرور نشست ورود را نامعتبر یا منقضی تشخیص داد. با همان حساب تجاری دوباره وارد شوید؛ این خطا به معنی قطع شبکه نیست.';

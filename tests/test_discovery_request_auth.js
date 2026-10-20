@@ -32,10 +32,11 @@ async function run() {
   const retryHelper = extractBetween(appSource, 'async function fetchWithRetry(', '\n// ==================== DISPLAY RESULTS');
   assert.ok(appSource.includes("fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', buildJourneyAnalysisRequest(payload))"));
   assert.ok(appSource.includes("fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', buildJourneyAnalysisRequest(payload))"));
-  assert.ok(indexSource.includes('app.js?v=70'));
+  assert.ok(indexSource.includes('app.js?v=71'));
 
   const localStorage = storage({
     dh_auth_v1: JSON.stringify({ token: 'commercial-token-123' }),
+    dh_quota_charged_session_v1: 'charged-journey-uuid',
     darkhorse_session_v2: JSON.stringify({ sessionId: 'charged-journey-uuid', stage: 'choice' })
   });
   const sandbox = {
