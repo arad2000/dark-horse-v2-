@@ -12,9 +12,14 @@ assert.ok(Array.isArray(majors), 'majors_database_v2.json must be an array');
 assert.ok(Array.isArray(motives), 'docs/data/micro_motives.json must be an array');
 const motiveCodes = new Set(motives.map((item) => item.code));
 
+assert.match(
+  indexSource,
+  /src="data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1"/,
+  'docs/index.html must load clean single src for data.js without duplicate data.js?v= concatenation'
+);
 assert.ok(
-  indexSource.includes('data.js?v=motives-1393-catalog-230-v1data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1narrow-fix=1data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1wood-fix=1'),
-  'docs/index.html must cache-bust data.js via narrow-fix=2'
+  !indexSource.includes('v1data.js'),
+  'docs/index.html must not contain duplicated data.js?v= substrings inside src attribute'
 );
 
 const sandbox = {};
