@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import unittest
 
 
@@ -28,9 +29,11 @@ class CommercialUIContractTests(unittest.TestCase):
             self.assertIn(marker, self.auth)
 
     def test_commercial_ui_is_loaded_after_auth_client(self):
-        auth_pos = self.index.index('src="auth_api_client.js?v=6"')
-        ui_pos = self.index.index('src="commercial_ui.js?v=24"')
-        self.assertLess(auth_pos, ui_pos)
+        auth_match = re.search(r'src="auth_api_client\.js\?v=[^"]+"', self.index)
+        ui_match = re.search(r'src="commercial_ui\.js\?v=[^"]+"', self.index)
+        self.assertIsNotNone(auth_match)
+        self.assertIsNotNone(ui_match)
+        self.assertLess(auth_match.start(), ui_match.start())
         self.assertIn("DHAuth.createPayment", self.ui)
         self.assertIn("DHAuth.consumeTest", self.ui)
         self.assertIn("DHAuth.quota", self.ui)
@@ -46,8 +49,8 @@ class CommercialUIContractTests(unittest.TestCase):
         self.assertIn("async saveResult(summary)", self.auth)
         self.assertIn("await global.DHAuth.saveResult(summary);", self.ui)
         self.assertNotIn("DHAuth.saveResult(sessionId, summary)", self.ui)
-        self.assertIn("result_summary: summary || {}", self.auth)
-        self.assertIn("session_id: sessionId", self.auth)
+        self.assertIn("result_summary: Object.assign({}, summary || {}, { session_uuid: sessionId })", self.auth)
+        self.assertIn("session_uuid: sessionId", self.auth)
 
     def test_discovery_bridge_propagates_and_persists_session(self):
         self.assertIn("discover|branch-discovery", self.ui)

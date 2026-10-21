@@ -100,12 +100,13 @@ class HybridResultFlowTests(unittest.TestCase):
         app.state.engine = _FakeEngine()
         anonymous_client = TestClient(app)
 
-        with patch("main_v2._authenticated_user_id", return_value=None), \
+        with patch("main_v2._require_charged_journey", return_value=None), \
              patch("database.SessionLocal", self.SessionLocal), \
              patch("operational_store.SessionLocal", self.SessionLocal):
             discovery = anonymous_client.post(
                 "/api/v2/darkhorse/discover",
                 json={
+                    "session_id": "flow-session-init",
                     "micro_motives": ["MOT-001"],
                     "sjt_answers": {"S01": "A"},
                     "conjoint_choices": {"Q1": "A"},
@@ -128,7 +129,7 @@ class HybridResultFlowTests(unittest.TestCase):
             )
 
         authenticated_client = TestClient(app)
-        with patch("main_v2._authenticated_user_id", return_value=1), \
+        with patch("main_v2._require_charged_journey", return_value=1), \
              patch("database.SessionLocal", self.SessionLocal), \
              patch("operational_store.SessionLocal", self.SessionLocal):
             claimed = authenticated_client.post(
@@ -163,7 +164,7 @@ class HybridResultFlowTests(unittest.TestCase):
                 "/api/v1/me/save-result",
                 headers={"Authorization": "Bearer user-token"},
                 json={
-                    "session_id": session_uuid,
+                    "session_uuid": session_uuid,
                     "result_summary": {
                         "session_id": session_uuid,
                         "kind": "majors",
@@ -191,12 +192,13 @@ class HybridResultFlowTests(unittest.TestCase):
         app.state.branch_engine = app.state.engine
         anonymous_client = TestClient(app)
 
-        with patch("main_v2._authenticated_user_id", return_value=None), \
+        with patch("main_v2._require_charged_journey", return_value=None), \
              patch("database.SessionLocal", self.SessionLocal), \
              patch("operational_store.SessionLocal", self.SessionLocal):
             discovery = anonymous_client.post(
                 "/api/v2/darkhorse/discover",
                 json={
+                    "session_id": "flow-session-init",
                     "micro_motives": ["MOT-001"],
                     "sjt_answers": {"S01": "A"},
                     "conjoint_choices": {"Q1": "A"},
@@ -211,7 +213,7 @@ class HybridResultFlowTests(unittest.TestCase):
         with self.SessionLocal() as db:
             sessions_before_branch = db.query(UserSession).count()
 
-        with patch("main_v2._authenticated_user_id", return_value=1), \
+        with patch("main_v2._require_charged_journey", return_value=1), \
              patch("database.SessionLocal", self.SessionLocal), \
              patch("operational_store.SessionLocal", self.SessionLocal):
             branches = anonymous_client.post(
@@ -249,7 +251,7 @@ class HybridResultFlowTests(unittest.TestCase):
         app.state.engine = _FakeEngine()
         headers = {"Authorization": "Bearer flow-token"}
 
-        with patch("main_v2._authenticated_user_id", return_value=1), \
+        with patch("main_v2._require_charged_journey", return_value=1), \
              patch("database.SessionLocal", self.SessionLocal), \
              patch("operational_store.SessionLocal", self.SessionLocal), \
              patch("commercial_api.resolve_session", return_value=SimpleNamespace(id=1)):
@@ -258,6 +260,7 @@ class HybridResultFlowTests(unittest.TestCase):
                 "/api/v2/darkhorse/discover",
                 headers=headers,
                 json={
+                    "session_id": "flow-session-init",
                     "micro_motives": ["MOT-001"],
                     "sjt_answers": {"S01": "A"},
                     "conjoint_choices": {"Q1": "A"},
@@ -271,7 +274,7 @@ class HybridResultFlowTests(unittest.TestCase):
             session_uuid = discovery_body["session_id"]
 
             save_payload = {
-                "session_id": session_uuid,
+                "session_uuid": session_uuid,
                 "result_summary": {
                     "session_id": session_uuid,
                     "kind": "majors",
@@ -332,7 +335,7 @@ class HybridResultFlowTests(unittest.TestCase):
                 "/api/v1/me/save-result",
                 headers=headers,
                 json={
-                    "session_id": "owned-flow-session",
+                    "session_uuid": "owned-flow-session",
                     "result_summary": {"session_id": "owned-flow-session", "kind": "majors"},
                 },
             )

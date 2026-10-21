@@ -45,6 +45,8 @@ jobs:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
       POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
       DARK_HORSE_SHADOW_PERSISTENCE: "false"
+      BILLING_PROVIDER: mock
+      OTP_PROVIDER: mock
       PYTHONUNBUFFERED: "1"
 
     steps:

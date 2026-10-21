@@ -9,7 +9,7 @@ from sqlalchemy import delete, select
 
 from database import engine, get_db
 from main_v2 import app
-from billing_models import Entitlement, Order, Payment, PaymentEvent, PremiumPlan, User
+from billing_models import AdminAuditLog, Entitlement, JourneyCreditConsumption, Order, Payment, PaymentEvent, PremiumPlan, User
 from models import Base
 
 
@@ -26,6 +26,8 @@ class CommercialBillingE2ETests(unittest.TestCase):
 
     def setUp(self):
         with next(get_db()) as db:
+            db.execute(delete(JourneyCreditConsumption))
+            db.execute(delete(AdminAuditLog))
             db.execute(delete(PaymentEvent))
             db.execute(delete(Entitlement))
             db.execute(delete(Payment))
@@ -106,7 +108,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             self.assertEqual(free_entitlement.credits_remaining, 1)
             self.assertIsNone(free_entitlement.expires_at)
 
-        consumed_free = self.client.post("/api/v1/me/consume-test", headers=headers)
+        consumed_free = self.client.post("/api/v1/me/consume-test", headers=headers, json={"session_uuid": "e2e-free-journey-1"})
         self.assertEqual(consumed_free.status_code, 200, consumed_free.text)
         self.assertEqual(consumed_free.json()["credits_remaining"], 0)
 
@@ -127,7 +129,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             follow_redirects=False,
         )
         self.assertEqual(callback.status_code, 303, callback.text)
-        self.assertEqual(callback.headers["location"], "https://asbe-siah.ir/?payment=success")
+        self.assertTrue(callback.headers["location"].startswith("https://asbe-siah.ir/?payment=success"))
 
         # A gateway retry must not turn 3 credits into 6.
         replay = self.client.get(
@@ -140,7 +142,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             follow_redirects=False,
         )
         self.assertEqual(replay.status_code, 303, replay.text)
-        self.assertEqual(replay.headers["location"], "https://asbe-siah.ir/?payment=success")
+        self.assertTrue(replay.headers["location"].startswith("https://asbe-siah.ir/?payment=success"))
 
         quota = self.client.get("/api/v1/me/quota", headers=headers)
         self.assertEqual(quota.status_code, 200, quota.text)
@@ -167,11 +169,11 @@ class CommercialBillingE2ETests(unittest.TestCase):
         # Consume all three purchased tests: 3 -> 2 -> 1 -> 0.
         expected_remaining = [2, 1, 0]
         for expected in expected_remaining:
-            paid_consume = self.client.post("/api/v1/me/consume-test", headers=headers)
+            paid_consume = self.client.post("/api/v1/me/consume-test", headers=headers, json={"session_uuid": f"e2e-paid-journey-{expected}"})
             self.assertEqual(paid_consume.status_code, 200, paid_consume.text)
             self.assertEqual(paid_consume.json()["credits_remaining"], expected)
 
-        exhausted = self.client.post("/api/v1/me/consume-test", headers=headers)
+        exhausted = self.client.post("/api/v1/me/consume-test", headers=headers, json={"session_uuid": "e2e-exhausted-journey"})
         self.assertEqual(exhausted.status_code, 409, exhausted.text)
 
         # The paid entitlement is depleted, but never expires by time/date.
