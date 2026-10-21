@@ -10,6 +10,10 @@ const API_BASE = 'https://api.asbe-siah.ir';
 const DATA_BASE = './data/';
 
 // ==================== GLOBAL STATE ====================
+const VALUE_SCHEMA_VERSION = 'v2-canonical-poles-1';
+const VALUE_SCHEMA_RESET_NOTICE =
+  'به‌دلیل به‌روزرسانی علمی قطب‌های ارزش برای دقت بیشتر تحلیل، پاسخ‌های ناتمام بخش ارزش بازنشانی شد تا دوباره با مقیاس جدید پاسخ دهی.';
+
 const state = {
   sessionId: null,
   stage: 'splash',
@@ -20,6 +24,7 @@ const state = {
   likedCodes: [],
   strategyAnswers: [],
   valueAnswers: [],
+  valueSchemaResetNotice: '',
   currentQuestion: 0,
   currentValueQuestion: 0,
   swipeCards: [],
@@ -228,9 +233,11 @@ function durableJourneySessionIdForSave() {
 }
 
 function saveSession() {
+  const schemaVer = 'v2-canonical-poles-1';
   const stableSessionId = durableJourneySessionIdForSave();
   const sessionData = {
     sessionId: stableSessionId,
+    valueSchemaVersion: schemaVer,
     selectedRealms: state.selectedRealms,
     selectedSubRealms: state.selectedSubRealms,
     selectedNarrowPaths: state.selectedNarrowPaths,
@@ -251,6 +258,8 @@ function saveSession() {
 }
 
 function loadSession() {
+  const schemaVer = 'v2-canonical-poles-1';
+  const resetMsg = 'به‌دلیل به‌روزرسانی علمی قطب‌های ارزش برای دقت بیشتر تحلیل، پاسخ‌های ناتمام بخش ارزش بازنشانی شد تا دوباره با مقیاس جدید پاسخ دهی.';
   const saved = localStorage.getItem('darkhorse_session_v2');
   if (!saved) return false;
   try {
@@ -267,10 +276,31 @@ function loadSession() {
     if (chargedSessionId && storedSessionId && storedSessionId !== String(chargedSessionId) && !pendingChargedId) {
       return false;
     }
+    var wasValueSchemaReset = false;
+    if (data && typeof data === 'object' && !data.journeyFinished && data.valueSchemaVersion !== schemaVer) {
+      var hasLegacyVals = Array.isArray(data.valueAnswers) &&
+        data.valueAnswers.some(function (v) { return v !== undefined && v !== null && String(v).trim() !== ''; });
+      var hasLegacyCur = Number(data.currentValueQuestion || 0) > 0;
+      if (!hasLegacyVals && !hasLegacyCur) {
+        data.valueSchemaVersion = schemaVer;
+      } else {
+        data.valueAnswers = [];
+        data.currentValueQuestion = 0;
+        data.valueSchemaVersion = schemaVer;
+        if (data.stage === 'values' || data.stage === 'choice') {
+          data.stage = 'introValues';
+        }
+        state.valueSchemaResetNotice = resetMsg;
+        try {
+          if (typeof window !== 'undefined' && window) window.__dhValueSchemaResetNotice = resetMsg;
+        } catch (_) {}
+        wasValueSchemaReset = true;
+      }
+    }
     var recoveredChargedId = pendingChargedId || (chargedSessionId && !storedSessionId ? String(chargedSessionId) : '');
     state.sessionId = recoveredChargedId || (storedSessionId || null);
-    if (state.sessionId && String(data.sessionId || '') !== String(state.sessionId)) {
-      data.sessionId = String(state.sessionId);
+    if (wasValueSchemaReset || (state.sessionId && String(data.sessionId || '') !== String(state.sessionId))) {
+      if (state.sessionId) data.sessionId = String(state.sessionId);
       try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(data)); } catch (_) {}
     }
     state.selectedRealms = data.selectedRealms || [];
@@ -670,6 +700,9 @@ function renderGuide() {
 
 function renderSplash() {
   const hasSession = window.__dhHasSavedSession || !!localStorage.getItem('darkhorse_session_v2');
+  const schemaNoticeHTML = state.valueSchemaResetNotice
+    ? `<p data-dh-value-schema-reset="1" style="color:#f0c040;background:rgba(240,192,64,.10);border:1px solid rgba(240,192,64,.35);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.86rem;line-height:1.9;">⚠️ ${escapeHtml(state.valueSchemaResetNotice)}</p>`
+    : '';
   let actionButtonHTML = '';
   if (hasSession) {
     actionButtonHTML = `
@@ -684,6 +717,7 @@ function renderSplash() {
       <h1 style="color:#f0c040;font-size:1.8rem;margin:12px 0 6px;">شهر رؤیاها</h1>
       <p style="color:#c9b896;font-size:0.9rem;margin-bottom:18px;">شش محله · بیش از ۱۳۰۰ جرقه</p>
       <div class="card" style="text-align:right;">
+        ${schemaNoticeHTML}
         <p class="quote">«شهر رؤیاها، جایی که هر کودکی قبل از خواب به آن سفر می‌کرد...»</p>
         <p>یادت می‌آید بچه که بودی، چشمانت را می‌بستی و خودت را جای یک نفر دیگر تصور می‌کردی؟ یک روز دکتر بودی، یک روز خلبان، یک روز نقاش، یک روز هم کاشف سیارات دور. آن تصویرها، آن حس‌ها، هنوز هم جایی در عمق وجودت زنده‌اند.</p>
         <p>حالا وقت آن رسیده که دوباره به آن شهر برگردی. اما این بار، نه با خیال کودکانه، که با نگاه دقیق یک بزرگسال. در «شهر رؤیاها»، شش محله وجود دارد. هر محله، بوی خاصی می‌دهد، نوری متفاوت دارد، و آدم‌هایش کاری می‌کنند که انگار برای آن به دنیا آمده‌اند.</p>
@@ -706,6 +740,25 @@ function dhResumeFromSplash() {
     return;
   }
   try {
+    const schemaVer = 'v2-canonical-poles-1';
+    const resetMsg = 'به‌دلیل به‌روزرسانی علمی قطب‌های ارزش برای دقت بیشتر تحلیل، پاسخ‌های ناتمام بخش ارزش بازنشانی شد تا دوباره با مقیاس جدید پاسخ دهی.';
+    if (data && typeof data === 'object' && !data.journeyFinished && data.valueSchemaVersion !== schemaVer) {
+      const hasLegacyVals = Array.isArray(data.valueAnswers) &&
+        data.valueAnswers.some(function (v) { return v !== undefined && v !== null && String(v).trim() !== ''; });
+      const hasLegacyCur = Number(data.currentValueQuestion || 0) > 0;
+      if (hasLegacyVals || hasLegacyCur) {
+        data.valueAnswers = [];
+        data.currentValueQuestion = 0;
+        if (data.stage === 'values' || data.stage === 'choice') {
+          data.stage = 'introValues';
+        }
+        state.valueSchemaResetNotice = resetMsg;
+        try {
+          if (typeof window !== 'undefined' && window) window.__dhValueSchemaResetNotice = resetMsg;
+        } catch (_) {}
+      }
+      data.valueSchemaVersion = schemaVer;
+    }
     state.sessionId = data.sessionId || null;
     state.selectedRealms = data.selectedRealms || [];
     state.selectedSubRealms = data.selectedSubRealms || [];
@@ -1226,6 +1279,9 @@ function renderIntroValues() {
   const total = (state.valueQuestions && state.valueQuestions.length) || 15;
   const canResume = answered > 0 && answered < total;
   const startLabel = canResume ? `ادامه از سوال ${answered + 1} از ${total}` : 'شروع سوالات ارزش';
+  const schemaNoticeHTML = state.valueSchemaResetNotice
+    ? `<p data-dh-value-schema-reset="1" style="color:#f0c040;background:rgba(240,192,64,.10);border:1px solid rgba(240,192,64,.35);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:0.86rem;line-height:1.9;">⚠️ ${escapeHtml(state.valueSchemaResetNotice)}</p>`
+    : '';
   const resumeHint = canResume
     ? `<p style="color:#d4af37;text-align:center;margin-top:10px;">✓ ${answered} پاسخ ذخیره شده.</p>`
     : '';
@@ -1233,6 +1289,7 @@ function renderIntroValues() {
     <h2>⚖️ لایهٔ سوم: ارزش‌های بنیادین</h2>
     <div class="card">
       <p style="color:#c9b896;line-height:2.2;">اینجا بین دو گزینه انتخاب می‌کنی که هر دو می‌توانند ارزشمند باشند. جواب درست یا غلطی وجود ندارد.</p>
+      ${schemaNoticeHTML}
       ${resumeHint}
       <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="goTo('values')">🚀 ${startLabel}</button>
       ${canResume ? `<button class="btn" style="width:100%;margin-top:8px;" onclick="state.currentValueQuestion=0;saveSession();goTo('values')">از سوال اول مرور کن</button>` : ''}
@@ -1276,6 +1333,7 @@ function renderValue() {
 }
 
 function answerValue(code) {
+  state.valueSchemaResetNotice = '';
   state.valueAnswers[state.currentValueQuestion] = code;
   const total = (state.valueQuestions || []).length;
   let next = state.currentValueQuestion + 1;
@@ -2031,43 +2089,74 @@ function analyzeStrategyStyle(answers) {
 
 function analyzeValueStyle(answers) {
   const map = {
-    'Q1A': { label: 'تأثیر فوری بر انسان', icon: '❤️' },
-    'Q1B': { label: 'بهینه‌سازی سیستم‌ها', icon: '⚙️' },
-    'Q2A': { label: 'ساختن ماندگار', icon: '🏗️' },
-    'Q2B': { label: 'تکثیر ایده در ذهن‌ها', icon: '🌱' },
-    'Q3A': { label: 'تنوع و چالش روزانه', icon: '🎢' },
-    'Q3B': { label: 'عمق و تخصص مرجع', icon: '🎯' },
-    'Q4A': { label: 'مسئولیت فردی', icon: '🫂' },
-    'Q4B': { label: 'مسئولیت سیستمی', icon: '🌐' },
-    'Q5A': { label: 'تقدیر از دقت و نظم', icon: '🏅' },
-    'Q5B': { label: 'تقدیر از خلاقیت', icon: '🎨' },
-    'Q6A': { label: 'انرژی از تعامل', icon: '💬' },
-    'Q6B': { label: 'انرژی از تمرکز تنهایی', icon: '🧘' },
-    'Q7A': { label: 'نوآوری و اختراع', icon: '🚀' },
-    'Q7B': { label: 'مربی‌گری و پرورش', icon: '👨‍🏫' },
-    'Q8A': { label: 'ثبات و امنیت', icon: '🏰' },
-    'Q8B': { label: 'آزادی و انعطاف', icon: '🕊️' },
-    'Q9A': { label: 'کاهش رنج انسان', icon: '🕯️' },
-    'Q9B': { label: 'خلق زیبایی و دانش', icon: '✨' },
-    'Q10A': { label: 'رهبری و تعیین مسیر', icon: '🧭' },
-    'Q10B': { label: 'همدلی و وفاق‌سازی', icon: '🕊️' },
-    'Q11A': { label: 'کار با داده‌ها', icon: '📊' },
-    'Q11B': { label: 'کار با انسان‌ها', icon: '👥' },
-    'Q12A': { label: 'خطرپذیری', icon: '🎲' },
-    'Q12B': { label: 'ثبات‌طلبی', icon: '🛡️' },
-    'Q13A': { label: 'نتیجهٔ فوری', icon: '⚡' },
-    'Q13B': { label: 'اثر ماندگار', icon: '🏛️' },
-    'Q14A': { label: 'استقلال کامل', icon: '🦅' },
-    'Q14B': { label: 'تعلق سازمانی', icon: '🏢' },
-    'Q15A': { label: 'تسلط بر یک حوزه', icon: '🎯' },
-    'Q15B': { label: 'کنجکاوی بی‌پایان', icon: '🌌' }
+    'Q1A':  { pole: 'عمق‌تأثیر',       label: 'عمق‌تأثیر (کمک مستقیم به انسان)',      dim: 'خدمت‌محور و انسانی', icon: '❤️' },
+    'Q1B':  { pole: 'گستره‌تأثیر',     label: 'گستره‌تأثیر (اثرگذاری کلان)',           dim: 'رهبر و اثرگذار',      icon: '🌐' },
+    'Q2A':  { pole: 'میراث‌مادی',      label: 'میراث‌مادی (خلق اثر ماندگار)',          dim: 'خلاق و نوآور',        icon: '🏗️' },
+    'Q2B':  { pole: 'میراث‌انسانی',    label: 'میراث‌انسانی (پرورش و رشد انسان‌ها)',   dim: 'خدمت‌محور و انسانی', icon: '🌱' },
+    'Q3A':  { pole: 'عمق‌محور',        label: 'عمق‌محور (تخصص عمیق و مرجعیت)',         dim: 'علم‌گرا و کاشف',      icon: '🎯' },
+    'Q3B':  { pole: 'گستره‌محور',      label: 'گستره‌محور (تنوع و یادگیری پیوسته)',    dim: 'خلاق و نوآور',        icon: '🎢' },
+    'Q4A':  { pole: 'حقیقت‌جو',        label: 'حقیقت‌جو (کشف دانش ناشناخته)',          dim: 'علم‌گرا و کاشف',      icon: '🔬' },
+    'Q4B':  { pole: 'خلق‌زیبایی',      label: 'خلق‌زیبایی (آفرینش هنر و الهام)',       dim: 'خلاق و نوآور',        icon: '🎨' },
+    'Q5A':  { pole: 'نظم‌خواه',        label: 'نظم‌خواه (ساختار و برنامهٔ روشن)',      dim: 'پایدار و امنیت‌گرا',  icon: '📐' },
+    'Q5B':  { pole: 'آشوب‌پذیر',       label: 'آشوب‌پذیر (پویایی و موقعیت‌های تازه)',  dim: 'مستقل و عمل‌گرا',     icon: '⚡' },
+    'Q6A':  { pole: 'مسئولیت‌فردی',    label: 'مسئولیت‌فردی (حمایت از انسان مشخص)',    dim: 'خدمت‌محور و انسانی', icon: '🫂' },
+    'Q6B':  { pole: 'مسئولیت‌سیستمی',  label: 'مسئولیت‌سیستمی (هدایت سیستم بزرگ)',     dim: 'رهبر و اثرگذار',      icon: '⚙️' },
+    'Q7A':  { pole: 'خالق',            label: 'خالق (ابداع و نوآوری)',                 dim: 'خلاق و نوآور',        icon: '🚀' },
+    'Q7B':  { pole: 'ناقل',            label: 'ناقل (انتقال اثربخش دانش)',             dim: 'خدمت‌محور و انسانی', icon: '👨‍🏫' },
+    'Q8A':  { pole: 'آزادی‌خواه',      label: 'آزادی‌خواه (آزادی عمل و انعطاف)',       dim: 'مستقل و عمل‌گرا',     icon: '🕊️' },
+    'Q8B':  { pole: 'امنیت‌خواه',      label: 'امنیت‌خواه (امنیت و ثبات شغلی)',        dim: 'پایدار و امنیت‌گرا',  icon: '🛡️' },
+    'Q9A':  { pole: 'تغییرگر',         label: 'تغییرگر (اصلاح و تحول‌آفرینی)',         dim: 'رهبر و اثرگذار',      icon: '🔥' },
+    'Q9B':  { pole: 'محافظ',           label: 'محافظ (پاسداشت ارزش‌های ماندگار)',      dim: 'پایدار و امنیت‌گرا',  icon: '🏰' },
+    'Q10A': { pole: 'دیده‌شدن',        label: 'دیده‌شدن (رهبری و تصمیم‌گیری محوری)',   dim: 'رهبر و اثرگذار',      icon: '🧭' },
+    'Q10B': { pole: 'بی‌نام‌تأثیرگذار', label: 'بی‌نام‌تأثیرگذار (اثر عمیق بی‌ادعا)',    dim: 'خدمت‌محور و انسانی', icon: '🕯️' },
+    'Q11A': { pole: 'داده‌نگر',        label: 'داده‌نگر (تحلیل الگوها و داده‌ها)',     dim: 'علم‌گرا و کاشف',      icon: '📊' },
+    'Q11B': { pole: 'انسان‌نگر',       label: 'انسان‌نگر (درک احساس و انگیزهٔ انسان)', dim: 'خدمت‌محور و انسانی', icon: '👥' },
+    'Q12A': { pole: 'ریسک‌پذیر',       label: 'ریسک‌پذیر (جسارت برای دستاورد بزرگ)',   dim: 'مستقل و عمل‌گرا',     icon: '🎲' },
+    'Q12B': { pole: 'ثبات‌خواه',       label: 'ثبات‌خواه (پیشرفت مطمئن و پایدار)',     dim: 'پایدار و امنیت‌گرا',  icon: '⚓' },
+    'Q13A': { pole: 'نتیجه‌فوری',      label: 'نتیجه‌فوری (مشاهدهٔ سریع ثمرهٔ کار)',   dim: 'مستقل و عمل‌گرا',     icon: '⏱️' },
+    'Q13B': { pole: 'اثر‌بلندمدت',     label: 'اثر‌بلندمدت (ماندگاری در افق سال‌ها)',  dim: 'رهبر و اثرگذار',      icon: '🏛️' },
+    'Q14A': { pole: 'تعلق‌خواه',       label: 'تعلق‌خواه (هم‌افزایی در تیم و سازمان)', dim: 'پایدار و امنیت‌گرا',  icon: '🏢' },
+    'Q14B': { pole: 'استقلال‌طلب',     label: 'استقلال‌طلب (خودآیینی و مسیر مستقل)',   dim: 'مستقل و عمل‌گرا',     icon: '🦅' },
+    'Q15A': { pole: 'تسلط‌گرا',        label: 'تسلط‌گرا (چیرگی کامل در یک حوزه)',      dim: 'علم‌گرا و کاشف',      icon: '🏆' },
+    'Q15B': { pole: 'کنجکاوی‌گرا',     label: 'کنجکاوی‌گرا (کشف و یادگیری بی‌پایان)',   dim: 'علم‌گرا و کاشف',      icon: '🌌' }
   };
-  const selected = answers.map(a => map[a] || { label: a, icon: '❓' });
-  const unique = [...new Set(selected.map(s => s.label))];
+
+  let normalizedCodes = [];
+  if (Array.isArray(answers)) {
+    normalizedCodes = answers
+      .map(a => String(a || '').trim().toUpperCase())
+      .filter(Boolean);
+  } else if (answers && typeof answers === 'object') {
+    Object.entries(answers).forEach(([k, v]) => {
+      const rawKey = String(k || '').trim().toUpperCase();
+      const rawVal = String(v || '').trim().toUpperCase();
+      if (!rawVal) return;
+      if (rawVal.startsWith('Q')) {
+        normalizedCodes.push(rawVal);
+      } else if (rawKey.startsWith('Q') && (rawVal === 'A' || rawVal === 'B')) {
+        normalizedCodes.push(rawKey + rawVal);
+      }
+    });
+  }
+
+  const selected = normalizedCodes.map(code => map[code] || { pole: code, label: code, dim: 'متعادل', icon: '✨' });
+  const uniquePoles = [...new Set(selected.map(s => s.pole))];
+  const dimCounts = {};
+  selected.forEach(s => {
+    if (s.dim) dimCounts[s.dim] = (dimCounts[s.dim] || 0) + 1;
+  });
+  const sortedDims = Object.entries(dimCounts).sort((a, b) => b[1] - a[1]);
+  const topDims = sortedDims.slice(0, 2).map(([d]) => d);
+  const dominantStyle = topDims.length ? topDims.join(' · ') : 'متعادل';
+
   return {
+    style: dominantStyle,
+    dimension: dominantStyle,
     values: selected.slice(0, 5),
-    summary: unique.slice(0, 4).join('، '),
-    description: 'ارزش‌های بنیادین شما نشان می‌دهد که چه چیزی به کارتان معنا می‌بخشد.'
+    summary: uniquePoles.slice(0, 4).join('، '),
+    description: topDims.length
+      ? `جهت‌گیری ارزشی غالب شما «${dominantStyle}» است که نشان می‌دهد چه نوع معنا و رضایتی برایتان اصالت دارد.`
+      : 'ارزش‌های بنیادین شما نشان می‌دهد که چه چیزی به کارتان معنا می‌بخشد.'
   };
 }
 
