@@ -36,6 +36,8 @@ jobs:
         run: node tests/test_admin_credit_grant_ui.js
       - name: Run admission chance UI regression
         run: node tests/test_admission_chance_ui.js
+      - name: Run auth timeout and security contracts
+        run: node tests/test_security_contracts.js
 
   catalog-motive-contracts:
     runs-on: ubuntu-latest

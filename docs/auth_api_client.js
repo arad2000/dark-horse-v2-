@@ -3,6 +3,7 @@
   const API = (global.API_BASE || 'https://api.asbe-siah.ir');
   const KEY = 'dh_auth_v1';
   const QUOTA_KEY = 'dh_local_quota_v1';
+  const REQUEST_TIMEOUT_MS = 15000;
 
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
@@ -82,7 +83,25 @@
     const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
     const auth = load();
     if (auth && auth.token) headers['Authorization'] = 'Bearer ' + auth.token;
-    const res = await fetch(API + path, Object.assign({}, opts, { headers }));
+    const controller = (!opts.signal && typeof AbortController === 'function') ? new AbortController() : null;
+    const timer = controller ? setTimeout(function () {
+      controller.abort();
+    }, REQUEST_TIMEOUT_MS) : null;
+    const fetchOpts = Object.assign({}, opts, { headers });
+    if (controller) fetchOpts.signal = controller.signal;
+    let res;
+    try {
+      res = await fetch(API + path, fetchOpts);
+    } catch (err) {
+      if (err && (err.name === 'AbortError' || err.code === 20)) {
+        const timeoutErr = new Error('زمان پاسخ سرور تمام شد. اتصال اینترنت را بررسی کنید.');
+        timeoutErr.code = 'TIMEOUT';
+        throw timeoutErr;
+      }
+      throw err;
+    } finally {
+      if (timer !== null) clearTimeout(timer);
+    }
     let body = null;
     try { body = await res.json(); } catch (_) {}
     if (!res.ok) {
