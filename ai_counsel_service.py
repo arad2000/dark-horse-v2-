@@ -56,8 +56,20 @@ def _cfg() -> tuple[str, str, str]:
 # ابزارهای کمکی پایه
 # ─────────────────────────────────────────────────────────────────────────
 
-def _clean(s: Any) -> str:
-    return re.sub(r"\s+", " ", str(s or "").strip())
+_INJECTION_PATTERNS = re.compile(
+    r"(?:<\s*\|[^|>]*\|\s*>|```+|\b(?:system|assistant|developer)\s*:"
+    r"|ignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions"
+    r"|دستورات?\s+(?:قبلی|بالا|پیشین)\s+را\s+نادیده\s+بگیر)",
+    re.IGNORECASE,
+)
+
+
+def _clean(s: Any, max_len: int = 260) -> str:
+    raw = str(s or "")
+    raw = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", " ", raw)
+    raw = _INJECTION_PATTERNS.sub(" ", raw)
+    cleaned = re.sub(r"\s+", " ", raw).strip()
+    return cleaned[:max_len]
 
 
 def _short_motive(m: Any) -> str:

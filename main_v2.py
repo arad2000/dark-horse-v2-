@@ -192,7 +192,7 @@ def _enforce_payload_limit(
     endpoint_label: str,
 ) -> None:
     """Bound discover/counsel JSON payloads before expensive processing."""
-    declared_length = req.headers.get("content-length")
+    declared_length = (getattr(req, "headers", None) or {}).get("content-length")
     if declared_length is not None:
         try:
             declared_bytes = int(declared_length)
@@ -351,7 +351,7 @@ async def root():
 
 
 def _authenticated_user_id(req: Request) -> int | None:
-    authorization = req.headers.get("authorization")
+    authorization = (getattr(req, "headers", None) or {}).get("authorization")
     if not authorization or not authorization.startswith("Bearer "):
         return None
     token = authorization[7:].strip()
@@ -460,7 +460,7 @@ def _persist_discovery_session(
                     sjt_answers=payload["sjt_answers"],
                     conjoint_choices=payload["conjoint_choices"],
                     user_ip=(req.client.host if req.client else None),
-                    user_agent=req.headers.get("user-agent"),
+                    user_agent=(getattr(req, "headers", None) or {}).get("user-agent"),
                     language_preference="fa",
                 )
                 db.add(row)
@@ -472,7 +472,7 @@ def _persist_discovery_session(
         adapter = OperationalPersistenceAdapter(OperationalStore())
         row = adapter.create_session(payload, request_meta={
             "user_ip": req.client.host if req.client else None,
-            "user_agent": req.headers.get("user-agent"),
+            "user_agent": (getattr(req, "headers", None) or {}).get("user-agent"),
         })
         return session_uuid, int(row.id)
     except HTTPException:

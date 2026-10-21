@@ -34,10 +34,11 @@ from operational_contract import (
 class OperationalStore:
     """Transactional store for sessions, results, recommendations and feedback."""
 
-    def __init__(self, session_factory=SessionLocal):
-        if session_factory is None:
+    def __init__(self, session_factory=None):
+        resolved = SessionLocal if session_factory is None else session_factory
+        if resolved is None:
             raise RuntimeError("DATABASE_URL is not configured")
-        self._session_factory = session_factory
+        self._session_factory = resolved
 
     @contextmanager
     def transaction(self) -> Iterator[Session]:

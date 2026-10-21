@@ -219,6 +219,11 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
     assert_production_billing_configuration()
     try:
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=401, detail="invalid credentials") from exc
+
+    try:
         ensure_free_entitlement(db, user.id)
         db.commit()
         details = _quota_details(db, user.id)
@@ -232,7 +237,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]
         }
     except ValueError as exc:
         db.rollback()
-        raise HTTPException(status_code=401, detail="invalid credentials") from exc
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/me")

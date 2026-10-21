@@ -258,7 +258,7 @@ def _extract_rows(payload: Any, source_name: str) -> list[dict[str, Any]]:
     return [row for row in rows if isinstance(row, dict)]
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=8)
 def load_exam_capacity_rows(group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = "riazi") -> tuple[dict[str, Any], ...]:
     """Load one group-specific extraction read-only."""
     try:

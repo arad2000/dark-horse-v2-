@@ -41,14 +41,14 @@ class AiRateLimitTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_counsel_endpoint_returns_429_without_calling_ai(self):
         request = SimpleNamespace(client=SimpleNamespace(host="198.51.100.10"))
-        payload = {"profile": {}, "top_results": []}
+        payload = {"session_id": "rate-limit-session-1", "profile": {}, "top_results": []}
 
         from main_v2 import COUNSEL_RATE_LIMITER
         COUNSEL_RATE_LIMITER.reset()
         COUNSEL_RATE_LIMITER.limit = 1
 
         try:
-            with patch("main_v2.generate_counseling", new=AsyncMock(return_value="ok")) as generate:
+            with patch("main_v2._require_charged_journey", return_value=1), patch("main_v2.generate_counseling", new=AsyncMock(return_value="ok")) as generate:
                 first = await darkhorse_counsel(payload, request)
                 self.assertEqual(first["success"], True)
                 generate.assert_awaited_once()
