@@ -591,11 +591,9 @@
   function authorizedCommercialJourneySessionId() {
     var authorized = '';
     var pending = '';
-    var charged = '';
     try { authorized = String(window.__dhCommercialJourneyAuthorizedSessionId || ''); } catch (_) {}
     try { pending = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
-    try { charged = String(localStorage.getItem('dh_quota_charged_session_v1') || ''); } catch (_) {}
-    return authorized && authorized === pending && authorized === charged ? authorized : '';
+    return authorized && authorized === pending ? authorized : '';
   }
 
   async function startJourneyFromShell() {

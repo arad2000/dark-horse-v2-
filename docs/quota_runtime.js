@@ -91,6 +91,7 @@
   var QUOTA_KEY = 'dh_local_quota_v1';
   var CHARGED_SESSION_KEY = 'dh_quota_charged_session_v1';
   var SESSION_MEMORY = null;
+  var IN_FLIGHT_CONSUME = Object.create(null);
 
   function parse(raw) {
     try { var v = JSON.parse(raw || 'null'); return v && typeof v === 'object' ? v : null; }
@@ -259,32 +260,42 @@
       try { if (typeof state !== 'undefined' && state) state.sessionId = sessionId; } catch (_) {}
       return { consumed: 0, already_consumed: true, local_guard: true, session_uuid: sessionId };
     }
-    var a = auth();
-    var headers = { 'Content-Type': 'application/json' };
-    if (a && a.token) headers.Authorization = 'Bearer ' + a.token;
-    var res = await nativeFetch(API + '/api/v1/me/consume-test', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({ session_uuid: sessionId })
-    });
-    var body = null;
-    try { body = await res.json(); } catch (_) {}
-    if (!res.ok) {
-      var msg = body && (body.detail || body.message);
-      throw new Error(typeof msg === 'string' ? msg : ('خطا در ثبت مصرف اعتبار (' + res.status + ')'));
+    if (IN_FLIGHT_CONSUME[sessionId]) return IN_FLIGHT_CONSUME[sessionId];
+    IN_FLIGHT_CONSUME[sessionId] = (async function () {
+      var a = auth();
+      var headers = { 'Content-Type': 'application/json' };
+      if (a && a.token) headers.Authorization = 'Bearer ' + a.token;
+      var res = await nativeFetch(API + '/api/v1/me/consume-test', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ session_uuid: sessionId })
+      });
+      var body = null;
+      try { body = await res.json(); } catch (_) {}
+      if (!res.ok) {
+        var msg = body && (body.detail || body.message);
+        var consumeErr = new Error(typeof msg === 'string' ? msg : ('خطا در ثبت مصرف اعتبار (' + res.status + ')'));
+        consumeErr.status = Number(res.status) || 0;
+        throw consumeErr;
+      }
+      persistQuota(body);
+      if (body && (body.consumed === 1 || body.already_consumed === true)) {
+        markCharged(sessionId);
+        // A confirmed charge defines the active journey identity. Persist it even
+        // when the prior unfinished record had a different or missing UUID.
+        var journey = readJourney();
+        journey.sessionId = sessionId;
+        try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey)); } catch (_) {}
+        SESSION_MEMORY = sessionId;
+        try { if (typeof state !== 'undefined' && state) state.sessionId = sessionId; } catch (_) {}
+      }
+      return body;
+    })();
+    try {
+      return await IN_FLIGHT_CONSUME[sessionId];
+    } finally {
+      delete IN_FLIGHT_CONSUME[sessionId];
     }
-    persistQuota(body);
-    if (body && (body.consumed === 1 || body.already_consumed === true)) {
-      markCharged(sessionId);
-      // A confirmed charge defines the active journey identity. Persist it even
-      // when the prior unfinished record had a different or missing UUID.
-      var journey = readJourney();
-      journey.sessionId = sessionId;
-      try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey)); } catch (_) {}
-      SESSION_MEMORY = sessionId;
-      try { if (typeof state !== 'undefined' && state) state.sessionId = sessionId; } catch (_) {}
-    }
-    return body;
   }
 
   function wrapResults() {

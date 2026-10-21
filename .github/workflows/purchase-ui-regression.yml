@@ -26,6 +26,8 @@ jobs:
         run: node tests/test_pwa_boot_startup.js
       - name: Run quota double-consumption regression
         run: node tests/test_quota_enforcement_bridge.js
+      - name: Run City of Dreams navigation quota guard E2E contract
+        run: node tests/test_city_of_dreams_navigation_quota_guard.js
       - name: Run authenticated discovery request contract regression
         run: node tests/test_discovery_request_auth.js
       - name: Run charged journey session persistence regression

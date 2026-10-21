@@ -121,11 +121,16 @@ const postAuthSource = fs.readFileSync('docs/post_auth_flow_policy.js', 'utf8');
   }
   assert.strictEqual(consumeCalls, 1, 'discovery/counsel must not consume a second credit');
 
+  const appSource = fs.readFileSync('docs/app.js', 'utf8');
   const continueMatch = commercialSource.match(/async function continueAfterAuth\(\)\s*\{[\s\S]*?\n  \}/);
   assert.ok(continueMatch, 'commercial continuation gate not found');
-  assert.ok(continueMatch[0].includes('consumeForJourney(sessionId)'));
-  assert.ok(continueMatch[0].indexOf('consumeForJourney(sessionId)') < continueMatch[0].indexOf('DHShell.startJourney()'),
-    'server charge must succeed before the journey begins');
+  assert.strictEqual(continueMatch[0].includes('consumeForJourney'), false,
+    'journey entry gate must NOT pre-consume credit before completion');
+  assert.strictEqual(continueMatch[0].includes('consume-test'), false,
+    'journey entry gate must NOT call consume-test before completion');
+  assert.match(appSource, /async function ensureJourneyChargedForResults\(\)/);
+  assert.match(appSource, /async function analyzeMajors\(\)[\s\S]*?await ensureJourneyChargedForResults\(\);[\s\S]*?\/api\/v2\/darkhorse\/discover/);
+  assert.match(appSource, /async function analyzeBranches\(\)[\s\S]*?await ensureJourneyChargedForResults\(\);[\s\S]*?\/api\/v2\/darkhorse\/branch-discovery/);
   assert.match(commercialSource, /dh_pending_journey_session_id/);
   assert.match(shellSource, /dh_pending_journey_session_id/);
   assert.match(indexSource, /window\.DHCommercialUI\.startServerAuthorizedJourney\(\)/);

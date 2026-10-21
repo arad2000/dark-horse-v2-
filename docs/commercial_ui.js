@@ -181,7 +181,7 @@
 
   function isResumableCommercialJourney() {
     var journey = readCommercialJourney();
-    var stages = ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+    var stages = ['splash', 'realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
       'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
     return !!(journey && !journey.journeyFinished && stages.indexOf(journey.stage) >= 0);
   }
@@ -198,30 +198,44 @@
   }
 
   function prepareCommercialJourneyId() {
+    var journey = readCommercialJourney();
+    var finished = !!(journey && journey.journeyFinished);
+    if (finished) {
+      // Starting a new journey after finishing a previous one must clear the
+      // completed journey's charge marker without consuming a new credit yet.
+      try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
+      try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+    }
+
     var pendingSessionId = '';
     var chargedSessionId = '';
     try { pendingSessionId = String(localStorage.getItem(PENDING_SESSION_KEY) || ''); } catch (_) {}
     try { chargedSessionId = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
-    // Reuse a previously charged session if the earlier shell entry was interrupted.
-    if (pendingSessionId && pendingSessionId === chargedSessionId) return pendingSessionId;
+    if (!finished && pendingSessionId && pendingSessionId === chargedSessionId) {
+      return pendingSessionId;
+    }
 
-    var journey = readCommercialJourney();
-    var resumable = !!(journey && !journey.journeyFinished &&
-      ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
-       'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(journey.stage) >= 0);
-    var resumableSessionId = resumable && journey.sessionId ? String(journey.sessionId) : '';
-    var sessionId = resumable && chargedSessionId &&
-      (!resumableSessionId || resumableSessionId === chargedSessionId)
-      ? String(chargedSessionId) : createCommercialJourneyId();
+    var resumable = isResumableCommercialJourney();
+    var resumableSessionId = resumable && journey && journey.sessionId ? String(journey.sessionId) : '';
+    var sessionId = '';
+    if (resumable && chargedSessionId && (!resumableSessionId || resumableSessionId === chargedSessionId)) {
+      sessionId = String(chargedSessionId);
+    } else if (resumable && resumableSessionId) {
+      sessionId = resumableSessionId;
+    } else if (!finished && pendingSessionId) {
+      sessionId = pendingSessionId;
+    } else {
+      sessionId = createCommercialJourneyId();
+    }
     try { localStorage.setItem(PENDING_SESSION_KEY, sessionId); } catch (_) {}
     return sessionId;
   }
 
-  function persistChargedJourneySession(sessionId) {
+  function persistPreparedJourneySession(sessionId) {
     var stableId = String(sessionId || '');
-    if (!stableId) throw new Error('شناسهٔ سفر شارژشده خالی است.');
+    if (!stableId) throw new Error('شناسهٔ سفر آماده نیست.');
     if (typeof state === 'undefined' || !state) {
-      throw new Error('وضعیت سفر هنوز آماده نیست؛ شناسهٔ شارژشده حفظ شد و شروع تأیید نشد.');
+      throw new Error('وضعیت سفر هنوز آماده نیست؛ شروع سفر تأیید نشد.');
     }
     var journey = readCommercialJourney() || {};
     journey.sessionId = stableId;
@@ -230,13 +244,13 @@
       localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey));
       localStorage.setItem(PENDING_SESSION_KEY, stableId);
     } catch (_) {
-      throw new Error('ذخیرهٔ شناسهٔ سفر شارژشده ناموفق بود؛ سفر هنوز شروع نشده است.');
+      throw new Error('ذخیرهٔ شناسهٔ سفر ناموفق بود؛ سفر هنوز شروع نشده است.');
     }
     var persisted = readCommercialJourney();
     if (!persisted || String(persisted.sessionId || '') !== stableId ||
         String(state.sessionId || '') !== stableId ||
         String(localStorage.getItem(PENDING_SESSION_KEY) || '') !== stableId) {
-      throw new Error('تطبیق شناسهٔ شارژشده در حافظه و ذخیره‌سازی تأیید نشد.');
+      throw new Error('تطبیق شناسهٔ سفر در حافظه و ذخیره‌سازی تأیید نشد.');
     }
     return stableId;
   }
@@ -244,34 +258,26 @@
   async function continueAfterAuth(){
     if(!global.DHAuth||!global.DHAuth.isLoggedIn()){showAuthModal('login');return;}
     var sessionId = null;
-    var chargeSucceeded = false;
     try{
       var q = await global.DHAuth.quota();
       var remaining = Number(q && q.credits_remaining || 0);
+      if(Number.isFinite(remaining) && remaining >= 0) setLocalQuota(remaining);
       var pendingBeforeGate = '';
       var chargedBeforeGate = '';
       try { pendingBeforeGate = String(localStorage.getItem(PENDING_SESSION_KEY) || ''); } catch (_) {}
       try { chargedBeforeGate = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
       var recoverChargedStart = !!pendingBeforeGate && pendingBeforeGate === chargedBeforeGate;
       var resumable = isResumableCommercialJourney();
-      if(remaining <= 0 && !resumable && !recoverChargedStart){await openPurchaseModal();return;}
+      if(remaining <= 0 && !recoverChargedStart && !(resumable && chargedBeforeGate)){await openPurchaseModal();return;}
       if(!global.DHShell || typeof global.DHShell.startJourney !== 'function') {
         throw new Error('رابط سفر هنوز آماده نیست؛ دوباره تلاش کنید.');
       }
-      if(!global.DHQuotaEnforcement || typeof global.DHQuotaEnforcement.consumeForJourney !== 'function') {
-        throw new Error('اتصال ایمن سهمیه آماده نیست؛ سفر آغاز نشد.');
-      }
-      sessionId = prepareCommercialJourneyId();
-      var charge = await global.DHQuotaEnforcement.consumeForJourney(sessionId);
-      if(!charge || !(charge.consumed === 1 || charge.already_consumed === true || charge.local_guard === true)) {
-        throw new Error('ثبت مصرف اعتبار در سرور تأیید نشد؛ سفر آغاز نشد.');
-      }
-      chargeSucceeded = true;
-      var serverRemaining = Number(charge.credits_remaining);
-      if(Number.isFinite(serverRemaining) && serverRemaining >= 0) setLocalQuota(serverRemaining);
 
-      // Keep the exact confirmed UUID in memory/storage while shell entry is in progress.
-      persistChargedJourneySession(sessionId);
+      // Entering or navigating City of Dreams NEVER consumes a server credit.
+      // Credit consumption happens once, strictly when preparing the completed
+      // journey result (analyzeMajors / analyzeBranches -> discover).
+      sessionId = prepareCommercialJourneyId();
+      persistPreparedJourneySession(sessionId);
       global.__dhCommercialJourneyAuthorizedSessionId = sessionId;
       closeModal();
       await global.DHShell.startJourney();
@@ -284,17 +290,17 @@
         'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
       var stageAfterStart = typeof state !== 'undefined' && state && state.stage ? String(state.stage) : '';
       if (!global.__dhInJourney || validStages.indexOf(stageAfterStart) < 0 ||
-          liveSessionId !== sessionId || storedSessionId !== sessionId || pendingAfterStart !== sessionId ||
-          String(localStorage.getItem(CHARGED_SESSION_KEY) || '') !== sessionId) {
-        throw new Error('شارژ انجام شده، اما شروع سفر با همان شناسه تأیید نشد. از همین مسیر تجاری دوباره تلاش کنید؛ شناسهٔ شارژشده حفظ شده است.');
+          liveSessionId !== sessionId || storedSessionId !== sessionId || pendingAfterStart !== sessionId) {
+        throw new Error('شروع سفر با شناسهٔ تخصیص‌یافته تأیید نشد؛ دوباره تلاش کنید.');
       }
       localStorage.removeItem(PENDING_SESSION_KEY);
       global.__dhCommercialJourneyStartedSessionId = sessionId;
       global.__dhCommercialJourneyAuthorizedSessionId = '';
     }catch(e){
-      if(sessionId && !chargeSucceeded) {
+      if(sessionId) {
         try { if(localStorage.getItem(PENDING_SESSION_KEY) === sessionId) localStorage.removeItem(PENDING_SESSION_KEY); } catch(_) {}
       }
+      global.__dhCommercialJourneyAuthorizedSessionId = '';
       var m=text(e&&e.message?e.message:e);
       if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}
       if(/402|insufficient|quota|credit|سهمیه|اعتبار/i.test(m)){await openPurchaseModal();return;}

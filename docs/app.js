@@ -376,7 +376,26 @@ function startNewJourney() {
         return;
       }
     }
+    var prevWasFinished = !!state.journeyFinished;
+    var prevUnchargedId = !prevWasFinished && state.sessionId ? String(state.sessionId) : '';
+    try {
+      var prevSaved = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
+      if (prevSaved && prevSaved.journeyFinished) prevWasFinished = true;
+      if (!prevWasFinished && !prevUnchargedId && prevSaved && prevSaved.sessionId) {
+        prevUnchargedId = String(prevSaved.sessionId);
+      }
+    } catch (ePrev) {}
     fullResetState(true);
+    if (prevWasFinished) {
+      try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (eClr) {}
+      if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
+        try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (eNewId) {}
+      }
+    } else if (prevUnchargedId) {
+      state.sessionId = prevUnchargedId;
+    } else if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
+      try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (eInitId) {}
+    }
     if (typeof REALMS === 'undefined' || !REALMS || !REALMS.length) {
       app.innerHTML = `<div class="card" style="margin:20px;text-align:right;">
         <h2 style="color:#f0c040">دادهٔ شهر رؤیاها لود نشد</h2>
@@ -1414,6 +1433,66 @@ function buildPayload() {
 }
 
 
+async function ensureJourneyChargedForResults() {
+  var authState = null;
+  var journey = null;
+  var pendingSessionId = null;
+  var chargedSessionId = null;
+  try { authState = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
+  var token = authState && typeof authState.token === 'string' ? authState.token.trim() : '';
+  if (!token) {
+    var authError = new Error('ورود تجاری معتبر نیست یا نشست ورود پایان یافته است.');
+    authError.code = 'AUTH_REQUIRED';
+    throw authError;
+  }
+  try { journey = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
+  try { pendingSessionId = localStorage.getItem('dh_pending_journey_session_id'); } catch (_) {}
+  try { chargedSessionId = localStorage.getItem('dh_quota_charged_session_v1'); } catch (_) {}
+  var pendingChargedId = pendingSessionId && chargedSessionId === pendingSessionId
+    ? String(pendingSessionId) : '';
+  var journeySessionId = journey && journey.sessionId ? String(journey.sessionId) : '';
+  var stateSessionId = state && state.sessionId ? String(state.sessionId) : '';
+
+  if (chargedSessionId) {
+    if (pendingChargedId || !journeySessionId || journeySessionId === String(chargedSessionId)) {
+      var existingCharged = pendingChargedId || String(chargedSessionId);
+      if (state) state.sessionId = existingCharged;
+      try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
+      return existingCharged;
+    }
+    var conflictError = new Error('شناسهٔ سفر شارژشده با سفر ذخیره‌شده تطبیق ندارد؛ از خانه سفر را از مسیر تجاری شروع کنید.');
+    conflictError.code = 'JOURNEY_SESSION_REQUIRED';
+    throw conflictError;
+  }
+
+  var candidateId = stateSessionId || journeySessionId ||
+    (typeof window !== 'undefined' && window && window.DHQuotaEnforcement &&
+     typeof window.DHQuotaEnforcement.ensureJourneySession === 'function'
+       ? String(window.DHQuotaEnforcement.ensureJourneySession() || '')
+       : '');
+  if (!candidateId) {
+    var missingError = new Error('شناسهٔ سفر آماده نیست؛ از خانه سفر را از مسیر تجاری شروع کنید.');
+    missingError.code = 'JOURNEY_SESSION_REQUIRED';
+    throw missingError;
+  }
+  if (typeof window === 'undefined' || !window || !window.DHQuotaEnforcement ||
+      typeof window.DHQuotaEnforcement.consumeForJourney !== 'function') {
+    var bridgeError = new Error('اتصال ایمن سهمیه برای ثبت نتیجهٔ سفر آماده نیست.');
+    bridgeError.code = 'QUOTA_BRIDGE_UNAVAILABLE';
+    throw bridgeError;
+  }
+
+  var charge = await window.DHQuotaEnforcement.consumeForJourney(candidateId);
+  if (!charge || !(charge.consumed === 1 || charge.already_consumed === true || charge.local_guard === true)) {
+    var unconfirmedError = new Error('ثبت مصرف اعتبار برای دریافت نتیجه تأیید نشد.');
+    unconfirmedError.code = 'QUOTA_CHARGE_UNCONFIRMED';
+    throw unconfirmedError;
+  }
+  if (state) state.sessionId = candidateId;
+  try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
+  return candidateId;
+}
+
 function buildJourneyAnalysisRequest(payload) {
   var authState = null;
   var journey = null;
@@ -1502,6 +1581,11 @@ function journeyAnalysisErrorHTML(error, journeyType) {
     title = 'ورود دوباره لازم است (HTTP 401)';
     message = 'سرور نشست ورود را نامعتبر یا منقضی تشخیص داد. با همان حساب تجاری دوباره وارد شوید؛ این خطا به معنی قطع شبکه نیست.';
     actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود دوباره</button>";
+  } else if (status === 402) {
+    title = 'اعتبار کافی برای مشاهدهٔ نتیجه وجود ندارد (HTTP 402)';
+    message = 'همهٔ پاسخ‌های این سفر کامل ذخیره شده است؛ پس از تهیهٔ اعتبار، با زدن «تلاش دوباره» نتیجهٔ همین سفر را بدون تکرار مراحل دریافت کنید.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showPurchase==='function'){window.DHCommercialUI.showPurchase()}else{location.reload()}\">تهیهٔ اعتبار</button>" +
+      '<button class="btn" style="width:100%;margin-top:8px;" onclick="' + retryCall + '">🔄 تلاش دوباره پس از شارژ</button>';
   } else if (status === 403) {
     title = 'دسترسی به سفر تأیید نشد (HTTP 403)';
     message = 'سرور این شناسهٔ سفر را برای دریافت نتیجه مجاز ندانست. سفر فعلی را از خانه و با حساب تجاری ادامه دهید؛ این یک خطای مجوز/سشن است، نه خطای شبکه.';
@@ -1524,6 +1608,7 @@ async function analyzeMajors() {
   state.lastPayload = payload;
   app.innerHTML = progressHTML('results') + loadingHTML('داره جرقه‌هات رو به رشته‌ها وصل می‌کنه...');
   try {
+    await ensureJourneyChargedForResults();
     const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/discover', buildJourneyAnalysisRequest(payload));
     const data = await res.json();
     state.majorsResult = data;
@@ -1540,6 +1625,7 @@ async function analyzeBranches() {
   state.lastPayload = payload;
   app.innerHTML = progressHTML('results') + loadingHTML('داره نقشهٔ شاخه‌ها رو با انگیزه‌هات میزان می‌کنه...');
   try {
+    await ensureJourneyChargedForResults();
     const res = await fetchWithRetry(API_BASE + '/api/v2/darkhorse/branch-discovery', buildJourneyAnalysisRequest(payload));
     const data = await res.json();
     state.branchesResult = data;
