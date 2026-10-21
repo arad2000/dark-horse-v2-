@@ -61,7 +61,7 @@ const SUB_REALMS = {
  icon:'🔍',
  motto:'هر نشانه، یک معمای پنهان است.',
  description:'یک لوله خون، یک تصویر MRI، یا یک قطره مایع نخاعی… هرکدام داستانی ناگفته دارند. از تحلیل آزمایش‌ها و اسکن‌ها تا رمزگشایی کدهای ژنتیکی—تو مثل یک کارآگاه، راز بیماری را قبل از آنکه دیر شود کشف می‌کنی.',
- majorCodes: ['LAB-','RAD-','RADT-','NUCM-','IMGT-','GEN-','BIOC-','MICROM-','IMM-','PARA-','VIRO-']
+ majorCodes: ['LAB-','RAD-','RADT-','NUCM-','IMGT-','GEN-','BIOC-','MICROM-','IMM-','PARA-','VIRO-','NEURO-']
  },
  {
  id:'healer-care',
@@ -103,7 +103,7 @@ const SUB_REALMS = {
  icon:'🧠',
  motto:'منطق تو، جهان را می‌سازد.',
  description:'از طراحی یک الگوریتم هوشمند و یک اپلیکیشن کاربردی، تا ساخت مداری که یک سیستم الکترونیکی را زنده می‌کند—تو با کد، داده و جریان برق، جهان دیجیتال را می‌سازی و آن را به حرکت درمی‌آوری.',
- majorCodes: ['CS-','CSCI-','IT-','EE-']
+ majorCodes: ['CS-','CSCI-','IT-','EE-','AI-','CYBER-']
  },
  {
  id:'builder-motion',
@@ -111,7 +111,7 @@ const SUB_REALMS = {
  icon:'🏎️',
  motto:'سکون، اینجا معنا ندارد.',
  description:'از موتوری که یک جت را به آسمان می‌برد و پروانهٔ یک کشتی که امواج را می‌شکافد، تا ماشینی که زمین را شخم می‌زند و دستگاهی که غذا را بسته‌بندی می‌کند—تو نیروها را رام می‌کنی و به ماده، حرکت و حیات می‌بخشی.',
- majorCodes: ['ME-','AERO-','MAR-','NAV-','AGM-','FIM-','AGMECH-']
+ majorCodes: ['ME-','AERO-','MAR-','NAV-','AGM-','FIM-','AGMECH-','SPORT-','AVIA-','PILOT-','UAV-','MRO-','ROBOT-']
  },
  {
  id:'builder-structure',
@@ -119,7 +119,7 @@ const SUB_REALMS = {
  icon:'🏗️',
  motto:'رؤیاهایت، بر زمین استوار می‌شوند.',
  description:'از طراحی برجی که زلزله را تاب می‌آورد و ساخت پلی که یک رودخانه را فتح می‌کند، تا برنامه‌ریزی یک شهر و ترسیم نقشه‌های دقیق از زمین—تو ردپایت را برای دهه‌ها روی سیاره حک می‌کنی.',
- majorCodes: ['CE-','ARCHA-','SUR-','URB-','WW-','GEO-']
+ majorCodes: ['CE-','ARCHA-','SUR-','URB-','WW-','GEO-','ARCH-']
  },
  {
  id:'builder-transform',
@@ -127,7 +127,7 @@ const SUB_REALMS = {
  icon:'🧪',
  motto:'ماده، اینجا هویت تازه می‌گیرد.',
  description:'از تبدیل نفت خام به بنزین و پلاستیک، و استخراج گاز از اعماق زمین، تا ساخت فلزی که در ۲۰۰۰ درجه هم ذوب نمی‌شود یا پلیمری سبک‌تر از فولاد—تو کیمیاگر دنیای مدرنی.',
- majorCodes: ['CHE-','PE-','GAS-','POLY-','MAT-','CER-']
+ majorCodes: ['CHE-','PE-','GAS-','POLY-','MAT-','CER-','WOOD-']
  },
  {
  id:'builder-optimize',
@@ -143,7 +143,7 @@ const SUB_REALMS = {
  icon:'🌾',
  motto:'طبیعت، همکار و دوست توست.',
  description:'از اصلاح نژاد گندم و پرورش ماهی در استخرهای بزرگ، تا احیای یک تالاب خشک‌شده، طراحی گلخانهٔ هوشمند و محافظت از جنگل‌ها—تو با ریتم طبیعت کار می‌کنی و همزمان از آن محافظت می‌کنی.',
- majorCodes: ['AGR-','HORT-','ANIS-','FISH-','NR-','ENV-','RAN-','BIOS-','LAND-','AGMECH-']
+ majorCodes: ['AGR-','HORT-','ANIS-','FISH-','NR-','ENV-','RAN-','BIOS-','LAND-','AGMECH-','WATER-','RENW-']
  },
  {
  id:'builder-weave',
@@ -185,7 +185,7 @@ const SUB_REALMS = {
  icon:'🧬',
  motto:'راز زندگی، زیر نوک انگشتان توست.',
  description:'از تماشای تقسیم یک سلول سرطانی و استخراج DNA از یک میوه، تا مهندسی یک باکتری برای تولید انسولین و مطالعهٔ رفتار یک پرنده در طبیعت—هر موجود زنده برای تو یک کتاب خوانده‌نشده است.',
- majorCodes: ['BIO-','CMB-','PLB-','ANB-','MICRO-','BIOT-','BCH-']
+ majorCodes: ['BIO-','CMB-','PLB-','ANB-','MICRO-','BIOT-','BCH-','BIOTECH-','COGSCI-','BIOINF-']
  },
  {
  id:'explorer-earth',
@@ -211,7 +211,7 @@ const SUB_REALMS = {
  icon:'🧠',
  motto:'ذهن انسان، هم معماست هم معجزه.',
  description:'از پیدا کردن ریشهٔ یک ترس قدیمی در ذهن یک کودک و کمک به یک نوجوان برای یافتن مسیرش، تا آموزش الفبا به یک کلاس پرشور و طراحی برنامهٔ درسی برای یک نسل—تو ذهن‌ها را پرورش می‌دهی و التیام می‌بخشی.',
- majorCodes: ['PSY-','COUN-','EDU-','ELEM-','SPED-']
+ majorCodes: ['PSY-','COUN-','EDU-','ELEM-','SPED-','FAMILY-']
  },
  {
  id:'thinker-wealth',
@@ -219,7 +219,7 @@ const SUB_REALMS = {
  icon:'💰',
  motto:'ارزش‌ها خلق می‌شوند، رؤیاها بودجه می‌گیرند.',
  description:'از تحلیل نبض بازار و مدیریت یک کسب‌وکار، تا طراحی یک محصول بیمه، برنامه‌ریزی یک سفر، یا متقاعد کردن یک سرمایه‌گذار—تو با اعداد و استراتژی، ارزش خلق می‌کنی و رؤیاها را به ثروت تبدیل می‌کنی.',
- majorCodes: ['ECON-','ECOT-','BEC-','BUS-','INDM-','PUBM-','FIN-','ACC-','TOUR-','INS-','BANK-','ENT-']
+ majorCodes: ['ECON-','ECOT-','BEC-','BUS-','INDM-','PUBM-','FIN-','ACC-','TOUR-','INS-','BANK-','ENT-','TOURISM-','HOTEL-','BEHV-','TECM-']
  },
  {
  id:'thinker-society',
@@ -235,7 +235,7 @@ const SUB_REALMS = {
  icon:'📜',
  motto:'هر لحظهٔ حال، ریشه در عمق هزاران سال دارد.',
  description:'از تحلیل یک سند تاریخی و کشف حقیقت یک امپراتوری، تا تفسیر یک غزل حافظ، تحلیل یک ایدهٔ فلسفی، یا ترسیم نقشه‌ای از تغییرات یک سرزمین—تو با کندوکاو در گذشته، معنای امروز را می‌فهمی.',
- majorCodes: ['HIST-','PHIL-','GEOG-','PERS-']
+ majorCodes: ['HIST-','PHIL-','GEOG-','PERS-','ARCHY-','QURAN-','RELIG-']
  },
  {
  id:'thinker-eduplan',
@@ -253,7 +253,7 @@ const SUB_REALMS = {
  icon:'👁️‍🎨',
  motto:'یک تصویر، هزار کلمه را زمین می‌زند.',
  description:'از طراحی یک لوگوی ماندگار و یک پوستر خیابانی، تا ثبت لحظه‌ای که هرگز تکرار نمی‌شود—تو با رنگ، فرم، نور و سایه حرف می‌زنی و پیامت را در یک نگاه به قلب مخاطب می‌رسانی.',
- majorCodes: ['GRAPH-','VIS-','PHOT-']
+ majorCodes: ['GRAPH-','VIS-','PHOT-','CARPET-','UXDS-']
  },
  {
  id:'artist-space',
@@ -261,7 +261,7 @@ const SUB_REALMS = {
  icon:'📐',
  motto:'فضا، قصه‌ای برای گفتن دارد.',
  description:'از طراحی ساختمانی که نور در آن نمایش اجرا می‌کند و یک صندلی ارگونومیک که بدن را در آغوش می‌کشد، تا ساخت ماکت صحنه‌ای که بازیگر روی آن اشک می‌ریزد—تو ایده‌های خام را به حجم و فضایی واقعی تبدیل می‌کنی.',
- majorCodes: ['ARCHA-','IND_DES-','STAGE-']
+ majorCodes: ['ARCHA-','IND_DES-','STAGE-','INTARCH-']
  },
  {
  id:'artist-direction',
@@ -285,7 +285,7 @@ const SUB_REALMS = {
  icon:'🖐️🎨',
  motto:'ماده، تسلیم ارادهٔ تو می‌شود.',
  description:'ابزار کار تو دستان خودت هستند. از ایستادن مقابل یک بوم سفید و زدن اولین ضربهٔ قلم‌مو، تا ضربه زدن با چکش روی سنگ و تماشای تراشه‌ای که جدا می‌شود—تو به مادهٔ بی‌جان، روح و احساس می‌دمی.',
- majorCodes: ['PAINT-','SCULP-']
+ majorCodes: ['PAINT-','SCULP-','ISLART-','CRAFT-']
  },
  {
  id:'artist-restore',
@@ -311,7 +311,7 @@ const SUB_REALMS = {
  icon:'📖🔍',
  motto:'هر کلمه، یک تاریخ پنهان دارد.',
  description:'از تحلیل یک غزل شکسپیر و کشف یک بازی زبانی چهارصدساله، تا ریشه‌یابی یک واژهٔ عربی در دل تاریخ، یا ثبت یک گویش محلی در حال انقراض—تو باستان‌شناس کلمات و معمار فرهنگ‌ها هستی.',
- majorCodes: ['ENGL-','ARAB-','LING-','RUS-','DEU-','SPA-','TURK-','ITAL-','JPN-','KURD-']
+ majorCodes: ['ENGL-','ARAB-','LING-','RUS-','DEU-','SPA-','TURK-','ITAL-','JPN-','KURD-','FRENCH-','ARBTR-']
  }
  ]
 };
@@ -589,7 +589,7 @@ const NARROW_PATHS = {
  name:'مهندسان ماده',
  icon:'🔩',
  description:'تو فلزات را ذوب می‌کنی، آلیاژ می‌سازی و خواصشان را تغییر می‌دهی. یک پلیمر جدید اختراع می‌کنی که از فولاد سبک‌تر است، یا سرامیکی می‌سازی که در دمای ۲۰۰۰ درجه هم ذوب نمی‌شود. تو کیمیاگری هستی که ماده را به خدمت انسان درمی‌آوری.',
- majorCodes: ['MAT-','CER-','POLY-']
+ majorCodes: ['MAT-','CER-','POLY-','WOOD-']
  },
  {
  id:'transform-process',
@@ -628,7 +628,7 @@ const NARROW_PATHS = {
  name:'تولیدکنندگان زیستی',
  icon:'🌾',
  description:'تو غذای جهان را تأمین می‌کنی. از اصلاح نژاد گندم تا پرورش ماهی در استخرهای بزرگ. یک جیرهٔ غذایی دقیق برای یک گلهٔ شیری می‌نویسی، یا یک گلخانهٔ هیدروپونیک راه می‌اندازی که کاهوی تمیز و بی‌آفت تولید کند.',
- majorCodes: ['AGR-','HORT-','ANIS-','FISH-']
+ majorCodes: ['AGR-', 'HORT-', 'ANIS-', 'FISH-', 'AGMECH-']
  },
  {
  id:'earth-ecosystem',
