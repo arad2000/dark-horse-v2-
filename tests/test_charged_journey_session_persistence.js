@@ -251,13 +251,13 @@ async function run() {
   assert.equal(cleanDiscoveryCalls, 1);
   assert.equal(JSON.parse(cleanRequest.body).session_id, cleanId);
 
-  // Prevent a regression where a logged-in button bypasses commercial charge.
+  // Prevent a regression where a logged-in button bypasses commercial gate or charges prematurely at entry.
   assert.equal((commercialSource.match(/global\.DHShell\.startJourney\(\)/g) || []).length, 1,
-    'commercial module may invoke shell directly only after charging');
-  assert.match(commercialSource, /persistChargedJourneySession\(sessionId\)/);
+    'commercial module may invoke shell directly only after authorization');
+  assert.match(commercialSource, /persistPreparedJourneySession\(sessionId\)/);
   assert.match(commercialSource, /await global\.DHShell\.startJourney\(\)/);
   assert.match(shellSource, /authorizedCommercialJourneySessionId/);
-  assert.match(shellSource, /dh_quota_charged_session_v1/);
+  assert.match(appSource, /ensureJourneyChargedForResults/);
   assert.match(quotaSource, /pending && pending === String\(charged\)/);
 
   console.log('Charged journey session persistence: PASS (old journey + new charge rebind, strict discover guard, clean journey HTTP 200)');
