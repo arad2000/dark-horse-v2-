@@ -8,9 +8,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
 from auth_service import hash_password, issue_session
-from billing_models import AuthSession, PhoneVerification, User
+from billing_models import AuthSession, PhoneVerification, PremiumPlan, User
 from database import SessionLocal
 from main_v2 import app
+from sqlalchemy import select
 
 
 def _unique_phone() -> str:
@@ -21,8 +22,30 @@ def _unique_phone() -> str:
 
 class PasswordResetE2ETests(unittest.TestCase):
     def test_full_http_reset_flow_invalidates_old_auth(self):
+        if SessionLocal is None:
+            self.skipTest("DATABASE_URL is required for PostgreSQL E2E")
+        try:
+            from otp_rate_limit import OTP_REQUEST_RATE_LIMITER
+            OTP_REQUEST_RATE_LIMITER.reset()
+        except Exception:
+            pass
         phone = _unique_phone()
         db = SessionLocal()
+        db.execute(delete(PhoneVerification))
+        if db.scalar(select(PremiumPlan).where(PremiumPlan.code == "free_1_test")) is None:
+            db.add(
+                PremiumPlan(
+                    code="free_1_test",
+                    name_fa="رایگان — ۱ تست",
+                    plan_type="credits",
+                    duration_days=None,
+                    credits_granted=1,
+                    price_minor=0,
+                    currency="IRR",
+                    is_active=True,
+                    features={"tests": 1, "non_expiring": True},
+                )
+            )
         user = User(
             public_id=secrets.token_hex(18),
             name="Password Reset E2E",

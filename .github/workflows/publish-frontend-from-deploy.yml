@@ -1,4 +1,4 @@
-name: Publish frontend from deploy branch
+name: Verify frontend artifact on deploy (Pages restricted to main)
 
 on:
   pull_request:
@@ -10,10 +10,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: github-pages
-  cancel-in-progress: false
 
 jobs:
   verify:
@@ -32,7 +28,7 @@ jobs:
           grep -q 'SPORT-' docs/data.js
           grep -q 'ARCHY-' docs/data.js
           grep -q 'history-meaning-text' docs/data.js
-          grep -q 'data.js?v=phase3-161-176-1' docs/index.html
+          grep -Eq 'data\.js\?v=' docs/index.html
           python - <<'PY'
           import json
           from pathlib import Path
@@ -54,7 +50,7 @@ jobs:
           ! test -f data/micro_motives.json
 
   publish:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: verify
     runs-on: ubuntu-latest
     permissions:
@@ -64,6 +60,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

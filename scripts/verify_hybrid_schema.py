@@ -13,7 +13,8 @@ EXPECTED_TABLES = {
     "micro_motives", "value_poles", "trait_options", "majors", "school_branches",
     "major_micro_motives", "branch_micro_motives", "user_sessions", "discovery_results",
     "branch_recommendations", "user_feedback", "audit_logs", "users", "auth_sessions",
-    "phone_verifications", "premium_plans", "orders", "payments", "entitlements", "payment_events", "admin_audit_logs",
+    "phone_verifications", "premium_plans", "orders", "payments", "entitlements",
+    "payment_events", "admin_audit_logs", "journey_credit_consumptions",
 }
 EXPECTED_COLUMNS = {
     "micro_motives": {"id", "code", "description_fa", "category", "intensity_level"},
@@ -35,6 +36,7 @@ EXPECTED_COLUMNS = {
     "entitlements": {"id", "user_id", "plan_id", "source", "credits_granted", "credits_remaining", "starts_at", "expires_at", "status", "order_id"},
     "payment_events": {"id", "payment_id", "event_type", "event_key", "payload"},
     "admin_audit_logs": {"id", "admin_user_id", "action", "target_type", "target_id", "metadata", "ip_address"},
+    "journey_credit_consumptions": {"id", "user_id", "session_uuid", "entitlement_id", "created_at"},
 }
 
 def main() -> int:
