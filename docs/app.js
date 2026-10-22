@@ -303,7 +303,17 @@ function dhGoHomeKeepPlace() {
 window.dhGoHomeKeepPlace = dhGoHomeKeepPlace;
 
 function dhGetActivePlaceSummary() {
+  const commercialActive = typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime();
+  if (commercialActive && (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn())) {
+    return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
+  }
   if (window.__dhCachedResultsPlace && (state.majorsResult || state.branchesResult)) {
+    const resultSid = (state && state.sessionId) ? String(state.sessionId) : '';
+    if (commercialActive && window.DHCommercialUI && typeof window.DHCommercialUI.isBannerReturnAllowed === 'function') {
+      if (!window.DHCommercialUI.isBannerReturnAllowed({ isResults: true, sessionId: resultSid })) {
+        return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
+      }
+    }
     const isBr = window.__dhCachedResultsPlace.kind === 'branches';
     return {
       resumable: true,
@@ -318,6 +328,11 @@ function dhGetActivePlaceSummary() {
     if (raw) {
       const d = JSON.parse(raw);
       if (d && !d.journeyFinished && d.stage) {
+        if (commercialActive && window.DHCommercialUI && typeof window.DHCommercialUI.isBannerReturnAllowed === 'function') {
+          if (!window.DHCommercialUI.isBannerReturnAllowed({ isResults: false, sessionId: d.sessionId || '' })) {
+            return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
+          }
+        }
         const sTotal = (state.strategyQuestions && state.strategyQuestions.length) || 25;
         const vTotal = (state.valueQuestions && state.valueQuestions.length) || 15;
         let lbl = 'شهر رؤیاها';
@@ -353,13 +368,22 @@ window.dhGetActivePlaceSummary = dhGetActivePlaceSummary;
 
 async function dhReturnToActivePage() {
   if (window.__dhCachedResultsPlace && (state.majorsResult || state.branchesResult)) {
-    if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime() &&
-        (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn())) {
-      window.__dhInJourney = false;
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
-        window.DHCommercialUI.showAuth('login');
+    const resultSid = (state && state.sessionId) ? String(state.sessionId) : '';
+    if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
+      if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
+        window.__dhInJourney = false;
+        if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
+          window.DHCommercialUI.showAuth('login');
+        }
+        return;
       }
-      return;
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
+        const okResults = await window.DHCommercialUI.ensureCanEnterJourney({
+          mode: resultSid ? 'resume' : 'new',
+          sessionId: resultSid
+        });
+        if (!okResults) return;
+      }
     }
     const kind = window.__dhCachedResultsPlace.kind === 'branches' && state.branchesResult ? 'branches' : 'majors';
     const payload = kind === 'branches' ? state.branchesResult : state.majorsResult;
@@ -394,7 +418,13 @@ async function dhReturnToActivePage() {
         mode: candidateFinished ? 'new' : 'resume',
         sessionId: candidateFinished ? '' : candidateSessionId
       });
-      if (!allowed) return;
+      if (!allowed) {
+        try {
+          const staleBanner = document.getElementById('dh-active-place-banner');
+          if (staleBanner) staleBanner.remove();
+        } catch (_) {}
+        return;
+      }
     }
   }
   const ok = loadSession();
@@ -413,6 +443,15 @@ window.dhReturnToActivePage = dhReturnToActivePage;
 
 async function dhJumpToStage(targetId) {
   if (!targetId) return;
+  if (state.journeyFinished && targetId !== 'choice' && targetId !== 'results') {
+    const gateOk = dhEnsureServerQuotaGate({
+      mode: 'new',
+      sessionId: '',
+      isFinished: true,
+      targetStage: targetId
+    });
+    if (!gateOk) return;
+  }
   if (!dhIsStageUnlocked(targetId)) {
     dhShowJourneyToast(dhStageUnlockHint(targetId));
     return;
@@ -508,8 +547,9 @@ function ensureUXStyles() {
 function progressHTML(stageId) {
   const pct = dhComputeJourneyPercent(stageId);
   const detail = dhStageDetailLabel(stageId);
+  const hideStageNav = stageId === 'results' || Boolean(state && state.journeyFinished);
   const activeNavIdx = DH_NAV_STAGES.findIndex(s => s.match.includes(stageId));
-  const navPills = DH_NAV_STAGES.map((s, i) => {
+  const navPills = hideStageNav ? '' : DH_NAV_STAGES.map((s, i) => {
     const isCurrent = s.match.includes(stageId);
     const unlocked = dhIsStageUnlocked(s.id);
     const badge = dhStageBadgeText(s.id);
@@ -529,7 +569,7 @@ function progressHTML(stageId) {
         <span class="on">${detail} · ${dhFaNum(pct)}٪</span>
       </div>
       <div class="dh-progress-track"><div class="dh-progress-fill" style="width:${pct}%"></div></div>
-      <div class="dh-steps dh-stage-nav">${navPills}</div>
+      ${hideStageNav ? '' : `<div class="dh-steps dh-stage-nav">${navPills}</div>`}
     </div>`;
 }
 
@@ -782,11 +822,11 @@ function dhEnsureServerQuotaGate(opts) {
       typeof window.DHCommercialUI.isActiveStageAuthorized === 'function' &&
       typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
     if (options.mode !== 'new' &&
-        window.DHCommercialUI.isActiveStageAuthorized(options.sessionId, Boolean(options.isFinished))) {
+        window.DHCommercialUI.isActiveStageAuthorized(options.sessionId, Boolean(options.isFinished), options.targetStage || '')) {
       return true;
     }
     window.DHCommercialUI.ensureCanEnterJourney({
-      mode: options.mode || 'resume',
+      mode: options.mode || 'new',
       sessionId: options.mode === 'new' ? '' : String(options.sessionId || ''),
       onAuthorized: options.onAuthorized
     });
@@ -817,7 +857,7 @@ function dhExecuteStartNewJourney(approvedSessionId, prevWasFinished, prevUnchar
       <h2 style="color:#f0c040">دادهٔ شهر رؤیاها لود نشد</h2>
       <p style="color:#c9b896;line-height:2">فایل <code>data.js</code> در دسترس نیست یا خطا دارد.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="location.reload()">تلاش دوباره</button>
-      <button class="btn" style="width:100%;margin-top:8px" onclick="goTo('splash')">بازگشت</button>
+      <button class="btn" style="width:100%;margin-top:8px" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
     </div>`;
     return;
   }
@@ -847,15 +887,28 @@ function startNewJourney() {
         prevUnchargedId = String(prevSaved.sessionId);
       }
     } catch (ePrev) {}
-    var gateOk = dhEnsureServerQuotaGate({
-      mode: prevWasFinished ? 'new' : 'resume',
-      sessionId: prevWasFinished ? '' : prevUnchargedId,
-      isFinished: prevWasFinished,
-      onAuthorized: function (approvedId) {
-        dhExecuteStartNewJourney(approvedId, prevWasFinished, prevUnchargedId);
-      }
-    });
-    if (!gateOk) return;
+    var prevAlreadyConsumed = Boolean(
+      prevUnchargedId && window.DHCommercialUI &&
+      typeof window.DHCommercialUI.isSessionConsumedLocallyOrServer === 'function' &&
+      window.DHCommercialUI.isSessionConsumedLocallyOrServer(prevUnchargedId)
+    );
+    var alreadyAuthorizedUncharged = Boolean(
+      !prevWasFinished && !prevAlreadyConsumed && prevUnchargedId &&
+      window.DHCommercialUI && typeof window.DHCommercialUI.isActiveStageAuthorized === 'function' &&
+      window.DHCommercialUI.isActiveStageAuthorized(prevUnchargedId, false, 'realm')
+    );
+    if (!alreadyAuthorizedUncharged) {
+      var gateOk = dhEnsureServerQuotaGate({
+        mode: 'new',
+        sessionId: '',
+        isFinished: true,
+        targetStage: 'realm',
+        onAuthorized: function (approvedId) {
+          dhExecuteStartNewJourney(approvedId, true, '');
+        }
+      });
+      if (!gateOk) return;
+    }
     dhExecuteStartNewJourney('', prevWasFinished, prevUnchargedId);
   } catch (e) {
     console.error('startNewJourney error', e);
@@ -1036,7 +1089,7 @@ function dhRouteBreadcrumbHTML(currentStage) {
   return `<div class="dh-breadcrumb" aria-label="مسیر فعلی تو">${parts.join('<span class="dh-crumb-sep">‹</span>')}</div>`;
 }
 
-function goTo(stage) {
+function dhApplyStageTransition(stage) {
   if (state.stage && state.stage !== stage) {
     if (state.history[state.history.length - 1] !== state.stage) {
       state.history.push(state.stage);
@@ -1051,12 +1104,48 @@ function goTo(stage) {
   render();
   scrollPageToTop();
 }
+
+function goTo(stage) {
+  const needsNewCredit = Boolean(state.journeyFinished && stage !== 'choice' && stage !== 'results');
+  const gateOk = dhEnsureServerQuotaGate({
+    mode: needsNewCredit ? 'new' : 'resume',
+    sessionId: needsNewCredit ? '' : state.sessionId,
+    isFinished: Boolean(state.journeyFinished),
+    targetStage: stage,
+    onAuthorized: function (approvedId) {
+      if (needsNewCredit) {
+        fullResetState(true);
+        try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (_) {}
+      }
+      if (approvedId) state.sessionId = String(approvedId);
+      dhApplyStageTransition(stage);
+    }
+  });
+  if (!gateOk) return;
+  dhApplyStageTransition(stage);
+}
 window.goTo = goTo;
 
+function dhReturnToFinishedResults() {
+  if (state.majorsResult || state.branchesResult) {
+    const kind = state.lastCounselKind === 'branches' && state.branchesResult ? 'branches' : 'majors';
+    displayResults(kind === 'branches' ? state.branchesResult : state.majorsResult, kind);
+    return;
+  }
+  dhGoHomeKeepPlace();
+}
+window.dhReturnToFinishedResults = dhReturnToFinishedResults;
+
 function goBack() {
+  if (state.journeyFinished) {
+    dhReturnToFinishedResults();
+    return;
+  }
+  const popped = [];
   let prev = null;
   while (state.history && state.history.length > 0) {
     const cand = state.history.pop();
+    popped.push(cand);
     if (cand && cand !== state.stage) {
       prev = cand;
       break;
@@ -1069,6 +1158,16 @@ function goBack() {
   }
   if (!prev) {
     dhGoHomeKeepPlace();
+    return;
+  }
+  const gateOk = dhEnsureServerQuotaGate({
+    mode: 'resume',
+    sessionId: state.sessionId,
+    isFinished: Boolean(state.journeyFinished),
+    targetStage: prev
+  });
+  if (!gateOk) {
+    while (popped.length > 0) state.history.push(popped.pop());
     return;
   }
   // هیچ‌گاه انتخاب‌های گذر/مسیر باریک یا مکان سؤال کاربر را پاک نکن!
@@ -1091,7 +1190,7 @@ function goBack() {
 function render(opts) {
   const preserveScroll = Boolean(opts && opts.preserveScroll);
   try {
-    if (state.stage !== 'results' && typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
+    if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
       if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
         window.__dhInJourney = false;
         if (window.DHShell && typeof window.DHShell.renderHome === 'function') {
@@ -1104,10 +1203,10 @@ function render(opts) {
       }
       if (window.DHCommercialUI &&
           typeof window.DHCommercialUI.isActiveStageAuthorized === 'function' &&
-          !window.DHCommercialUI.isActiveStageAuthorized(state.sessionId, Boolean(state.journeyFinished))) {
+          !window.DHCommercialUI.isActiveStageAuthorized(state.sessionId, Boolean(state.journeyFinished), state.stage)) {
         const pendingStage = state.stage || 'splash';
         const pendingId = state.sessionId || '';
-        const wasFin = Boolean(state.journeyFinished);
+        const wasFin = Boolean(state.journeyFinished && pendingStage !== 'choice' && pendingStage !== 'results');
         window.__dhInJourney = false;
         if (window.DHShell && typeof window.DHShell.renderHome === 'function') {
           window.DHShell.renderHome();
@@ -1117,6 +1216,10 @@ function render(opts) {
             mode: wasFin ? 'new' : 'resume',
             sessionId: wasFin ? '' : pendingId,
             onAuthorized: function (approvedId) {
+              if (wasFin) {
+                fullResetState(true);
+                try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (_) {}
+              }
               if (approvedId) state.sessionId = approvedId;
               state.stage = pendingStage;
               window.__dhInJourney = true;
@@ -1223,7 +1326,7 @@ function renderManifesto() {
           نتیجه، پیشنهاد بر اساس فردیت توست — نه حکم نهایی بر اساس یک عدد.
         </p>
       </div>
-      <button class="btn btn-primary" style="margin-top:20px;width:100%;" onclick="goTo('splash')">شروع سفر اکتشافی</button>
+      <button class="btn btn-primary" style="margin-top:20px;width:100%;" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
     </div>`;
 }
 
@@ -1291,8 +1394,7 @@ function renderGuide() {
         </p>
       </div>
 
-      <button class="btn btn-primary" style="margin-top:20px;width:100%;" onclick="goTo('splash')">ورود به شهر رؤیاها</button>
-      <button class="btn" style="margin-top:10px;width:100%;" onclick="goTo('manifesto')">بازگشت</button>
+      <button class="btn" style="margin-top:14px;width:100%;" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
     </div>`;
 }
 
@@ -1517,7 +1619,6 @@ function renderSplash() {
     actionButtonHTML = `
       <div class="dh-stage-actions">
         <button type="button" class="btn btn-primary" onclick="dhResumeFromSplash()">ادامهٔ سفر دقیقاً از همان‌جا</button>
-        <button type="button" class="btn" onclick="startNewJourney()">شروع یک کاوش تازه</button>
         <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
       </div>`;
   } else {
@@ -2802,8 +2903,10 @@ function renderChoice() {
       </button>
     </div>
     <div class="dh-stage-actions">
-      <button type="button" class="btn" onclick="goBack()">‹ مرور دوراهی‌های ارزش</button>
-      <button type="button" class="btn" onclick="resetJourney()">شروع از نو</button>
+      ${state.journeyFinished
+        ? `<button type="button" class="btn" onclick="dhReturnToFinishedResults()">‹ بازگشت به نتیجهٔ تحلیل</button>
+           <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>`
+        : `<button type="button" class="btn" onclick="goBack()">‹ مرور دوراهی‌های ارزش</button>`}
     </div>
   `;
 }
@@ -3497,7 +3600,6 @@ function displayResults(data, type) {
         </button>` : ''}
       <button type="button" class="btn" onclick="goTo('choice')">بازگشت به صفحهٔ انتخاب تحلیل</button>
       <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">رفتن به صفحه اول (امکان بازگشت به همین نتیجه)</button>
-      <button type="button" class="btn" onclick="resetJourney()">شروع سفر جدید</button>
     </div>
 
     <div id="feedbackSection" class="card dh-surface-card" style="padding:20px;margin:24px 0 15px 0;text-align:right;">
@@ -3737,7 +3839,7 @@ async function showAllFeedback() {
     const feedbackData = data.feedbacks || [];
     if (feedbackData.length === 0) { alert('هنوز هیچ بازخوردی ثبت نشده است.'); return; }
     let html = `<h2>📋 بازخوردهای ثبت‌شده (${feedbackData.length} مورد)</h2>
-      <button class="btn" onclick="goTo('splash')" style="margin-bottom:15px;">⬅️ بازگشت به صفحه اصلی</button>
+      <button class="btn" onclick="dhGoHomeKeepPlace()" style="margin-bottom:15px;">⬅️ بازگشت به صفحه اصلی</button>
       <button class="btn" onclick="copyAllFeedbackServer()" style="margin-bottom:15px;background:#d4af37;color:#000;">📋 کپی همه به صورت JSON</button>
       <div style="text-align:right;">`;
     feedbackData.forEach(fb => {
@@ -3760,7 +3862,7 @@ async function showAllFeedback() {
         <p style="color:#f0c040;">۱۰. پیشنهاد بهبود: ${escapeHtml(fb.feedback?.q9) || 'ندارد'}</p>
       </div>`;
     });
-    html += `</div><button class="btn" onclick="goTo('splash')">⬅️ بازگشت به صفحه اصلی</button>`;
+    html += `</div><button class="btn" onclick="dhGoHomeKeepPlace()">⬅️ بازگشت به صفحه اصلی</button>`;
     app.innerHTML = html;
   } catch (e) { alert('نتوانستیم بازخوردها را از سرور بخوانیم.'); }
 }

@@ -487,7 +487,7 @@
               '<div class="dh-mk2-hero-sub">کشف رشته و شاخه بر اساس فردیت</div></div>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
-              (canContinue ? 'ادامه سفر' : 'شروع سفر') + ' <span>›</span></button>' +
+              'شروع سفر <span>›</span></button>' +
           '</div></section>' +
         '<section class="dh-home-sanjesh-entry" aria-labelledby="dh-home-sanjesh-title">' +
           '<div class="dh-home-entry-top">' +
@@ -537,6 +537,19 @@
       if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
       else startJourneyFromShell();
     });
+    if (!window.__dhActiveBannerQuotaSyncBound) {
+      window.__dhActiveBannerQuotaSyncBound = true;
+      window.addEventListener('dh-quota-updated', function () {
+        if (window.__dhInJourney) return;
+        var summary = (typeof window.dhGetActivePlaceSummary === 'function')
+          ? window.dhGetActivePlaceSummary()
+          : { resumable: false };
+        if (!summary || !summary.resumable) {
+          var staleBanner = $('dh-active-place-banner');
+          if (staleBanner && typeof staleBanner.remove === 'function') staleBanner.remove();
+        }
+      });
+    }
     on('dh-start-journey', function () { startJourneyFromShell(); });
     on('dh-open-sanjesh', function () {
       var panel = $('dh-home-sanjesh-panel');

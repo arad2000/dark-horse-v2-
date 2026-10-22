@@ -309,19 +309,69 @@
     }
   }
 
-  function isActiveStageAuthorized(sessionUuid, isFinished) {
+  function isActiveStageAuthorized(sessionUuid, isFinished, targetStage) {
     if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
       return false;
     }
     syncGateToken();
     var sid = String(sessionUuid || '').trim();
     if (!sid) return false;
-    if (SERVER_GATE.consumedSessions[sid] === true) return true;
-    if (isFinished) return false;
-    if (SERVER_GATE.authorizedSessionId === sid && Number.isFinite(SERVER_GATE.remaining) && SERVER_GATE.remaining > 0) {
+    var stg = String(targetStage || '').trim();
+    var isPostExplorationStage = stg === 'choice' || stg === 'results';
+    if (isFinished) {
+      return SERVER_GATE.consumedSessions[sid] === true && isPostExplorationStage;
+    }
+    if (SERVER_GATE.authorizedSessionId === sid &&
+        SERVER_GATE.consumedSessions[sid] !== true &&
+        Number.isFinite(SERVER_GATE.remaining) && SERVER_GATE.remaining > 0) {
+      return true;
+    }
+    if (SERVER_GATE.consumedSessions[sid] === true && isPostExplorationStage) {
       return true;
     }
     return false;
+  }
+
+  function isSessionConsumedLocallyOrServer(sessionUuid) {
+    syncGateToken();
+    var sid = String(sessionUuid || '').trim();
+    if (!sid) return false;
+    if (SERVER_GATE.consumedSessions[sid] === true) return true;
+    try {
+      return String(localStorage.getItem(CHARGED_SESSION_KEY) || '') === sid;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function knownServerRemaining() {
+    syncGateToken();
+    if (SERVER_GATE.remaining !== null && Number.isFinite(Number(SERVER_GATE.remaining))) {
+      return Number(SERVER_GATE.remaining);
+    }
+    try {
+      var cached = JSON.parse(localStorage.getItem(QUOTA_KEY) || 'null');
+      if (cached && Number.isFinite(Number(cached.serverRemaining))) {
+        return Number(cached.serverRemaining);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function isBannerReturnAllowed(info) {
+    var meta = info || {};
+    if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
+      return false;
+    }
+    var sid = String(meta.sessionId || '').trim();
+    if (meta.isResults) {
+      return !!sid && isSessionConsumedLocallyOrServer(sid);
+    }
+    var rem = knownServerRemaining();
+    if (rem !== null && rem <= 0) {
+      return false;
+    }
+    return true;
   }
 
   async function verifySessionAlreadyServerConsumed(sessionUuid, quotaPayload) {
@@ -353,7 +403,7 @@
       } catch (err) {
         var st = Number(err && err.status || 0);
         var msg = text(err && err.message ? err.message : err);
-        if (st === 402 || st === 403 || st === 409 || /credit|quota|remaining|اعتبار|سهمیه/i.test(msg)) {
+        if (st === 400 || st === 402 || st === 403 || st === 409 || st === 422 || /credit|quota|remaining|uuid|session|اعتبار|سهمیه/i.test(msg)) {
           try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
           return false;
         }
@@ -401,6 +451,12 @@
           if (forceNew) {
             try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
           }
+          try {
+            var staleCharged = String(localStorage.getItem(CHARGED_SESSION_KEY) || '').trim();
+            if (staleCharged && SERVER_GATE.consumedSessions[staleCharged] !== true) {
+              localStorage.removeItem(CHARGED_SESSION_KEY);
+            }
+          } catch (_) {}
           var stayingOnResults = typeof state !== 'undefined' && state && state.stage === 'results' &&
             !!(state.majorsResult || state.branchesResult);
           if (!stayingOnResults) {
@@ -700,6 +756,8 @@
     startServerAuthorizedJourney:continueAfterAuth,
     ensureCanEnterJourney:ensureCanEnterJourney,
     isActiveStageAuthorized:isActiveStageAuthorized,
+    isBannerReturnAllowed:isBannerReturnAllowed,
+    isSessionConsumedLocallyOrServer:isSessionConsumedLocallyOrServer,
     recordServerConsume:recordServerConsume,
     recordConsumeFailure:recordConsumeFailure,
     logout:doLogout,
