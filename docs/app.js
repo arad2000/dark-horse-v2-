@@ -830,7 +830,6 @@ function renderRealm() {
       <div class="grid" id="realmGrid">`;
     REALMS.forEach(r => {
       html += `<div class="option ${state.selectedRealms.includes(r.id) ? 'selected' : ''}" onclick="toggleRealm('${r.id}')">
-        <span class="option-icon">${r.icon || '📍'}</span><strong>${escapeHtml(r.name)}</strong>
         <p style="color:#d4af37;">${escapeHtml(r.motto || '')}</p><small>${escapeHtml(r.description || '')}</small></div>`;
     });
     html += `</div>
@@ -871,9 +870,7 @@ function renderSubRealm() {
     html += `<div class="option ${state.selectedSubRealms.includes(s.id) ? 'selected' : ''} ${isComplete ? 'disabled' : ''}" 
       onclick="${isComplete ? '' : `toggleSub('${s.id}', ${maxSelect})`}" 
       style="${isComplete ? 'opacity:0.5;pointer-events:none;' : ''}">
-      <span class="option-icon">${s.icon}</span>
-      <strong>${escapeHtml(s.name)} ${isComplete ? '✅' : ''}</strong>
-      <p style="color:#d4af37;">«${escapeHtml(s.motto)}»</p><small>${escapeHtml(s.description)}</small></div>`;
+      <p style="color:#d4af37;">${escapeHtml(s.motto || '')}${isComplete ? ' (انجام شد)' : ''}</p><small>${escapeHtml(s.description || '')}</small></div>`;
   });
   html += `</div>
     <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
@@ -903,9 +900,7 @@ function renderNarrowPath() {
     html += `<div class="option dh-path-card ${state.selectedNarrowPaths.includes(p.id) ? 'selected' : ''} ${isComplete ? 'dh-path-done' : ''}" 
       onclick="${isComplete ? '' : `togglePath('${p.id}')`}" 
       style="${isComplete ? 'opacity:0.42;pointer-events:none;filter:grayscale(0.7);' : ''}">
-      <span class="option-icon">${p.icon}</span>
-      <strong>${escapeHtml(p.name)} ${isComplete ? '✓ انجام شد' : ''}</strong>
-      <p style="color:${isComplete ? '#666' : '#d4af37'};">${isComplete ? 'جرقه‌های این مسیر ثبت شده — مسیر دیگری را انتخاب کن.' : escapeHtml(p.description)}</p></div>`;
+      <p style="color:${isComplete ? '#666' : '#d4af37'};">${escapeHtml(p.motto || '')}${isComplete ? ' (انجام شد)' : ''}</p><small style="color:${isComplete ? '#666' : ''};">${isComplete ? 'جرقه‌های این مسیر ثبت شده — مسیر دیگری را انتخاب کن.' : escapeHtml(p.description || '')}</small></div>`;
   });
   html += `</div>
     <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
