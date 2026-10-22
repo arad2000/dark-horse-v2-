@@ -212,13 +212,13 @@ const appSource = fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8');
 
 assert.match(
   indexSource,
-  /href="shell\.css\?v=66" media="print"/,
-  'docs/index.html must cache-bust shell.css for Phase 2 visual polish'
+  /href="shell\.css\?v=67" media="print"/,
+  'docs/index.html must cache-bust shell.css for visual polish'
 );
 assert.match(
   indexSource,
-  /src="app\.js\?v=72&poles-fix=1&quota-fix=1&copy=grade9-v1&genz=phase2-v1"/,
-  'docs/index.html must cache-bust app.js for Phase 2 visual polish'
+  /src="app\.js\?v=72&poles-fix=1&quota-fix=1&copy=grade9-v1&genz=phase2-v1&ux=phase3-v1"/,
+  'docs/index.html must cache-bust app.js for visual & navigation UX polish'
 );
 for (const selector of [
   '.dh-route-grid',

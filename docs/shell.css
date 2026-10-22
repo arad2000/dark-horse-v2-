@@ -2513,3 +2513,389 @@ body {
   color: #c8c3b7 !important;
 }
 
+
+/* ===== Phase 3: Unified Standard Palette, Seamless Stage Navigation & Exact Resume ===== */
+:root {
+  --dh-std-canvas: #0e1017;
+  --dh-std-surface-1: #151824;
+  --dh-std-surface-2: #171a25;
+  --dh-std-surface-hover: #1c202e;
+  --dh-std-surface-selected: #20222f;
+  --dh-std-border: rgba(255, 255, 255, 0.09);
+  --dh-std-border-accent: rgba(240, 192, 64, 0.45);
+  --dh-std-text-strong: #f5efe2;
+  --dh-std-text-body: #d6d1c4;
+  --dh-std-text-muted: #b8b2a4;
+  --dh-std-accent: #f0c040;
+}
+
+/* ۱) دکمه «صفحه اول» و نوار مراحل تعاملی در هدر چسبان */
+#app .dh-progress-wrap.dh-edu-header {
+  background: rgba(18, 21, 31, 0.94) !important;
+  border: 1px solid var(--dh-std-border) !important;
+  border-radius: 16px !important;
+  padding: 10px 12px 9px !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+#app .dh-home-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(240, 192, 64, 0.10);
+  border: 1px solid rgba(240, 192, 64, 0.34);
+  color: var(--dh-std-text-strong);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-family: inherit;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+#app .dh-home-chip:hover {
+  background: rgba(240, 192, 64, 0.18);
+  border-color: rgba(240, 192, 64, 0.65);
+}
+
+#app .dh-stage-nav {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  margin-top: 9px !important;
+  padding-bottom: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+#app .dh-stage-nav::-webkit-scrollbar {
+  display: none;
+}
+
+#app .dh-stage-pill {
+  appearance: none;
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #141722;
+  color: #a9a497 !important;
+  font-family: inherit;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+#app .dh-stage-pill i {
+  width: 6px !important;
+  height: 6px !important;
+  flex: 0 0 6px;
+}
+#app .dh-stage-pill.is-unlocked:hover {
+  background: var(--dh-std-surface-hover);
+  color: var(--dh-std-text-strong) !important;
+  border-color: rgba(240, 192, 64, 0.35);
+}
+#app .dh-stage-pill.done {
+  color: #d6d1c4 !important;
+  border-color: rgba(212, 175, 55, 0.28);
+}
+#app .dh-stage-pill.active {
+  background: var(--dh-std-surface-selected) !important;
+  border-color: rgba(240, 192, 64, 0.8) !important;
+  color: #fff6df !important;
+  font-weight: 700;
+}
+#app .dh-stage-pill.is-locked {
+  opacity: 0.56;
+}
+#app .dh-pill-count {
+  font-style: normal;
+  font-size: 0.69rem;
+  font-weight: 700;
+  color: var(--dh-std-accent);
+  background: rgba(240, 192, 64, 0.12);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+/* ۲) مسیر راهنمای زمینه (Breadcrumb) در گذرها / مسیرهای باریک / خرده‌انگیزه‌ها */
+#app .dh-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px 12px;
+  margin: 0 0 12px;
+  background: var(--dh-std-surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  font-size: 0.78rem;
+}
+#app .dh-crumb-link {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--dh-std-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#app .dh-crumb-sep {
+  color: #7d8292;
+  font-size: 0.85rem;
+}
+#app .dh-crumb-cur {
+  color: var(--dh-std-text-strong);
+  font-weight: 700;
+}
+
+/* ۳) کارت بازگشت فوری به همان صفحه در صفحه اول (خانه) */
+.dh-active-return-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+  padding: 13px 15px;
+  background: var(--dh-std-surface-2);
+  border: 1px solid var(--dh-std-border-accent);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.dh-active-return-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 170px;
+  flex: 1;
+}
+.dh-active-return-kicker {
+  font-size: 0.74rem;
+  color: var(--dh-std-text-muted);
+}
+.dh-active-return-title {
+  font-size: 0.92rem;
+  color: var(--dh-std-text-strong);
+  font-weight: 800;
+}
+.dh-active-return-btn {
+  appearance: none;
+  background: var(--dh-std-accent);
+  color: #12131a;
+  border: none;
+  border-radius: 12px;
+  padding: 9px 15px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ۴) کارت‌های استاندارد، نوار شماره سؤالات و گزینه‌های راهبرد/ارزش */
+#app .card.dh-surface-card {
+  background: var(--dh-std-surface-2) !important;
+  border: 1px solid var(--dh-std-border) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+#app .dh-q-jumper-wrap {
+  background: var(--dh-std-surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 9px 11px;
+  margin: 0 0 12px;
+}
+#app .dh-q-jumper-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.76rem;
+  color: var(--dh-std-text-muted);
+  margin-bottom: 7px;
+}
+#app .dh-q-jumper {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+#app .dh-q-jumper::-webkit-scrollbar {
+  display: none;
+}
+#app .dh-q-dot {
+  appearance: none;
+  flex: 0 0 auto;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #131621;
+  color: #9e9a8e;
+  font-family: inherit;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+#app .dh-q-dot.is-answered {
+  background: rgba(240, 192, 64, 0.13);
+  border-color: rgba(240, 192, 64, 0.36);
+  color: #f3dfb0;
+}
+#app .dh-q-dot.is-current {
+  background: var(--dh-std-accent) !important;
+  border-color: var(--dh-std-accent) !important;
+  color: #12131a !important;
+}
+
+#app .dh-q-prompt {
+  color: var(--dh-std-text-strong) !important;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.9;
+  margin: 4px 0 16px;
+}
+#app .dh-answer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+#app .dh-answer-option {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: right;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: #131621;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--dh-std-text-body);
+  font-family: inherit;
+  font-size: 0.91rem;
+  font-weight: 500;
+  line-height: 1.8;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+#app .dh-answer-option:hover {
+  background: var(--dh-std-surface-hover);
+  border-color: rgba(240, 192, 64, 0.35);
+  color: var(--dh-std-text-strong);
+}
+#app .dh-answer-option.selected {
+  background: var(--dh-std-surface-selected);
+  border-color: rgba(240, 192, 64, 0.82);
+  color: #fff6df;
+  font-weight: 600;
+}
+#app .dh-answer-option.selected .dh-route-check {
+  background: var(--dh-std-accent);
+  border-color: var(--dh-std-accent);
+}
+#app .dh-answer-option.selected .dh-route-check::after {
+  transform: rotate(45deg) scale(1);
+}
+#app .dh-q-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+}
+#app .dh-q-nav .btn {
+  flex: 1 1 130px;
+  min-height: 46px;
+}
+
+/* ۵) کشوی جرقه‌های انتخاب‌شده و نشان انتخاب */
+#app .dh-picked-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(240, 192, 64, 0.14);
+  border: 1px solid rgba(240, 192, 64, 0.42);
+  color: var(--dh-std-accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+#app .dh-liked-drawer {
+  margin-top: 12px;
+  background: var(--dh-std-surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+#app .dh-liked-drawer summary {
+  cursor: pointer;
+  color: var(--dh-std-text-body);
+  font-size: 0.84rem;
+  font-weight: 700;
+  list-style-position: inside;
+}
+#app .dh-liked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 10px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+#app .dh-liked-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #12151f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--dh-std-text-body);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+#app .dh-liked-rm {
+  appearance: none;
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--dh-std-text-muted);
+  border-radius: 8px;
+  padding: 3px 9px;
+  font-family: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+/* ۶) استانداردسازی کنتراست متن‌های کم‌نور قدیمی در سراسر اپ (WCAG AA+) */
+.dh-quote-foot,
+.dh-sanjesh-note,
+.dh-story-foot,
+.dh-par-lead,
+.dh-last-meta,
+.dh-spark-desc {
+  color: var(--dh-std-text-muted) !important;
+}
+
+

@@ -1,70 +1,83 @@
-/* Dark Horse — Gen-Z Results Experience v1
- * Presentation-only. No scoring, API, assessment state, or result data is changed.
- */
-
-#app > h2:first-of-type { letter-spacing: -0.02em; }
-
-.dh-result-reveal {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(145deg, #1a1a2e 0%, #17131f 55%, #21180f 100%) !important;
-  border-color: rgba(240, 192, 64, 0.48) !important;
-  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.42), 0 0 34px rgba(155, 140, 255, 0.055) !important;
+/* Dark Horse — Gen Z Results Layer v3 (Standard Accessible Palette) */
+:root {
+  --dh-rz-card-bg: #171a25;
+  --dh-rz-card-border: rgba(255, 255, 255, 0.08);
+  --dh-rz-card-top-border: rgba(240, 192, 64, 0.52);
+  --dh-rz-accent: #f0c040;
+  --dh-rz-text: #f5efe2;
+  --dh-rz-muted: #b8b2a4;
 }
-.dh-result-reveal::before {
-  content: '';
-  position: absolute;
-  width: 180px;
-  height: 180px;
-  top: -90px;
-  right: -70px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(155, 140, 255, 0.11), transparent 68%);
-  pointer-events: none;
-}
-.dh-result-reveal .dh-result-score { position: relative; z-index: 1; }
 
-.dh-result-card {
-  position: relative;
-  overflow: hidden;
-  border-color: rgba(155, 140, 255, 0.16) !important;
+#app .dh-result-card {
+  background: var(--dh-rz-card-bg) !important;
+  border: 1px solid var(--dh-rz-card-border) !important;
   border-radius: 18px !important;
-  background: linear-gradient(145deg, #1a1a2e 0%, #111118 72%, #17120e 100%) !important;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(240, 192, 64, 0.025) !important;
+  padding: 18px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
-.dh-result-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(circle at 88% 10%, rgba(155, 140, 255, 0.075), transparent 24%);
-}
-.dh-result-card > * { position: relative; z-index: 1; }
 
-.dh-result-card .dh-result-score-badge {
-  box-shadow: 0 5px 18px rgba(240, 192, 64, 0.16), 0 0 0 1px rgba(155, 140, 255, 0.05);
+#app .dh-result-card[data-rank="1"] {
+  background: #1b1f2d !important;
+  border-color: var(--dh-rz-card-top-border) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(240, 192, 64, 0.14);
 }
-.dh-result-fit-cue {
+
+#app .dh-result-card h3 {
+  color: var(--dh-rz-text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+#app .dh-result-why {
+  background: #131621;
+  border-right: 3px solid var(--dh-rz-accent);
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin: 12px 0;
+  color: #dcd6c8;
+  font-size: 0.87rem;
+  line-height: 1.85;
+}
+
+#app .dh-result-sparks-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+#app .dh-result-spark-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin: 8px 0 2px;
-  padding: 5px 9px;
+  padding: 4px 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(240, 192, 64, 0.10), rgba(155, 140, 255, 0.10));
-  border: 1px solid rgba(155, 140, 255, 0.18);
-  color: #d7cdb7;
-  font-size: 0.74rem;
+  background: rgba(240, 192, 64, 0.10);
+  border: 1px solid rgba(240, 192, 64, 0.24);
+  color: #f3dfb0;
+  font-size: 0.77rem;
+  line-height: 1.5;
 }
-.dh-result-card [style*="height:6px"] { border-radius: 99px !important; }
 
-@media (hover: hover) and (pointer: fine) {
-  .dh-result-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-  .dh-result-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(155, 140, 255, 0.28) !important;
-    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.38), 0 0 20px rgba(155, 140, 255, 0.06) !important;
-  }
+#app .dh-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 7px 0;
+  font-size: 0.81rem;
+  color: var(--dh-rz-muted);
 }
-@media (prefers-reduced-motion: reduce) { .dh-result-card { transition: none !important; } }
+
+#app .dh-bar-track {
+  flex: 1;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#app .dh-bar-fill-m { background: #f0c040; height: 100%; border-radius: 999px; }
+#app .dh-bar-fill-s { background: #56c7c1; height: 100%; border-radius: 999px; }
+#app .dh-bar-fill-v { background: #c9a6ff; height: 100%; border-radius: 999px; }

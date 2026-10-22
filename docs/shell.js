@@ -147,7 +147,7 @@
       var data = JSON.parse(raw);
       if (!data || data.journeyFinished) return false;
       var st = data.stage;
-      return st && ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+      return st && ['splash', 'realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
         'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(st) >= 0;
     } catch (e) { return false; }
   }
@@ -453,6 +453,19 @@
     var heroUrl = base + 'hero-journey.jpg';
     var heroUrl2x = base + 'hero-journey@2x.jpg';
     var ringOff = (301.6 * (1 - Math.min(100, Math.max(0, pct)) / 100)).toFixed(1);
+    var activePlace = (typeof window.dhGetActivePlaceSummary === 'function')
+      ? window.dhGetActivePlaceSummary()
+      : { resumable: false, label: '', cta: '' };
+    var activeBannerHtml = activePlace && activePlace.resumable
+      ? '<section class="dh-active-return-card" id="dh-active-place-banner" aria-label="بازگشت به آخرین صفحه فعال">' +
+          '<div class="dh-active-return-meta">' +
+            '<span class="dh-active-return-kicker">آخرین صفحهٔ فعال تو</span>' +
+            '<strong class="dh-active-return-title">' + escape(activePlace.label) + '</strong>' +
+          '</div>' +
+          '<button type="button" class="dh-active-return-btn" id="dh-return-exact-page">' +
+            (activePlace.isResults ? 'مشاهدهٔ دوبارهٔ نتیجه' : 'بازگشت به همان صفحه') + ' ‹</button>' +
+        '</section>'
+      : '';
 
     root.innerHTML =
       '<div class="dh-home-wrap dh-mk2">' +
@@ -467,6 +480,7 @@
           '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
           '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
+        activeBannerHtml +
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
@@ -534,8 +548,15 @@
 
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
     try { startFardiyatTicker(); } catch (eTicker) {}
+    on('dh-return-exact-page', function () {
+      if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
+      else startJourneyFromShell();
+    });
     on('dh-start-journey', function () { startJourneyFromShell(); });
-    on('dh-continue-journey', function () { startJourneyFromShell(); });
+    on('dh-continue-journey', function () {
+      if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
+      else startJourneyFromShell();
+    });
     on('dh-open-sanjesh', function () {
       var panel = $('dh-home-sanjesh-panel');
       var button = $('dh-open-sanjesh');
@@ -694,7 +715,7 @@
 
       var storedResumeSessionId = data && data.sessionId ? String(data.sessionId) : '';
       var unfinished = data && !data.journeyFinished && data.stage &&
-        ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+        ['splash', 'realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
          'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(data.stage) >= 0 &&
         (!storedResumeSessionId || storedResumeSessionId === authorizedSessionId);
 
@@ -719,11 +740,15 @@
           return;
         }
         if (typeof state !== 'undefined') {
-          if (!state.stage || ['splash', 'manifesto', 'guide', 'results'].indexOf(state.stage) >= 0) {
-            state.stage = data.stage || 'realm';
+          if (!state.stage || ['manifesto', 'guide', 'results'].indexOf(state.stage) >= 0) {
+            state.stage = data.stage || 'splash';
           }
         }
-        if (typeof render === 'function') render();
+        var resumeY = Number((data && data.lastScrollY) || (typeof state !== 'undefined' && state && state.lastScrollY) || 0);
+        if (typeof render === 'function') render({ preserveScroll: resumeY > 0 });
+        if (resumeY > 0) {
+          setTimeout(function () { try { window.scrollTo(0, resumeY); } catch (_) {} }, 40);
+        }
         return;
       }
 
