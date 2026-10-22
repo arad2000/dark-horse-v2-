@@ -208,18 +208,23 @@ assert.deepEqual(
 
 // Phase 2 Gen-Z UI & Mobile-First Route Card Contracts
 const shellCssSource = fs.readFileSync(path.join(root, 'docs', 'shell.css'), 'utf8');
+const journeyCssSource = fs.readFileSync(path.join(root, 'docs', 'journey_experience.css'), 'utf8');
 const appSource = fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8');
 
 assert.match(
   indexSource,
-  /href="shell\.css\?v=67" media="print"/,
+  /href="shell\.css\?v=67&ux=phase4-live-v2" media="print"/,
   'docs/index.html must cache-bust shell.css for visual polish'
 );
 assert.match(
   indexSource,
-  /src="app\.js\?v=72&poles-fix=1&quota-fix=1&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v1"/,
+  /src="app\.js\?v=72&poles-fix=1&quota-fix=1&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2"/,
   'docs/index.html must cache-bust app.js for visual & navigation UX polish'
 );
+assert.match(shellCssSource, /#app \.option\.dh-route-card \.dh-route-motto[\s\S]*?font-size:\s*1\.05rem/, 'Route motto must use teen-readable 1.05rem typography');
+assert.match(shellCssSource, /#app \.option\.dh-route-card \.dh-route-desc[\s\S]*?font-size:\s*0\.935rem/, 'Route description must use readable 0.935rem typography');
+assert.match(journeyCssSource, /\.dh-sigil-box\s*\{[\s\S]*?width:\s*28px;[\s\S]*?height:\s*28px;/, 'Realm sigil container must be compact 28x28px');
+assert.match(journeyCssSource, /\.dh-sigil-box svg\s*\{[\s\S]*?width:\s*18px;[\s\S]*?height:\s*18px;/, 'Realm sigil SVG must be compact 18x18px');
 for (const selector of [
   '.dh-route-grid',
   '.dh-route-card',
@@ -263,12 +268,28 @@ uiSandbox.globalThis = uiSandbox;
 vm.createContext(uiSandbox);
 vm.runInContext(dataSource, uiSandbox);
 vm.runInContext(
-  appSource + '\nglobalThis.__ui = { state, renderRealm, toggleRealm, renderSubRealm, toggleSub, renderNarrowPath, togglePath };',
+  appSource + '\nglobalThis.__ui = { state, renderSplash, renderRealm, toggleRealm, renderSubRealm, toggleSub, renderNarrowPath, togglePath };',
   uiSandbox
+);
+
+uiSandbox.__ui.renderSplash();
+assert.ok(
+  appEl.innerHTML.includes('به شهر رؤیاها خوش آمدی') && appEl.innerHTML.includes('دروازه‌های شهر رؤیاها'),
+  'Splash must display concise warm invitation to City of Dreams'
 );
 
 uiSandbox.__ui.toggleRealm('explorer');
 assert.ok(appEl.innerHTML.includes('dh-route-grid') && appEl.innerHTML.includes('dh-route-card selected'), 'Realm stage must render selected Gen-Z route card');
+assert.ok(appEl.innerHTML.includes('قدم به شهر رؤیاها بگذار'), 'Realm stage must display warm invitation header before districts');
+const strokeMatches = [...appEl.innerHTML.matchAll(/<svg width="18" height="18"[^>]*stroke="(#[0-9a-fA-F]{6})"/g)].map((m) => m[1].toLowerCase());
+assert.equal(strokeMatches.length, 6, 'All 6 realm cards must render compact 18x18 SVGs');
+assert.equal(new Set(strokeMatches).size, 6, 'All 6 realm cards must have distinct per-realm SVG colors');
+assert.deepEqual(
+  new Set(strokeMatches),
+  new Set(['#34d399', '#38bdf8', '#a78bfa', '#fbbf24', '#fb7185', '#2dd4bf']),
+  '6 realm SVG colors must match healer/builder/explorer/thinker/artist/speaker palette'
+);
+assert.ok(appEl.innerHTML.includes('width:28px;height:28px'), 'Realm sigil boxes must enforce compact 28x28 container dimensions');
 assert.ok(appEl.innerHTML.includes('aria-pressed="true"'), 'Selected realm card must set aria-pressed="true"');
 assert.ok(!appEl.innerHTML.includes('option-icon') && !emojiRegex.test(appEl.innerHTML), 'Realm stage must contain zero emojis and zero option-icon');
 

@@ -91,7 +91,9 @@ async function testStartupMarkup() {
   assert.match(indexSource, /shell\.js\?v=88/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
   assert.match(indexSource, /pwa-boot\.js\?v=68/);
-  assert.match(indexSource, /shell\.css\?v=67" media="print"/);
+  assert.match(indexSource, /shell\.css\?v=67&ux=phase4-live-v2" media="print"/);
+  assert.match(indexSource, /journey_experience\.css\?v=2">/);
+  assert.match(indexSource, /journey_experience\.js\?v=2">/);
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=72'),
     'payment hop bootstrap must precede app.js');
