@@ -42,6 +42,8 @@ jobs:
         run: node tests/test_value_poles_contract.js
       - name: Run seamless stage navigation, Home return & standard UX contract
         run: node tests/test_navigation_resume_and_standard_ux.js
+      - name: Run P0 server-authoritative quota gate E2E regression
+        run: node tests/test_p0_server_authoritative_quota_gate.js
 
   catalog-motive-contracts:
     runs-on: ubuntu-latest

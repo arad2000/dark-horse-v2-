@@ -3,8 +3,19 @@
   'use strict';
   if (global.__dhCommercialUIReady) return;
   var USER_KEY='dh_local_user_v1',QUOTA_KEY='dh_local_quota_v1',PENDING_SESSION_KEY='dh_pending_journey_session_id',CHARGED_SESSION_KEY='dh_quota_charged_session_v1',JOURNEY_KEY='darkhorse_session_v2',BUSY=false;
+  var SERVER_GATE={token:'',remaining:null,authorizedSessionId:'',consumedSessions:Object.create(null)};
+  function currentAuthToken(){try{return global.DHAuth&&typeof global.DHAuth.token==='function'?String(global.DHAuth.token()||'').trim():'';}catch(_){return '';}}
+  function syncGateToken(){var t=currentAuthToken();if(t!==SERVER_GATE.token){SERVER_GATE.token=t;SERVER_GATE.remaining=null;SERVER_GATE.authorizedSessionId='';SERVER_GATE.consumedSessions=Object.create(null);}return t;}
   function el(id){return document.getElementById(id);} function text(v){return String(v==null?'':v);} function digits(v){return text(v).replace(/[۰-۹]/g,function(d){return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d));});} function escapeHtml(v){return text(v).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');}
-  function saveLocalUser(u){try{localStorage.setItem(USER_KEY,JSON.stringify(u||null));}catch(_){}} function clearLocalUser(){try{localStorage.removeItem(USER_KEY);}catch(_){}} function setLocalQuota(q){try{localStorage.setItem(QUOTA_KEY,JSON.stringify(q||{}));}catch(_){} }
+  function saveLocalUser(u){try{localStorage.setItem(USER_KEY,JSON.stringify(u||null));}catch(_){}} function clearLocalUser(){try{localStorage.removeItem(USER_KEY);}catch(_){}}
+  function setLocalQuota(q){
+    try{
+      var payload=(typeof q==='number'&&Number.isFinite(q))
+        ?{remaining:Math.max(0,q),serverRemaining:Math.max(0,q),updatedAt:Date.now()}
+        :(q&&typeof q==='object'?q:{});
+      localStorage.setItem(QUOTA_KEY,JSON.stringify(payload));
+    }catch(_){}
+  }
   function setBusy(b,t,n,x){if(!b)return;b.disabled=!!x;b.textContent=x?t:n;b.style.opacity=x?'.72':'';}
   function addStyles(){if(el('dh-commercial-styles'))return;var s=document.createElement('style');s.id='dh-commercial-styles';s.textContent='.dh-commercial-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(9px)}.dh-commercial-modal{width:100%;max-width:440px;background:#161622;border:1px solid rgba(212,175,55,.45);border-radius:22px;padding:22px;box-shadow:0 25px 80px rgba(0,0,0,.62);color:#eee;max-height:92vh;overflow:auto}.dh-commercial-title{color:#f0c040;text-align:center;margin:0 0 8px;font-size:1.4rem;font-weight:850}.dh-commercial-sub{color:#b7ad98;text-align:center;font-size:.88rem;line-height:1.9;margin:0 0 14px}.dh-commercial-label{display:block;color:#d7caa9;font-size:.82rem;margin:10px 2px 5px;text-align:right}.dh-commercial-field{position:relative}.dh-commercial-input{width:100%;box-sizing:border-box;padding:13px 14px;border-radius:12px;border:1px solid #353545;background:#0f0f18;color:#fff;font:inherit;outline:none}.dh-commercial-input:focus{border-color:rgba(240,192,64,.78);box-shadow:0 0 0 3px rgba(240,192,64,.1)}.dh-commercial-input.has-toggle{padding-left:48px}.dh-commercial-toggle{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:#b8ad94;cursor:pointer}.dh-commercial-actions{display:flex;gap:9px;margin-top:16px}.dh-commercial-actions .btn{flex:1;margin:0;min-height:48px}.dh-commercial-error{color:#ff8787;min-height:1.45em;font-size:.83rem;line-height:1.7;margin-top:8px;text-align:right}.dh-commercial-note{color:#8f845f;font-size:.77rem;line-height:1.8;margin-top:11px;text-align:center}.dh-commercial-price{font-size:2rem;color:#f0c040;font-weight:850;text-align:center;margin:6px 0}.dh-commercial-pack{background:#10101a;border:1px solid rgba(212,175,55,.22);border-radius:14px;padding:14px;margin:12px 0;color:#cbb98a;line-height:2.05;text-align:center}.dh-commercial-pack .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.22);font-size:.72rem;color:#e0c876;margin-bottom:5px}.dh-commercial-link{background:none;border:0;color:#d4af37;text-decoration:underline;cursor:pointer;font:inherit;padding:6px}.dh-commercial-divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0 10px}.dh-commercial-status{display:flex;align-items:center;justify-content:center;gap:8px;font-size:.8rem;color:#9f957f;margin-top:10px}.dh-commercial-spinner{width:14px;height:14px;border:2px solid rgba(240,192,64,.2);border-top-color:#f0c040;border-radius:50%;animation:dhspin .8s linear infinite}.dh-otp-box{display:flex;gap:8px;justify-content:center;direction:ltr;margin:14px 0}.dh-otp-box input{width:46px;height:54px;text-align:center;font-size:1.35rem;font-weight:800;border-radius:12px}@keyframes dhspin{to{transform:rotate(360deg)}}';document.head.appendChild(s);}
   function closeModal(){var o=el('dh-commercial-overlay');if(o)o.remove();}
@@ -132,12 +143,21 @@
     var b3=el('dh-pay-copy');if(b3)b3.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}var done=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(hop).then(function(){alert('لینک کپی شد.');});done=true;}}catch(_){}if(!done){try{var t=el('dh-pay-url');if(t){t.focus();t.select();document.execCommand('copy');alert('لینک کپی شد.');done=true;}}catch(__){}}if(!done)alert('لینک پایین را نگه دارید و Copy کنید.');};
   }
 
-  function openPurchaseModal(){
+  function openPurchaseModal(reason){
     BUSY=false;
     try{closeModal();}catch(_){}
+    var exhaustedMsg=(typeof reason==='string'&&reason.trim())
+      ?reason.trim()
+      :((SERVER_GATE.remaining!==null&&Number(SERVER_GATE.remaining)<=0)
+        ?'اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع یا ادامهٔ سفر جدید، بستهٔ اعتبار تهیه کنید.'
+        :'');
+    var alertHtml=exhaustedMsg
+      ?'<div id="dh-quota-exhausted-alert" role="alert" style="margin:0 0 12px;padding:11px 13px;border-radius:12px;border:1px solid rgba(240,192,64,.42);background:rgba(240,192,64,.1);color:#f5dfa0;font-size:.84rem;line-height:1.85;text-align:right;">'+escapeHtml(exhaustedMsg)+'</div>'
+      :'';
     showModal(
       '<h2 class="dh-commercial-title">خرید بسته ۳ تست</h2>'+
       '<p class="dh-commercial-sub">پرداخت امن از طریق زرین‌پال</p>'+
+      alertHtml+
       '<div class="dh-commercial-pack"><span class="badge">بسته استاندارد</span>'+
       '<div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>'+
       '<p class="dh-commercial-sub">مبلغ فقط از سمت سرور تعیین می‌شود.</p>'+
@@ -255,20 +275,214 @@
     return stableId;
   }
 
+  function recordServerConsume(sessionUuid, quotaBody) {
+    syncGateToken();
+    var sid = String(sessionUuid || '').trim();
+    if (sid) SERVER_GATE.consumedSessions[sid] = true;
+    var rem = Number(quotaBody && quotaBody.credits_remaining);
+    if (Number.isFinite(rem) && rem >= 0) {
+      SERVER_GATE.remaining = rem;
+      setLocalQuota(rem);
+    }
+  }
+
+  function recordConsumeFailure(sessionUuid, status, quotaExhausted) {
+    syncGateToken();
+    var sid = String(sessionUuid || '').trim();
+    if (sid) delete SERVER_GATE.consumedSessions[sid];
+    if (quotaExhausted || Number(status) === 402) {
+      SERVER_GATE.remaining = 0;
+      SERVER_GATE.authorizedSessionId = '';
+      setLocalQuota(0);
+      try {
+        if (sid && String(localStorage.getItem(CHARGED_SESSION_KEY) || '') === sid) {
+          localStorage.removeItem(CHARGED_SESSION_KEY);
+        }
+      } catch (_) {}
+    } else if (Number(status) === 403 && sid) {
+      SERVER_GATE.authorizedSessionId = '';
+      try {
+        if (String(localStorage.getItem(CHARGED_SESSION_KEY) || '') === sid) {
+          localStorage.removeItem(CHARGED_SESSION_KEY);
+        }
+      } catch (_) {}
+    }
+  }
+
+  function isActiveStageAuthorized(sessionUuid, isFinished) {
+    if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
+      return false;
+    }
+    syncGateToken();
+    var sid = String(sessionUuid || '').trim();
+    if (!sid) return false;
+    if (SERVER_GATE.consumedSessions[sid] === true) return true;
+    if (isFinished) return false;
+    if (SERVER_GATE.authorizedSessionId === sid && Number.isFinite(SERVER_GATE.remaining) && SERVER_GATE.remaining > 0) {
+      return true;
+    }
+    return false;
+  }
+
+  async function verifySessionAlreadyServerConsumed(sessionUuid, quotaPayload) {
+    var sid = String(sessionUuid || '').trim();
+    if (!sid) return false;
+    if (quotaPayload && typeof quotaPayload.already_consumed === 'boolean') {
+      if (quotaPayload.already_consumed) {
+        SERVER_GATE.consumedSessions[sid] = true;
+        return true;
+      }
+      try {
+        if (String(localStorage.getItem(CHARGED_SESSION_KEY) || '') === sid) {
+          localStorage.removeItem(CHARGED_SESSION_KEY);
+        }
+      } catch (_) {}
+      return false;
+    }
+    if (SERVER_GATE.consumedSessions[sid] === true) return true;
+    var localCharged = '';
+    try { localCharged = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
+    if (!localCharged || localCharged !== sid) return false;
+    if (global.DHAuth && typeof global.DHAuth.consumeTest === 'function') {
+      try {
+        var check = await global.DHAuth.consumeTest(sid);
+        if (check && (check.already_consumed === true || check.consumed === 1)) {
+          recordServerConsume(sid, check);
+          return true;
+        }
+      } catch (err) {
+        var st = Number(err && err.status || 0);
+        var msg = text(err && err.message ? err.message : err);
+        if (st === 402 || st === 403 || st === 409 || /credit|quota|remaining|اعتبار|سهمیه/i.test(msg)) {
+          try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
+          return false;
+        }
+        throw err;
+      }
+      return false;
+    }
+    SERVER_GATE.consumedSessions[sid] = true;
+    return true;
+  }
+
+  async function ensureCanEnterJourney(options) {
+    var opts = options || {};
+    var forceNew = opts.mode === 'new';
+    if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
+      global.__dhInJourney = false;
+      try {
+        if (global.DHShell && typeof global.DHShell.renderHome === 'function' &&
+            !(typeof state !== 'undefined' && state && state.stage === 'results')) {
+          global.DHShell.renderHome();
+        }
+      } catch (_) {}
+      showAuthModal('login');
+      return false;
+    }
+    syncGateToken();
+    try {
+      var q = await global.DHAuth.quota();
+      var remaining = Number(q && q.credits_remaining);
+      if (!Number.isFinite(remaining) || remaining < 0) remaining = 0;
+      SERVER_GATE.remaining = remaining;
+      setLocalQuota(remaining);
+
+      var journey = readCommercialJourney();
+      var candidateSessionId = String(opts.sessionId || (journey && !journey.journeyFinished && journey.sessionId) || '');
+      if (forceNew) candidateSessionId = '';
+
+      if (remaining <= 0) {
+        var alreadyConsumed = false;
+        if (!forceNew && candidateSessionId) {
+          alreadyConsumed = await verifySessionAlreadyServerConsumed(candidateSessionId, q);
+        }
+        if (!alreadyConsumed) {
+          SERVER_GATE.authorizedSessionId = '';
+          if (forceNew) {
+            try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+          }
+          var stayingOnResults = typeof state !== 'undefined' && state && state.stage === 'results' &&
+            !!(state.majorsResult || state.branchesResult);
+          if (!stayingOnResults) {
+            global.__dhInJourney = false;
+            try {
+              if (global.DHShell && typeof global.DHShell.renderHome === 'function') {
+                global.DHShell.renderHome();
+              }
+            } catch (_) {}
+          }
+          await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع یا ادامهٔ سفر جدید، بستهٔ اعتبار تهیه کنید.');
+          return false;
+        }
+      }
+
+      var approvedId = candidateSessionId || (forceNew ? createCommercialJourneyId() : prepareCommercialJourneyId());
+      if (remaining > 0) {
+        SERVER_GATE.authorizedSessionId = approvedId;
+      }
+      if (typeof opts.onAuthorized === 'function') {
+        await opts.onAuthorized(approvedId, remaining);
+      }
+      return true;
+    } catch (e) {
+      var m = text(e && e.message ? e.message : e);
+      if (/401|authentication/i.test(m)) {
+        global.__dhInJourney = false;
+        global.DHAuth.logout();
+        clearLocalUser();
+        showAuthModal('login');
+        return false;
+      }
+      if (/402|403|409|insufficient|quota|credit|remaining|سهمیه|اعتبار/i.test(m)) {
+        global.__dhInJourney = false;
+        await openPurchaseModal('اعتبار کافی برای ورود به سفر اکتشافی وجود ندارد. لطفاً بستهٔ اعتبار تهیه کنید.');
+        return false;
+      }
+      showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">' + escapeHtml(m) + '</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');
+      if (el('dh-error-close')) el('dh-error-close').onclick = closeModal;
+      return false;
+    }
+  }
+
   async function continueAfterAuth(){
-    if(!global.DHAuth||!global.DHAuth.isLoggedIn()){showAuthModal('login');return;}
+    if(!global.DHAuth||!global.DHAuth.isLoggedIn()){
+      global.__dhInJourney = false;
+      showAuthModal('login');
+      return;
+    }
+    syncGateToken();
     var sessionId = null;
     try{
       var q = await global.DHAuth.quota();
-      var remaining = Number(q && q.credits_remaining || 0);
-      if(Number.isFinite(remaining) && remaining >= 0) setLocalQuota(remaining);
+      var remaining = Number(q && q.credits_remaining);
+      if(!Number.isFinite(remaining) || remaining < 0) remaining = 0;
+      SERVER_GATE.remaining = remaining;
+      setLocalQuota(remaining);
       var pendingBeforeGate = '';
       var chargedBeforeGate = '';
       try { pendingBeforeGate = String(localStorage.getItem(PENDING_SESSION_KEY) || ''); } catch (_) {}
       try { chargedBeforeGate = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
-      var recoverChargedStart = !!pendingBeforeGate && pendingBeforeGate === chargedBeforeGate;
+      var journeyBeforeGate = readCommercialJourney();
       var resumable = isResumableCommercialJourney();
-      if(remaining <= 0 && !recoverChargedStart && !(resumable && chargedBeforeGate)){await openPurchaseModal();return;}
+      var resumeCandidateId = '';
+      if (pendingBeforeGate && pendingBeforeGate === chargedBeforeGate && !(journeyBeforeGate && journeyBeforeGate.journeyFinished)) {
+        resumeCandidateId = pendingBeforeGate;
+      } else if (resumable && journeyBeforeGate && journeyBeforeGate.sessionId) {
+        resumeCandidateId = String(journeyBeforeGate.sessionId);
+      } else if (resumable && chargedBeforeGate) {
+        resumeCandidateId = chargedBeforeGate;
+      }
+      if(remaining <= 0){
+        var sessionPaid = resumeCandidateId
+          ? await verifySessionAlreadyServerConsumed(resumeCandidateId, q)
+          : false;
+        if(!sessionPaid){
+          SERVER_GATE.authorizedSessionId = '';
+          global.__dhInJourney = false;
+          await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
+          return;
+        }
+      }
       if(!global.DHShell || typeof global.DHShell.startJourney !== 'function') {
         throw new Error('رابط سفر هنوز آماده نیست؛ دوباره تلاش کنید.');
       }
@@ -278,6 +492,9 @@
       // journey result (analyzeMajors / analyzeBranches -> discover).
       sessionId = prepareCommercialJourneyId();
       persistPreparedJourneySession(sessionId);
+      if (remaining > 0) {
+        SERVER_GATE.authorizedSessionId = sessionId;
+      }
       global.__dhCommercialJourneyAuthorizedSessionId = sessionId;
       closeModal();
       await global.DHShell.startJourney();
@@ -303,13 +520,15 @@
       global.__dhCommercialJourneyAuthorizedSessionId = '';
       var m=text(e&&e.message?e.message:e);
       if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}
-      if(/402|insufficient|quota|credit|سهمیه|اعتبار/i.test(m)){await openPurchaseModal();return;}
+      if(/402|403|409|insufficient|quota|credit|remaining|سهمیه|اعتبار/i.test(m)){await openPurchaseModal('اعتبار کافی برای شروع سفر اکتشافی وجود ندارد.');return;}
       showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">'+escapeHtml(m)+'</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');
-      el('dh-error-close').onclick=closeModal;
+      if(el('dh-error-close'))el('dh-error-close').onclick=closeModal;
     }
   }
 
   function doLogout(){
+    SERVER_GATE={token:'',remaining:null,authorizedSessionId:'',consumedSessions:Object.create(null)};
+    global.__dhInJourney=false;
     try{if(global.DHAuth)global.DHAuth.logout();}catch(_){}
     try{localStorage.removeItem('dh_auth_v1');}catch(_){}
     try{clearLocalUser();}catch(_){}
@@ -426,7 +645,7 @@
     load();
   }
   function installButtonHooks(){function patch(){
-    document.querySelectorAll('#dh-start-journey,#dh-continue-journey,#dh-p-journey').forEach(function(b){
+    document.querySelectorAll('#dh-start-journey,#dh-continue-journey,#dh-p-journey,#dh-tabbar button[data-tab="journey"]').forEach(function(b){
       if(b.__dhCommercialHooked)return;b.__dhCommercialHooked=true;
       b.onclick=function(e){
         if(e){e.preventDefault();e.stopPropagation();}
@@ -454,8 +673,10 @@
     global.__dh_quota_last=now;
     global.DHAuth.quota().then(function(d){
       global.__dh_quota_busy=false;
+      syncGateToken();
       var r=Number(d&&d.credits_remaining);
       if(!isFinite(r)||r<0)r=0;
+      SERVER_GATE.remaining=r;
       try{
         var current={};
         try{current=JSON.parse(localStorage.getItem(QUOTA_KEY)||'{}')||{};}catch(_){}
@@ -473,15 +694,26 @@
     }).catch(function(){global.__dh_quota_busy=false;if(done)done(null);});
   }
 
+  var publicApi={
+    showAuth:showAuthModal,
+    showPurchase:openPurchaseModal,
+    startServerAuthorizedJourney:continueAfterAuth,
+    ensureCanEnterJourney:ensureCanEnterJourney,
+    isActiveStageAuthorized:isActiveStageAuthorized,
+    recordServerConsume:recordServerConsume,
+    recordConsumeFailure:recordConsumeFailure,
+    logout:doLogout,
+    syncQuota:syncServerQuota
+  };
   function boot(){
-    global.DHCommercialUI={showAuth:showAuthModal,showPurchase:openPurchaseModal,startServerAuthorizedJourney:continueAfterAuth,logout:doLogout,syncQuota:syncServerQuota};
+    global.DHCommercialUI=publicApi;
     try{if(handlePaymentHop())return;}catch(_){}
     try{installButtonHooks();}catch(_){}
     try{handlePaymentReturn();}catch(_){}
     try{syncServerQuota();}catch(_){}
     setTimeout(function(){try{syncServerQuota();}catch(_){}},2000);
   }
-  if (!global.DHCommercialUI) global.DHCommercialUI={showAuth:showAuthModal,showPurchase:openPurchaseModal,startServerAuthorizedJourney:continueAfterAuth,logout:doLogout,syncQuota:syncServerQuota};
+  if (!global.DHCommercialUI) global.DHCommercialUI=publicApi;
   global.__dhCommercialUIReady = true;
   window.addEventListener('dh-open-purchase',function(){try{openPurchaseModal();}catch(e){console.error(e);}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
