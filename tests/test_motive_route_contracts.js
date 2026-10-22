@@ -217,7 +217,7 @@ assert.match(
 );
 assert.match(
   indexSource,
-  /src="app\.js\?v=72&poles-fix=1&quota-fix=1&copy=grade9-v1&genz=phase2-v1&ux=phase3-v1"/,
+  /src="app\.js\?v=72&poles-fix=1&quota-fix=1&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v1"/,
   'docs/index.html must cache-bust app.js for visual & navigation UX polish'
 );
 for (const selector of [

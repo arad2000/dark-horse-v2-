@@ -163,6 +163,7 @@ async function run() {
   for (const rel of [
     'docs/data.js',
     'docs/app.js',
+    'docs/journey_experience.js',
     'docs/ux_v2_patch.js',
     'docs/shell.js',
     'docs/stories.js',
@@ -193,7 +194,10 @@ async function run() {
   const r2 = sandbox.REALMS[1].id;
   sandbox.toggleRealm(r1);
   sandbox.toggleRealm(r2);
+  assert.ok(getEl('app').innerHTML.includes('dh-world-card'), 'Realm cards must have distinct world aura theme');
+  assert.ok(getEl('app').innerHTML.includes('dh-synergy-card'), 'Selecting 2 realms must render Live Synergy Banner');
   sandbox.goTo('subRealm');
+  assert.ok(getEl('app').innerHTML.includes('dh-district-group'), 'SubRealms must group passages under parent world headers');
 
   const s1 = sandbox.SUB_REALMS[r1][0].id;
   const s2 = sandbox.SUB_REALMS[r2][0].id;
@@ -243,6 +247,8 @@ async function run() {
   await sandbox.loadSwipeCards();
   assert.equal(sandbox.state.stage, 'swipe');
   assert.ok(!getEl('app').innerHTML.includes('قلمروها'), 'Swipe UI must not contain legacy قلمروها term');
+  assert.ok(getEl('app').innerHTML.includes('dh-swipe-stage') && getEl('app').innerHTML.includes('dh-swipe-stamp--like'),
+    'Swipe deck must render 3D layered stack + live drag stamps');
   sandbox.likeCard(true);
   sandbox.likeCard(false);
   sandbox.likeCard(true);
@@ -294,9 +300,25 @@ async function run() {
   assert.equal(sandbox.state.stage, 'introStrategies');
   assert.equal(sandbox.state.strategyAnswers[0], 1, 'Answers must stay intact on goBack');
 
-  // 7. Complete Values -> view Results -> return to Home -> return directly to cached Results!
+  // 7. Complete Values -> verify VS Split Duel Arena + Live Strategy Mirror -> Results Story Card!
+  for (let i = 0; i < 8; i++) sandbox.state.strategyAnswers[i] = i % 4;
+  sandbox.jumpStrategyQ(8);
+  assert.ok(getEl('app').innerHTML.includes('dh-chapter-bar') && getEl('app').innerHTML.includes('dh-opt-letter'),
+    'Strategies must render 5-chapter bar and letter badges');
+  assert.ok(getEl('app').innerHTML.includes('dh-live-mirror'),
+    'Strategies must render live thinking-style mirror checkpoint');
+
   for (let i = 0; i < 25; i++) sandbox.state.strategyAnswers[i] = i % 4;
+  sandbox.goTo('values');
+  assert.ok(getEl('app').innerHTML.includes('dh-duel-arena') && getEl('app').innerHTML.includes('dh-duel-vs'),
+    'Values must render dramatic VS Split Duel Cards');
+  assert.ok(getEl('app').innerHTML.includes('عمق‌تأثیر') && getEl('app').innerHTML.includes('گستره‌تأثیر'),
+    'Value duel cards must display canonical pole badges');
+
   for (let i = 0; i < 15; i++) sandbox.state.valueAnswers[i] = `Q${i + 1}A`;
+  sandbox.goTo('choice');
+  assert.ok(getEl('app').innerHTML.includes('dh-choice-mode-card'), 'Choice page must render visual mode cards');
+
   sandbox.state.majorsResult = {
     discovered_majors: [
       {
@@ -310,6 +332,7 @@ async function run() {
   };
   sandbox.displayResults(sandbox.state.majorsResult, 'majors');
   assert.ok(getEl('app').innerHTML.includes('dh-result-card'), 'Result items must have .dh-result-card');
+  assert.ok(getEl('app').innerHTML.includes('dh-story-id-card'), 'Results must render Shareable Gen-Z Story Identity Card');
 
   sandbox.dhGoHomeKeepPlace();
   assert.ok(getEl('app').innerHTML.includes('مشاهدهٔ دوبارهٔ نتیجه'),
