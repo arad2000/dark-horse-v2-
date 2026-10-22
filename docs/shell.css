@@ -2379,18 +2379,18 @@ body {
 #app .option.dh-route-card .dh-route-motto {
   flex: 1 1 auto;
   margin: 0 !important;
-  color: #f5efe2 !important;
-  font-size: 0.97rem !important;
-  font-weight: 700 !important;
-  line-height: 1.65 !important;
+  color: #fbf6ea !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  line-height: 1.72 !important;
 }
 #app .option.dh-route-card .dh-route-desc {
   display: block;
   margin: 0;
-  color: #bdb8ab !important;
-  font-size: 0.855rem !important;
-  font-weight: 400;
-  line-height: 1.82 !important;
+  color: #e2dcd0 !important;
+  font-size: 0.935rem !important;
+  font-weight: 500 !important;
+  line-height: 1.9 !important;
 }
 
 /* نشانگر انتخاب هندسی تمیز (بدون ایموجی) */
@@ -2426,10 +2426,10 @@ body {
   transform: none;
 }
 #app .option.dh-route-card.selected .dh-route-motto {
-  color: #fff6df !important;
+  color: #fff3cf !important;
 }
 #app .option.dh-route-card.selected .dh-route-desc {
-  color: #dcd6c8 !important;
+  color: #efe9dc !important;
 }
 #app .option.dh-route-card.selected .dh-route-check {
   background: #f0c040;
@@ -2897,5 +2897,63 @@ body {
 .dh-spark-desc {
   color: var(--dh-std-text-muted) !important;
 }
+
+/* ۷) حذف قطعی نمایش بلوک قدیمی پیشرفت/آخرین فعالیت در خانه (بنر #dh-active-place-banner مستقل و فعال می‌ماند) */
+.dh-mk2-progress {
+  display: none !important;
+}
+
+/* ۸) کادر فشردهٔ ۲۸×۲۸ نشان محله‌ها و دکمه‌های طلایی مجلل مرحلهٔ انتخاب نهایی */
+.dh-sigil-box {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+}
+.dh-sigil-box svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: block;
+}
+.dh-sigil-box--sm {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 7px;
+  flex: 0 0 24px;
+}
+.dh-sigil-box--sm svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+}
+#app .dh-choice-mode-card {
+  width: 100%;
+  display: block;
+  margin: 0 !important;
+  text-align: right;
+  padding: 18px 18px !important;
+  border-radius: 18px !important;
+  border: 1.5px solid #fbe38e !important;
+  background: linear-gradient(135deg, #f8da72 0%, #f0c040 52%, #cfa125 100%) !important;
+  color: #141108 !important;
+  box-shadow: 0 12px 30px rgba(240, 192, 64, 0.34), inset 0 1px 0 rgba(255, 250, 224, 0.55) !important;
+}
+#app .dh-choice-mode-card:disabled,
+#app .dh-choice-mode-card[aria-disabled="true"] {
+  background: #222634 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.13) !important;
+  color: #8e8a7f !important;
+  box-shadow: none !important;
+  opacity: 0.62 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
 
 

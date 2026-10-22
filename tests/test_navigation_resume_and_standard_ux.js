@@ -286,6 +286,10 @@ async function run() {
 
   sandbox.dhGoHomeKeepPlace();
   assert.ok(getEl('app').innerHTML.includes('سؤال ۹ از ۲۵'), 'Home must show exact question ۹ از ۲۵');
+  assert.ok(getEl('app').innerHTML.includes('dh-active-place-banner') && getEl('app').innerHTML.includes('بازگشت به همان صفحه'),
+    'Home must keep exact active-page resume banner');
+  assert.ok(!getEl('app').innerHTML.includes('dh-mk2-progress'),
+    'Home must completely omit legacy dh-mk2-progress / آخرین فعالیت block from DOM');
   sandbox.DHStories.open();
   assert.ok(!getEl('app').innerHTML.includes('→Excellence'), 'BiDi defect in stories.js must be fixed');
   assert.ok(getEl('app').innerHTML.includes('dh-st-resume-place'), 'Secondary pages must offer 1-tap return to active page');
@@ -317,7 +321,22 @@ async function run() {
 
   for (let i = 0; i < 15; i++) sandbox.state.valueAnswers[i] = `Q${i + 1}A`;
   sandbox.goTo('choice');
-  assert.ok(getEl('app').innerHTML.includes('dh-choice-mode-card'), 'Choice page must render visual mode cards');
+  assert.ok(getEl('app').innerHTML.includes('btn btn-primary dh-choice-mode-card'), 'Choice page buttons must be bold primary brand buttons');
+  assert.ok(
+    getEl('app').innerHTML.includes('تحلیل شاخه') &&
+    getEl('app').innerHTML.includes('تحلیل دانشگاه') &&
+    getEl('app').innerHTML.includes('#f0c040'),
+    'Choice page must render bold golden primary buttons for both Branch Analysis and University Analysis'
+  );
+  sandbox.state.choiceDisabled = true;
+  sandbox.render();
+  assert.ok(
+    getEl('app').innerHTML.includes('disabled aria-disabled="true"') &&
+    getEl('app').innerHTML.includes('#222634'),
+    'Choice buttons must render distinct disabled state when disabled'
+  );
+  sandbox.state.choiceDisabled = false;
+  sandbox.render();
 
   sandbox.state.majorsResult = {
     discovered_majors: [

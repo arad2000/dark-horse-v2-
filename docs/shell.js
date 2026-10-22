@@ -418,10 +418,7 @@
 
     var u = getDisplayUser();
     var name = (u && u.name) ? u.name : 'مسافر';
-    var pct = journeyProgressPct();
     var canContinue = hasUnfinishedJourney();
-    var progressLabel = pct >= 100 ? 'سفر قبلی کامل شده'
-      : (canContinue ? 'آخرین مسیر شما' : 'هنوز سفری شروع نشده');
 
     var quote = { t: 'هیچ راهی به سوی موفقیت وجود ندارد، موفقیت خود یک راه است.', tag: 'وینستون چرچیل' };
     try {
@@ -452,7 +449,6 @@
 
     var heroUrl = base + 'hero-journey.jpg';
     var heroUrl2x = base + 'hero-journey@2x.jpg';
-    var ringOff = (301.6 * (1 - Math.min(100, Math.max(0, pct)) / 100)).toFixed(1);
     var activePlace = (typeof window.dhGetActivePlaceSummary === 'function')
       ? window.dhGetActivePlaceSummary()
       : { resumable: false, label: '', cta: '' };
@@ -504,17 +500,6 @@
             '<div class="dh-home-sanjesh-mount" id="dh-home-sanjesh-mount"></div>' +
           '</div>' +
         '</section>' +
-        '<section class="dh-mk2-progress">' +
-          '<div class="dh-mk2-ring"><svg viewBox="0 0 120 120">' +
-            '<circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>' +
-            '<circle cx="60" cy="60" r="48" fill="none" stroke="#D4AF37" stroke-width="10" stroke-linecap="round" ' +
-              'stroke-dasharray="301.6" stroke-dashoffset="' + ringOff + '" transform="rotate(-90 60 60)" class="dh-mk2-ring-val"/>' +
-          '</svg><span>' + pct + '%</span></div>' +
-          '<div class="dh-mk2-prog-body">' +
-            '<div class="dh-mk2-prog-title">' + escape(progressLabel) + '</div>' +
-            '<div class="dh-mk2-bar"><i style="width:' + pct + '%"></i></div>' +
-            (canContinue ? '<button type="button" class="dh-mk2-cont" id="dh-continue-journey">ادامه سفر ‹</button>' : '') +
-          '</div></section>' +
         '<section class="dh-mk2-quote">' +
           '<div class="dh-mk2-quote-top">' + ico('ico-quill.svg') +
           '<span class="dh-mk2-quote-label">پیام امروز</span><span class="dh-mk2-qq">”</span></div>' +
@@ -553,10 +538,6 @@
       else startJourneyFromShell();
     });
     on('dh-start-journey', function () { startJourneyFromShell(); });
-    on('dh-continue-journey', function () {
-      if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
-      else startJourneyFromShell();
-    });
     on('dh-open-sanjesh', function () {
       var panel = $('dh-home-sanjesh-panel');
       var button = $('dh-open-sanjesh');

@@ -408,14 +408,48 @@ async function dhJumpToStage(targetId) {
 window.dhJumpToStage = dhJumpToStage;
 
 function ensureUXStyles() {
+  try {
+    if (!document.getElementById('dh-journey-exp-link') && document.head && typeof document.createElement === 'function') {
+      const link = document.createElement('link');
+      link.id = 'dh-journey-exp-link';
+      link.rel = 'stylesheet';
+      link.href = 'journey_experience.css?v=2';
+      document.head.appendChild(link);
+    }
+  } catch (_) {}
   if (document.getElementById('dh-ux-styles')) return;
   const s = document.createElement('style');
   s.id = 'dh-ux-styles';
   s.textContent = `
     .dh-progress-wrap{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-    .dh-stage-hint{color:#b8b2a4;font-size:.87rem;text-align:center;margin:0 0 12px;line-height:1.8}
+    .dh-stage-hint{color:#cfc9bb;font-size:.9rem;text-align:center;margin:0 0 12px;line-height:1.85}
+    .dh-dreamcity-invite{margin:8px auto 12px;max-width:425px;color:#efe9dc!important;font-size:.94rem!important;font-weight:500;line-height:1.9!important}
+    .dh-realm-invite{margin:0 auto 12px!important;max-width:460px;padding:10px 14px;border-radius:13px;background:rgba(240,192,64,.07);border:1px solid rgba(240,192,64,.24);color:#ece6d8!important;font-size:.91rem!important;line-height:1.88!important;text-align:right!important}
     .option{transition:border-color .18s ease,background .18s ease,box-shadow .18s ease,transform .14s ease}
     .option:active:not(.disabled):not(.dh-path-done){transform:scale(.988)}
+    .dh-card-meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+    .dh-world-tag{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:800;color:var(--dh-world,#f0c040)}
+    .dh-sigil-box{width:28px;height:28px;min-width:28px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:var(--dh-world-soft,rgba(240,192,64,.12));border:1px solid var(--dh-world-border,rgba(240,192,64,.35));color:var(--dh-world,#f0c040);box-shadow:0 3px 10px var(--dh-world-glow,rgba(0,0,0,.2));flex:0 0 28px}
+    .dh-sigil-box svg{width:18px;height:18px;flex:0 0 18px;display:block}
+    .dh-sigil-box--sm{width:24px;height:24px;min-width:24px;border-radius:7px;flex:0 0 24px}
+    .dh-sigil-box--sm svg{width:15px;height:15px;flex:0 0 15px}
+    .dh-world-orb svg,.dh-swipe-world-pill svg{width:14px;height:14px;flex:0 0 14px;display:block}
+    #app .option.dh-route-card .dh-route-motto{color:#fbf6ea!important;font-size:1.05rem!important;font-weight:800!important;line-height:1.72!important}
+    #app .option.dh-route-card .dh-route-desc{color:#e2dcd0!important;font-size:.935rem!important;font-weight:500!important;line-height:1.9!important}
+    #app .option.dh-route-card.selected .dh-route-motto{color:#fff3cf!important}
+    #app .option.dh-route-card.selected .dh-route-desc{color:#efe9dc!important}
+    .dh-choice-modes{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:16px 0}
+    #app .dh-choice-mode-card{width:100%;display:block;margin:0!important;text-align:right;padding:18px 18px!important;border-radius:18px!important;cursor:pointer;border:1.5px solid #fbe38e!important;background:linear-gradient(135deg,#f8da72 0%,#f0c040 52%,#cfa125 100%)!important;color:#141108!important;font-family:inherit;box-shadow:0 12px 30px rgba(240,192,64,.34),inset 0 1px 0 rgba(255,250,224,.55)!important;transition:transform .18s ease,box-shadow .2s ease,filter .2s ease!important}
+    #app .dh-choice-mode-card--alt{border-color:#ffe8a3!important;background:linear-gradient(135deg,#f5d259 0%,#e7b532 54%,#c7951c 100%)!important}
+    #app .dh-choice-mode-card:hover:not(:disabled):not([aria-disabled="true"]){transform:translateY(-2px);filter:brightness(1.03);box-shadow:0 16px 36px rgba(240,192,64,.45),inset 0 1px 0 rgba(255,252,232,.72)!important}
+    #app .dh-choice-mode-card:active:not(:disabled):not([aria-disabled="true"]){transform:scale(.986)}
+    #app .dh-choice-mode-card:disabled,#app .dh-choice-mode-card[aria-disabled="true"]{background:#222634!important;border:1.5px solid rgba(255,255,255,.13)!important;color:#8e8a7f!important;box-shadow:none!important;opacity:.62!important;cursor:not-allowed!important;transform:none!important;filter:none!important}
+    .dh-choice-kicker{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:800;color:#f8da72;background:rgba(14,16,23,.88);border:1px solid rgba(255,248,220,.22);margin-bottom:8px}
+    .dh-choice-title{font-size:1.08rem;font-weight:900;color:#120f07;line-height:1.6;margin-bottom:5px}
+    .dh-choice-sub{font-size:.86rem;font-weight:600;color:#26200f;line-height:1.75}
+    #app .dh-choice-mode-card:disabled .dh-choice-kicker,#app .dh-choice-mode-card[aria-disabled="true"] .dh-choice-kicker{color:#9e9a8f;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+    #app .dh-choice-mode-card:disabled .dh-choice-title,#app .dh-choice-mode-card[aria-disabled="true"] .dh-choice-title{color:#a6a296}
+    #app .dh-choice-mode-card:disabled .dh-choice-sub,#app .dh-choice-mode-card[aria-disabled="true"] .dh-choice-sub{color:#858176}
     .swipe-card{animation:dhIn .24s ease;position:relative;overflow:hidden}
     .swipe-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 30% 18%,rgba(240,192,64,.06),transparent 52%)}
     @keyframes dhIn{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
@@ -1154,7 +1188,7 @@ const DH_WORLD_THEMES = {
     borderMuted: 'rgba(52, 211, 153, 0.24)',
     glow: 'rgba(52, 211, 153, 0.26)',
     soloDesc: 'ذهن و حس تو به زنده‌نگه‌داشتن، التیام و بازگرداندن توان به موجودات زنده واکنش نشان می‌دهد.',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.5-8.5-9.5A5.2 5.2 0 0 1 12 6a5.2 5.2 0 0 1 8.5 5.5C19 16.5 12 21 12 21z"/><path d="M6.5 12h3l1.6-2.8 2.2 5.4 1.6-2.6h2.6"/></svg>'
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:0 0 18px;display:block;color:#34d399" aria-hidden="true"><path d="M12 21s-7-4.5-8.5-9.5A5.2 5.2 0 0 1 12 6a5.2 5.2 0 0 1 8.5 5.5C19 16.5 12 21 12 21z"/><path d="M6.5 12h3l1.6-2.8 2.2 5.4 1.6-2.6h2.6"/></svg>'
   },
   builder: {
     id: 'builder',
@@ -1167,7 +1201,7 @@ const DH_WORLD_THEMES = {
     borderMuted: 'rgba(56, 189, 248, 0.24)',
     glow: 'rgba(56, 189, 248, 0.26)',
     soloDesc: 'تو از تبدیل نقشهٔ ذهنی به سیستم، ابزار یا سازه‌ای که واقعاً کار کند انرژی می‌گیری.',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l8.5 4.9v9.2L12 21.5l-8.5-4.9V7.4L12 2.5z"/><path d="M12 21.5V12"/><path d="M20.5 7.4L12 12 3.5 7.4"/></svg>'
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:0 0 18px;display:block;color:#38bdf8" aria-hidden="true"><path d="M12 2.5l8.5 4.9v9.2L12 21.5l-8.5-4.9V7.4L12 2.5z"/><path d="M12 21.5V12"/><path d="M20.5 7.4L12 12 3.5 7.4"/></svg>'
   },
   explorer: {
     id: 'explorer',
@@ -1180,7 +1214,7 @@ const DH_WORLD_THEMES = {
     borderMuted: 'rgba(167, 139, 250, 0.25)',
     glow: 'rgba(167, 139, 250, 0.28)',
     soloDesc: 'کنجکاوی تو به جواب‌های آماده قانع نمی‌شود؛ دنبال کشف الگو و قانون پنهان پدیده‌ها می‌گردی.',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(32 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-32 12 12)"/><circle cx="12" cy="12" r="2"/></svg>'
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:0 0 18px;display:block;color:#a78bfa" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(32 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-32 12 12)"/><circle cx="12" cy="12" r="2"/></svg>'
   },
   thinker: {
     id: 'thinker',
@@ -1193,7 +1227,7 @@ const DH_WORLD_THEMES = {
     borderMuted: 'rgba(251, 191, 36, 0.25)',
     glow: 'rgba(251, 191, 36, 0.25)',
     soloDesc: 'در تحلیل رفتار آدم‌ها، استدلال، تصمیم‌گیری و هدایت جریان‌های انسانی می‌درخشی.',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="15.8 8.2 13.6 13.6 8.2 15.8 10.4 10.4 15.8 8.2"/></svg>'
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:0 0 18px;display:block;color:#fbbf24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="15.8 8.2 13.6 13.6 8.2 15.8 10.4 10.4 15.8 8.2"/></svg>'
   },
   artist: {
     id: 'artist',
@@ -1206,7 +1240,7 @@ const DH_WORLD_THEMES = {
     borderMuted: 'rgba(251, 113, 133, 0.24)',
     glow: 'rgba(251, 113, 133, 0.26)',
     soloDesc: 'به حس‌ها و ایده‌های نادیدنی فرم، رنگ، تصویر، فضا و ریتم می‌بخشی.',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.8L20.5 11l-5.2 4.1 1.5 6.4L12 18.2 7.2 21.5l1.5-6.4L3.5 11l5.9-2.2L12 3z"/></svg>'
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:0 0 18px;display:block;color:#fb7185" aria-hidden="true"><path d="M12 3l2.6 5.8L20.5 11l-5.2 4.1 1.5 6.4L12 18.2 7.2 21.5l1.5-6.4L3.5 11l5.9-2.2L12 3z"/></svg>'
   },
   speaker: {
     id: 'speaker',
@@ -1219,7 +1253,7 @@ const DH_WORLD_THEMES = {
     borderMuted: 'rgba(45, 212, 191, 0.24)',
     glow: 'rgba(45, 212, 191, 0.26)',
     soloDesc: 'قدرت واژه‌ها، روایت، یاددادن و ساختن پل میان زبان‌ها و فرهنگ‌ها به تو جان می‌دهد.',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H10l-4.5 3.5V16H6.5A2.5 2.5 0 0 1 4 13.5v-7z"/><path d="M8.5 9.5h7"/><path d="M8.5 12.5h4.5"/></svg>'
+    svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:0 0 18px;display:block;color:#2dd4bf" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H10l-4.5 3.5V16H6.5A2.5 2.5 0 0 1 4 13.5v-7z"/><path d="M8.5 9.5h7"/><path d="M8.5 12.5h4.5"/></svg>'
   }
 };
 window.DH_WORLD_THEMES = DH_WORLD_THEMES;
@@ -1373,11 +1407,12 @@ function renderSplash() {
       </div>`;
   }
 
+  ensureUXStyles();
   app.innerHTML = progressHTML('splash') + `
     <div class="dh-gateway-hero">
       <div class="dh-gateway-kicker">✦ سفر تعاملی کشف فردیت · بدون نمره و کلیشه</div>
-      <h1 style="color:#fff8eb;font-size:1.72rem;margin:4px 0 6px;font-weight:900;">شهر رؤیاها</h1>
-      <p style="color:#d6d1c4;font-size:0.88rem;line-height:1.85;margin:0 auto;max-width:410px;">اینجا آزمون درسی نیست؛ از ۶ قلمرو رنگی عبور می‌کنی، با کشیدن کارت‌ها جرقه‌های واقعی‌ات را شکار می‌کنی و نقشهٔ منحصربه‌فرد خودت را می‌گیری.</p>
+      <h1 style="color:#fff8eb;font-size:1.72rem;margin:4px 0 6px;font-weight:900;">به شهر رؤیاها خوش آمدی</h1>
+      <p class="dh-dreamcity-invite">دروازه‌های شهر رؤیاها به روی تو باز است؛ به ۶ محلهٔ این شهر سر بزن و ببین در کدام فضا گذر زمان یادت می‌رود. اینجا آزمون درسی نیست — فقط دنبال حس و کنجکاوی واقعی خودت برو.</p>
       <div class="dh-world-orbs">${orbsHTML}</div>
     </div>
     <div class="card dh-surface-card" style="text-align:right;padding:18px 16px;">
@@ -1485,6 +1520,7 @@ function renderRouteCardHTML(opts) {
   const realmId = opts.realmId || 'thinker';
   const theme = dhGetWorldTheme(realmId);
   const compactSigil = Boolean(opts.compactSigil);
+  const boxPx = compactSigil ? 24 : 28;
   const extraCls = opts.extraCls ? ' ' + opts.extraCls : '';
   const stateCls = (isSelected ? ' selected' : '') + (isComplete ? ' disabled dh-path-done' : '');
   const action = isComplete ? '' : opts.onclickExpr;
@@ -1494,7 +1530,8 @@ function renderRouteCardHTML(opts) {
   const descText = isComplete && opts.doneDescription
     ? escapeHtml(opts.doneDescription)
     : escapeHtml(opts.description || '');
-  const metaRight = `<span class="dh-world-tag"><span class="dh-sigil-box${compactSigil ? ' dh-sigil-box--sm' : ''}">${theme.svg}</span><span>${escapeHtml(opts.tagLabel || theme.title)}</span></span>`;
+  const sigilStyle = `width:${boxPx}px;height:${boxPx}px;min-width:${boxPx}px;flex:0 0 ${boxPx}px;display:inline-flex;align-items:center;justify-content:center;border-radius:${compactSigil ? 7 : 9}px;background:${theme.soft};border:1px solid ${theme.border};color:${theme.color}`;
+  const metaRight = `<span class="dh-world-tag" style="color:${theme.color}"><span class="dh-sigil-box${compactSigil ? ' dh-sigil-box--sm' : ''}" style="${sigilStyle}">${theme.svg}</span><span>${escapeHtml(opts.tagLabel || theme.title)}</span></span>`;
   const metaLeft = opts.orderNum
     ? `<span class="dh-order-badge">انتخاب ${dhFaNum(opts.orderNum)}</span>`
     : (opts.countLabel ? `<span class="dh-card-subcount">${escapeHtml(opts.countLabel)}</span>` : '');
@@ -1509,6 +1546,7 @@ function renderRouteCardHTML(opts) {
 
 function renderRealm() {
   try {
+    ensureUXStyles();
     if (typeof REALMS === 'undefined' || !Array.isArray(REALMS) || REALMS.length === 0) {
       app.innerHTML = `<div class="card" style="margin:16px;text-align:right">
         <h2 style="color:#f5efe2">محله‌ها بارگذاری نشدند</h2>
@@ -1520,8 +1558,8 @@ function renderRealm() {
     const maxSelect = Math.min(3, REALMS.length);
     const selCount = state.selectedRealms.length;
     let html = progressHTML('realm') + sparkChipHTML() + `<div class="dh-stage-head">
-        <h2 class="dh-stage-title">دروازهٔ ۶ محلهٔ شهر رؤیاها</h2>
-        <p class="dh-stage-hint">به صدای کنجکاوی خودت گوش بده، نه کلیشه‌ها — تا ${dhFaNum(maxSelect)} قلمرو رنگی می‌توانی با هم ترکیب کنی.</p>
+        <h2 class="dh-stage-title">محله‌های شهر رؤیاها</h2>
+        <p class="dh-stage-hint dh-realm-invite">قدم به شهر رؤیاها بگذار؛ هر محله دنیای آدم‌هایی است که از یک جنس کار انرژی می‌گیرند. نجواهای هر محله را بخوان و ۱ تا ${dhFaNum(maxSelect)} محله‌ای را که دلت می‌خواهد واردشان شوی روشن کن.</p>
         <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} محله روشن شده</div>
       </div>
       <div class="grid dh-route-grid" id="realmGrid">`;
@@ -1570,6 +1608,7 @@ window.dhResumeFromSplash = dhResumeFromSplash;
 window.goBack = goBack;
 
 function renderSubRealm() {
+  ensureUXStyles();
   const groups = [];
   let totalSubs = 0;
   state.selectedRealms.forEach(realmId => {
@@ -1595,7 +1634,7 @@ function renderSubRealm() {
     html += `<section class="dh-district-group" style="${dhWorldStyleVars(g.realmId)}">
       <div class="dh-district-head">
         <div class="dh-district-head-main">
-          <span class="dh-sigil-box dh-sigil-box--sm">${theme.svg}</span>
+          <span class="dh-sigil-box dh-sigil-box--sm" style="width:24px;height:24px;min-width:24px;flex:0 0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;background:${theme.soft};border:1px solid ${theme.border};color:${theme.color}">${theme.svg}</span>
           <div>
             <span class="dh-district-head-title">گذرهای محلهٔ ${escapeHtml(theme.title)}</span>
             <span class="dh-district-head-sub">${dhFaNum(g.list.length)} گذر پیش رو</span>
@@ -1643,6 +1682,7 @@ function toggleSub(id, maxSelect) {
 window.toggleSub = toggleSub;
 
 function renderNarrowPath() {
+  ensureUXStyles();
   if (!(state.completedPaths instanceof Set)) {
     state.completedPaths = new Set(state.completedPaths || []);
   }
@@ -1675,7 +1715,7 @@ function renderNarrowPath() {
     html += `<section class="dh-district-group" style="${dhWorldStyleVars(g.realmId)}">
       <div class="dh-district-head">
         <div class="dh-district-head-main">
-          <span class="dh-sigil-box dh-sigil-box--sm">${theme.svg}</span>
+          <span class="dh-sigil-box dh-sigil-box--sm" style="width:24px;height:24px;min-width:24px;flex:0 0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;background:${theme.soft};border:1px solid ${theme.border};color:${theme.color}">${theme.svg}</span>
           <div>
             <span class="dh-district-head-title">${escapeHtml(g.subMotto || theme.title)}</span>
             <span class="dh-district-head-sub">قلمرو ${escapeHtml(theme.title)} · ${dhFaNum(g.list.length)} مسیر تخصصی</span>
@@ -2584,6 +2624,7 @@ function continueValue() {
 
 // ==================== صفحه انتخاب ====================
 function renderChoice() {
+  ensureUXStyles();
   const mix = dhComputeWorldSparkMix();
   const topWorldsHTML = mix.slice(0, 3).map(m =>
     `<span class="dh-world-orb" style="--dh-world:${m.theme.color};--dh-world-border:${m.theme.border};--dh-world-glow:${m.theme.glow}">${m.theme.svg}<span>${escapeHtml(m.theme.title)} · ${dhFaNum(m.pct)}٪</span></span>`
@@ -2591,6 +2632,14 @@ function renderChoice() {
   const sStyle = (state.strategyAnswers || []).length >= 5 && typeof analyzeStrategyStyle === 'function'
     ? analyzeStrategyStyle(state.strategyAnswers)
     : null;
+  const isDisabled = Boolean(state.choiceDisabled) || (Array.isArray(state.likedCodes) && state.likedCodes.length < 20);
+  const disabledAttr = isDisabled ? ' disabled aria-disabled="true"' : '';
+  const btnPrimaryInline = isDisabled
+    ? 'width:100%;display:block;margin:0;text-align:right;padding:18px;border-radius:18px;background:#222634;border:1.5px solid rgba(255,255,255,.13);color:#8e8a7f;box-shadow:none;opacity:.62;cursor:not-allowed'
+    : 'width:100%;display:block;margin:0;text-align:right;padding:18px;border-radius:18px;background:linear-gradient(135deg,#f8da72 0%,#f0c040 52%,#cfa125 100%);border:1.5px solid #fbe38e;color:#141108;box-shadow:0 12px 30px rgba(240,192,64,.34)';
+  const btnAltInline = isDisabled
+    ? btnPrimaryInline
+    : 'width:100%;display:block;margin:0;text-align:right;padding:18px;border-radius:18px;background:linear-gradient(135deg,#f5d259 0%,#e7b532 54%,#c7951c 100%);border:1.5px solid #ffe8a3;color:#141108;box-shadow:0 12px 30px rgba(240,192,64,.34)';
 
   app.innerHTML = progressHTML('choice') + sparkChipHTML() + `
     <div class="dh-stage-head">
@@ -2602,16 +2651,17 @@ function renderChoice() {
       <div class="dh-live-mirror-kicker">✦ چکیدهٔ زندهٔ پروفایل تو پیش از تطبیق نهایی</div>
       <div class="dh-live-mirror-main">${dhFaNum(state.likedCodes.length)} جرقهٔ فعال · سبک فکری غالب: <span style="color:#f5d472;">${escapeHtml(sStyle.style)}</span></div>
     </div>` : ''}
+    ${isDisabled ? `<p class="dh-stage-hint" style="color:#f5d472;font-weight:700;">برای فعال شدن تحلیل نهایی، حداقل ${dhFaNum(20)} جرقه باید انتخاب شده باشد.</p>` : ''}
     <div class="dh-choice-modes">
-      <button type="button" class="dh-choice-mode-card" onclick="analyzeBranches()">
-        <span style="display:inline-block;font-size:.74rem;font-weight:800;color:#f5d472;margin-bottom:4px;">مناسب پایهٔ نهم و دورهٔ متوسطه</span>
-        <div style="font-size:1.05rem;font-weight:900;color:#fff8eb;margin-bottom:5px;">هدایت تحصیلی (شاخه‌های دبیرستان) ›</div>
-        <div style="font-size:.83rem;color:#d6d1c4;line-height:1.75;">مقایسهٔ هم‌خوانی فردیت تو با شاخه‌های نظری، فنی‌وحرفه‌ای و کاردانش بر اساس جرقه‌ها، راهبردها و ارزش‌ها.</div>
+      <button type="button" id="dh-choice-branches-btn" class="btn btn-primary dh-choice-mode-card"${disabledAttr} style="${btnPrimaryInline}" onclick="if(!this.disabled) analyzeBranches()">
+        <span class="dh-choice-kicker">مناسب پایهٔ نهم و دورهٔ متوسطه</span>
+        <div class="dh-choice-title">تحلیل شاخه (هدایت تحصیلی دبیرستان) ›</div>
+        <div class="dh-choice-sub">مقایسهٔ هم‌خوانی فردیت تو با شاخه‌های نظری، فنی‌وحرفه‌ای و کاردانش بر اساس جرقه‌ها، راهبردها و ارزش‌ها.</div>
       </button>
-      <button type="button" class="dh-choice-mode-card dh-choice-mode-card--alt" onclick="analyzeMajors()">
-        <span style="display:inline-block;font-size:.74rem;font-weight:800;color:#7dd3fc;margin-bottom:4px;">مناسب دبیرستانی‌ها، کنکوری‌ها و دانشجویان</span>
-        <div style="font-size:1.05rem;font-weight:900;color:#fff8eb;margin-bottom:5px;">انتخاب رشته‌های دانشگاهی ›</div>
-        <div style="font-size:.83rem;color:#d6d1c4;line-height:1.75;">کشف دقیق‌ترین رشته‌های دانشگاهی هم‌سو با انرژی درونی تو از میان کاتالوگ جامع رشته‌ها.</div>
+      <button type="button" id="dh-choice-majors-btn" class="btn btn-primary dh-choice-mode-card dh-choice-mode-card--alt"${disabledAttr} style="${btnAltInline}" onclick="if(!this.disabled) analyzeMajors()">
+        <span class="dh-choice-kicker">مناسب دبیرستانی‌ها، کنکوری‌ها و دانشجویان</span>
+        <div class="dh-choice-title">تحلیل دانشگاه (انتخاب رشته‌های دانشگاهی) ›</div>
+        <div class="dh-choice-sub">کشف دقیق‌ترین رشته‌های دانشگاهی هم‌سو با انرژی درونی تو از میان کاتالوگ جامع رشته‌ها.</div>
       </button>
     </div>
     <div class="dh-stage-actions">
