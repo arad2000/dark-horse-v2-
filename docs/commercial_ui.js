@@ -347,6 +347,36 @@
     }
   }
 
+  function knownServerRemaining() {
+    syncGateToken();
+    if (SERVER_GATE.remaining !== null && Number.isFinite(Number(SERVER_GATE.remaining))) {
+      return Number(SERVER_GATE.remaining);
+    }
+    try {
+      var cached = JSON.parse(localStorage.getItem(QUOTA_KEY) || 'null');
+      if (cached && Number.isFinite(Number(cached.serverRemaining))) {
+        return Number(cached.serverRemaining);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function isBannerReturnAllowed(info) {
+    var meta = info || {};
+    if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
+      return false;
+    }
+    var sid = String(meta.sessionId || '').trim();
+    if (meta.isResults) {
+      return !!sid && isSessionConsumedLocallyOrServer(sid);
+    }
+    var rem = knownServerRemaining();
+    if (rem !== null && rem <= 0) {
+      return false;
+    }
+    return true;
+  }
+
   async function verifySessionAlreadyServerConsumed(sessionUuid, quotaPayload) {
     var sid = String(sessionUuid || '').trim();
     if (!sid) return false;
@@ -796,6 +826,7 @@
     startServerAuthorizedJourney:continueAfterAuth,
     ensureCanEnterJourney:ensureCanEnterJourney,
     isActiveStageAuthorized:isActiveStageAuthorized,
+    isBannerReturnAllowed:isBannerReturnAllowed,
     isSessionConsumedLocallyOrServer:isSessionConsumedLocallyOrServer,
     recordServerConsume:recordServerConsume,
     recordConsumeFailure:recordConsumeFailure,

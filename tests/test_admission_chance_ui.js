@@ -145,7 +145,7 @@ assert.match(css, /\.dh-admission-tab/);
 assert.match(css, /\.dh-admission-field select:disabled/);
 assert.match(css, /@media/);
 
-assert.match(indexSource, /shell\.css\?v=69/);
+assert.match(indexSource, /shell\.css\?v=70/);
 assert.match(indexSource, /shell\.js\?v=/);
 assert.match(indexSource, /admission_chance_ui\.css\?v=5/);
 assert.match(indexSource, /admission_chance_ui\.js\?v=20/);

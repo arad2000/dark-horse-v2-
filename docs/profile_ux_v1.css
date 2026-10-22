@@ -4,23 +4,23 @@
 .dh-profile-v2 > *:last-child { margin-bottom: 0; }
 .dh-profile-header { padding: 8px 0 4px; text-align: center; }
 .dh-profile-avatar-v2 { width:72px; height:72px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 35% 30%,#f6d97a,#c9a227 68%,#8a7020); color:#15110a; font-size:1.65rem; font-weight:800; box-shadow:0 8px 26px rgba(212,175,55,.22); }
-.dh-profile-name-v2 { margin:0; color:#f7f3e8 !important; font-size:1.3rem !important; line-height:1.45; font-weight:800 !important; }
-.dh-profile-meta-v2 { margin:4px 0 0; color:#cfc8b8 !important; font-size:.84rem !important; line-height:1.7; }
+.dh-profile-name-v2 { margin:0; color:#f2eadc !important; font-size:1.3rem !important; line-height:1.45; font-weight:700 !important; }
+.dh-profile-meta-v2 { margin:4px 0 0; color:#988d76 !important; font-size:.82rem !important; line-height:1.7; }
 .dh-profile-stats { padding:0; }
 .dh-profile-stats .dh-stat-grid { margin:0; gap:8px; }
-.dh-profile-stats .dh-stat { padding:12px 8px; border-radius:14px; background:#151a28; border:1px solid rgba(255,255,255,.09); }
-.dh-profile-last .dh-last-card { margin:0; padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.09); background:#151a28; }
+.dh-profile-stats .dh-stat { padding:12px 8px; border-radius:14px; background:rgba(22,21,29,.9); border:1px solid rgba(212,175,55,.13); }
+.dh-profile-last .dh-last-card { margin:0; padding:12px; border-radius:14px; border:1px solid rgba(212,175,55,.14); background:rgba(18,18,28,.72); }
 .dh-profile-last .dh-last-title { margin-bottom:2px; font-size:.92rem; }
-.dh-profile-last .dh-last-meta { margin-bottom:6px; font-size:.75rem; }
+.dh-profile-last .dh-last-meta { margin-bottom:6px; font-size:.72rem; }
 .dh-profile-last .dh-last-row { padding:6px 0; }
 .dh-profile-last .dh-last-name { font-size:.87rem !important; }
 .dh-profile-last .dh-last-score { font-size:.8rem !important; }
 .dh-profile-actions { display:flex; flex-direction:column; gap:8px; }
 .dh-profile-actions .btn, .dh-profile-account .btn { width:100%; margin:0 !important; }
-.dh-profile-actions .dh-profile-journey { min-height:50px !important; border-radius:14px !important; border:1.5px solid #fbe38e !important; background:linear-gradient(135deg,#f9dc78 0%,#f0c040 52%,#cfa125 100%) !important; color:#141108 !important; font-weight:800 !important; font-size:.98rem !important; }
-.dh-profile-actions .dh-profile-buy { min-height:48px !important; border-radius:14px !important; background:rgba(240,192,64,.13) !important; border:1.5px solid rgba(240,192,64,.46) !important; color:#f8de82 !important; font-weight:800 !important; box-shadow:none !important; }
-.dh-profile-actions .dh-profile-share { min-height:44px !important; border-radius:13px !important; background:#151a28 !important; border:1px solid rgba(255,255,255,.12) !important; color:#dcd5c6 !important; font-weight:700 !important; box-shadow:none !important; }
-.dh-profile-account .btn { background:#141826 !important; border-color:rgba(255,255,255,.10) !important; color:#d2cbbd !important; min-height:44px !important; font-size:.86rem !important; font-weight:600 !important; }
+.dh-profile-actions .dh-profile-journey { background:var(--accent); color:var(--bg-primary); font-weight:bold; }
+.dh-profile-actions .dh-profile-buy { background:rgba(240,192,64,.075) !important; border:1px solid rgba(240,192,64,.34) !important; color:#e8c95b !important; box-shadow:none !important; }
+.dh-profile-actions .dh-profile-share { min-height:40px !important; background:transparent !important; border:1px solid rgba(255,255,255,.10) !important; color:#a99f8c !important; box-shadow:none !important; }
+.dh-profile-account .btn { background:rgba(255,255,255,.025) !important; border-color:rgba(255,255,255,.07) !important; color:#989180 !important; min-height:44px !important; font-size:.84rem !important; }
 .dh-admin-panel { margin-top:16px; padding:14px; border-radius:16px; background:linear-gradient(160deg,rgba(24,22,30,.96),rgba(15,14,21,.96)); border:1px solid rgba(126,200,163,.28); box-shadow:0 10px 28px rgba(0,0,0,.18); }
 .dh-admin-title { margin:0 0 10px; color:#d8ccb5 !important; font-size:.94rem !important; font-weight:700 !important; text-align:right; }
 .dh-admin-users-table-wrap { max-height:360px; overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:12px; background:rgba(255,255,255,.02); }

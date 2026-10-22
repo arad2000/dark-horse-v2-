@@ -449,6 +449,19 @@
 
     var heroUrl = base + 'hero-journey.jpg';
     var heroUrl2x = base + 'hero-journey@2x.jpg';
+    var activePlace = (typeof window.dhGetActivePlaceSummary === 'function')
+      ? window.dhGetActivePlaceSummary()
+      : { resumable: false, label: '', cta: '' };
+    var activeBannerHtml = activePlace && activePlace.resumable
+      ? '<section class="dh-active-return-card" id="dh-active-place-banner" aria-label="بازگشت به آخرین صفحه فعال">' +
+          '<div class="dh-active-return-meta">' +
+            '<span class="dh-active-return-kicker">آخرین صفحهٔ فعال تو</span>' +
+            '<strong class="dh-active-return-title">' + escape(activePlace.label) + '</strong>' +
+          '</div>' +
+          '<button type="button" class="dh-active-return-btn" id="dh-return-exact-page">' +
+            (activePlace.isResults ? 'مشاهدهٔ دوبارهٔ نتیجه' : 'بازگشت به همان صفحه') + ' ‹</button>' +
+        '</section>'
+      : '';
 
     root.innerHTML =
       '<div class="dh-home-wrap dh-mk2">' +
@@ -463,6 +476,7 @@
           '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
           '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
+        activeBannerHtml +
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
@@ -519,6 +533,23 @@
 
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
     try { startFardiyatTicker(); } catch (eTicker) {}
+    on('dh-return-exact-page', function () {
+      if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
+      else startJourneyFromShell();
+    });
+    if (!window.__dhActiveBannerQuotaSyncBound) {
+      window.__dhActiveBannerQuotaSyncBound = true;
+      window.addEventListener('dh-quota-updated', function () {
+        if (window.__dhInJourney) return;
+        var summary = (typeof window.dhGetActivePlaceSummary === 'function')
+          ? window.dhGetActivePlaceSummary()
+          : { resumable: false };
+        if (!summary || !summary.resumable) {
+          var staleBanner = $('dh-active-place-banner');
+          if (staleBanner && typeof staleBanner.remove === 'function') staleBanner.remove();
+        }
+      });
+    }
     on('dh-start-journey', function () { startJourneyFromShell(); });
     on('dh-open-sanjesh', function () {
       var panel = $('dh-home-sanjesh-panel');
@@ -660,7 +691,7 @@
         return;
       }
 
-      if (window.__dhInJourney && typeof saveSession === 'function') {
+      if (typeof saveSession === 'function') {
         try { saveSession(); } catch (e1) {}
       }
 
@@ -825,22 +856,22 @@
 
     if (!u) {
       root.innerHTML =
-        '<div class="dh-home-wrap dh-profile-guest">' +
-        '<div class="card dh-surface-card" style="text-align:right;margin-top:4px;">' +
-        '<h2 style="text-align:center;color:#f7f3e8;font-weight:800;">حساب کاربری اسب سیاه</h2>' +
-        '<p style="color:#d4cebf;line-height:1.9;text-align:center;">برای ورود، ساخت حساب رسمی با پیامک تأیید و مشاهدهٔ اعتبار سفر از دکمه‌های زیر استفاده کن.</p>' +
-        '<button class="btn btn-primary dh-guest-primary" style="width:100%;margin-top:8px;" id="dh-p-register">ساخت حساب جدید (پیامک)</button>' +
-        '<button class="btn dh-guest-secondary" style="width:100%;margin-top:8px;" id="dh-p-login">ورود به حساب</button>' +
-        '<div style="height:1px;background:rgba(255,255,255,.09);margin:16px 0;"></div>' +
-        '<p style="color:#c5beb0;line-height:1.8;font-size:.86rem;">اختیاری: ذخیرهٔ نام فقط روی همین دستگاه (بدون پیامک)</p>' +
-        '<label style="display:block;margin:8px 0 4px;color:#e7e1d3;font-weight:600;">نام</label>' +
-        '<input id="dh-p-name" placeholder="مثلاً سارا" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#0f131d;color:#f7f3e8;font-size:16px;">' +
-        '<label style="display:block;margin:8px 0 4px;color:#e7e1d3;font-weight:600;">موبایل</label>' +
-        '<input id="dh-p-phone" inputmode="numeric" placeholder="09xxxxxxxxx" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#0f131d;color:#f7f3e8;font-size:16px;">' +
-        '<p id="dh-p-err" style="color:#ff8585;min-height:1.2em;font-size:0.85rem;"></p>' +
+        '<div class="dh-home-wrap">' +
+        '<div class="card" style="text-align:right;margin-top:4px;">' +
+        '<h2 style="text-align:center;color:#f0c040;">پروفایل</h2>' +
+        '<p style="color:#c9b896;line-height:1.9;text-align:center;">برای حساب واقعی و پیامک تأیید از دکمه‌های زیر استفاده کنید.</p>' +
+        '<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="dh-p-register">ساخت حساب جدید (پیامک)</button>' +
+        '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-login">ورود به حساب</button>' +
+        '<div style="height:1px;background:rgba(255,255,255,.08);margin:16px 0;"></div>' +
+        '<p style="color:#8f845f;line-height:1.8;font-size:.85rem;">اختیاری: ذخیره فقط روی همین دستگاه (بدون پیامک)</p>' +
+        '<label style="display:block;margin:8px 0 4px;">نام</label>' +
+        '<input id="dh-p-name" placeholder="مثلاً سارا" style="width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#12121c;color:#eee;font-size:16px;">' +
+        '<label style="display:block;margin:8px 0 4px;">موبایل</label>' +
+        '<input id="dh-p-phone" inputmode="numeric" placeholder="09xxxxxxxxx" style="width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#12121c;color:#eee;font-size:16px;">' +
+        '<p id="dh-p-err" style="color:#f66;min-height:1.2em;font-size:0.85rem;"></p>' +
         '<button class="btn" style="width:100%;" id="dh-p-save">ثبت پروفایل محلی</button>' +
         '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
-        '<div class="card dh-surface-card" style="text-align:right;margin-top:14px;border:1px solid rgba(240,192,64,.3)!important;"><h3 style="color:#f5d472;margin:0 0 8px;text-align:center;font-weight:800;">پشتیبانی و ارتباط</h3><p style="color:#d4cebf;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#c5beb0;font-size:.82rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.09);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#f5d472;font-size:.86rem;font-weight:700;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#d4cebf;font-size:.82rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#a9a396;font-size:.76rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
+        '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#c9b896;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#c9b896;font-size:.8rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
         '</div></div>';
       $('dh-p-home').onclick = function () { switchTab('home'); };
       var __dhAuthUiLoad = null;
