@@ -487,7 +487,7 @@ function sparkChipHTML() {
 }
 
 function loadingHTML(msg) {
-  return `<div class="dh-loading"><div class="spin"></div><p style="color:#f5efe2;font-weight:700">${msg || 'در حال آماده‌سازی تحلیل فردیت تو...'}</p><p style="color:#b8b2a4;font-size:.85rem;margin-top:8px">لطفاً چند لحظه صبر کن؛ هیچ‌یک از انتخاب‌هایت از دست نمی‌رود.</p></div>`;
+  return `<div class="dh-loading"><div class="dh-reveal-orb" aria-hidden="true"></div><p id="dh-reveal-step-text" style="color:#f5efe2;font-weight:800;font-size:.98rem;">${msg || '۱ از ۳ · در حال خوانش جرقه‌های انرژی درونی تو...'}</p><p style="color:#b8b2a4;font-size:.84rem;margin-top:8px">نقشهٔ فردیت تو در حال ترکیب است؛ همهٔ انتخاب‌هایت محفوظ مانده‌اند.</p></div>`;
 }
 
 function wrapWithProgress(innerHTML) {
@@ -1141,39 +1141,270 @@ function renderGuide() {
     </div>`;
 }
 
+// ==================== 6-WORLD VISUAL ARCHITECTURE & LIVE MIRROR ====================
+const DH_WORLD_THEMES = {
+  healer: {
+    id: 'healer',
+    title: 'درمان و زندگی',
+    short: 'درمان',
+    color: '#34d399',
+    soft: 'rgba(52, 211, 153, 0.13)',
+    selected: 'rgba(52, 211, 153, 0.24)',
+    border: 'rgba(52, 211, 153, 0.48)',
+    borderMuted: 'rgba(52, 211, 153, 0.24)',
+    glow: 'rgba(52, 211, 153, 0.26)',
+    soloDesc: 'ذهن و حس تو به زنده‌نگه‌داشتن، التیام و بازگرداندن توان به موجودات زنده واکنش نشان می‌دهد.',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.5-8.5-9.5A5.2 5.2 0 0 1 12 6a5.2 5.2 0 0 1 8.5 5.5C19 16.5 12 21 12 21z"/><path d="M6.5 12h3l1.6-2.8 2.2 5.4 1.6-2.6h2.6"/></svg>'
+  },
+  builder: {
+    id: 'builder',
+    title: 'ساختن و مهندسی',
+    short: 'ساختن',
+    color: '#38bdf8',
+    soft: 'rgba(56, 189, 248, 0.13)',
+    selected: 'rgba(56, 189, 248, 0.24)',
+    border: 'rgba(56, 189, 248, 0.48)',
+    borderMuted: 'rgba(56, 189, 248, 0.24)',
+    glow: 'rgba(56, 189, 248, 0.26)',
+    soloDesc: 'تو از تبدیل نقشهٔ ذهنی به سیستم، ابزار یا سازه‌ای که واقعاً کار کند انرژی می‌گیری.',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l8.5 4.9v9.2L12 21.5l-8.5-4.9V7.4L12 2.5z"/><path d="M12 21.5V12"/><path d="M20.5 7.4L12 12 3.5 7.4"/></svg>'
+  },
+  explorer: {
+    id: 'explorer',
+    title: 'کشف و دانش',
+    short: 'کشف',
+    color: '#a78bfa',
+    soft: 'rgba(167, 139, 250, 0.14)',
+    selected: 'rgba(167, 139, 250, 0.25)',
+    border: 'rgba(167, 139, 250, 0.5)',
+    borderMuted: 'rgba(167, 139, 250, 0.25)',
+    glow: 'rgba(167, 139, 250, 0.28)',
+    soloDesc: 'کنجکاوی تو به جواب‌های آماده قانع نمی‌شود؛ دنبال کشف الگو و قانون پنهان پدیده‌ها می‌گردی.',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(32 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-32 12 12)"/><circle cx="12" cy="12" r="2"/></svg>'
+  },
+  thinker: {
+    id: 'thinker',
+    title: 'اندیشه و جامعه',
+    short: 'اندیشه',
+    color: '#fbbf24',
+    soft: 'rgba(251, 191, 36, 0.13)',
+    selected: 'rgba(251, 191, 36, 0.24)',
+    border: 'rgba(251, 191, 36, 0.5)',
+    borderMuted: 'rgba(251, 191, 36, 0.25)',
+    glow: 'rgba(251, 191, 36, 0.25)',
+    soloDesc: 'در تحلیل رفتار آدم‌ها، استدلال، تصمیم‌گیری و هدایت جریان‌های انسانی می‌درخشی.',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="15.8 8.2 13.6 13.6 8.2 15.8 10.4 10.4 15.8 8.2"/></svg>'
+  },
+  artist: {
+    id: 'artist',
+    title: 'خلق و هنر',
+    short: 'هنر',
+    color: '#fb7185',
+    soft: 'rgba(251, 113, 133, 0.13)',
+    selected: 'rgba(251, 113, 133, 0.24)',
+    border: 'rgba(251, 113, 133, 0.48)',
+    borderMuted: 'rgba(251, 113, 133, 0.24)',
+    glow: 'rgba(251, 113, 133, 0.26)',
+    soloDesc: 'به حس‌ها و ایده‌های نادیدنی فرم، رنگ، تصویر، فضا و ریتم می‌بخشی.',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.8L20.5 11l-5.2 4.1 1.5 6.4L12 18.2 7.2 21.5l1.5-6.4L3.5 11l5.9-2.2L12 3z"/></svg>'
+  },
+  speaker: {
+    id: 'speaker',
+    title: 'واژه و فرهنگ',
+    short: 'واژه',
+    color: '#2dd4bf',
+    soft: 'rgba(45, 212, 191, 0.13)',
+    selected: 'rgba(45, 212, 191, 0.24)',
+    border: 'rgba(45, 212, 191, 0.48)',
+    borderMuted: 'rgba(45, 212, 191, 0.24)',
+    glow: 'rgba(45, 212, 191, 0.26)',
+    soloDesc: 'قدرت واژه‌ها، روایت، یاددادن و ساختن پل میان زبان‌ها و فرهنگ‌ها به تو جان می‌دهد.',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H10l-4.5 3.5V16H6.5A2.5 2.5 0 0 1 4 13.5v-7z"/><path d="M8.5 9.5h7"/><path d="M8.5 12.5h4.5"/></svg>'
+  }
+};
+window.DH_WORLD_THEMES = DH_WORLD_THEMES;
+
+const DH_SYNERGY_PAIRS = {
+  'builder+healer':   { title: 'معمار سلامت و زیست‌فناوری', desc: 'ترکیب دقت مهندسی با دغدغهٔ جان و سلامت انسان؛ امضای رشته‌های پیشرو پزشکی‌ـ‌مهندسی.' },
+  'explorer+healer':  { title: 'پژوهشگر مرزهای حیات', desc: 'کسی که هم درمان را می‌فهمد و هم تا کشف سازوکار سلولی و علمی بیماری جلو می‌رود.' },
+  'healer+thinker':   { title: 'درمانگر ذهن و تصمیم', desc: 'پیوند شناخت روان و جامعه با التیام واقعی انسان‌ها در لحظه‌های حساس.' },
+  'artist+healer':    { title: 'التیام‌بخش با حس و زیبایی', desc: 'ترکیب کمیاب ظرافت هنری با بازگرداندن آرامش، حرکت و کیفیت زندگی.' },
+  'healer+speaker':   { title: 'همراه توان‌بخش و ارتباط‌گر', desc: 'قدرت ارتباط انسانی و کلام در خدمت درمان، آموزش سلامت و توان‌بخشی.' },
+  'builder+explorer': { title: 'پیشگام علم و فناوری', desc: 'هم قانون پشت طبیعت را کشف می‌کنی و هم از دل آن سیستم و ابزار تازه می‌سازی.' },
+  'builder+thinker':  { title: 'معمار سیستم و استراتژی', desc: 'پیوند ساختن فنی با مدیریت، اقتصاد و تصمیم‌گیری کلان؛ ترکیب کلاسیک کارآفرینان.' },
+  'artist+builder':   { title: 'مهندسِ خلاق و طراح تجربه', desc: 'جایی که کد، سازه و صنعت با فرم، معماری و حس زیبایی‌شناسی گره می‌خورند.' },
+  'builder+speaker':  { title: 'پل‌ساز فناوری و انسان', desc: 'تبدیل پیچیده‌ترین سیستم‌های فنی به زبانی قابل‌فهم و انسانی برای جهان.' },
+  'explorer+thinker': { title: 'تحلیل‌گر الگوهای بزرگ', desc: 'ترکیب کنجکاوی علمی و داده‌کاوی با فهم عمیق جامعه، اقتصاد و تصمیم.' },
+  'artist+explorer':  { title: 'کاوشگر فرم و شگفتی', desc: 'ذهنی که هم مثل دانشمند الگو می‌بیند و هم مثل هنرمند جهان تازه خلق می‌کند.' },
+  'explorer+speaker': { title: 'راوی دانش و فرهنگ', desc: 'کشف ریشه‌های علمی و زبانی و روایت جذاب آن برای دیگران.' },
+  'artist+thinker':   { title: 'کارگردان معنا و فرهنگ', desc: 'وقتی اندیشهٔ انتقادی و شناخت انسان در قالب هنر، سینما یا طراحی جان می‌گیرد.' },
+  'speaker+thinker':  { title: 'صدای اثرگذار جامعه', desc: 'قدرت استدلال، اقناع، حقوق، آموزش و رهبری فکری با نیروی کلمات.' },
+  'artist+speaker':   { title: 'خالق روایت، تصویر و صدا', desc: 'آمیختن زیبایی تصویر و موسیقی با جادوی داستان‌گویی و زبان.' }
+};
+
+function dhGetWorldTheme(realmId) {
+  return DH_WORLD_THEMES[realmId] || DH_WORLD_THEMES.thinker;
+}
+
+function dhWorldStyleVars(realmId, delayIndex) {
+  const t = dhGetWorldTheme(realmId);
+  const d = typeof delayIndex === 'number' ? `;animation-delay:${Math.min(delayIndex * 32, 220)}ms` : '';
+  return `--dh-world:${t.color};--dh-world-soft:${t.soft};--dh-world-selected:${t.selected};--dh-world-border:${t.border};--dh-world-border-muted:${t.borderMuted};--dh-world-glow:${t.glow}${d}`;
+}
+
+let __dhRouteIndexCache = null;
+function dhGetRouteLookup() {
+  if (__dhRouteIndexCache) return __dhRouteIndexCache;
+  const subToRealm = {};
+  const pathToMeta = {};
+  const prefixToRealm = {};
+  if (typeof SUB_REALMS !== 'undefined' && SUB_REALMS) {
+    Object.keys(SUB_REALMS).forEach(rid => {
+      (SUB_REALMS[rid] || []).forEach(s => {
+        if (s && s.id) subToRealm[s.id] = rid;
+      });
+    });
+  }
+  if (typeof NARROW_PATHS !== 'undefined' && NARROW_PATHS) {
+    Object.keys(NARROW_PATHS).forEach(sid => {
+      const rid = subToRealm[sid] || 'thinker';
+      (NARROW_PATHS[sid] || []).forEach(p => {
+        if (!p || !p.id) return;
+        pathToMeta[p.id] = { realmId: rid, subId: sid, path: p };
+        (p.majorCodes || []).forEach(pref => {
+          if (pref && !prefixToRealm[pref]) prefixToRealm[pref] = rid;
+        });
+      });
+    });
+  }
+  __dhRouteIndexCache = { subToRealm, pathToMeta, prefixToRealm };
+  return __dhRouteIndexCache;
+}
+
+function dhResolveMotiveWorldId(code) {
+  if (!code) return 'thinker';
+  const lookup = dhGetRouteLookup();
+  const s = String(code);
+  const dash = s.indexOf('-');
+  if (dash > 0) {
+    const exactPref = s.slice(0, dash + 1);
+    if (lookup.prefixToRealm[exactPref]) return lookup.prefixToRealm[exactPref];
+  }
+  const prefs = Object.keys(lookup.prefixToRealm);
+  for (let i = 0; i < prefs.length; i++) {
+    if (s.startsWith(prefs[i])) return lookup.prefixToRealm[prefs[i]];
+  }
+  return (state.selectedRealms && state.selectedRealms[0]) || 'thinker';
+}
+
+function dhSynergyBannerHTML() {
+  const sel = state.selectedRealms || [];
+  if (!sel.length) return '';
+  if (sel.length === 1) {
+    const t = dhGetWorldTheme(sel[0]);
+    return `<div class="dh-synergy-card" style="--dh-syn-a:${t.soft};--dh-syn-b:rgba(240,192,64,0.08)">
+      <span class="dh-synergy-kicker">✦ قطب انتخابی تو · می‌توانی تا ۲ محلهٔ دیگر هم ترکیب کنی</span>
+      <p class="dh-synergy-title">قلمرو ${escapeHtml(t.title)}</p>
+      <p class="dh-synergy-desc">${escapeHtml(t.soloDesc)}</p>
+    </div>`;
+  }
+  const sortedPair = sel.slice(0, 2).sort().join('+');
+  const t1 = dhGetWorldTheme(sel[0]);
+  const t2 = dhGetWorldTheme(sel[1]);
+  if (sel.length === 2) {
+    const syn = DH_SYNERGY_PAIRS[sortedPair] || {
+      title: `${t1.short} × ${t2.short}`,
+      desc: 'ترکیب دو دنیای متفاوت، مسیرهای میان‌رشته‌ای منحصربه‌فردی جلوی پایت می‌گذارد.'
+    };
+    return `<div class="dh-synergy-card" style="--dh-syn-a:${t1.selected};--dh-syn-b:${t2.selected}">
+      <span class="dh-synergy-kicker">✦ هم‌افزایی زندهٔ انتخاب‌های تو (${escapeHtml(t1.short)} + ${escapeHtml(t2.short)})</span>
+      <p class="dh-synergy-title">${escapeHtml(syn.title)}</p>
+      <p class="dh-synergy-desc">${escapeHtml(syn.desc)}</p>
+    </div>`;
+  }
+  const t3 = dhGetWorldTheme(sel[2]);
+  return `<div class="dh-synergy-card" style="--dh-syn-a:${t1.selected};--dh-syn-b:${t3.selected}">
+    <span class="dh-synergy-kicker">✦ ترکیب سه‌گانهٔ کامل (${escapeHtml(t1.short)} × ${escapeHtml(t2.short)} × ${escapeHtml(t3.short)})</span>
+    <p class="dh-synergy-title">ذهن چندبعدی و میان‌رشته‌ای</p>
+    <p class="dh-synergy-desc">هر سه دروازهٔ تو آمادهٔ کاوش‌اند؛ حالا بزن بریم ببینیم داخل گذرهای هرکدام چه خبر است.</p>
+  </div>`;
+}
+
+function dhComputeWorldSparkMix() {
+  const counts = {};
+  const codes = state.likedCodes || [];
+  codes.forEach(c => {
+    const rid = dhResolveMotiveWorldId(c);
+    counts[rid] = (counts[rid] || 0) + 1;
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([rid, count]) => ({
+      realmId: rid,
+      theme: dhGetWorldTheme(rid),
+      count,
+      pct: codes.length ? Math.round((count / codes.length) * 100) : 0
+    }));
+}
+
 function renderSplash() {
   const hasSession = window.__dhHasSavedSession || !!localStorage.getItem('darkhorse_session_v2');
   const schemaNoticeHTML = state.valueSchemaResetNotice
     ? `<p data-dh-value-schema-reset="1" style="color:#f0c040;background:rgba(240,192,64,.10);border:1px solid rgba(240,192,64,.35);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:0.86rem;line-height:1.9;">${escapeHtml(state.valueSchemaResetNotice)}</p>`
     : '';
+  const orbsHTML = Object.keys(DH_WORLD_THEMES).map(rid => {
+    const t = DH_WORLD_THEMES[rid];
+    return `<span class="dh-world-orb" style="--dh-world:${t.color};--dh-world-border:${t.borderMuted};--dh-world-glow:${t.glow}">${t.svg}<span>${escapeHtml(t.title)}</span></span>`;
+  }).join('');
+
   let actionButtonHTML = '';
   if (hasSession) {
     actionButtonHTML = `
       <div class="dh-stage-actions">
-        <button type="button" class="btn btn-primary" onclick="dhResumeFromSplash()">ادامهٔ سفر از همان‌جا</button>
-        <button type="button" class="btn" onclick="startNewJourney()">شروع از نو</button>
+        <button type="button" class="btn btn-primary" onclick="dhResumeFromSplash()">ادامهٔ سفر دقیقاً از همان‌جا</button>
+        <button type="button" class="btn" onclick="startNewJourney()">شروع یک کاوش تازه</button>
         <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
       </div>`;
   } else {
     actionButtonHTML = `
       <div class="dh-stage-actions">
-        <button type="button" class="btn btn-primary" onclick="startNewJourney()">ورود به محله‌ها</button>
+        <button type="button" class="btn btn-primary" onclick="startNewJourney()">ورود به ۶ محلهٔ شهر رؤیاها</button>
         <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
       </div>`;
   }
 
   app.innerHTML = progressHTML('splash') + `
-    <div style="text-align:center;padding:12px 4px 6px;">
-      <h1 style="color:#f5efe2;font-size:1.72rem;margin:8px 0 6px;font-weight:800;">شهر رؤیاها</h1>
-      <p style="color:#b8b2a4;font-size:0.88rem;margin-bottom:16px;">شش محله · بیش از ۱٬۳۰۰ خرده‌انگیزه</p>
-      <div class="card dh-surface-card" style="text-align:right;">
-        ${schemaNoticeHTML}
-        <p class="quote">«شهر رؤیاها، جایی که کنجکاوی واقعی تو هنوز بیدار است...»</p>
-        <p style="color:#d6d1c4;line-height:1.95;">یادت می‌آید وقتی بدون فکر کردن به قضاوت دیگران، غرق یک خیال یا کار می‌شدی؟ یک روز می‌خواستی بفهمی یک دستگاه چطور کار می‌کند، روزی داستان می‌ساختی، یا دغدغهٔ حال آدم‌ها را داشتی. آن نشانه‌ها هنوز در وجودت زنده‌اند.</p>
-        <p style="color:#d6d1c4;line-height:1.95;">در «شهر رؤیاها» شش محله پیش روی توست. هر زمان خواستی می‌توانی بین محله‌ها، گذرها، مسیرهای باریک، خرده‌انگیزه‌ها و سؤالات جابه‌جا شوی یا به صفحه اول برگردی و دقیقاً به همین نقطه بازگردی.</p>
-        <p style="margin-bottom:4px;"><strong style="color:#f0c040;">کدام محله بیشتر تو را به سمت خودش می‌کشد؟</strong></p>
-        ${actionButtonHTML}
+    <div class="dh-gateway-hero">
+      <div class="dh-gateway-kicker">✦ سفر تعاملی کشف فردیت · بدون نمره و کلیشه</div>
+      <h1 style="color:#fff8eb;font-size:1.72rem;margin:4px 0 6px;font-weight:900;">شهر رؤیاها</h1>
+      <p style="color:#d6d1c4;font-size:0.88rem;line-height:1.85;margin:0 auto;max-width:410px;">اینجا آزمون درسی نیست؛ از ۶ قلمرو رنگی عبور می‌کنی، با کشیدن کارت‌ها جرقه‌های واقعی‌ات را شکار می‌کنی و نقشهٔ منحصربه‌فرد خودت را می‌گیری.</p>
+      <div class="dh-world-orbs">${orbsHTML}</div>
+    </div>
+    <div class="card dh-surface-card" style="text-align:right;padding:18px 16px;">
+      ${schemaNoticeHTML}
+      <div class="dh-act-roadmap">
+        <div class="dh-act-step" style="--dh-step-color:#38bdf8">
+          <span class="dh-act-step-num">گام ۱ · نقشهٔ شهر</span>
+          <span class="dh-act-step-title">محله‌ها، گذرها و کارگاه‌ها</span>
+          <span class="dh-act-step-sub">فقط جاهایی که کنجکاوت می‌کنند</span>
+        </div>
+        <div class="dh-act-step" style="--dh-step-color:#34d399">
+          <span class="dh-act-step-num">گام ۲ · دسته کارت زنده</span>
+          <span class="dh-act-step-title">شکار حداقل ۲۰ جرقه</span>
+          <span class="dh-act-step-sub">با کشیدن کارت به راست یا چپ</span>
+        </div>
+        <div class="dh-act-step" style="--dh-step-color:#a78bfa">
+          <span class="dh-act-step-num">گام ۳ · ۵ فصل کوتاه</span>
+          <span class="dh-act-step-title">۲۵ موقعیت واقعی</span>
+          <span class="dh-act-step-sub">همراه با آینهٔ زندهٔ سبک فکر</span>
+        </div>
+        <div class="dh-act-step" style="--dh-step-color:#fbbf24">
+          <span class="dh-act-step-num">گام ۴ · دوئل دوراهی</span>
+          <span class="dh-act-step-title">۱۵ انتخاب روبه‌رو</span>
+          <span class="dh-act-step-sub">کشف ارزش‌های ریشه‌ای تو</span>
+        </div>
       </div>
+      ${actionButtonHTML}
     </div>`;
 }
 
@@ -1251,6 +1482,9 @@ window.dhResumeFromSplash = dhResumeFromSplash;
 function renderRouteCardHTML(opts) {
   const isSelected = Boolean(opts.isSelected);
   const isComplete = Boolean(opts.isComplete);
+  const realmId = opts.realmId || 'thinker';
+  const theme = dhGetWorldTheme(realmId);
+  const compactSigil = Boolean(opts.compactSigil);
   const extraCls = opts.extraCls ? ' ' + opts.extraCls : '';
   const stateCls = (isSelected ? ' selected' : '') + (isComplete ? ' disabled dh-path-done' : '');
   const action = isComplete ? '' : opts.onclickExpr;
@@ -1260,7 +1494,12 @@ function renderRouteCardHTML(opts) {
   const descText = isComplete && opts.doneDescription
     ? escapeHtml(opts.doneDescription)
     : escapeHtml(opts.description || '');
-  return `<div class="option dh-route-card${extraCls}${stateCls}" role="button" tabindex="${isComplete ? '-1' : '0'}" aria-pressed="${isSelected ? 'true' : 'false'}" aria-disabled="${isComplete ? 'true' : 'false'}" onclick="${action}" onkeydown="${keyAction}">
+  const metaRight = `<span class="dh-world-tag"><span class="dh-sigil-box${compactSigil ? ' dh-sigil-box--sm' : ''}">${theme.svg}</span><span>${escapeHtml(opts.tagLabel || theme.title)}</span></span>`;
+  const metaLeft = opts.orderNum
+    ? `<span class="dh-order-badge">انتخاب ${dhFaNum(opts.orderNum)}</span>`
+    : (opts.countLabel ? `<span class="dh-card-subcount">${escapeHtml(opts.countLabel)}</span>` : '');
+  return `<div class="option dh-world-card dh-route-card${extraCls}${stateCls}" style="${dhWorldStyleVars(realmId, opts.index)}" role="button" tabindex="${isComplete ? '-1' : '0'}" aria-pressed="${isSelected ? 'true' : 'false'}" aria-disabled="${isComplete ? 'true' : 'false'}" onclick="${action}" onkeydown="${keyAction}">
+      <div class="dh-card-meta-row">${metaRight}${metaLeft}</div>
       <div class="dh-route-card__head">
         <p class="dh-route-motto">${escapeHtml(opts.motto || '')}</p>
         <span class="dh-route-check" aria-hidden="true"></span>
@@ -1281,23 +1520,29 @@ function renderRealm() {
     const maxSelect = Math.min(3, REALMS.length);
     const selCount = state.selectedRealms.length;
     let html = progressHTML('realm') + sparkChipHTML() + `<div class="dh-stage-head">
-        <h2 class="dh-stage-title">ورود به محله‌ها</h2>
-        <p class="dh-stage-hint">به صدای کنجکاوی خودت گوش بده، نه انتظار دیگران — تا ${dhFaNum(maxSelect)} محله می‌توانی انتخاب کنی.</p>
-        <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} محله انتخاب شده</div>
+        <h2 class="dh-stage-title">دروازهٔ ۶ محلهٔ شهر رؤیاها</h2>
+        <p class="dh-stage-hint">به صدای کنجکاوی خودت گوش بده، نه کلیشه‌ها — تا ${dhFaNum(maxSelect)} قلمرو رنگی می‌توانی با هم ترکیب کنی.</p>
+        <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} محله روشن شده</div>
       </div>
       <div class="grid dh-route-grid" id="realmGrid">`;
-    REALMS.forEach(r => {
+    REALMS.forEach((r, idx) => {
+      const selIdx = state.selectedRealms.indexOf(r.id);
+      const subLen = (typeof SUB_REALMS !== 'undefined' && SUB_REALMS[r.id]) ? SUB_REALMS[r.id].length : 0;
       html += renderRouteCardHTML({
-        isSelected: state.selectedRealms.includes(r.id),
+        realmId: r.id,
+        index: idx,
+        orderNum: selIdx >= 0 ? selIdx + 1 : 0,
+        countLabel: subLen ? `${dhFaNum(subLen)} گذر` : '',
+        isSelected: selIdx >= 0,
         isComplete: false,
         onclickExpr: `toggleRealm('${r.id}')`,
         motto: r.motto,
         description: r.description
       });
     });
-    html += `</div>
+    html += `</div>` + dhSynergyBannerHTML() + `
       <div class="dh-stage-actions">
-        <button type="button" class="btn btn-primary" onclick="if(state.selectedRealms.length>=1) goTo('subRealm'); else alert('حداقل یک محله را انتخاب کن');">ادامه به گذرها</button>
+        <button type="button" class="btn btn-primary" onclick="if(state.selectedRealms.length>=1) goTo('subRealm'); else alert('حداقل یک محله را انتخاب کن');">ورود به گذرهای انتخابی ›</button>
         <button type="button" class="btn" onclick="goBack()">بازگشت</button>
       </div>`;
     app.innerHTML = html;
@@ -1325,30 +1570,63 @@ window.dhResumeFromSplash = dhResumeFromSplash;
 window.goBack = goBack;
 
 function renderSubRealm() {
-  const subs = [];
-  state.selectedRealms.forEach(realmId => { if (SUB_REALMS[realmId]) subs.push(...SUB_REALMS[realmId]); });
-  const maxSelect = Math.min(3 * state.selectedRealms.length, subs.length);
-  const selCount = state.selectedSubRealms.length;
-  let html = progressHTML('subRealm') + sparkChipHTML() + dhRouteBreadcrumbHTML('subRealm') + `<div class="dh-stage-head">
-      <h2 class="dh-stage-title">گذرهای نیمه‌روشن</h2>
-      <p class="dh-stage-hint">هر گذر، حال‌وهوای یک سبک زندگی و کار است — کدام‌یک تو را کنجکاوتر می‌کند؟</p>
-      <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} گذر انتخاب شده</div>
-    </div>
-    <div class="grid dh-route-grid" id="subGrid">`;
-  subs.forEach(s => {
-    const isComplete = state.completedSubRealms.has(s.id);
-    html += renderRouteCardHTML({
-      isSelected: state.selectedSubRealms.includes(s.id),
-      isComplete: isComplete,
-      onclickExpr: `toggleSub('${s.id}', ${maxSelect})`,
-      motto: s.motto,
-      description: s.description
-    });
+  const groups = [];
+  let totalSubs = 0;
+  state.selectedRealms.forEach(realmId => {
+    const arr = (typeof SUB_REALMS !== 'undefined' && SUB_REALMS[realmId]) ? SUB_REALMS[realmId] : [];
+    if (arr.length) {
+      groups.push({ realmId, list: arr });
+      totalSubs += arr.length;
+    }
   });
+  const maxSelect = Math.min(3 * state.selectedRealms.length, totalSubs);
+  const selCount = state.selectedSubRealms.length;
+  let cardIdx = 0;
+  let html = progressHTML('subRealm') + sparkChipHTML() + dhRouteBreadcrumbHTML('subRealm') + `<div class="dh-stage-head">
+      <h2 class="dh-stage-title">گذرهای نیمه‌روشن هر محله</h2>
+      <p class="dh-stage-hint">گذرها بر اساس محلهٔ رنگی‌شان دسته‌بندی شده‌اند — هر گذری که چشمت را گرفت روشن کن.</p>
+      <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} گذر روشن شده</div>
+    </div>
+    <div id="subGrid">`;
+
+  groups.forEach(g => {
+    const theme = dhGetWorldTheme(g.realmId);
+    const inGroupSelected = g.list.filter(s => state.selectedSubRealms.includes(s.id)).length;
+    html += `<section class="dh-district-group" style="${dhWorldStyleVars(g.realmId)}">
+      <div class="dh-district-head">
+        <div class="dh-district-head-main">
+          <span class="dh-sigil-box dh-sigil-box--sm">${theme.svg}</span>
+          <div>
+            <span class="dh-district-head-title">گذرهای محلهٔ ${escapeHtml(theme.title)}</span>
+            <span class="dh-district-head-sub">${dhFaNum(g.list.length)} گذر پیش رو</span>
+          </div>
+        </div>
+        <span class="dh-district-count">${inGroupSelected > 0 ? dhFaNum(inGroupSelected) + ' انتخاب شده' : 'آمادهٔ انتخاب'}</span>
+      </div>
+      <div class="grid dh-route-grid">`;
+    g.list.forEach(s => {
+      const isComplete = state.completedSubRealms.has(s.id);
+      const pathLen = (typeof NARROW_PATHS !== 'undefined' && NARROW_PATHS[s.id]) ? NARROW_PATHS[s.id].length : 0;
+      html += renderRouteCardHTML({
+        realmId: g.realmId,
+        index: cardIdx++,
+        compactSigil: true,
+        tagLabel: theme.short,
+        countLabel: pathLen ? `${dhFaNum(pathLen)} کارگاه` : '',
+        isSelected: state.selectedSubRealms.includes(s.id),
+        isComplete: isComplete,
+        onclickExpr: `toggleSub('${s.id}', ${maxSelect})`,
+        motto: s.motto,
+        description: s.description
+      });
+    });
+    html += `</div></section>`;
+  });
+
   html += `</div>
     <div class="dh-stage-actions">
-      <button type="button" class="btn btn-primary" onclick="if(state.selectedSubRealms.length>=1) goTo('narrowPath'); else alert('حداقل یک گذر را انتخاب کن');">ادامه به مسیرهای باریک</button>
-      <button type="button" class="btn" onclick="goBack()">بازگشت به محله‌ها</button>
+      <button type="button" class="btn btn-primary" onclick="if(state.selectedSubRealms.length>=1) goTo('narrowPath'); else alert('حداقل یک گذر را انتخاب کن');">ورود به کارگاه‌ها و مسیرهای باریک ›</button>
+      <button type="button" class="btn" onclick="goBack()">‹ بازگشت به محله‌ها</button>
     </div>`;
   app.innerHTML = html;
 }
@@ -1365,34 +1643,72 @@ function toggleSub(id, maxSelect) {
 window.toggleSub = toggleSub;
 
 function renderNarrowPath() {
-  const paths = [];
-  state.selectedSubRealms.forEach(subId => { if (NARROW_PATHS[subId]) paths.push(...NARROW_PATHS[subId]); });
   if (!(state.completedPaths instanceof Set)) {
     state.completedPaths = new Set(state.completedPaths || []);
   }
-  const selCount = state.selectedNarrowPaths.length;
-  let html = progressHTML('narrowPath') + sparkChipHTML() + dhRouteBreadcrumbHTML('narrowPath') + `<div class="dh-stage-head">
-      <h2 class="dh-stage-title">مسیرهای باریک</h2>
-      <p class="dh-stage-hint">اینجا دیگر خبری از کلیشه نیست — کدام کارها بی‌دلیل در تو کشش ایجاد می‌کنند؟</p>
-      <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${selCount > 0 ? dhFaNum(selCount) + ' مسیر انتخاب شده' : 'حداقل ۱ مسیر انتخاب کن'}</div>
-    </div>
-    <div class="grid dh-route-grid" id="pathGrid">`;
-  paths.forEach(p => {
-    const isComplete = state.completedPaths.has(p.id);
-    html += renderRouteCardHTML({
-      extraCls: 'dh-path-card',
-      isSelected: state.selectedNarrowPaths.includes(p.id),
-      isComplete: isComplete,
-      onclickExpr: `togglePath('${p.id}')`,
-      motto: p.motto,
-      description: p.description,
-      doneDescription: 'جرقه‌های این مسیر بررسی شد — می‌توانی مسیر دیگری هم انتخاب کنی.'
-    });
+  const lookup = dhGetRouteLookup();
+  const subGroups = [];
+  state.selectedSubRealms.forEach(subId => {
+    const arr = (typeof NARROW_PATHS !== 'undefined' && NARROW_PATHS[subId]) ? NARROW_PATHS[subId] : [];
+    if (!arr.length) return;
+    const realmId = lookup.subToRealm[subId] || 'thinker';
+    let subMotto = '';
+    if (typeof SUB_REALMS !== 'undefined' && SUB_REALMS[realmId]) {
+      const foundSub = SUB_REALMS[realmId].find(x => x.id === subId);
+      if (foundSub) subMotto = foundSub.motto || '';
+    }
+    subGroups.push({ subId, realmId, subMotto, list: arr });
   });
+
+  const selCount = state.selectedNarrowPaths.length;
+  let cardIdx = 0;
+  let html = progressHTML('narrowPath') + sparkChipHTML() + dhRouteBreadcrumbHTML('narrowPath') + `<div class="dh-stage-head">
+      <h2 class="dh-stage-title">کارگاه‌ها و مسیرهای باریک</h2>
+      <p class="dh-stage-hint">اینجا دیگر خبری از کلیشه نیست — هر کارگاهی که دوست داری دست‌به‌کارش شوی تیک بزن تا جرقه‌هایش باز شوند.</p>
+      <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${selCount > 0 ? dhFaNum(selCount) + ' مسیر آمادهٔ شکار جرقه' : 'حداقل ۱ مسیر انتخاب کن'}</div>
+    </div>
+    <div id="pathGrid">`;
+
+  subGroups.forEach(g => {
+    const theme = dhGetWorldTheme(g.realmId);
+    const inGroupSel = g.list.filter(p => state.selectedNarrowPaths.includes(p.id)).length;
+    html += `<section class="dh-district-group" style="${dhWorldStyleVars(g.realmId)}">
+      <div class="dh-district-head">
+        <div class="dh-district-head-main">
+          <span class="dh-sigil-box dh-sigil-box--sm">${theme.svg}</span>
+          <div>
+            <span class="dh-district-head-title">${escapeHtml(g.subMotto || theme.title)}</span>
+            <span class="dh-district-head-sub">قلمرو ${escapeHtml(theme.title)} · ${dhFaNum(g.list.length)} مسیر تخصصی</span>
+          </div>
+        </div>
+        <span class="dh-district-count">${inGroupSel > 0 ? dhFaNum(inGroupSel) + ' انتخاب شده' : ''}</span>
+      </div>
+      <div class="grid dh-route-grid">`;
+    g.list.forEach(p => {
+      const isComplete = state.completedPaths.has(p.id);
+      const codeCount = (p.majorCodes || []).length;
+      html += renderRouteCardHTML({
+        realmId: g.realmId,
+        index: cardIdx++,
+        compactSigil: true,
+        tagLabel: `کارگاه · ${theme.short}`,
+        countLabel: codeCount ? `${dhFaNum(codeCount)} شاخهٔ تخصصی` : '',
+        extraCls: 'dh-path-card',
+        isSelected: state.selectedNarrowPaths.includes(p.id),
+        isComplete: isComplete,
+        onclickExpr: `togglePath('${p.id}')`,
+        motto: p.motto,
+        description: p.description,
+        doneDescription: 'جرقه‌های این مسیر بررسی شد — می‌توانی مسیر دیگری هم انتخاب کنی.'
+      });
+    });
+    html += `</div></section>`;
+  });
+
   html += `</div>
     <div class="dh-stage-actions">
-      <button type="button" class="btn btn-primary" onclick="if(state.selectedNarrowPaths.length>=1) goTo('introSwipe'); else alert('حداقل یک مسیر را انتخاب کن');">مشاهدهٔ جرقه‌های انرژی</button>
-      <button type="button" class="btn" onclick="goBack()">بازگشت به گذرها</button>
+      <button type="button" class="btn btn-primary" onclick="if(state.selectedNarrowPaths.length>=1) goTo('introSwipe'); else alert('حداقل یک مسیر را انتخاب کن');">ورود به دسته کارت جرقه‌ها ›</button>
+      <button type="button" class="btn" onclick="goBack()">‹ بازگشت به گذرها</button>
     </div>`;
   app.innerHTML = html;
 }
@@ -1406,19 +1722,66 @@ function togglePath(id) {
 }
 window.togglePath = togglePath;
 
-// ==================== SWIPE ====================
+function dhWorldMixHTML() {
+  const n = (state.likedCodes || []).length;
+  if (n < 2) return '';
+  const mix = dhComputeWorldSparkMix();
+  if (!mix.length) return '';
+  const segs = mix.map(item =>
+    `<span class="dh-world-mix-seg" style="width:${Math.max(6, item.pct)}%;background:${item.theme.color}"></span>`
+  ).join('');
+  const legend = mix.slice(0, 3).map(item =>
+    `<span><b style="color:${item.theme.color}">●</b> ${escapeHtml(item.theme.short)} ${dhFaNum(item.pct)}٪</span>`
+  ).join('');
+  return `<div class="dh-world-mix-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#b8b2a4;">
+      <span>ترکیب زندهٔ جرقه‌های تو تا اینجا</span>
+      <span style="color:#f5efe2;font-weight:800;">${dhFaNum(n)} جرقه</span>
+    </div>
+    <div class="dh-world-mix-bar">${segs}</div>
+    <div class="dh-world-mix-legend">${legend}</div>
+  </div>`;
+}
+
+function dhMilestoneBannerHTML() {
+  const n = (state.likedCodes || []).length;
+  const mix = n >= 5 ? dhComputeWorldSparkMix() : [];
+  const topTitle = mix.length ? mix[0].theme.title : '';
+  if (n === 5) {
+    return `<div class="dh-milestone-banner">✦ ۵ جرقه روشن شد! ریتم عالیه — همین‌طور با حس درونی خودت پیش برو.</div>`;
+  }
+  if (n === 10) {
+    return `<div class="dh-milestone-banner">✦ ۱۰ جرقه ثبت شد! بیشترین کشش تو تا اینجا به سمت «${escapeHtml(topTitle)}» بوده است.</div>`;
+  }
+  if (n === 15) {
+    return `<div class="dh-milestone-banner">✦ فقط ۵ جرقهٔ دیگر تا باز شدن مرحلهٔ بعد باقی مانده!</div>`;
+  }
+  if (n === 20) {
+    return `<div class="dh-milestone-banner">✦ مرز ۲۰ جرقه باز شد! می‌تونی همین الان بری سراغ چالش موقعیت‌ها یا باز هم جرقه جمع کنی.</div>`;
+  }
+  if (n === 30 || n === 40) {
+    return `<div class="dh-milestone-banner">✦ ${dhFaNum(n)} جرقهٔ دقیق! نقشهٔ انرژی تو فوق‌العاده شفاف شده است.</div>`;
+  }
+  return '';
+}
+
 function renderIntroSwipe() {
+  const selWorlds = (state.selectedRealms || []).map(rid => {
+    const t = dhGetWorldTheme(rid);
+    return `<span class="dh-world-orb" style="--dh-world:${t.color};--dh-world-border:${t.border};--dh-world-glow:${t.glow}">${t.svg}<span>${escapeHtml(t.title)}</span></span>`;
+  }).join('');
   app.innerHTML = progressHTML('introSwipe') + sparkChipHTML() + dhRouteBreadcrumbHTML('introSwipe') + `
     <div class="dh-stage-head">
-      <h2 class="dh-stage-title">لایهٔ اول: خرده‌انگیزه‌ها</h2>
-      <p class="dh-stage-hint">بر اساس محله‌ها، گذرها و مسیرهای باریکی که برگزیدی، حالا ریزترین کارهایی را می‌بینی که انرژی درونی تو را نشان می‌دهند.</p>
+      <h2 class="dh-stage-title">لایهٔ اول: دسته کارت جرقه‌ها</h2>
+      <p class="dh-stage-hint">کارت‌های فعالیت‌های واقعی بر اساس انتخاب‌های تو چیده شدند — سریع و شهودی تصمیم بگیر.</p>
+      ${selWorlds ? `<div class="dh-world-orbs">${selWorlds}</div>` : ''}
     </div>
-    <div class="card dh-surface-card">
-      <p style="color:#d6d1c4;line-height:1.95;margin-bottom:10px;">هر عبارتی که واقعاً به تو حس سرزندگی، کنجکاوی یا رضایت می‌دهد را <strong style="color:#f0c040;">«جرقه زد»</strong> بزن و بقیه را رد کن.</p>
-      <p style="color:#b8b2a4;font-size:0.86rem;line-height:1.85;margin-bottom:4px;">هر زمان خواستی می‌توانی از نوار بالا به مسیرهای باریک، گذرها یا محله‌ها برگردی و مسیر تازه‌ای اضافه کنی.</p>
+    <div class="card dh-surface-card" style="text-align:right;">
+      <p style="color:#f5efe2;line-height:1.95;margin-bottom:8px;font-weight:600;">هر کارتی را که خواندنش حتی یک لحظه در دلت حس کنجکاوی یا ذوق روشن کرد، <strong style="color:#34d399;">به راست بکش</strong> (یا «جرقه زد» را بزن) و بقیه را رد کن.</p>
+      <p style="color:#b8b2a4;font-size:0.84rem;line-height:1.85;margin-bottom:4px;">هدف: جمع‌کردن حداقل <strong style="color:#f0c040;">۲۰ جرقه</strong> واقعی از کارهایی که به تو انرژی می‌دهند.</p>
       <div class="dh-stage-actions">
-        <button type="button" class="btn btn-primary" onclick="loadSwipeCards()">شروع بررسی خرده‌انگیزه‌ها</button>
-        <button type="button" class="btn" onclick="goBack()">بازگشت به مسیرهای باریک</button>
+        <button type="button" class="btn btn-primary" onclick="loadSwipeCards()">باز کردن دسته کارت‌ها ›</button>
+        <button type="button" class="btn" onclick="goBack()">‹ بازگشت به مسیرهای باریک</button>
       </div>
     </div>`;
 }
@@ -1654,31 +2017,46 @@ function renderSwipe() {
   const deckLen = state.swipeCards.length;
   const progress = deckLen > 0 ? ((state.swipeIndex + 1) / deckLen) * 100 : 0;
   const alreadyLiked = Boolean(card && card.code && state.likedCodesSet.has(card.code));
+  const cardWorldId = dhResolveMotiveWorldId(card && card.code);
+  const cardTheme = dhGetWorldTheme(cardWorldId);
 
-  if (document.getElementById('dh-swipe-card') && state.stage === 'swipe') {
+  if (document.getElementById('dh-swipe-card') && app.innerHTML.indexOf('id="dh-swipe-card"') !== -1 && state.stage === 'swipe') {
     updateSwipeCardInPlace();
     return;
   }
 
   app.innerHTML = progressHTML('swipe') + sparkChipHTML() + dhRouteBreadcrumbHTML('swipe') + `
-    <div class="dh-stage-head" style="margin-bottom:8px;">
-      <h2 class="dh-stage-title">خرده‌انگیزه‌ها</h2>
+    <div id="dh-milestone-host">${dhMilestoneBannerHTML()}</div>
+    <div id="dh-world-mix-host">${dhWorldMixHTML()}</div>
+    <div class="dh-stage-head" style="margin-bottom:6px;">
+      <h2 class="dh-stage-title">شکار خرده‌انگیزه‌ها</h2>
       <p class="dh-stage-hint" id="dh-swipe-pos-label">کارت ${dhFaNum(state.swipeIndex + 1)} از ${dhFaNum(deckLen)} در این دسته</p>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="dh-swipe-progress-fill" style="width:${progress}%"></div></div>
-    <div class="swipe-card dh-surface-card" id="dh-swipe-card" style="min-height:250px;">
-      <div id="dh-swipe-picked-badge" style="min-height:24px;margin-bottom:8px;">${alreadyLiked ? '<span class="dh-picked-pill">✓ قبلاً به جرقه‌ها اضافه شده</span>' : ''}</div>
-      <p id="dh-swipe-text" style="font-size:1.1rem;line-height:2.05;color:#f5efe2;min-height:5.6em;margin:0 0 18px 0;font-weight:600;">${escapeHtml(card.description_fa || '')}</p>
-      <div id="dh-spark-actions" style="display:flex;flex-direction:column;gap:12px;margin:8px 0 4px 0;">
-        <button type="button" class="btn btn-heart" id="dh-btn-heart"
-          style="width:100%;min-height:52px;font-size:1rem;border-radius:14px;touch-action:manipulation;"
-          onclick="likeCard(true, this)">جرقه زد (انتخاب)</button>
-        <button type="button" class="btn btn-skip" id="dh-btn-skip"
-          style="width:100%;min-height:50px;font-size:0.96rem;border-radius:14px;touch-action:manipulation;margin-top:0;"
-          onclick="likeCard(false, this)">جذبم نکرد (رد کردن)</button>
+    <div class="dh-gesture-hint" aria-hidden="true">
+      <span style="color:#34d399;">→ بکش به راست: این منم!</span>
+      <span style="color:#b8b2a4;">← بکش به چپ: رد کردن</span>
+    </div>
+    <div class="dh-swipe-stage" id="dh-swipe-stage">
+      ${state.swipeIndex + 2 < deckLen ? '<div class="dh-swipe-stack-back dh-swipe-stack-back--2" aria-hidden="true"></div>' : ''}
+      ${state.swipeIndex + 1 < deckLen ? '<div class="dh-swipe-stack-back dh-swipe-stack-back--1" aria-hidden="true"></div>' : ''}
+      <div class="swipe-card dh-surface-card dh-deal-anim" id="dh-swipe-card" style="min-height:256px;${dhWorldStyleVars(cardWorldId)}">
+        <div class="dh-swipe-stamp dh-swipe-stamp--like" aria-hidden="true">✦ این منم!</div>
+        <div class="dh-swipe-stamp dh-swipe-stamp--skip" aria-hidden="true">فعلاً نه</div>
+        <div id="dh-swipe-world-badge"><span class="dh-swipe-world-pill">${cardTheme.svg}<span>${escapeHtml(cardTheme.title)}</span></span></div>
+        <div id="dh-swipe-picked-badge" style="min-height:22px;margin-bottom:4px;">${alreadyLiked ? '<span class="dh-picked-pill">✓ در فهرست جرقه‌های تو ثبت شده</span>' : ''}</div>
+        <p id="dh-swipe-text" style="font-size:1.12rem;line-height:2.05;color:#fff8eb;min-height:5.2em;margin:0 0 18px 0;font-weight:700;">${escapeHtml(card.description_fa || '')}</p>
+        <div id="dh-spark-actions" class="dh-spark-action-row">
+          <button type="button" class="btn btn-heart" id="dh-btn-heart"
+            style="width:100%;touch-action:manipulation;"
+            onclick="likeCard(true, this)">✦ جرقه زد!</button>
+          <button type="button" class="btn btn-skip" id="dh-btn-skip"
+            style="width:100%;touch-action:manipulation;"
+            onclick="likeCard(false, this)">جذبم نکرد</button>
+        </div>
+        <div id="dh-prev-wrap" style="margin-top:10px;width:100%;"></div>
+        <div id="dh-spark-need" style="margin-top:14px;padding-top:12px;width:100%;border-top:1px solid rgba(255,255,255,.08);"></div>
       </div>
-      <div id="dh-prev-wrap" style="margin-top:10px;"></div>
-      <div id="dh-spark-need" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);"></div>
     </div>
     <div id="dh-liked-drawer-host">${dhLikedSparksDrawerHTML()}</div>`;
   updateSwipeChrome();
@@ -1694,12 +2072,32 @@ function updateSwipeChrome() {
   if (posEl && deckLen > 0) {
     posEl.textContent = `کارت ${dhFaNum(state.swipeIndex + 1)} از ${dhFaNum(deckLen)} در این دسته`;
   }
+  const worldEl = document.getElementById('dh-swipe-world-badge');
+  const cardEl = document.getElementById('dh-swipe-card');
+  if (curCard) {
+    const wid = dhResolveMotiveWorldId(curCard.code);
+    const wTheme = dhGetWorldTheme(wid);
+    if (worldEl) {
+      worldEl.innerHTML = `<span class="dh-swipe-world-pill">${wTheme.svg}<span>${escapeHtml(wTheme.title)}</span></span>`;
+    }
+    if (cardEl && cardEl.style && typeof cardEl.style.setProperty === 'function') {
+      cardEl.style.setProperty('--dh-world', wTheme.color);
+      cardEl.style.setProperty('--dh-world-soft', wTheme.soft);
+      cardEl.style.setProperty('--dh-world-border', wTheme.border);
+      cardEl.style.setProperty('--dh-world-glow', wTheme.glow);
+    }
+  }
   const pickedEl = document.getElementById('dh-swipe-picked-badge');
   if (pickedEl) {
     pickedEl.innerHTML = (curCard && curCard.code && state.likedCodesSet.has(curCard.code))
-      ? '<span class="dh-picked-pill">✓ قبلاً به جرقه‌ها اضافه شده</span>'
+      ? '<span class="dh-picked-pill">✓ در فهرست جرقه‌های تو ثبت شده</span>'
       : '';
   }
+  const mixHost = document.getElementById('dh-world-mix-host');
+  if (mixHost) mixHost.innerHTML = dhWorldMixHTML();
+  const mileHost = document.getElementById('dh-milestone-host');
+  if (mileHost) mileHost.innerHTML = dhMilestoneBannerHTML();
+
   const fill = document.getElementById('dh-swipe-progress-fill');
   if (fill) fill.style.width = progress + '%';
 
@@ -1723,18 +2121,18 @@ function updateSwipeChrome() {
   const prevWrap = document.getElementById('dh-prev-wrap');
   if (prevWrap) {
     prevWrap.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
-      ${state.swipeIndex > 0 ? `<button type="button" class="btn" style="flex:1;min-width:130px;" onclick="previousCard()">کارت قبل</button>` : ''}
-      <button type="button" class="btn" style="flex:1;min-width:140px;" onclick="dhJumpToStage('narrowPath')">تغییر مسیر باریک / گذر</button>
+      ${state.swipeIndex > 0 ? `<button type="button" class="btn" style="flex:1;min-width:125px;margin:0;" onclick="previousCard()">‹ کارت قبلی</button>` : ''}
+      <button type="button" class="btn" style="flex:1;min-width:140px;margin:0;" onclick="dhJumpToStage('narrowPath')">مسیر باریک جدید</button>
     </div>`;
   }
 
   const need = document.getElementById('dh-spark-need');
   if (need) {
     if (n >= 20) {
-      need.innerHTML = `<p style="color:#d6d1c4;font-size:.86rem;margin-bottom:8px;">حداقل ۲۰ جرقه کامل شده است؛ هر زمان آماده بودی وارد سؤالات راهبرد شو.</p>
-        <button type="button" class="btn btn-primary" style="width:100%;" onclick="finishSwipe()">ادامه به سؤالات راهبرد (${dhFaNum(n)} جرقه)</button>`;
+      need.innerHTML = `<p style="color:#d6d1c4;font-size:.86rem;margin-bottom:8px;">مرز ۲۰ جرقه باز شده است — هر زمان خواستی وارد مرحلهٔ بعد شو.</p>
+        <button type="button" class="btn btn-primary" style="width:100%;" onclick="finishSwipe()">ادامه به چالش موقعیت‌ها (${dhFaNum(n)} جرقه) ›</button>`;
     } else {
-      need.innerHTML = `<p style="color:#b8b2a4;font-size:.84rem;margin:0;">تا باز شدن سؤالات راهبرد، <strong style="color:#f0c040;">${dhFaNum(20 - n)}</strong> جرقهٔ دیگر لازم داری.</p>`;
+      need.innerHTML = `<p style="color:#b8b2a4;font-size:.84rem;margin:0;">تا باز شدن مرحلهٔ بعد، <strong style="color:#f0c040;">${dhFaNum(20 - n)}</strong> جرقهٔ دیگر لازم داری.</p>`;
     }
   }
 }
@@ -1751,43 +2149,39 @@ function updateSwipeCardInPlace() {
   }
   textEl.textContent = card.description_fa || card.description || '';
   if (box) {
-    box.classList.remove('dh-card-swap');
+    box.classList.remove('dh-deal-anim');
+    void box.offsetWidth;
+    box.classList.add('dh-deal-anim');
   }
   updateSwipeChrome();
 }
 
-let __dhLikeBusy = false;
 function likeCard(liked, btnEl) {
-  if (__dhLikeBusy) return;
   if (state.swipeIndex >= state.swipeCards.length) return;
-  __dhLikeBusy = true;
+  try {
+    if (navigator && typeof navigator.vibrate === 'function') navigator.vibrate(liked ? 12 : 7);
+  } catch (_) {}
 
-  const btn = btnEl || (liked ? document.getElementById('dh-btn-heart') : document.getElementById('dh-btn-skip'));
-  if (btn) btn.classList.add('dh-pulse');
-
-  window.setTimeout(function () {
-    const c = state.swipeCards[state.swipeIndex];
-    if (liked && state.likedCodes.length < 80) {
-      if (c && c.code && !state.likedCodesSet.has(c.code)) {
-        state.likedCodes.push(c.code);
-        state.likedCodesSet.add(c.code);
-      }
-    } else if (!liked && c && c.code && state.likedCodesSet.has(c.code)) {
-      state.likedCodes = state.likedCodes.filter(code => code !== c.code);
-      state.likedCodesSet.delete(c.code);
+  const c = state.swipeCards[state.swipeIndex];
+  if (liked && state.likedCodes.length < 80) {
+    if (c && c.code && !state.likedCodesSet.has(c.code)) {
+      state.likedCodes.push(c.code);
+      state.likedCodesSet.add(c.code);
     }
-    state.swipeIndex++;
-    saveSession();
-    if (btn) btn.classList.remove('dh-pulse');
+  } else if (!liked && c && c.code && state.likedCodesSet.has(c.code)) {
+    state.likedCodes = state.likedCodes.filter(code => code !== c.code);
+    state.likedCodesSet.delete(c.code);
+  }
+  state.swipeIndex++;
+  saveSession();
 
-    if (state.swipeIndex >= state.swipeCards.length || state.likedCodes.length >= 80) {
-      __dhLikeBusy = false;
-      renderSwipe();
-      return;
-    }
-    updateSwipeCardInPlace();
-    __dhLikeBusy = false;
-  }, 220);
+  if (state.swipeIndex >= state.swipeCards.length || state.likedCodes.length >= 80) {
+    const existing = document.getElementById('dh-swipe-card');
+    if (existing) existing.remove();
+    renderSwipe();
+    return;
+  }
+  updateSwipeCardInPlace();
 }
 
 function previousCard() {
@@ -1837,6 +2231,7 @@ function dhQuestionJumperHTML(total, answersArr, currentIdx, clickFnName) {
 function jumpStrategyQ(idx) {
   const total = (state.strategyQuestions && state.strategyQuestions.length) || 0;
   if (idx < 0 || idx >= total) return;
+  state.stage = 'strategies';
   state.currentQuestion = idx;
   saveSession();
   render();
@@ -1881,10 +2276,43 @@ function renderIntroStrategies() {
     </div>`;
 }
 
+const DH_STRATEGY_CHAPTERS = [
+  'فصل ۱ از ۵ · مواجهه با ناشناخته‌ها',
+  'فصل ۲ از ۵ · ریتم یادگیری و تمرکز',
+  'فصل ۳ از ۵ · تعامل، تیم و بازخورد',
+  'فصل ۴ از ۵ · تصمیم‌گیری در چالش',
+  'فصل ۵ از ۵ · ساختن مسیر شخصی'
+];
+const DH_OPT_LETTERS = ['الف', 'ب', 'ج', 'د', 'هـ'];
+
+function dhStrategyChapterHTML(qIdx) {
+  const chapIdx = Math.min(4, Math.floor((qIdx || 0) / 5));
+  let pips = '';
+  for (let i = 0; i < 5; i++) {
+    const cls = i < chapIdx ? 'is-done' : (i === chapIdx ? 'is-now' : '');
+    pips += `<span class="dh-chapter-pip ${cls}"></span>`;
+  }
+  return `<div class="dh-chapter-bar">
+    <span class="dh-chapter-title">${DH_STRATEGY_CHAPTERS[chapIdx]}</span>
+    <span class="dh-chapter-steps" aria-hidden="true">${pips}</span>
+  </div>`;
+}
+
+function dhStrategyMirrorHTML(answeredCount) {
+  if (answeredCount < 5 || typeof analyzeStrategyStyle !== 'function') return '';
+  const st = analyzeStrategyStyle(state.strategyAnswers || []);
+  if (!st || !st.style) return '';
+  const isCheckpoint = answeredCount === 8 || answeredCount === 16 || answeredCount >= 24;
+  return `<div class="dh-live-mirror${isCheckpoint ? ' is-checkpoint' : ''}">
+    <div class="dh-live-mirror-kicker">${isCheckpoint ? `✦ ایستگاه شناخت (${dhFaNum(answeredCount)} موقعیت طی شد)` : 'آینهٔ زندهٔ سبک فکری تو تا اینجا'}</div>
+    <div class="dh-live-mirror-main">گرایش برجسته: <span style="color:#f5d472;">${escapeHtml(st.style)}</span> <span style="font-size:.78rem;color:#b8b2a4;">(${dhFaNum(st.strength)}٪ هم‌سویی)</span></div>
+  </div>`;
+}
+
 function renderStrategy() {
   if (!state.questionsReady) {
     app.innerHTML = progressHTML('strategies') + `<div class="card dh-surface-card" style="text-align:center;">
-      <h2 style="color:#f5efe2;font-size:1.15rem;margin-bottom:10px;">در حال بارگذاری سؤالات راهبرد...</h2>
+      <h2 style="color:#f5efe2;font-size:1.15rem;margin-bottom:10px;">در حال بارگذاری موقعیت‌های راهبرد...</h2>
       <button type="button" class="btn btn-primary" onclick="retryLoadQuestions()">تلاش دوباره</button>
     </div>`;
     return;
@@ -1900,25 +2328,30 @@ function renderStrategy() {
   const currentAnswer = state.strategyAnswers[state.currentQuestion];
   const answeredCount = dhAnsweredCount(state.strategyAnswers);
   let html = progressHTML('strategies') +
+    dhStrategyChapterHTML(state.currentQuestion) +
+    dhStrategyMirrorHTML(answeredCount) +
     dhQuestionJumperHTML(total, state.strategyAnswers, state.currentQuestion, 'jumpStrategyQ') +
     `<div class="card dh-surface-card dh-q-card">
       <div class="dh-q-top">
-        <span class="dh-sjt-badge">موقعیت واقعی · سؤال ${dhFaNum(q.number)} از ${dhFaNum(total)}</span>
+        <span class="dh-sjt-badge">موقعیت ${dhFaNum(q.number)} از ${dhFaNum(total)}</span>
+        ${currentAnswer !== undefined && currentAnswer !== null ? '<span class="dh-picked-pill">✓ پاسخ ثبت‌شده</span>' : ''}
       </div>
       <p class="dh-q-prompt">${escapeHtml(q.question)}</p>
       <div class="dh-answer-list">`;
-  q.options.forEach(o => {
+  q.options.forEach((o, idx) => {
     const isSelected = currentAnswer === o.index;
+    const letter = DH_OPT_LETTERS[idx] || String(idx + 1);
     html += `<button type="button" class="dh-answer-option${isSelected ? ' selected' : ''}" aria-pressed="${isSelected ? 'true' : 'false'}" onclick="answerStrategy(${o.index})">
+      <span class="dh-opt-letter" aria-hidden="true">${letter}</span>
       <span class="dh-answer-text">${escapeHtml(o.text)}</span>
       <span class="dh-route-check" aria-hidden="true"></span>
     </button>`;
   });
   html += `</div></div>
     <div class="dh-q-nav">
-      ${state.currentQuestion > 0 ? `<button type="button" class="btn" onclick="previousStrategy()">سؤال قبل</button>` : ''}
-      ${state.currentQuestion < total - 1 ? `<button type="button" class="btn" onclick="nextStrategyStep()">سؤال بعد</button>` : ''}
-      <button type="button" class="btn btn-primary" onclick="continueStrategy()">${answeredCount >= total ? 'ورود به لایهٔ ارزش‌ها' : 'ادامه به اولین بی‌پاسخ'}</button>
+      ${state.currentQuestion > 0 ? `<button type="button" class="btn" onclick="previousStrategy()">‹ سؤال قبلی</button>` : ''}
+      ${state.currentQuestion < total - 1 ? `<button type="button" class="btn" onclick="nextStrategyStep()">سؤال بعدی ›</button>` : ''}
+      <button type="button" class="btn btn-primary" onclick="continueStrategy()">${answeredCount >= total ? 'ورود به دوراهی ارزش‌ها ›' : 'ادامه به اولین بی‌پاسخ'}</button>
       <button type="button" class="btn" onclick="goBack()">بازگشت</button>
     </div>`;
   app.innerHTML = html;
@@ -1985,6 +2418,7 @@ async function retryLoadQuestions() {
 function jumpValueQ(idx) {
   const total = (state.valueQuestions && state.valueQuestions.length) || 0;
   if (idx < 0 || idx >= total) return;
+  state.stage = 'values';
   state.currentValueQuestion = idx;
   saveSession();
   render();
@@ -2035,10 +2469,32 @@ function renderIntroValues() {
     </div>`;
 }
 
+const DH_VALUE_POLE_TITLES = {
+  Q1A: 'عمق‌تأثیر',       Q1B: 'گستره‌تأثیر',
+  Q2A: 'میراث‌مادی',      Q2B: 'میراث‌انسانی',
+  Q3A: 'عمق‌محور',        Q3B: 'گستره‌محور',
+  Q4A: 'حقیقت‌جو',        Q4B: 'خلق‌زیبایی',
+  Q5A: 'نظم‌خواه',        Q5B: 'آشوب‌پذیر',
+  Q6A: 'مسئولیت‌فردی',    Q6B: 'مسئولیت‌سیستمی',
+  Q7A: 'خالق',            Q7B: 'ناقل',
+  Q8A: 'آزادی‌خواه',      Q8B: 'امنیت‌خواه',
+  Q9A: 'تغییرگر',         Q9B: 'محافظ',
+  Q10A: 'دیده‌شدن',       Q10B: 'بی‌نام‌تأثیرگذار',
+  Q11A: 'داده‌نگر',       Q11B: 'انسان‌نگر',
+  Q12A: 'ریسک‌پذیر',      Q12B: 'ثبات‌خواه',
+  Q13A: 'نتیجه‌فوری',     Q13B: 'اثر‌بلندمدت',
+  Q14A: 'تعلق‌خواه',      Q14B: 'استقلال‌طلب',
+  Q15A: 'تسلط‌گرا',       Q15B: 'کنجکاوی‌گرا'
+};
+
 function renderValue() {
+  const fmt = typeof dhFaNum === 'function' ? dhFaNum : function (x) { return String(x); };
+  const cntFn = typeof dhAnsweredCount === 'function'
+    ? dhAnsweredCount
+    : function (arr) { return (arr || []).filter(function (v) { return v !== undefined && v !== null && String(v).trim() !== ''; }).length; };
   if (!state.questionsReady) {
     app.innerHTML = progressHTML('values') + `<div class="card dh-surface-card" style="text-align:center;">
-      <h2 style="color:#f5efe2;font-size:1.15rem;margin-bottom:10px;">در حال بارگذاری سؤالات ارزش...</h2>
+      <h2 style="color:#f5efe2;font-size:1.15rem;margin-bottom:10px;">در حال بارگذاری دوراهی‌های ارزش...</h2>
       <button type="button" class="btn btn-primary" onclick="retryLoadQuestions()">تلاش دوباره</button>
     </div>`;
     return;
@@ -2047,11 +2503,11 @@ function renderValue() {
   if (state.currentValueQuestion >= total) {
     app.innerHTML = progressHTML('values') + `
       <div class="dh-done-box">
-        <h2 style="color:#f5efe2;font-size:1.35rem;margin-bottom:8px;">پاسخ‌های هر سه لایه کامل شد</h2>
-        <p style="color:#d6d1c4;line-height:1.9;">تا اینجا ${dhFaNum(state.likedCodes.length)} خرده‌انگیزه، ${dhFaNum(dhAnsweredCount(state.strategyAnswers))} راهبرد و ${dhFaNum(dhAnsweredCount(state.valueAnswers))} ارزش از خودت ثبت کرده‌ای.</p>
+        <h2 style="color:#fff8eb;font-size:1.35rem;margin-bottom:8px;">✦ هر سه لایهٔ شناخت کامل شد!</h2>
+        <p style="color:#d6d1c4;line-height:1.9;">تا اینجا ${fmt(state.likedCodes.length)} خرده‌انگیزه، ${fmt(cntFn(state.strategyAnswers))} موقعیت راهبردی و ${fmt(cntFn(state.valueAnswers))} دوراهی ارزشی از خودت ثبت کرده‌ای.</p>
         <div class="dh-stage-actions">
-          <button type="button" class="btn btn-primary" onclick="goTo('choice')">انتخاب نوع تحلیل</button>
-          <button type="button" class="btn" onclick="state.currentValueQuestion=${Math.max(0, total - 1)};saveSession();render()">مرور سؤالات ارزش</button>
+          <button type="button" class="btn btn-primary" onclick="goTo('choice')">رفتن به صفحهٔ رمزگشایی نهایی ›</button>
+          <button type="button" class="btn" onclick="state.currentValueQuestion=${Math.max(0, total - 1)};saveSession();render()">مرور دوراهی‌های ارزش</button>
         </div>
       </div>`;
     return;
@@ -2059,29 +2515,42 @@ function renderValue() {
   const q = state.valueQuestions[state.currentValueQuestion];
   const opts = q.options;
   const currentAnswer = state.valueAnswers[state.currentValueQuestion];
-  const answeredCount = dhAnsweredCount(state.valueAnswers);
+  const answeredCount = cntFn(state.valueAnswers);
+  const poleA = DH_VALUE_POLE_TITLES[opts[0].code] || 'قطب اول';
+  const poleB = DH_VALUE_POLE_TITLES[opts[1].code] || 'قطب دوم';
+  const jumperHTML = typeof dhQuestionJumperHTML === 'function'
+    ? dhQuestionJumperHTML(total, state.valueAnswers, state.currentValueQuestion, 'jumpValueQ')
+    : '';
   app.innerHTML = progressHTML('values') +
-    dhQuestionJumperHTML(total, state.valueAnswers, state.currentValueQuestion, 'jumpValueQ') +
+    jumperHTML +
     `<div class="card dh-surface-card dh-q-card">
       <div class="dh-q-top">
-        <span class="dh-sjt-badge">دوراهی ارزشی · سؤال ${dhFaNum(q.number)} از ${dhFaNum(total)}</span>
+        <span class="dh-sjt-badge">دوئل دوراهی · ${fmt(q.number)} از ${fmt(total)}</span>
+        ${currentAnswer ? '<span class="dh-picked-pill">✓ انتخاب ثبت‌شده</span>' : ''}
       </div>
-      <p class="dh-q-prompt">${escapeHtml(q.question)}</p>
-      <div class="dh-answer-list">
-        <button type="button" class="dh-answer-option${currentAnswer === opts[0].code ? ' selected' : ''}" aria-pressed="${currentAnswer === opts[0].code ? 'true' : 'false'}" onclick="answerValue('${opts[0].code}')">
-          <span class="dh-answer-text">${escapeHtml(opts[0].text)}</span>
-          <span class="dh-route-check" aria-hidden="true"></span>
+      <p class="dh-q-prompt" style="text-align:center;">${escapeHtml(q.question)}</p>
+      <div class="dh-duel-arena">
+        <button type="button" class="dh-answer-option dh-duel-card dh-duel-card--a${currentAnswer === opts[0].code ? ' selected' : ''}" aria-pressed="${currentAnswer === opts[0].code ? 'true' : 'false'}" onclick="answerValue('${opts[0].code}')">
+          <div class="dh-duel-pole-head">
+            <span class="dh-duel-pole-tag">✦ ${escapeHtml(poleA)}</span>
+            <span class="dh-route-check" aria-hidden="true"></span>
+          </div>
+          <p class="dh-duel-body">${escapeHtml(opts[0].text)}</p>
         </button>
-        <button type="button" class="dh-answer-option${currentAnswer === opts[1].code ? ' selected' : ''}" aria-pressed="${currentAnswer === opts[1].code ? 'true' : 'false'}" onclick="answerValue('${opts[1].code}')">
-          <span class="dh-answer-text">${escapeHtml(opts[1].text)}</span>
-          <span class="dh-route-check" aria-hidden="true"></span>
+        <div class="dh-duel-vs" aria-hidden="true">یا</div>
+        <button type="button" class="dh-answer-option dh-duel-card dh-duel-card--b${currentAnswer === opts[1].code ? ' selected' : ''}" aria-pressed="${currentAnswer === opts[1].code ? 'true' : 'false'}" onclick="answerValue('${opts[1].code}')">
+          <div class="dh-duel-pole-head">
+            <span class="dh-duel-pole-tag">✦ ${escapeHtml(poleB)}</span>
+            <span class="dh-route-check" aria-hidden="true"></span>
+          </div>
+          <p class="dh-duel-body">${escapeHtml(opts[1].text)}</p>
         </button>
       </div>
     </div>
     <div class="dh-q-nav">
-      ${state.currentValueQuestion > 0 ? `<button type="button" class="btn" onclick="previousValue()">سؤال قبل</button>` : ''}
-      ${state.currentValueQuestion < total - 1 ? `<button type="button" class="btn" onclick="nextValueStep()">سؤال بعد</button>` : ''}
-      <button type="button" class="btn btn-primary" onclick="continueValue()">${answeredCount >= total ? 'ادامه به انتخاب تحلیل' : 'ادامه به اولین بی‌پاسخ'}</button>
+      ${state.currentValueQuestion > 0 ? `<button type="button" class="btn" onclick="previousValue()">‹ دوراهی قبلی</button>` : ''}
+      ${state.currentValueQuestion < total - 1 ? `<button type="button" class="btn" onclick="nextValueStep()">دوراهی بعدی ›</button>` : ''}
+      <button type="button" class="btn btn-primary" onclick="continueValue()">${answeredCount >= total ? 'ادامه به رمزگشایی نهایی ›' : 'ادامه به اولین بی‌پاسخ'}</button>
       <button type="button" class="btn" onclick="goBack()">بازگشت</button>
     </div>`;
 }
@@ -2115,21 +2584,39 @@ function continueValue() {
 
 // ==================== صفحه انتخاب ====================
 function renderChoice() {
+  const mix = dhComputeWorldSparkMix();
+  const topWorldsHTML = mix.slice(0, 3).map(m =>
+    `<span class="dh-world-orb" style="--dh-world:${m.theme.color};--dh-world-border:${m.theme.border};--dh-world-glow:${m.theme.glow}">${m.theme.svg}<span>${escapeHtml(m.theme.title)} · ${dhFaNum(m.pct)}٪</span></span>`
+  ).join('');
+  const sStyle = (state.strategyAnswers || []).length >= 5 && typeof analyzeStrategyStyle === 'function'
+    ? analyzeStrategyStyle(state.strategyAnswers)
+    : null;
+
   app.innerHTML = progressHTML('choice') + sparkChipHTML() + `
     <div class="dh-stage-head">
-      <h2 class="dh-stage-title">انتخاب نوع تحلیل نهایی</h2>
-      <p class="dh-stage-hint">هر دو گزارش بر پایهٔ نقشهٔ فردیت تو ساخته می‌شوند؛ مقیاس مورد نظرت را انتخاب کن.</p>
+      <h2 class="dh-stage-title">رمزگشایی نقشهٔ فردیت تو</h2>
+      <p class="dh-stage-hint">همهٔ داده‌های درونی تو آمادهٔ ترکیب‌اند — بگو می‌خواهی نقشه را در چه افقی ببینی؟</p>
+      ${topWorldsHTML ? `<div class="dh-world-orbs">${topWorldsHTML}</div>` : ''}
     </div>
-    <div class="card dh-surface-card" style="text-align:right;">
-      <p style="color:#d6d1c4;line-height:1.95;margin-bottom:16px;">
-        خرده‌انگیزه‌ها، راهبردها و ارزش‌هایت آمادهٔ تحلیل است. اگر بخواهی قبل از دریافت نتیجه تغییری بدهی، از نوار بالای صفحه به هر بخش سر بزن.
-      </p>
-      <div class="dh-stage-actions">
-        <button type="button" class="btn btn-primary" onclick="analyzeBranches()">هدایت تحصیلی (شاخه‌های دبیرستان)</button>
-        <button type="button" class="btn btn-primary" onclick="analyzeMajors()">انتخاب رشته‌های دانشگاهی</button>
-        <button type="button" class="btn" onclick="goBack()">مرور بخش ارزش‌ها</button>
-        <button type="button" class="btn" onclick="resetJourney()">شروع از نو</button>
-      </div>
+    ${sStyle && sStyle.style ? `<div class="dh-live-mirror is-checkpoint" style="margin-bottom:14px;">
+      <div class="dh-live-mirror-kicker">✦ چکیدهٔ زندهٔ پروفایل تو پیش از تطبیق نهایی</div>
+      <div class="dh-live-mirror-main">${dhFaNum(state.likedCodes.length)} جرقهٔ فعال · سبک فکری غالب: <span style="color:#f5d472;">${escapeHtml(sStyle.style)}</span></div>
+    </div>` : ''}
+    <div class="dh-choice-modes">
+      <button type="button" class="dh-choice-mode-card" onclick="analyzeBranches()">
+        <span style="display:inline-block;font-size:.74rem;font-weight:800;color:#f5d472;margin-bottom:4px;">مناسب پایهٔ نهم و دورهٔ متوسطه</span>
+        <div style="font-size:1.05rem;font-weight:900;color:#fff8eb;margin-bottom:5px;">هدایت تحصیلی (شاخه‌های دبیرستان) ›</div>
+        <div style="font-size:.83rem;color:#d6d1c4;line-height:1.75;">مقایسهٔ هم‌خوانی فردیت تو با شاخه‌های نظری، فنی‌وحرفه‌ای و کاردانش بر اساس جرقه‌ها، راهبردها و ارزش‌ها.</div>
+      </button>
+      <button type="button" class="dh-choice-mode-card dh-choice-mode-card--alt" onclick="analyzeMajors()">
+        <span style="display:inline-block;font-size:.74rem;font-weight:800;color:#7dd3fc;margin-bottom:4px;">مناسب دبیرستانی‌ها، کنکوری‌ها و دانشجویان</span>
+        <div style="font-size:1.05rem;font-weight:900;color:#fff8eb;margin-bottom:5px;">انتخاب رشته‌های دانشگاهی ›</div>
+        <div style="font-size:.83rem;color:#d6d1c4;line-height:1.75;">کشف دقیق‌ترین رشته‌های دانشگاهی هم‌سو با انرژی درونی تو از میان کاتالوگ جامع رشته‌ها.</div>
+      </button>
+    </div>
+    <div class="dh-stage-actions">
+      <button type="button" class="btn" onclick="goBack()">‹ مرور دوراهی‌های ارزش</button>
+      <button type="button" class="btn" onclick="resetJourney()">شروع از نو</button>
     </div>
   `;
 }
@@ -2568,18 +3055,41 @@ function displayResults(data, type) {
     savedAt: Date.now()
   };
 
+  const worldMix = dhComputeWorldSparkMix();
+  const cA = worldMix[0] ? worldMix[0].theme.color : '#f0c040';
+  const cB = worldMix[1] ? worldMix[1].theme.color : '#38bdf8';
+  const sA = worldMix[0] ? worldMix[0].theme.selected : 'rgba(240, 192, 64, 0.22)';
+  const sB = worldMix[1] ? worldMix[1].theme.selected : 'rgba(56, 189, 248, 0.18)';
+  const topHeroMatch = matched.length > 0 ? matched[0] : null;
+  const topWorldsText = worldMix.slice(0, 3).map(m => `${m.theme.title} (${dhFaNum(m.pct)}٪)`).join(' · ') || 'شهر رؤیاها';
+  window.__dhIdentityStoryPayload = {
+    topMatch: topHeroMatch ? topHeroMatch.name : (isBranch ? 'پروفایل هدایت تحصیلی' : 'پروفایل انتخاب رشته'),
+    fitPct: topHeroMatch ? (dhFaNum(Math.round(topHeroMatch.fit_score || 0)) + '٪') : '',
+    worldsText: topWorldsText,
+    styleText: strategyStyle ? strategyStyle.style : '',
+    valueText: valueStyle ? valueStyle.summary : '',
+    colorA: cA,
+    colorB: cB
+  };
+
   let html = progressHTML('results') + `
     <div class="dh-stage-head">
       <h2 class="dh-stage-title">${isBranch ? 'نتیجه هدایت تحصیلی' : 'نتیجه انتخاب رشته'}</h2>
-      <p class="dh-stage-hint">این گزارش بر پایهٔ رتبه نیست؛ نقشه‌ای از فعالیت‌ها، راهبردها و ارزش‌هایی است که به تو انرژی می‌دهند.</p>
+      <p class="dh-stage-hint">این گزارش بر پایهٔ رتبه نیست؛ نقشه‌ای زنده از فعالیت‌ها، راهبردها و ارزش‌هایی است که به تو انرژی می‌دهند.</p>
     </div>
-    <div class="dh-share-box">✦ ${dhFaNum(state.likedCodes.length)} خرده‌انگیزه از خودت ثبت شد.<br>این پایان مسیر نیست؛ نقطهٔ شروعی روشن برای شناخت دقیق‌تر خودت است.</div>
-    ${strategyStyle || valueStyle ? `
-    <div class="card dh-surface-card" style="padding:18px;margin:15px 0;text-align:right;font-size:0.9rem;">
-      <p style="margin:0 0 10px 0;color:#f0c040;font-weight:700;">تحلیل سبک شخصی تو</p>
-      ${strategyStyle ? `<p style="margin:6px 0;color:#d6d1c4;line-height:1.85;"><strong style="color:#f5efe2;">سبک فکری:</strong> ${escapeHtml(strategyStyle.style)} (${dhFaNum(strategyStyle.strength)}٪) — ${escapeHtml(strategyStyle.description)}</p>` : ''}
-      ${valueStyle ? `<p style="margin:6px 0;color:#d6d1c4;line-height:1.85;"><strong style="color:#f5efe2;">ارزش‌های کلیدی:</strong> ${escapeHtml(valueStyle.summary)}</p>` : ''}
-    </div>` : ''}
+    <div class="dh-story-id-card" style="--dh-id-a:${sA};--dh-id-b:${sB}">
+      <div class="dh-story-id-top">
+        <span class="dh-story-id-brand">✦ کارت هویت فردیت · اسب سیاه</span>
+        <span style="font-size:.76rem;color:#d6d1c4;font-weight:700;">${dhFaNum(state.likedCodes.length)} جرقه</span>
+      </div>
+      ${topHeroMatch ? `<div class="dh-story-id-match">هم‌سوترين مسیر با تو: ${escapeHtml(topHeroMatch.name)} (${dhFaNum(Math.round(topHeroMatch.fit_score || 0))}٪)</div>` : `<div class="dh-story-id-match">نقشهٔ انرژی درونی تو</div>`}
+      <div class="dh-story-id-pills">
+        ${worldMix.slice(0, 3).map(m => `<span class="dh-story-id-pill" style="border-color:${m.theme.border};color:${m.theme.color};">${escapeHtml(m.theme.title)} · ${dhFaNum(m.pct)}٪</span>`).join('')}
+        ${strategyStyle ? `<span class="dh-story-id-pill">سبک فکری: ${escapeHtml(strategyStyle.style)}</span>` : ''}
+      </div>
+      ${valueStyle ? `<p style="margin:0 0 12px 0;color:#dcd6c8;font-size:.82rem;line-height:1.8;"><strong style="color:#f5d472;">قطب‌های ارزشی کلیدی:</strong> ${escapeHtml(valueStyle.summary)}</p>` : ''}
+      <button type="button" class="dh-story-share-btn" onclick="if(window.dhShareIdentityStoryCard){window.dhShareIdentityStoryCard()}else if(window.dhCopyShare){window.dhCopyShare()}">دانلود یا اشتراک کارت استوری فردیت من</button>
+    </div>
 
     <p style="text-align:center;color:#b8b2a4;font-size:.9rem;margin:12px 0;">بر اساس <strong style="color:#f0c040;">${dhFaNum(state.likedCodes.length)}</strong> خرده‌انگیزه، <strong style="color:#f5efe2;">${dhFaNum(matched.length)}</strong> ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
   `;
