@@ -523,34 +523,83 @@ async function run() {
   assert.equal(sandbox.state.stage, 'results', 'Returning to completed Results from Home must stay allowed without extra charge');
   assert.equal(userQuotaDetails(101).credits_consumed, 1);
 
-  // ==================== 1) REMAINING = 0 -> BLOCK ALL 2ND JOURNEY ENTRY VECTORS ====================
+  // ==================== POST-#263 MANDATORY DOM DELETION & BANNER AUTH CONTRACTS ====================
+  const rawAppSource = fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8');
+  const rawShellSource = fs.readFileSync(path.join(root, 'docs', 'shell.js'), 'utf8');
+  for (const forbiddenLabel of ['شروع یک کاوش تازه', 'شروع کاوش تازه', 'شروع سفر جدید', 'شروع از نو']) {
+    assert.ok(!rawAppSource.includes(forbiddenLabel), `docs/app.js MUST completely delete "${forbiddenLabel}" from DOM`);
+    assert.ok(!new RegExp(`<button[^>]*>[^<]*${forbiddenLabel}`).test(rawShellSource),
+      `docs/shell.js MUST NOT render any button "${forbiddenLabel}"`);
+    assert.ok(!getEl('app').innerHTML.includes(forbiddenLabel), `Rendered Results DOM MUST NOT contain "${forbiddenLabel}"`);
+  }
+  assert.ok(!rawAppSource.includes("goTo('splash')") && !rawAppSource.includes("goTo('realm')"),
+    'docs/app.js MUST NOT leave any direct unguarded onclick="goTo(\'splash\'|\'realm\')" button');
+  assert.ok(!rawShellSource.includes('آخرین فعالیت') && !rawShellSource.includes('dh-mk2-progress'),
+    'docs/shell.js MUST completely omit legacy آخرین فعالیت / dh-mk2-progress from Home render');
+  assert.ok(!rawShellSource.includes("'ادامه سفر'"),
+    'docs/shell.js MUST NOT render duplicate ادامه سفر hero button on Home');
+  assert.ok(!getEl('app').innerHTML.includes('dh-stage-nav'),
+    'Finished Results screen MUST omit pre-result stage jump pills from DOM');
+
+  // Verify Home banner rules when remaining=0:
+  // (A) Consumed session + existing results -> #dh-active-place-banner (`مشاهدهٔ دوبارهٔ نتیجه`) IS allowed on Home!
+  await sandbox.DHCommercialUI.syncQuota();
+  sandbox.dhGoHomeKeepPlace();
+  assert.ok(getEl('app').innerHTML.includes('dh-active-place-banner') && getEl('app').innerHTML.includes('مشاهدهٔ دوبارهٔ نتیجه'),
+    'Home MUST allow #dh-active-place-banner ONLY for consumed session with existing Results when remaining=0');
+  assert.ok(!getEl('app').innerHTML.includes('dh-mk2-progress') && !getEl('app').innerHTML.includes('آخرین فعالیت'),
+    'Home DOM MUST NOT contain dh-mk2-progress or آخرین فعالیت');
+
+  // Return to Results via #dh-active-place-banner (`مشاهدهٔ دوبارهٔ نتیجه`) -> 0 extra credits deducted
+  await sandbox.dhReturnToActivePage();
+  assert.equal(sandbox.state.stage, 'results', 'Returning to consumed Results from Home must stay on results');
+
+  // ==================== 1) REMAINING = 0 -> BLOCK ALL 2ND JOURNEY ENTRY VECTORS & ZERO STAGE MUTATION ====================
   // Even if someone tampers with EVERY localStorage key in DevTools (`remaining: 99`, `premium: true`, forged `dh_quota_charged_session_v1`)!
   localStorage.setItem('dh_local_quota_v1', JSON.stringify({ remaining: 99, serverRemaining: 99, premium: true }));
   localStorage.setItem('dh_local_user_v1', JSON.stringify({ id: 101, is_premium: true }));
 
   const quotaCallsBeforeLock = quotaRequests;
 
-  // 1a. Clicking «شروع سفر جدید» (`resetJourney()`) right after Results MUST query server, block `splash`, and open Purchase Modal!
+  // 1a. Hypothetical legacy «شروع سفر جدید» (`resetJourney()`) right after Results MUST query server, NEVER change `state.stage`, NEVER render splash/realm, and open Purchase Modal!
   elements.delete('dh-commercial-overlay');
+  assert.equal(sandbox.state.stage, 'results');
   sandbox.resetJourney();
   await flushMicrotasks();
   await flushMicrotasks();
   assert.ok(quotaRequests > quotaCallsBeforeLock, 'resetJourney() must check server quota first');
-  assert.notEqual(sandbox.state.stage, 'splash', 'resetJourney() with remaining=0 MUST NOT enter splash');
-  assert.notEqual(sandbox.state.stage, 'realm', 'resetJourney() with remaining=0 MUST NOT enter realm');
+  assert.equal(sandbox.state.stage, 'results', 'resetJourney() with remaining=0 MUST NOT mutate state.stage away from results');
   assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
     'resetJourney() with remaining=0 MUST open Purchase Modal');
   assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('اعتبار سفر اکتشافی شما به پایان رسیده است'),
     'Purchase Modal must display explicit quota exhaustion message');
 
-  // 1b. Calling `startNewJourney()` directly with `remaining=0` MUST block `realm` and open Purchase Modal!
+  // 1b. Hypothetical legacy «شروع یک کاوش تازه» (`startNewJourney()`) on consumed session MUST NEVER reuse consumed sessionId, MUST NOT mutate `state.stage`, and MUST open Purchase Modal!
   elements.delete('dh-commercial-overlay');
   sandbox.startNewJourney();
   await flushMicrotasks();
   await flushMicrotasks();
-  assert.notEqual(sandbox.state.stage, 'realm', 'startNewJourney() with remaining=0 MUST NOT enter realm');
+  assert.equal(sandbox.state.stage, 'results', 'startNewJourney() with remaining=0 MUST NOT mutate state.stage');
   assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
     'startNewJourney() with remaining=0 MUST open Purchase Modal');
+
+  // 1b-2. Direct `goTo('splash')`, `goTo('realm')`, and `dhJumpToStage('realm')` from finished Results with remaining=0 MUST NOT mutate `state.stage`!
+  for (const blockedTarget of ['splash', 'realm']) {
+    elements.delete('dh-commercial-overlay');
+    sandbox.goTo(blockedTarget);
+    await flushMicrotasks();
+    await flushMicrotasks();
+    assert.equal(sandbox.state.stage, 'results', `goTo('${blockedTarget}') with remaining=0 MUST NOT mutate state.stage`);
+    assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
+      `goTo('${blockedTarget}') with remaining=0 MUST open Purchase Modal`);
+  }
+  elements.delete('dh-commercial-overlay');
+  await sandbox.dhJumpToStage('realm');
+  await flushMicrotasks();
+  await flushMicrotasks();
+  assert.equal(sandbox.state.stage, 'results', 'dhJumpToStage("realm") with remaining=0 MUST NOT mutate state.stage');
+  assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
+    'dhJumpToStage("realm") with remaining=0 MUST open Purchase Modal');
 
   // 1c. Clicking bottom Tabbar `[سفر]` (`switchTab('journey')`) or `startServerAuthorizedJourney()` with `remaining=0`!
   elements.delete('dh-commercial-overlay');
@@ -561,7 +610,7 @@ async function run() {
   assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
     'Tabbar journey button with remaining=0 MUST open Purchase Modal');
 
-  // 1d. Tampering with an uncharged session + forged `dh_quota_charged_session_v1` in `localStorage` and calling `dhReturnToActivePage()`!
+  // 1d. Uncharged session + `remaining=0`: Home MUST NOT render `#dh-active-place-banner` AND `dhReturnToActivePage()` MUST NOT open journey or mutate stage!
   sandbox.__dhCachedResultsPlace = null;
   localStorage.setItem('darkhorse_session_v2', JSON.stringify({
     sessionId: 'forged-uncharged-session-999',
@@ -569,13 +618,27 @@ async function run() {
     journeyFinished: false
   }));
   localStorage.setItem('dh_quota_charged_session_v1', 'forged-uncharged-session-999');
+  await sandbox.DHCommercialUI.syncQuota();
+  sandbox.DHShell.renderHome();
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
+    'Home MUST NOT render #dh-active-place-banner when remaining=0 and session is uncharged');
+  const stageBeforeBlockedReturn = sandbox.state.stage;
   elements.delete('dh-commercial-overlay');
   await sandbox.dhReturnToActivePage();
   await flushMicrotasks();
   assert.equal(sandbox.__dhInJourney, false, 'Forged localStorage charge marker MUST be rejected by server check');
+  assert.equal(sandbox.state.stage, stageBeforeBlockedReturn, 'Blocked dhReturnToActivePage() MUST NOT mutate state.stage');
   assert.equal(localStorage.getItem('dh_quota_charged_session_v1'), null, 'Forged charge marker must be purged');
   assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
     'Resuming forged uncharged session with remaining=0 MUST open Purchase Modal');
+
+  // 1d-2. Logged-out state: Home MUST NOT render `#dh-active-place-banner` either!
+  const savedAuthRaw = localStorage.getItem('dh_auth_v1');
+  localStorage.removeItem('dh_auth_v1');
+  sandbox.DHShell.renderHome();
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
+    'Home MUST NOT render #dh-active-place-banner when user is logged out');
+  localStorage.setItem('dh_auth_v1', savedAuthRaw);
 
   // 1e. Direct DevTools `window.__dhInJourney = true; state.stage = 'realm'; render();`!
   elements.delete('dh-commercial-overlay');

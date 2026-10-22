@@ -1,7 +1,7 @@
-/* Dark Horse SW v68 — instant cached HTML shell + fresh network updates.
+/* Dark Horse SW v69 — instant cached HTML shell + fresh network updates.
  * JSON stays network-only with cache: 'no-store'; versioned assets stay guarded SWR.
  */
-const CACHE = 'darkhorse-v68';
+const CACHE = 'darkhorse-v69';
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();
