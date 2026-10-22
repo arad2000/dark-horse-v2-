@@ -116,12 +116,12 @@
           if (!index[pref]) index[pref] = [];
           index[pref].push({
             pathId: p.id,
-            pathName: p.name,
+            pathName: p.name || p.motto || p.id,
             pathIcon: p.icon || '',
             subId: subId,
-            subName: (meta.sub && meta.sub.name) || subId,
+            subName: (meta.sub && (meta.sub.name || meta.sub.motto)) || subId,
             realmId: meta.realmId || '',
-            realmName: (realm && realm.name) || '',
+            realmName: (realm && (realm.name || realm.motto)) || '',
             realmIcon: (realm && realm.icon) || ''
           });
         });

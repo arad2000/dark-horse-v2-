@@ -14,8 +14,8 @@ const motiveCodes = new Set(motives.map((item) => item.code));
 
 assert.match(
   indexSource,
-  /src="data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1"/,
-  'docs/index.html must load clean single src for data.js without duplicate data.js?v= concatenation'
+  /src="data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=grade9-v1"/,
+  'docs/index.html must load clean cache-busted src for data.js'
 );
 assert.ok(
   !indexSource.includes('v1data.js'),
@@ -24,20 +24,48 @@ assert.ok(
 
 const sandbox = {};
 vm.runInNewContext(
-  dataSource + '\nthis.__testSubRealms = SUB_REALMS;\nthis.__testNarrowPaths = NARROW_PATHS;',
+  dataSource + '\nthis.__testRealms = REALMS;\nthis.__testSubRealms = SUB_REALMS;\nthis.__testNarrowPaths = NARROW_PATHS;',
   sandbox,
   { filename: 'docs/data.js' }
 );
+const realms = sandbox.__testRealms;
 const subRealms = sandbox.__testSubRealms;
 const narrowPaths = sandbox.__testNarrowPaths;
+assert.ok(Array.isArray(realms), 'REALMS must load from docs/data.js');
 assert.ok(subRealms && typeof subRealms === 'object', 'SUB_REALMS must load from docs/data.js');
 assert.ok(narrowPaths && typeof narrowPaths === 'object', 'NARROW_PATHS must load from docs/data.js');
+
+// S1 structural lock: 6 REALMS, 32 SUB_REALMS, 105 NARROW_PATHS
+assert.equal(realms.length, 6, 'S1 lock requires exactly 6 REALMS');
+const totalSubRealms = Object.values(subRealms).reduce((acc, arr) => acc + arr.length, 0);
+const totalNarrowPaths = Object.values(narrowPaths).reduce((acc, arr) => acc + arr.length, 0);
+assert.equal(totalSubRealms, 32, 'S1 lock requires exactly 32 SUB_REALMS');
+assert.equal(totalNarrowPaths, 105, 'S1 lock requires exactly 105 NARROW_PATHS');
+
+// Copy quality, titleless & emoji-free contract across all 143 cards
+const emojiRegex = /\p{Extended_Pictographic}/u;
+const copyViolations = [];
+function validateCard(level, card) {
+  if (card.icon !== '') copyViolations.push({ level, id: card.id, reason: 'non-empty icon' });
+  if (card.name !== '') copyViolations.push({ level, id: card.id, reason: 'non-empty name/title' });
+  if (typeof card.motto !== 'string' || card.motto.trim().length < 10) {
+    copyViolations.push({ level, id: card.id, reason: 'missing or too-short motto' });
+  }
+  if (typeof card.description !== 'string' || card.description.trim().length < 40) {
+    copyViolations.push({ level, id: card.id, reason: 'missing or too-short description' });
+  }
+  if (emojiRegex.test(card.motto || '') || emojiRegex.test(card.description || '')) {
+    copyViolations.push({ level, id: card.id, reason: 'emoji detected in copy' });
+  }
+}
+for (const r of realms) validateCard('REALM', r);
 
 const subRealmPrefixes = [];
 const subRealmMap = new Map();
 for (const [realmId, items] of Object.entries(subRealms)) {
   assert.ok(Array.isArray(items), `SUB_REALMS[${realmId}] must be an array`);
   for (const item of items) {
+    validateCard('SUB_REALM', item);
     subRealmMap.set(item.id, new Set(item.majorCodes || []));
     for (const prefix of item.majorCodes || []) {
       subRealmPrefixes.push({ realmId, subRealmId: item.id, prefix });
@@ -46,11 +74,14 @@ for (const [realmId, items] of Object.entries(subRealms)) {
 }
 
 const prefixes = [];
+const narrowPathList = [];
 const narrowPathMap = new Map();
 for (const [pathId, items] of Object.entries(narrowPaths)) {
   assert.ok(Array.isArray(items), `NARROW_PATHS[${pathId}] must be an array`);
   const unionSet = new Set();
   for (const item of items) {
+    validateCard('NARROW_PATH', item);
+    narrowPathList.push({ subId: pathId, id: item.id, majorCodes: item.majorCodes || [] });
     for (const prefix of item.majorCodes || []) {
       unionSet.add(prefix);
       prefixes.push({ pathId, itemId: item.id, prefix });
@@ -58,7 +89,37 @@ for (const [pathId, items] of Object.entries(narrowPaths)) {
   }
   narrowPathMap.set(pathId, unionSet);
 }
+assert.deepEqual(copyViolations, [], 'all REALMS, SUB_REALMS, and NARROW_PATHS must have valid Grade-9 motto+description with empty name/icon and zero emojis');
 assert.ok(prefixes.length > 0, 'NARROW_PATHS must declare at least one majorCodes prefix');
+
+// Strict zero-duplicate prefix/code across all NARROW_PATHS
+const seenPrefixToPaths = new Map();
+for (const { itemId, prefix } of prefixes) {
+  if (!seenPrefixToPaths.has(prefix)) seenPrefixToPaths.set(prefix, []);
+  seenPrefixToPaths.get(prefix).push(itemId);
+}
+const duplicatePrefixes = [...seenPrefixToPaths.entries()].filter(([, list]) => list.length > 1);
+assert.deepEqual(
+  duplicatePrefixes,
+  [],
+  'no majorCodes prefix/slice may appear in more than one NARROW_PATH'
+);
+
+// Every single micro-motive in micro_motives.json must match at most 1 (and in fact exactly 1) NARROW_PATH
+const multiRoutedMotives = [];
+for (const motive of motives) {
+  const matching = narrowPathList.filter((p) =>
+    p.majorCodes.some((pref) => motive.code.startsWith(pref))
+  );
+  if (matching.length !== 1) {
+    multiRoutedMotives.push({ code: motive.code, count: matching.length, paths: matching.map((x) => x.id) });
+  }
+}
+assert.deepEqual(
+  multiRoutedMotives,
+  [],
+  'every micro-motive code in micro_motives.json must map to exactly 1 NARROW_PATH'
+);
 
 // Bidirectional sync check: SUB_REALMS[subId].majorCodes <-> NARROW_PATHS[subId] union
 const bidirectionalMismatches = [];
@@ -96,6 +157,7 @@ assert.deepEqual(
 const invalidActiveMajors = [];
 const unreachableSubRealmMajors = [];
 const unreachableNarrowPathMajors = [];
+const unexpectedMultiPathMajors = [];
 let activeCount = 0;
 for (const major of majors) {
   if (major.motive_driven !== true) continue;
@@ -109,9 +171,18 @@ for (const major of majors) {
     if (!motiveCodes.has(code)) invalidActiveMajors.push({ id: major.id, code, reason: 'code absent from micro_motives.json' });
   }
   const hasSubRealm = codes.some((code) => subRealmPrefixes.some(({ prefix }) => code.startsWith(prefix)));
-  const hasNarrowPath = codes.some((code) => prefixes.some(({ prefix }) => code.startsWith(prefix)));
+  const matchedPaths = narrowPathList.filter((p) =>
+    codes.some((code) => p.majorCodes.some((pref) => code.startsWith(pref)))
+  );
   if (!hasSubRealm) unreachableSubRealmMajors.push({ id: major.id, name: major.name, codes });
-  if (!hasNarrowPath) unreachableNarrowPathMajors.push({ id: major.id, name: major.name, codes });
+  if (matchedPaths.length === 0) unreachableNarrowPathMajors.push({ id: major.id, name: major.name, codes });
+  if (matchedPaths.length > 1) {
+    // Sole documented catalog-level cross-prefix hybrid: major #100 (IT-001..003 + DS-001,002,005,006)
+    const pathIds = matchedPaths.map((x) => x.id).sort();
+    if (!(major.id === 100 && pathIds.length === 2 && pathIds[0] === 'digital-logic' && pathIds[1] === 'logic-data')) {
+      unexpectedMultiPathMajors.push({ id: major.id, name: major.name, paths: pathIds });
+    }
+  }
 }
 assert.equal(activeCount, 202, 'catalog must contain 202 motive_driven=true active majors');
 assert.deepEqual(
@@ -129,5 +200,10 @@ assert.deepEqual(
   [],
   'every motive_driven=true major must be reachable from at least one NARROW_PATHS majorCodes prefix'
 );
+assert.deepEqual(
+  unexpectedMultiPathMajors,
+  [],
+  'every active major except documented hybrid major #100 (IT-/DS-) must map to exactly 1 NARROW_PATH'
+);
 
-console.log(`R2 motive-route contract: PASS (${prefixes.length} route-prefix occurrences, ${uniquePrefixSet.size} unique prefixes, bidirectional SUB_REALMS<->NARROW_PATHS sync, WOOD-/WW- distinct, all 202 active majors reachable)`);
+console.log(`R2 motive-route contract: PASS (S1 6-32-105, ${prefixes.length} unique route entries, 0 duplicates, 1393/1393 1-to-1 motives, 202/202 active majors reachable, WOOD-/WW- distinct, Grade-9 copy validated)`);
