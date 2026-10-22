@@ -58,7 +58,7 @@ function makeServiceWorker() {
       assert.ok(pendingResolve, 'expected pending network request');
       const resolve = pendingResolve; pendingResolve = null; resolve(response(body));
     },
-    async cached(url) { return (await caches.open('darkhorse-v69')).match({ url }); },
+    async cached(url) { return (await caches.open('darkhorse-v70')).match({ url }); },
     async dispatch(url) {
       let responsePromise;
       const waiters = [];
@@ -90,7 +90,7 @@ async function testStartupMarkup() {
   assert.match(indexSource, /app\.js\?v=72/);
   assert.match(indexSource, /shell\.js\?v=88/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
-  assert.match(indexSource, /pwa-boot\.js\?v=69/);
+  assert.match(indexSource, /pwa-boot\.js\?v=70/);
   assert.match(indexSource, /shell\.css\?v=67&ux=phase4-live-v2" media="print"/);
   assert.match(indexSource, /journey_experience\.css\?v=2">/);
   assert.match(indexSource, /journey_experience\.js\?v=2">/);
@@ -200,7 +200,7 @@ async function testPwaRegistrationAndSingleReload() {
   windowListeners.load();
   await Promise.resolve();
   await Promise.resolve();
-  assert.deepStrictEqual(registered, ['./sw.js?v=69']);
+  assert.deepStrictEqual(registered, ['./sw.js?v=70']);
   swListeners.controllerchange();
   swListeners.controllerchange();
   assert.strictEqual(reloads, 1, 'controller changes must not cause repeated reloads');

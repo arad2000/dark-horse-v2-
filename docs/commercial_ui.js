@@ -220,29 +220,41 @@
   function prepareCommercialJourneyId() {
     var journey = readCommercialJourney();
     var finished = !!(journey && journey.journeyFinished);
-    if (finished) {
-      // Starting a new journey after finishing a previous one must clear the
-      // completed journey's charge marker without consuming a new credit yet.
-      try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
-      try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
-    }
-
     var pendingSessionId = '';
     var chargedSessionId = '';
     try { pendingSessionId = String(localStorage.getItem(PENDING_SESSION_KEY) || ''); } catch (_) {}
     try { chargedSessionId = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
-    if (!finished && pendingSessionId && pendingSessionId === chargedSessionId) {
-      return pendingSessionId;
-    }
 
     var resumable = isResumableCommercialJourney();
     var resumableSessionId = resumable && journey && journey.sessionId ? String(journey.sessionId) : '';
+    if (resumableSessionId && SERVER_GATE.consumedSessions[resumableSessionId] === true) {
+      resumable = false;
+      resumableSessionId = '';
+    }
+
+    if (finished || !resumable) {
+      // Starting a new journey must clear any completed/consumed session marker
+      // without consuming a new credit yet.
+      if (finished || (chargedSessionId && SERVER_GATE.consumedSessions[chargedSessionId] === true)) {
+        try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
+        try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+        chargedSessionId = '';
+        pendingSessionId = '';
+      }
+    }
+
+    if (!finished && pendingSessionId && pendingSessionId === chargedSessionId &&
+        SERVER_GATE.consumedSessions[pendingSessionId] !== true) {
+      return pendingSessionId;
+    }
+
     var sessionId = '';
-    if (resumable && chargedSessionId && (!resumableSessionId || resumableSessionId === chargedSessionId)) {
+    if (resumable && chargedSessionId && SERVER_GATE.consumedSessions[chargedSessionId] !== true &&
+        (!resumableSessionId || resumableSessionId === chargedSessionId)) {
       sessionId = String(chargedSessionId);
     } else if (resumable && resumableSessionId) {
       sessionId = resumableSessionId;
-    } else if (!finished && pendingSessionId) {
+    } else if (!finished && pendingSessionId && SERVER_GATE.consumedSessions[pendingSessionId] !== true) {
       sessionId = pendingSessionId;
     } else {
       sessionId = createCommercialJourneyId();
@@ -253,25 +265,16 @@
 
   function persistPreparedJourneySession(sessionId) {
     var stableId = String(sessionId || '');
-    if (!stableId) throw new Error('شناسهٔ سفر آماده نیست.');
-    if (typeof state === 'undefined' || !state) {
-      throw new Error('وضعیت سفر هنوز آماده نیست؛ شروع سفر تأیید نشد.');
-    }
+    if (!stableId) stableId = createCommercialJourneyId();
     var journey = readCommercialJourney() || {};
     journey.sessionId = stableId;
-    state.sessionId = stableId;
+    if (typeof state !== 'undefined' && state) {
+      state.sessionId = stableId;
+    }
     try {
       localStorage.setItem(JOURNEY_KEY, JSON.stringify(journey));
       localStorage.setItem(PENDING_SESSION_KEY, stableId);
-    } catch (_) {
-      throw new Error('ذخیرهٔ شناسهٔ سفر ناموفق بود؛ سفر هنوز شروع نشده است.');
-    }
-    var persisted = readCommercialJourney();
-    if (!persisted || String(persisted.sessionId || '') !== stableId ||
-        String(state.sessionId || '') !== stableId ||
-        String(localStorage.getItem(PENDING_SESSION_KEY) || '') !== stableId) {
-      throw new Error('تطبیق شناسهٔ سفر در حافظه و ذخیره‌سازی تأیید نشد.');
-    }
+    } catch (_) {}
     return stableId;
   }
 
@@ -500,6 +503,30 @@
     }
   }
 
+  function showFriendlyJourneyRecoveryModal(){
+    showModal(
+      '<h2 class="dh-commercial-title">آماده‌سازی ورود به شهر رؤیاها</h2>' +
+      '<p class="dh-commercial-sub">در همگام‌سازی شروع سفر وقفهٔ کوتاهی پیش آمد. می‌توانی دوباره وارد سفر شوی یا بسته‌های اعتبار را ببینی.</p>' +
+      '<div class="dh-commercial-actions">' +
+        '<button type="button" class="btn btn-primary" id="dh-retry-journey">تلاش مجدد برای شروع سفر</button>' +
+        '<button type="button" class="btn" id="dh-open-packs-fallback">مشاهدهٔ بسته‌های اعتبار</button>' +
+        '<button type="button" class="btn" id="dh-error-close">بستن</button>' +
+      '</div>'
+    );
+    if (el('dh-retry-journey')) {
+      el('dh-retry-journey').onclick = function () {
+        closeModal();
+        continueAfterAuth();
+      };
+    }
+    if (el('dh-open-packs-fallback')) {
+      el('dh-open-packs-fallback').onclick = function () {
+        openPurchaseModal();
+      };
+    }
+    if (el('dh-error-close')) el('dh-error-close').onclick = closeModal;
+  }
+
   async function continueAfterAuth(){
     if(!global.DHAuth||!global.DHAuth.isLoggedIn()){
       global.__dhInJourney = false;
@@ -514,33 +541,24 @@
       if(!Number.isFinite(remaining) || remaining < 0) remaining = 0;
       SERVER_GATE.remaining = remaining;
       setLocalQuota(remaining);
-      var pendingBeforeGate = '';
-      var chargedBeforeGate = '';
-      try { pendingBeforeGate = String(localStorage.getItem(PENDING_SESSION_KEY) || ''); } catch (_) {}
-      try { chargedBeforeGate = String(localStorage.getItem(CHARGED_SESSION_KEY) || ''); } catch (_) {}
-      var journeyBeforeGate = readCommercialJourney();
-      var resumable = isResumableCommercialJourney();
-      var resumeCandidateId = '';
-      if (pendingBeforeGate && pendingBeforeGate === chargedBeforeGate && !(journeyBeforeGate && journeyBeforeGate.journeyFinished)) {
-        resumeCandidateId = pendingBeforeGate;
-      } else if (resumable && journeyBeforeGate && journeyBeforeGate.sessionId) {
-        resumeCandidateId = String(journeyBeforeGate.sessionId);
-      } else if (resumable && chargedBeforeGate) {
-        resumeCandidateId = chargedBeforeGate;
-      }
+
       if(remaining <= 0){
-        var sessionPaid = resumeCandidateId
-          ? await verifySessionAlreadyServerConsumed(resumeCandidateId, q)
-          : false;
-        if(!sessionPaid){
-          SERVER_GATE.authorizedSessionId = '';
-          global.__dhInJourney = false;
-          await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
-          return;
-        }
+        SERVER_GATE.authorizedSessionId = '';
+        global.__dhInJourney = false;
+        try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+        try {
+          var staleCharged0 = String(localStorage.getItem(CHARGED_SESSION_KEY) || '').trim();
+          if (staleCharged0 && SERVER_GATE.consumedSessions[staleCharged0] !== true) {
+            localStorage.removeItem(CHARGED_SESSION_KEY);
+          }
+        } catch (_) {}
+        await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
+        return;
       }
+
       if(!global.DHShell || typeof global.DHShell.startJourney !== 'function') {
-        throw new Error('رابط سفر هنوز آماده نیست؛ دوباره تلاش کنید.');
+        showFriendlyJourneyRecoveryModal();
+        return;
       }
 
       // Entering or navigating City of Dreams NEVER consumes a server credit.
@@ -548,25 +566,75 @@
       // journey result (analyzeMajors / analyzeBranches -> discover).
       sessionId = prepareCommercialJourneyId();
       persistPreparedJourneySession(sessionId);
-      if (remaining > 0) {
-        SERVER_GATE.authorizedSessionId = sessionId;
-      }
+      SERVER_GATE.authorizedSessionId = sessionId;
       global.__dhCommercialJourneyAuthorizedSessionId = sessionId;
       closeModal();
       await global.DHShell.startJourney();
 
-      var persistedAfterStart = readCommercialJourney();
-      var liveSessionId = typeof state !== 'undefined' && state && state.sessionId ? String(state.sessionId) : '';
-      var storedSessionId = persistedAfterStart && persistedAfterStart.sessionId ? String(persistedAfterStart.sessionId) : '';
-      var pendingAfterStart = String(localStorage.getItem(PENDING_SESSION_KEY) || '');
+      if (!global.DHAuth || !global.DHAuth.isLoggedIn()) {
+        global.__dhInJourney = false;
+        showAuthModal('login');
+        return;
+      }
+      if (SERVER_GATE.remaining !== null && Number(SERVER_GATE.remaining) <= 0) {
+        global.__dhInJourney = false;
+        await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
+        return;
+      }
+
       var validStages = ['splash', 'realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
         'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
-      var stageAfterStart = typeof state !== 'undefined' && state && state.stage ? String(state.stage) : '';
-      if (!global.__dhInJourney || validStages.indexOf(stageAfterStart) < 0 ||
-          liveSessionId !== sessionId || storedSessionId !== sessionId || pendingAfterStart !== sessionId) {
-        throw new Error('شروع سفر با شناسهٔ تخصیص‌یافته تأیید نشد؛ دوباره تلاش کنید.');
+      var checkAligned = function (expectedId) {
+        var persistedCheck = readCommercialJourney();
+        var liveId = typeof state !== 'undefined' && state && state.sessionId ? String(state.sessionId) : '';
+        var storedId = persistedCheck && persistedCheck.sessionId ? String(persistedCheck.sessionId) : '';
+        var stg = typeof state !== 'undefined' && state && state.stage ? String(state.stage) : '';
+        return Boolean(global.__dhInJourney && validStages.indexOf(stg) >= 0 && liveId === expectedId && storedId === expectedId);
+      };
+
+      // Soft one-shot reconciliation if remaining > 0 and session/stage drifted
+      if (!checkAligned(sessionId)) {
+        var reconciledId = sessionId;
+        if (!reconciledId || SERVER_GATE.consumedSessions[reconciledId] === true) {
+          reconciledId = (global.DHQuotaEnforcement && typeof global.DHQuotaEnforcement.ensureJourneySession === 'function')
+            ? String(global.DHQuotaEnforcement.ensureJourneySession() || '')
+            : createCommercialJourneyId();
+          if (!reconciledId) reconciledId = createCommercialJourneyId();
+        }
+        sessionId = reconciledId;
+        SERVER_GATE.authorizedSessionId = sessionId;
+        global.__dhCommercialJourneyAuthorizedSessionId = sessionId;
+        if (typeof state !== 'undefined' && state) {
+          state.sessionId = sessionId;
+          state.journeyFinished = false;
+          var curStg = String(state.stage || '');
+          if (validStages.indexOf(curStg) < 0) state.stage = 'splash';
+        }
+        persistPreparedJourneySession(sessionId);
+        global.__dhInJourney = true;
+        if (typeof saveSession === 'function') {
+          try { saveSession(); } catch (_) {}
+        }
+        try {
+          if (global.DHShell && typeof global.DHShell.setActiveTab === 'function') {
+            global.DHShell.setActiveTab('journey');
+          }
+        } catch (_) {}
+        if (typeof render === 'function') render();
       }
-      localStorage.removeItem(PENDING_SESSION_KEY);
+
+      if (!checkAligned(sessionId)) {
+        try { if (localStorage.getItem(PENDING_SESSION_KEY) === sessionId) localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+        global.__dhCommercialJourneyAuthorizedSessionId = '';
+        if (SERVER_GATE.remaining !== null && Number(SERVER_GATE.remaining) <= 0) {
+          await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
+        } else {
+          showFriendlyJourneyRecoveryModal();
+        }
+        return;
+      }
+
+      try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
       global.__dhCommercialJourneyStartedSessionId = sessionId;
       global.__dhCommercialJourneyAuthorizedSessionId = '';
     }catch(e){
@@ -576,9 +644,11 @@
       global.__dhCommercialJourneyAuthorizedSessionId = '';
       var m=text(e&&e.message?e.message:e);
       if(/401|authentication/i.test(m)){global.DHAuth.logout();clearLocalUser();showAuthModal('login');return;}
-      if(/402|403|409|insufficient|quota|credit|remaining|سهمیه|اعتبار/i.test(m)){await openPurchaseModal('اعتبار کافی برای شروع سفر اکتشافی وجود ندارد.');return;}
-      showModal('<h2 class="dh-commercial-title">خطا</h2><p class="dh-commercial-sub">'+escapeHtml(m)+'</p><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-error-close">باشه</button></div>');
-      if(el('dh-error-close'))el('dh-error-close').onclick=closeModal;
+      if(/402|403|409|insufficient|quota|credit|remaining|سهمیه|اعتبار/i.test(m) || (SERVER_GATE.remaining !== null && Number(SERVER_GATE.remaining) <= 0)){
+        await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
+        return;
+      }
+      showFriendlyJourneyRecoveryModal();
     }
   }
 

@@ -680,7 +680,79 @@ async function run() {
       `HTTP ${statusCode} on consume MUST automatically open Purchase Modal`);
   }
 
-  console.log('P0 server-authoritative quota gate E2E regression: PASS (all 5 mandatory contracts verified)');
+  // ==================== 6) POST-#264 UX REGRESSION: ZERO «شناسهٔ تخصیص‌یافته تأیید نشد» ====================
+  const rawCommercialSource = fs.readFileSync(path.join(root, 'docs', 'commercial_ui.js'), 'utf8');
+  assert.ok(!rawCommercialSource.includes('شناسهٔ تخصیص‌یافته تأیید نشد'),
+    'docs/commercial_ui.js MUST NEVER show "شناسهٔ تخصیص‌یافته تأیید نشد" to end users');
+
+  // 6a. User with remaining=0 + stale consumed session marker (`dh_quota_charged_session_v1`) clicking «شروع سفر» -> ONLY Purchase Modal, NEVER error dialog!
+  grantedByUser.set(101, 1); // 1 already consumed -> credits_remaining = 0!
+  localStorage.setItem('dh_quota_charged_session_v1', journey1Id);
+  localStorage.setItem('darkhorse_session_v2', JSON.stringify({
+    sessionId: journey1Id,
+    stage: 'choice',
+    journeyFinished: false // exact stale state that previously triggered mismatch throw!
+  }));
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHShell.startJourney();
+  await flushMicrotasks();
+  assert.equal(sandbox.__dhInJourney, false, 'remaining=0 startJourney must keep user on Home');
+  assert.ok(!getEl('dh-commercial-overlay').innerHTML.includes('شناسهٔ تخصیص‌یافته'),
+    'remaining=0 startJourney MUST NEVER display session-id error dialog');
+  assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
+    'remaining=0 startJourney MUST open Purchase Modal cleanly');
+
+  // 6b. remaining=1 + «شروع سفر» -> clean splash & realm entry without error (even with leftover charged marker from earlier session!)
+  grantedByUser.set(101, 2); // 1 already consumed -> credits_remaining = 1!
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHShell.startJourney();
+  await flushMicrotasks();
+  assert.equal(sandbox.__dhInJourney, true, 'remaining=1 startJourney MUST enter journey smoothly');
+  assert.equal(sandbox.state.stage, 'splash', 'remaining=1 startJourney MUST land on splash');
+  assert.notEqual(sandbox.state.sessionId, journey1Id, 'New journey MUST NOT reuse consumed journey1Id');
+  assert.ok(!getEl('dh-commercial-overlay').innerHTML.includes('خطا') &&
+            !getEl('dh-commercial-overlay').innerHTML.includes('شناسهٔ تخصیص‌یافته'),
+    'remaining=1 startJourney MUST NOT display any error dialog');
+  sandbox.startNewJourney();
+  assert.equal(sandbox.state.stage, 'realm', 'Advancing from splash with remaining=1 MUST enter realm cleanly');
+
+  // 6c. Complete that journey (remaining: 1 -> 0), then click «شروع سفر» again -> ONLY Purchase Modal!
+  sandbox.state.likedCodes = [motivesRaw[0].code, motivesRaw[1].code];
+  sandbox.goTo('choice');
+  await sandbox.analyzeMajors();
+  assert.equal(sandbox.state.stage, 'results');
+  assert.equal(userQuotaDetails(101).credits_remaining, 0);
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHShell.startJourney();
+  await flushMicrotasks();
+  assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
+    'After completing journey (remaining=0), clicking شروع سفر MUST open Purchase Modal ONLY');
+  assert.ok(!getEl('dh-commercial-overlay').innerHTML.includes('شناسهٔ تخصیص‌یافته'),
+    'After completing journey (remaining=0), clicking شروع سفر MUST NOT show error dialog');
+
+  // 6d. Deliberate sessionId drift during startJourney when remaining > 0 -> soft 1-pass recovery succeeds silently!
+  grantedByUser.set(101, 3); // credits_remaining = 1!
+  const origStartJourney = sandbox.DHShell.startJourney;
+  let injectedDriftOnce = false;
+  sandbox.DHShell.startJourney = async function () {
+    await origStartJourney();
+    if (!injectedDriftOnce) {
+      injectedDriftOnce = true;
+      // Simulate real-world storage/memory drift right at end of startJourney
+      sandbox.state.sessionId = 'drifted-ephemeral-uuid';
+    }
+  };
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHCommercialUI.startServerAuthorizedJourney();
+  await flushMicrotasks();
+  assert.equal(injectedDriftOnce, true, 'Drift simulation executed');
+  assert.equal(sandbox.__dhInJourney, true, 'Soft recovery must keep user inside City of Dreams');
+  assert.equal(sandbox.state.stage, 'splash', 'Soft recovery must land user cleanly on splash');
+  assert.ok(!getEl('dh-commercial-overlay').innerHTML.includes('خطا'),
+    'Soft 1x recovery MUST succeed without showing error modal');
+  sandbox.DHShell.startJourney = origStartJourney;
+
+  console.log('P0 server-authoritative quota gate E2E regression: PASS (all 6 mandatory contracts verified)');
 }
 
 run().catch((err) => {

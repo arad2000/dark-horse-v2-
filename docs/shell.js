@@ -769,9 +769,13 @@
       window.__dhInJourney = false;
       try { setActiveTab('home'); renderHome(); } catch (eHome) {}
       var msg = String(e && e.message ? e.message : e);
-      setTimeout(function () {
-        try { alert('ورود به سفر انجام نشد: ' + msg); } catch (_) {}
-      }, 50);
+      if (/401|authentication/i.test(msg)) {
+        if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
+          window.DHCommercialUI.showAuth('login');
+        }
+      } else if (window.DHCommercialUI && typeof window.DHCommercialUI.showPurchase === 'function') {
+        window.DHCommercialUI.showPurchase('برای ورود به سفر اکتشافی، وضعیت اعتبار خود را بررسی کنید.');
+      }
     } finally {
       window.__dhJourneyStarting = false;
     }
@@ -1193,15 +1197,16 @@
     ensureTabbar();
     patchRender();
     patchConsumeOnResults();
+    if (window.__dhInJourney || window.__dhJourneyStarting) return;
     // همیشه از صفحه خانه باز شو
     // سشن ناتمام تا دیدن نتایج حفظ می‌شود؛ ادامه فقط با دکمه «ادامه سفر»
     window.__dhInJourney = false;
     renderHome();
     setTimeout(function () {
-      if (!window.__dhInJourney) renderHome();
+      if (!window.__dhInJourney && !window.__dhJourneyStarting) renderHome();
     }, 200);
     setTimeout(function () {
-      if (!window.__dhInJourney) renderHome();
+      if (!window.__dhInJourney && !window.__dhJourneyStarting) renderHome();
     }, 700);
   }
 
