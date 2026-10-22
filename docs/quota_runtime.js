@@ -274,11 +274,29 @@
       try { body = await res.json(); } catch (_) {}
       if (!res.ok) {
         var msg = body && (body.detail || body.message);
-        var consumeErr = new Error(typeof msg === 'string' ? msg : ('خطا در ثبت مصرف اعتبار (' + res.status + ')'));
+        var msgStr = typeof msg === 'string' ? msg : ('خطا در ثبت مصرف اعتبار (' + res.status + ')');
+        var consumeErr = new Error(msgStr);
         consumeErr.status = Number(res.status) || 0;
+        consumeErr.quotaExhausted = consumeErr.status === 402 ||
+          (consumeErr.status === 409 && /credit|quota|remaining|اعتبار|سهمیه/i.test(msgStr));
+        if (consumeErr.quotaExhausted || consumeErr.status === 403) {
+          try {
+            if (chargedSessionId() === sessionId) localStorage.removeItem(CHARGED_KEY);
+          } catch (_) {}
+          try {
+            if (global.DHCommercialUI && typeof global.DHCommercialUI.recordConsumeFailure === 'function') {
+              global.DHCommercialUI.recordConsumeFailure(sessionId, consumeErr.status, consumeErr.quotaExhausted);
+            }
+          } catch (_) {}
+        }
         throw consumeErr;
       }
       persistQuota(body);
+      try {
+        if (global.DHCommercialUI && typeof global.DHCommercialUI.recordServerConsume === 'function') {
+          global.DHCommercialUI.recordServerConsume(sessionId, body);
+        }
+      } catch (_) {}
       if (body && (body.consumed === 1 || body.already_consumed === true)) {
         markCharged(sessionId);
         // A confirmed charge defines the active journey identity. Persist it even
@@ -312,6 +330,14 @@
       if (sid2 && loggedIn()) {
         consumeForJourney(String(sid2)).catch(function (err) {
           try { console.error('[DarkHorse quota] consume failed', err); } catch (_) {}
+          var st = Number(err && err.status || 0);
+          if (st === 402 || st === 403 || (err && err.quotaExhausted)) {
+            try {
+              if (global.DHCommercialUI && typeof global.DHCommercialUI.showPurchase === 'function') {
+                global.DHCommercialUI.showPurchase('اعتبار سفر اکتشافی شما به پایان رسیده است. برای مشاهدهٔ تحلیل جدید، بستهٔ اعتبار تهیه کنید.');
+              }
+            } catch (_) {}
+          }
         });
       }
       return out;

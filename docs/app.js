@@ -353,6 +353,14 @@ window.dhGetActivePlaceSummary = dhGetActivePlaceSummary;
 
 async function dhReturnToActivePage() {
   if (window.__dhCachedResultsPlace && (state.majorsResult || state.branchesResult)) {
+    if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime() &&
+        (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn())) {
+      window.__dhInJourney = false;
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
+        window.DHCommercialUI.showAuth('login');
+      }
+      return;
+    }
     const kind = window.__dhCachedResultsPlace.kind === 'branches' && state.branchesResult ? 'branches' : 'majors';
     const payload = kind === 'branches' ? state.branchesResult : state.majorsResult;
     const savedY = window.__dhCachedResultsPlace.scrollY || 0;
@@ -364,9 +372,30 @@ async function dhReturnToActivePage() {
     }
     return;
   }
-  if (window.DHAuth && typeof window.DHAuth.isLoggedIn === 'function' && !window.DHAuth.isLoggedIn() &&
-      window.DHCommercialUI && typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
-    return window.DHCommercialUI.startServerAuthorizedJourney();
+  let candidateSessionId = (state && state.sessionId) ? String(state.sessionId) : '';
+  let candidateFinished = !!(state && state.journeyFinished);
+  try {
+    const rawSaved = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
+    if (rawSaved && typeof rawSaved === 'object') {
+      candidateSessionId = rawSaved.sessionId ? String(rawSaved.sessionId) : '';
+      candidateFinished = Boolean(rawSaved.journeyFinished);
+    }
+  } catch (_) {}
+  if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
+    if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
+      window.__dhInJourney = false;
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
+        window.DHCommercialUI.showAuth('login');
+      }
+      return;
+    }
+    if (window.DHCommercialUI && typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
+      const allowed = await window.DHCommercialUI.ensureCanEnterJourney({
+        mode: candidateFinished ? 'new' : 'resume',
+        sessionId: candidateFinished ? '' : candidateSessionId
+      });
+      if (!allowed) return;
+    }
   }
   const ok = loadSession();
   const savedY = state.lastScrollY || 0;
@@ -729,6 +758,77 @@ function fullResetState(force) {
 }
 
 
+function dhHasCommercialRuntime() {
+  return Boolean(typeof window !== 'undefined' && window && (window.DHAuth || window.DHCommercialUI));
+}
+
+function dhEnsureServerQuotaGate(opts) {
+  var options = opts || {};
+  if (!dhHasCommercialRuntime()) return true;
+  if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
+    window.__dhInJourney = false;
+    try {
+      if (window.DHShell && typeof window.DHShell.renderHome === 'function' &&
+          !(state && state.stage === 'results' && (state.majorsResult || state.branchesResult))) {
+        window.DHShell.renderHome();
+      }
+    } catch (_) {}
+    if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
+      window.DHCommercialUI.showAuth('login');
+    }
+    return false;
+  }
+  if (window.DHCommercialUI &&
+      typeof window.DHCommercialUI.isActiveStageAuthorized === 'function' &&
+      typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
+    if (options.mode !== 'new' &&
+        window.DHCommercialUI.isActiveStageAuthorized(options.sessionId, Boolean(options.isFinished))) {
+      return true;
+    }
+    window.DHCommercialUI.ensureCanEnterJourney({
+      mode: options.mode || 'resume',
+      sessionId: options.mode === 'new' ? '' : String(options.sessionId || ''),
+      onAuthorized: options.onAuthorized
+    });
+    return false;
+  }
+  return true;
+}
+
+function dhExecuteStartNewJourney(approvedSessionId, prevWasFinished, prevUnchargedId) {
+  fullResetState(true);
+  if (approvedSessionId) {
+    if (prevWasFinished) {
+      try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (eClr0) {}
+    }
+    state.sessionId = String(approvedSessionId);
+  } else if (prevWasFinished) {
+    try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (eClr) {}
+    if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
+      try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (eNewId) {}
+    }
+  } else if (prevUnchargedId) {
+    state.sessionId = prevUnchargedId;
+  } else if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
+    try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (eInitId) {}
+  }
+  if (typeof REALMS === 'undefined' || !REALMS || !REALMS.length) {
+    app.innerHTML = `<div class="card" style="margin:20px;text-align:right;">
+      <h2 style="color:#f0c040">دادهٔ شهر رؤیاها لود نشد</h2>
+      <p style="color:#c9b896;line-height:2">فایل <code>data.js</code> در دسترس نیست یا خطا دارد.</p>
+      <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="location.reload()">تلاش دوباره</button>
+      <button class="btn" style="width:100%;margin-top:8px" onclick="goTo('splash')">بازگشت</button>
+    </div>`;
+    return;
+  }
+  state.stage = 'realm';
+  window.__dhInJourney = true;
+  try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e) {}
+  // ذخیرهٔ تمیز بدون تیک‌های قبلی
+  saveSession();
+  render();
+}
+
 function startNewJourney() {
   try {
     if (isPreResultsInProgress()) {
@@ -747,32 +847,16 @@ function startNewJourney() {
         prevUnchargedId = String(prevSaved.sessionId);
       }
     } catch (ePrev) {}
-    fullResetState(true);
-    if (prevWasFinished) {
-      try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (eClr) {}
-      if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
-        try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (eNewId) {}
+    var gateOk = dhEnsureServerQuotaGate({
+      mode: prevWasFinished ? 'new' : 'resume',
+      sessionId: prevWasFinished ? '' : prevUnchargedId,
+      isFinished: prevWasFinished,
+      onAuthorized: function (approvedId) {
+        dhExecuteStartNewJourney(approvedId, prevWasFinished, prevUnchargedId);
       }
-    } else if (prevUnchargedId) {
-      state.sessionId = prevUnchargedId;
-    } else if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
-      try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (eInitId) {}
-    }
-    if (typeof REALMS === 'undefined' || !REALMS || !REALMS.length) {
-      app.innerHTML = `<div class="card" style="margin:20px;text-align:right;">
-        <h2 style="color:#f0c040">دادهٔ شهر رؤیاها لود نشد</h2>
-        <p style="color:#c9b896;line-height:2">فایل <code>data.js</code> در دسترس نیست یا خطا دارد.</p>
-        <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="location.reload()">تلاش دوباره</button>
-        <button class="btn" style="width:100%;margin-top:8px" onclick="goTo('splash')">بازگشت</button>
-      </div>`;
-      return;
-    }
-    state.stage = 'realm';
-    window.__dhInJourney = true;
-    try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e) {}
-    // ذخیرهٔ تمیز بدون تیک‌های قبلی
-    saveSession();
-    render();
+    });
+    if (!gateOk) return;
+    dhExecuteStartNewJourney('', prevWasFinished, prevUnchargedId);
   } catch (e) {
     console.error('startNewJourney error', e);
     app.innerHTML = `<div class="card" style="margin:20px;text-align:right;">
@@ -1007,6 +1091,43 @@ function goBack() {
 function render(opts) {
   const preserveScroll = Boolean(opts && opts.preserveScroll);
   try {
+    if (state.stage !== 'results' && typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
+      if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
+        window.__dhInJourney = false;
+        if (window.DHShell && typeof window.DHShell.renderHome === 'function') {
+          window.DHShell.renderHome();
+        }
+        if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
+          window.DHCommercialUI.showAuth('login');
+        }
+        return;
+      }
+      if (window.DHCommercialUI &&
+          typeof window.DHCommercialUI.isActiveStageAuthorized === 'function' &&
+          !window.DHCommercialUI.isActiveStageAuthorized(state.sessionId, Boolean(state.journeyFinished))) {
+        const pendingStage = state.stage || 'splash';
+        const pendingId = state.sessionId || '';
+        const wasFin = Boolean(state.journeyFinished);
+        window.__dhInJourney = false;
+        if (window.DHShell && typeof window.DHShell.renderHome === 'function') {
+          window.DHShell.renderHome();
+        }
+        if (typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
+          window.DHCommercialUI.ensureCanEnterJourney({
+            mode: wasFin ? 'new' : 'resume',
+            sessionId: wasFin ? '' : pendingId,
+            onAuthorized: function (approvedId) {
+              if (approvedId) state.sessionId = approvedId;
+              state.stage = pendingStage;
+              window.__dhInJourney = true;
+              saveSession();
+              render({ preserveScroll: preserveScroll });
+            }
+          });
+        }
+        return;
+      }
+    }
     ensureUXStyles();
     switch (state.stage) {
       case 'manifesto': state.stage='splash'; renderSplash(); break;
@@ -1444,14 +1565,30 @@ function renderSplash() {
 }
 
 function dhResumeFromSplash() {
-  window.__dhInJourney = true;
-  try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e0) {}
   let data = window.__dhSavedSession;
   if (!data) {
     try { data = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null'); } catch (_) {}
   }
+  const finished = Boolean(!data || data.journeyFinished || window.__dhJourneyFinished);
+  const candidateId = !finished && data && data.sessionId ? String(data.sessionId) : (state && state.sessionId ? String(state.sessionId) : '');
+  const gateOk = dhEnsureServerQuotaGate({
+    mode: finished ? 'new' : 'resume',
+    sessionId: finished ? '' : candidateId,
+    isFinished: finished,
+    onAuthorized: function (approvedId) {
+      if (finished) {
+        dhExecuteStartNewJourney(approvedId, true, '');
+        return;
+      }
+      if (approvedId && data) data.sessionId = approvedId;
+      dhResumeFromSplash();
+    }
+  });
+  if (!gateOk) return;
+  window.__dhInJourney = true;
+  try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (e0) {}
   // اگر کاربر قبلاً نتیجه را دیده، ادامه = شروع تمیز (بدون تیک‌های قبلی)
-  if (!data || data.journeyFinished || window.__dhJourneyFinished) {
+  if (finished) {
     fullResetState();
     state.stage = 'realm';
     saveSession();
@@ -2835,6 +2972,9 @@ function buildJourneyAnalysisRequest(payload) {
 
 function journeyAnalysisErrorHTML(error, journeyType) {
   var status = Number(error && error.status || 0);
+  var errMsg = String(error && error.message || '');
+  var quotaExhausted = status === 402 || Boolean(error && error.quotaExhausted) ||
+    (status === 409 && /credit|quota|remaining|اعتبار|سهمیه/i.test(errMsg));
   var retryCall = journeyType === 'branches' ? 'analyzeBranches()' : 'analyzeMajors()';
   var title = 'خطا در آماده‌سازی نتیجه';
   var message = 'در دریافت نتیجه مشکلی رخ داد. وضعیت سفر حفظ شده است؛ دوباره تلاش کنید یا به مرحلهٔ قبل برگردید.';
@@ -2851,15 +2991,16 @@ function journeyAnalysisErrorHTML(error, journeyType) {
     title = 'ورود دوباره لازم است (HTTP 401)';
     message = 'سرور نشست ورود را نامعتبر یا منقضی تشخیص داد. با همان حساب تجاری دوباره وارد شوید؛ این خطا به معنی قطع شبکه نیست.';
     actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showAuth==='function'){window.DHCommercialUI.showAuth('login')}else{location.reload()}\">ورود دوباره</button>";
-  } else if (status === 402) {
-    title = 'اعتبار کافی برای مشاهدهٔ نتیجه وجود ندارد (HTTP 402)';
-    message = 'همهٔ پاسخ‌های این سفر کامل ذخیره شده است؛ پس از تهیهٔ اعتبار، با زدن «تلاش دوباره» نتیجهٔ همین سفر را بدون تکرار مراحل دریافت کنید.';
+  } else if (quotaExhausted) {
+    title = 'اعتبار کافی برای مشاهدهٔ نتیجه وجود ندارد' + (status ? ' (HTTP ' + status + ')' : '');
+    message = 'اعتبار سفر اکتشافی شما در سرور به پایان رسیده است. همهٔ پاسخ‌های این سفر ذخیره شده است؛ پس از تهیهٔ بستهٔ اعتبار، با زدن «تلاش دوباره پس از شارژ» نتیجهٔ همین سفر را بدون تکرار مراحل دریافت کنید.';
     actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showPurchase==='function'){window.DHCommercialUI.showPurchase()}else{location.reload()}\">تهیهٔ اعتبار</button>" +
       '<button class="btn" style="width:100%;margin-top:8px;" onclick="' + retryCall + '">🔄 تلاش دوباره پس از شارژ</button>';
   } else if (status === 403) {
     title = 'دسترسی به سفر تأیید نشد (HTTP 403)';
-    message = 'سرور این شناسهٔ سفر را برای دریافت نتیجه مجاز ندانست. سفر فعلی را از خانه و با حساب تجاری ادامه دهید؛ این یک خطای مجوز/سشن است، نه خطای شبکه.';
-    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">بازگشت به خانه</button>";
+    message = 'سرور این شناسهٔ سفر را برای دریافت نتیجه مجاز ندانست. در صورت اتمام اعتبار، بستهٔ اعتبار تهیه کنید یا سفر را از خانه و با حساب تجاری ادامه دهید؛ این یک خطای مجوز/سشن است، نه خطای شبکه.';
+    actions = "<button class=\"btn btn-primary\" style=\"width:100%;margin-top:15px;\" onclick=\"if(window.DHCommercialUI&&typeof window.DHCommercialUI.showPurchase==='function'){window.DHCommercialUI.showPurchase()}else{location.reload()}\">تهیهٔ اعتبار</button>" +
+      "<button class=\"btn\" style=\"width:100%;margin-top:8px;\" onclick=\"if(window.DHShell&&typeof window.DHShell.switchTab==='function'){window.DHShell.switchTab('home')}else{location.reload()}\">بازگشت به خانه</button>";
   } else if (status >= 400) {
     title = 'سرور پاسخ خطا داد (HTTP ' + status + ')';
     message = 'درخواست به سرور رسید، اما سرور نتیجه را نپذیرفت یا نتوانست پردازش کند. وضعیت HTTP بالا را برای بررسی ثبت کنید.';
@@ -2872,6 +3013,30 @@ function journeyAnalysisErrorHTML(error, journeyType) {
 }
 
 // ==================== توابع تحلیل (جدید/تغییر نام) ====================
+function dhNotifyAnalysisGateError(err) {
+  var st = Number(err && err.status || 0);
+  var msg = String(err && err.message || '');
+  var exhausted = st === 402 || Boolean(err && err.quotaExhausted) ||
+    (st === 409 && /credit|quota|remaining|اعتبار|سهمیه/i.test(msg));
+  if (exhausted || st === 403) {
+    try {
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.showPurchase === 'function') {
+        window.DHCommercialUI.showPurchase(
+          exhausted
+            ? 'اعتبار سفر اکتشافی شما به پایان رسیده است. پس از تهیهٔ اعتبار، بدون تکرار مراحل نتیجه را مشاهده کنید.'
+            : 'دسترسی یا اعتبار این سفر در سرور تأیید نشد. برای ادامه، بستهٔ اعتبار تهیه کنید.'
+        );
+      }
+    } catch (_) {}
+  } else if (st === 401 || (err && err.code === 'AUTH_REQUIRED')) {
+    try {
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
+        window.DHCommercialUI.showAuth('login');
+      }
+    } catch (_) {}
+  }
+}
+
 async function analyzeMajors() {
   state.stage = 'results';
   const payload = buildPayload();
@@ -2886,6 +3051,7 @@ async function analyzeMajors() {
   } catch (e) {
     console.error(e);
     app.innerHTML = journeyAnalysisErrorHTML(e, 'majors');
+    dhNotifyAnalysisGateError(e);
   }
 }
 
@@ -2903,6 +3069,7 @@ async function analyzeBranches() {
   } catch (e) {
     console.error(e);
     app.innerHTML = journeyAnalysisErrorHTML(e, 'branches');
+    dhNotifyAnalysisGateError(e);
   }
 }
 
@@ -3612,8 +3779,30 @@ function resetJourney() {
   if (isPreResultsInProgress()) {
     if (!confirm('هنوز نتایج را ندیده‌ای. سفر فعلی پاک شود؟')) return;
   }
+  const gateOk = dhEnsureServerQuotaGate({
+    mode: 'new',
+    sessionId: '',
+    isFinished: true,
+    onAuthorized: function (approvedId) {
+      fullResetState(true);
+      try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (_) {}
+      if (approvedId) {
+        state.sessionId = String(approvedId);
+      } else if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
+        try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (_) {}
+      }
+      state.stage = 'splash';
+      window.__dhInJourney = true;
+      try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (_) {}
+      saveSession();
+      render();
+    }
+  });
+  if (!gateOk) return;
   fullResetState(true);
   state.stage = 'splash';
+  window.__dhInJourney = true;
+  saveSession();
   render();
 }
 window.resetJourney = resetJourney;

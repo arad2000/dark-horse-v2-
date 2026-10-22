@@ -633,13 +633,10 @@
     }
 
     try {
-      // The commercial path already consumed and confirmed this exact UUID; do not gate that same journey a second time.
-      var allowed = !!authorizedSessionId || canRunTest();
+      // The commercial gate already checked server quota and authorized this exact UUID.
+      var allowed = !!authorizedSessionId;
       var u = getDisplayUser();
 
-      // Quota refresh must never block the Journey UI indefinitely.
-      // Use the local/server snapshot immediately; only wait briefly when the
-      // snapshot says "no credit", because the cached value may be stale.
       var quotaRefreshPromise = null;
       try {
         if (u && window.DHAuth &&
@@ -647,7 +644,7 @@
             DHAuth.isLoggedIn() &&
             typeof DHAuth.quota === 'function') {
           quotaRefreshPromise = DHAuth.quota().catch(function (quotaError) {
-            console.warn('[DarkHorse][Journey] quota refresh failed; using cached gate', quotaError);
+            console.warn('[DarkHorse][Journey] quota refresh failed', quotaError);
             return null;
           });
           if (!allowed) {
@@ -659,28 +656,25 @@
             ]);
             if (quotaWait) {
               var remaining = Number(quotaWait && quotaWait.credits_remaining);
-              allowed = !!(u.is_premium || localQuota().premium ||
-                (Number.isFinite(remaining) && remaining > 0));
+              allowed = Number.isFinite(remaining) && remaining > 0;
             }
           } else {
-            // A successful cached/local gate is enough to enter the journey;
-            // reconcile the server quota in the background.
             quotaRefreshPromise.catch(function (quotaError) {
               console.warn('[DarkHorse][Journey] background quota refresh failed', quotaError);
             });
           }
         }
       } catch (quotaError) {
-        console.warn('[DarkHorse][Journey] quota refresh failed; using local gate', quotaError);
+        console.warn('[DarkHorse][Journey] quota refresh failed', quotaError);
       }
 
       if (!allowed) {
         window.__dhInJourney = false;
-        setActiveTab('profile');
-        try { renderProfile(); } catch (eProfile) {}
-        setTimeout(function () {
-          alert('سهمیه رایگان تمام شده. از پروفایل اشتراک تستی را فعال کن.');
-        }, 100);
+        setActiveTab('home');
+        try { renderHome(); } catch (eHome) {}
+        if (window.DHCommercialUI && typeof window.DHCommercialUI.showPurchase === 'function') {
+          window.DHCommercialUI.showPurchase('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
+        }
         return;
       }
 
@@ -1135,15 +1129,12 @@
   function patchRender() {
     if (typeof window.render !== 'function' || window.__dhShellRenderPatched) return;
     var _render = window.render;
-    window.render = function () {
+    window.render = function (opts) {
       if (!window.__dhInJourney && typeof state !== 'undefined') {
-        var st = state.stage;
-        if (!st || st === 'manifesto' || st === 'guide') {
-          renderHome();
-          return;
-        }
+        renderHome();
+        return;
       }
-      _render();
+      _render(opts);
     };
     window.__dhShellRenderPatched = true;
   }
