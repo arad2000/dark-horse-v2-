@@ -281,19 +281,8 @@ function dhCaptureCurrentScroll() {
 
 function dhGoHomeKeepPlace() {
   dhCaptureCurrentScroll();
-  if (state.stage === 'results' && (state.majorsResult || state.branchesResult)) {
-    window.__dhCachedResultsPlace = {
-      kind: state.lastCounselKind === 'branches' && state.branchesResult ? 'branches' : 'majors',
-      scrollY: state.lastScrollY || 0,
-      savedAt: Date.now()
-    };
-  } else {
+  if (!state.journeyFinished && state.stage && state.stage !== 'results') {
     try { saveSession(); } catch (_) {}
-    window.__dhActiveInMemoryPlace = {
-      stage: state.stage || 'splash',
-      scrollY: state.lastScrollY || 0,
-      savedAt: Date.now()
-    };
   }
   window.__dhInJourney = false;
   if (window.DHShell && typeof window.DHShell.renderHome === 'function') {
@@ -301,145 +290,6 @@ function dhGoHomeKeepPlace() {
   }
 }
 window.dhGoHomeKeepPlace = dhGoHomeKeepPlace;
-
-function dhGetActivePlaceSummary() {
-  const commercialActive = typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime();
-  if (commercialActive && (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn())) {
-    return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-  }
-  if (window.__dhCachedResultsPlace && (state.majorsResult || state.branchesResult)) {
-    const resultSid = (state && state.sessionId) ? String(state.sessionId) : '';
-    if (commercialActive && window.DHCommercialUI && typeof window.DHCommercialUI.isBannerReturnAllowed === 'function') {
-      if (!window.DHCommercialUI.isBannerReturnAllowed({ isResults: true, sessionId: resultSid })) {
-        return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-      }
-    }
-    const isBr = window.__dhCachedResultsPlace.kind === 'branches';
-    return {
-      resumable: true,
-      isResults: true,
-      stage: 'results',
-      label: isBr ? 'نتیجهٔ هدایت تحصیلی' : 'نتیجهٔ انتخاب رشته',
-      cta: isBr ? 'بازگشت به نتیجهٔ هدایت تحصیلی' : 'بازگشت به نتیجهٔ انتخاب رشته'
-    };
-  }
-  try {
-    const raw = localStorage.getItem('darkhorse_session_v2');
-    if (raw) {
-      const d = JSON.parse(raw);
-      if (d && !d.journeyFinished && d.stage) {
-        if (commercialActive && window.DHCommercialUI && typeof window.DHCommercialUI.isBannerReturnAllowed === 'function') {
-          if (!window.DHCommercialUI.isBannerReturnAllowed({ isResults: false, sessionId: d.sessionId || '' })) {
-            return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-          }
-        }
-        const sTotal = (state.strategyQuestions && state.strategyQuestions.length) || 25;
-        const vTotal = (state.valueQuestions && state.valueQuestions.length) || 15;
-        let lbl = 'شهر رؤیاها';
-        if (d.stage === 'realm') lbl = (d.selectedRealms && d.selectedRealms.length) ? `محله‌ها (${dhFaNum(d.selectedRealms.length)} انتخاب)` : 'انتخاب محله';
-        else if (d.stage === 'subRealm') lbl = (d.selectedSubRealms && d.selectedSubRealms.length) ? `گذرها (${dhFaNum(d.selectedSubRealms.length)} انتخاب)` : 'انتخاب گذر';
-        else if (d.stage === 'narrowPath') lbl = (d.selectedNarrowPaths && d.selectedNarrowPaths.length) ? `مسیرهای باریک (${dhFaNum(d.selectedNarrowPaths.length)} انتخاب)` : 'مسیرهای باریک';
-        else if (d.stage === 'introSwipe' || d.stage === 'swipe') {
-          const totalC = (d.swipeDeckCodes && d.swipeDeckCodes.length) || d.totalSwipes || 0;
-          const idxC = Math.min((d.swipeIndex || 0) + 1, Math.max(totalC, 1));
-          lbl = totalC > 0 && (d.swipeIndex || 0) < totalC
-            ? `خرده‌انگیزه‌ها (کارت ${dhFaNum(idxC)} از ${dhFaNum(totalC)})`
-            : `خرده‌انگیزه‌ها (${dhFaNum((d.likedCodes || []).length)} جرقه)`;
-        } else if (d.stage === 'introStrategies' || d.stage === 'strategies') {
-          lbl = `سؤالات راهبرد (سؤال ${dhFaNum((d.currentQuestion || 0) + 1)} از ${dhFaNum(sTotal)})`;
-        } else if (d.stage === 'introValues' || d.stage === 'values') {
-          lbl = `سؤالات ارزش (سؤال ${dhFaNum((d.currentValueQuestion || 0) + 1)} از ${dhFaNum(vTotal)})`;
-        } else if (d.stage === 'choice') {
-          lbl = 'انتخاب نوع تحلیل';
-        }
-        return {
-          resumable: true,
-          isResults: false,
-          stage: d.stage,
-          label: lbl,
-          cta: `ادامه از همان‌جا · ${lbl}`
-        };
-      }
-    }
-  } catch (_) {}
-  return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-}
-window.dhGetActivePlaceSummary = dhGetActivePlaceSummary;
-
-async function dhReturnToActivePage() {
-  if (window.__dhCachedResultsPlace && (state.majorsResult || state.branchesResult)) {
-    const resultSid = (state && state.sessionId) ? String(state.sessionId) : '';
-    if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
-      if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
-        window.__dhInJourney = false;
-        if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
-          window.DHCommercialUI.showAuth('login');
-        }
-        return;
-      }
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
-        const okResults = await window.DHCommercialUI.ensureCanEnterJourney({
-          mode: resultSid ? 'resume' : 'new',
-          sessionId: resultSid
-        });
-        if (!okResults) return;
-      }
-    }
-    const kind = window.__dhCachedResultsPlace.kind === 'branches' && state.branchesResult ? 'branches' : 'majors';
-    const payload = kind === 'branches' ? state.branchesResult : state.majorsResult;
-    const savedY = window.__dhCachedResultsPlace.scrollY || 0;
-    window.__dhInJourney = true;
-    try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (_) {}
-    displayResults(payload, kind);
-    if (savedY > 0) {
-      setTimeout(() => { try { window.scrollTo(0, savedY); } catch (_) {} }, 40);
-    }
-    return;
-  }
-  let candidateSessionId = (state && state.sessionId) ? String(state.sessionId) : '';
-  let candidateFinished = !!(state && state.journeyFinished);
-  try {
-    const rawSaved = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
-    if (rawSaved && typeof rawSaved === 'object') {
-      candidateSessionId = rawSaved.sessionId ? String(rawSaved.sessionId) : '';
-      candidateFinished = Boolean(rawSaved.journeyFinished);
-    }
-  } catch (_) {}
-  if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
-    if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
-      window.__dhInJourney = false;
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
-        window.DHCommercialUI.showAuth('login');
-      }
-      return;
-    }
-    if (window.DHCommercialUI && typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
-      const allowed = await window.DHCommercialUI.ensureCanEnterJourney({
-        mode: candidateFinished ? 'new' : 'resume',
-        sessionId: candidateFinished ? '' : candidateSessionId
-      });
-      if (!allowed) {
-        try {
-          const staleBanner = document.getElementById('dh-active-place-banner');
-          if (staleBanner) staleBanner.remove();
-        } catch (_) {}
-        return;
-      }
-    }
-  }
-  const ok = loadSession();
-  const savedY = state.lastScrollY || 0;
-  window.__dhInJourney = true;
-  try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (_) {}
-  if (!ok) {
-    state.stage = 'splash';
-  }
-  render({ preserveScroll: savedY > 0 });
-  if (savedY > 0) {
-    setTimeout(() => { try { window.scrollTo(0, savedY); } catch (_) {} }, 40);
-  }
-}
-window.dhReturnToActivePage = dhReturnToActivePage;
 
 async function dhJumpToStage(targetId) {
   if (!targetId) return;
@@ -565,7 +415,7 @@ function progressHTML(stageId) {
   return `
     <div class="dh-progress-wrap dh-edu-header" role="navigation" aria-label="ناوبری مراحل سفر">
       <div class="dh-progress-labels">
-        <button type="button" class="dh-home-chip" onclick="dhGoHomeKeepPlace()" title="بازگشت به صفحه اول و حفظ دقیق همین صفحه">⌂ صفحه اول</button>
+        <button type="button" class="dh-home-chip" onclick="dhGoHomeKeepPlace()" title="بازگشت به صفحه اول">⌂ صفحه اول</button>
         <span class="on">${detail} · ${dhFaNum(pct)}٪</span>
       </div>
       <div class="dh-progress-track"><div class="dh-progress-fill" style="width:${pct}%"></div></div>
@@ -3610,7 +3460,7 @@ function displayResults(data, type) {
           مشاهدهٔ نتایج رشته‌های دانشگاهی
         </button>` : ''}
       <button type="button" class="btn" onclick="goTo('choice')">بازگشت به صفحهٔ انتخاب تحلیل</button>
-      <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">رفتن به صفحه اول (امکان بازگشت به همین نتیجه)</button>
+      <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
     </div>
 
     <div id="feedbackSection" class="card dh-surface-card" style="padding:20px;margin:24px 0 15px 0;text-align:right;">

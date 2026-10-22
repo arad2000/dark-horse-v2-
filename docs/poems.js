@@ -219,15 +219,10 @@
     window.__dhInJourney = false;
     var p = pickPair();
 
-    var activeSummary = (typeof window.dhGetActivePlaceSummary === 'function')
-      ? window.dhGetActivePlaceSummary()
-      : { resumable: false };
-
     root.innerHTML =
       '<div class="dh-home-wrap dh-poems-wrap">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">' +
           '<button type="button" class="dh-back-link" id="dh-po-back">← بازگشت به صفحه اول</button>' +
-          (activeSummary.resumable ? '<button type="button" class="dh-back-link" id="dh-po-resume-place">بازگشت به همان صفحه ‹</button>' : '') +
         '</div>' +
         '<div class="dh-poem-live-top">' +
           '<span class="dh-story-pill">سخن بزرگان</span>' +
@@ -238,7 +233,7 @@
         cardHTML(p.b, 'بیت همراه') +
         '<div class="dh-story-actions" style="margin-top:12px;">' +
           '<button type="button" class="btn btn-primary" id="dh-po-next" style="flex:1;">بیت بعدی</button>' +
-          '<button type="button" class="btn" id="dh-po-go" style="flex:1;">' + (activeSummary.resumable ? 'ادامهٔ سفر' : 'شروع سفر') + '</button>' +
+          '<button type="button" class="btn" id="dh-po-go" style="flex:1;">شروع سفر</button>' +
         '</div>' +
         '<p class="dh-story-foot">گزیده از شعر کلاسیک و معاصر فارسی (میراث عمومی). برای خواندن بیشتر به دیوان‌ها رجوع کنید.</p>' +
         '<button type="button" class="btn" id="dh-po-home" style="width:100%;margin-top:10px;">صفحه اول</button>' +
@@ -250,14 +245,8 @@
     $('dh-po-home').onclick = function () {
       if (window.DHShell && DHShell.renderHome) DHShell.renderHome();
     };
-    if ($('dh-po-resume-place')) {
-      $('dh-po-resume-place').onclick = function () {
-        if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
-      };
-    }
     $('dh-po-go').onclick = function () {
-      if (activeSummary.resumable && typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
-      else if (window.DHShell && DHShell.startJourney) DHShell.startJourney();
+      if (window.DHShell && DHShell.startJourney) DHShell.startJourney();
     };
     $('dh-po-next').onclick = function () {
       var cur = loadCursor();

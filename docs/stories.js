@@ -130,15 +130,10 @@
     var c = loadCursor();
     var n = ((c.day + c.offset) % HORSES.length) + 1;
 
-    var activeSummary = (typeof window.dhGetActivePlaceSummary === 'function')
-      ? window.dhGetActivePlaceSummary()
-      : { resumable: false, label: '' };
-
     root.innerHTML =
       '<div class="dh-home-wrap dh-stories-wrap">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">' +
           '<button type="button" class="dh-back-link" id="dh-st-back">← بازگشت به صفحه اول</button>' +
-          (activeSummary.resumable ? '<button type="button" class="dh-back-link" id="dh-st-resume-place">بازگشت به همان صفحه ‹</button>' : '') +
         '</div>' +
         '<div class="dh-story-live">' +
           '<div class="dh-story-live-top">' +
@@ -156,7 +151,7 @@
           '</div>' +
           '<div class="dh-story-actions">' +
             '<button type="button" class="btn btn-primary" id="dh-st-next" style="flex:1;">داستان بعدی</button>' +
-            '<button type="button" class="btn" id="dh-st-go" style="flex:1;">' + (activeSummary.resumable ? 'ادامهٔ سفر' : 'شروع سفر') + '</button>' +
+            '<button type="button" class="btn" id="dh-st-go" style="flex:1;">شروع سفر</button>' +
           '</div>' +
           '<p class="dh-story-foot">بازنویسی آموزشی با الهام از کتاب و مصاحبه‌های عمومی نویسندگان — متن کتاب کپی نشده است.</p>' +
         '</div>' +
@@ -169,14 +164,8 @@
     $('dh-st-home').onclick = function () {
       if (window.DHShell && DHShell.renderHome) DHShell.renderHome();
     };
-    if ($('dh-st-resume-place')) {
-      $('dh-st-resume-place').onclick = function () {
-        if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
-      };
-    }
     $('dh-st-go').onclick = function () {
-      if (activeSummary.resumable && typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
-      else if (window.DHShell && DHShell.startJourney) DHShell.startJourney();
+      if (window.DHShell && DHShell.startJourney) DHShell.startJourney();
     };
     $('dh-st-next').onclick = function () {
       var cur = loadCursor();
