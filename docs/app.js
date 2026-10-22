@@ -86,17 +86,11 @@ function ensureUXStyles() {
   const s = document.createElement('style');
   s.id = 'dh-ux-styles';
   s.textContent = `
-    .dh-progress-wrap{position:sticky;top:0;z-index:50;background:rgba(18,18,26,.94);backdrop-filter:blur(10px);padding:10px 0 8px;margin-bottom:10px;border-bottom:1px solid rgba(240,192,64,.12)}
-    .dh-progress-labels{display:flex;justify-content:space-between;font-size:.72rem;color:#c9b896;margin-bottom:6px}
-    .dh-progress-labels .on{color:#f0c040;font-weight:700}
-    .dh-progress-track{height:6px;background:#2a2a3e;border-radius:99px;overflow:hidden}
-    .dh-progress-fill{height:100%;background:linear-gradient(90deg,#b8860b,#f0c040,#ffe9a0);border-radius:99px;transition:width .4s ease;box-shadow:0 0 12px rgba(240,192,64,.45)}
-    .dh-spark-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.35);color:#f0c040;border-radius:99px;padding:7px 14px;font-size:.85rem;margin:6px 0 12px;box-shadow:0 0 20px rgba(240,192,64,.08)}
-    .dh-stage-hint{color:#c9b896;font-size:.82rem;text-align:center;margin:0 0 14px;line-height:1.7}
-    .option{transition:transform .18s ease,box-shadow .18s ease,border-color .18s,background .18s;border-radius:14px}
-    .option:active{transform:scale(.975)}
-    .option.selected{transform:scale(1.015);box-shadow:0 0 0 1px rgba(240,192,64,.5),0 8px 24px rgba(240,192,64,.12)}
-    .swipe-card{animation:dhIn .32s ease;position:relative;overflow:hidden}
+    .dh-progress-wrap{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+    .dh-stage-hint{color:#c9b896;font-size:.85rem;text-align:center;margin:0 0 12px;line-height:1.75}
+    .option{transition:border-color .18s ease,background .18s ease,box-shadow .18s ease,transform .14s ease}
+    .option:active:not(.disabled):not(.dh-path-done){transform:scale(.988)}
+    .swipe-card{animation:dhIn .28s ease;position:relative;overflow:hidden}
     .swipe-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 30% 20%,rgba(240,192,64,.08),transparent 50%)}
     @keyframes dhIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
     @keyframes dhFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
@@ -812,6 +806,26 @@ function dhResumeFromSplash() {
 window.dhResumeFromSplash = dhResumeFromSplash;
 
 
+function renderRouteCardHTML(opts) {
+  const isSelected = Boolean(opts.isSelected);
+  const isComplete = Boolean(opts.isComplete);
+  const extraCls = opts.extraCls ? ' ' + opts.extraCls : '';
+  const stateCls = (isSelected ? ' selected' : '') + (isComplete ? ' disabled dh-path-done' : '');
+  const action = isComplete ? '' : opts.onclickExpr;
+  const keyAction = isComplete
+    ? ''
+    : `if(event.key==='Enter'||event.key===' '){event.preventDefault();${opts.onclickExpr};}`;
+  const descText = isComplete && opts.doneDescription
+    ? escapeHtml(opts.doneDescription)
+    : escapeHtml(opts.description || '');
+  return `<div class="option dh-route-card${extraCls}${stateCls}" role="button" tabindex="${isComplete ? '-1' : '0'}" aria-pressed="${isSelected ? 'true' : 'false'}" aria-disabled="${isComplete ? 'true' : 'false'}" onclick="${action}" onkeydown="${keyAction}">
+      <div class="dh-route-card__head">
+        <p class="dh-route-motto">${escapeHtml(opts.motto || '')}</p>
+        <span class="dh-route-check" aria-hidden="true"></span>
+      </div>
+      <small class="dh-route-desc">${descText}</small>${isComplete ? '<span class="dh-route-badge">انجام شد</span>' : ''}</div>`;
+}
+
 function renderRealm() {
   try {
     if (typeof REALMS === 'undefined' || !Array.isArray(REALMS) || REALMS.length === 0) {
@@ -823,18 +837,27 @@ function renderRealm() {
       return;
     }
     const maxSelect = Math.min(3, REALMS.length);
-    let html = progressHTML('realm') + sparkChipHTML() + `<h2>🌃 ورود به محله‌ها</h2>
-      <p class="dh-stage-hint">به صدای بدن و کنجکاوی‌ات گوش بده — نه به انتظار دیگران</p>
-      <p style="color:#c9b896;">کدام محله‌ها تو را صدا می‌زنند؟ (۱ تا ${maxSelect})</p>
-      <p style="color:#f0c040;">💛 جرقه‌های تو: <strong>${state.likedCodes.length}</strong></p>
-      <div class="grid" id="realmGrid">`;
+    const selCount = state.selectedRealms.length;
+    let html = progressHTML('realm') + sparkChipHTML() + `<div class="dh-stage-head">
+        <h2 class="dh-stage-title">ورود به محله‌ها</h2>
+        <p class="dh-stage-hint">به صدای کنجکاوی خودت گوش بده، نه انتظار دیگران — کدام فضا تو را صدا می‌زند؟</p>
+        <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${selCount} از ${maxSelect} محله انتخاب شده</div>
+      </div>
+      <div class="grid dh-route-grid" id="realmGrid">`;
     REALMS.forEach(r => {
-      html += `<div class="option ${state.selectedRealms.includes(r.id) ? 'selected' : ''}" onclick="toggleRealm('${r.id}')">
-        <p style="color:#d4af37;">${escapeHtml(r.motto || '')}</p><small>${escapeHtml(r.description || '')}</small></div>`;
+      html += renderRouteCardHTML({
+        isSelected: state.selectedRealms.includes(r.id),
+        isComplete: false,
+        onclickExpr: `toggleRealm('${r.id}')`,
+        motto: r.motto,
+        description: r.description
+      });
     });
     html += `</div>
-      <button class="btn" onclick="goTo('splash')">⬅️ بازگشت</button>
-      <button class="btn btn-primary" onclick="if(state.selectedRealms.length>=1) goTo('subRealm'); else alert('حداقل یک محله را انتخاب کن');">ادامه</button>`;
+      <div class="dh-stage-actions">
+        <button type="button" class="btn btn-primary" onclick="if(state.selectedRealms.length>=1) goTo('subRealm'); else alert('حداقل یک محله را انتخاب کن');">ادامه</button>
+        <button type="button" class="btn" onclick="goTo('splash')">بازگشت</button>
+      </div>`;
     app.innerHTML = html;
   } catch (e) {
     console.error('renderRealm', e);
@@ -860,21 +883,28 @@ function renderSubRealm() {
   const subs = [];
   state.selectedRealms.forEach(realmId => { if (SUB_REALMS[realmId]) subs.push(...SUB_REALMS[realmId]); });
   const maxSelect = Math.min(3 * state.selectedRealms.length, subs.length);
-  let html = progressHTML('subRealm') + sparkChipHTML() + `<h2>گذرهای نیمه‌روشن</h2>
-    <p class="dh-stage-hint">هر گذر، بوی یک جور زندگی را می‌دهد</p>
-    <p style="color:#c9b896;">کدام گذر تو را آرام‌تر و کنجکاوتر می‌کند؟</p>
-    <p style="font-size:0.85rem;color:#888;">(۱ تا ${maxSelect} گذر انتخاب کن)</p>
-    <div class="grid" id="subGrid">`;
+  const selCount = state.selectedSubRealms.length;
+  let html = progressHTML('subRealm') + sparkChipHTML() + `<div class="dh-stage-head">
+      <h2 class="dh-stage-title">گذرهای نیمه‌روشن</h2>
+      <p class="dh-stage-hint">هر گذر، حال‌وهوای یک جور زندگی است — کدام‌یک تو را کنجکاوتر می‌کند؟</p>
+      <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${selCount} از ${maxSelect} گذر انتخاب شده</div>
+    </div>
+    <div class="grid dh-route-grid" id="subGrid">`;
   subs.forEach(s => {
     const isComplete = state.completedSubRealms.has(s.id);
-    html += `<div class="option ${state.selectedSubRealms.includes(s.id) ? 'selected' : ''} ${isComplete ? 'disabled' : ''}" 
-      onclick="${isComplete ? '' : `toggleSub('${s.id}', ${maxSelect})`}" 
-      style="${isComplete ? 'opacity:0.5;pointer-events:none;' : ''}">
-      <p style="color:#d4af37;">${escapeHtml(s.motto || '')}${isComplete ? ' (انجام شد)' : ''}</p><small>${escapeHtml(s.description || '')}</small></div>`;
+    html += renderRouteCardHTML({
+      isSelected: state.selectedSubRealms.includes(s.id),
+      isComplete: isComplete,
+      onclickExpr: `toggleSub('${s.id}', ${maxSelect})`,
+      motto: s.motto,
+      description: s.description
+    });
   });
   html += `</div>
-    <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
-    <button class="btn btn-primary" onclick="if(state.selectedSubRealms.length>=1) goTo('narrowPath')">ادامه</button>`;
+    <div class="dh-stage-actions">
+      <button type="button" class="btn btn-primary" onclick="if(state.selectedSubRealms.length>=1) goTo('narrowPath'); else alert('حداقل یک گذر را انتخاب کن');">ادامه</button>
+      <button type="button" class="btn" onclick="goBack()">بازگشت</button>
+    </div>`;
   app.innerHTML = html;
 }
 
@@ -888,23 +918,33 @@ function toggleSub(id, maxSelect) {
 function renderNarrowPath() {
   const paths = [];
   state.selectedSubRealms.forEach(subId => { if (NARROW_PATHS[subId]) paths.push(...NARROW_PATHS[subId]); });
-  let html = progressHTML('narrowPath') + sparkChipHTML() + `<h2>مسیرهای باریک</h2>
-    <p class="dh-stage-hint">اینجا دیگر خبری از کلیشه نیست؛ فقط کارهایی که ممکن است دوست داشته باشی انجام بدهی</p>
-    <p style="color:#c9b896;">کدام مسیر، یک‌جور کشش بی‌دلیل در تو ایجاد می‌کند؟</p>
-    <div class="grid" id="pathGrid">`;
   if (!(state.completedPaths instanceof Set)) {
     state.completedPaths = new Set(state.completedPaths || []);
   }
+  const selCount = state.selectedNarrowPaths.length;
+  let html = progressHTML('narrowPath') + sparkChipHTML() + `<div class="dh-stage-head">
+      <h2 class="dh-stage-title">مسیرهای باریک</h2>
+      <p class="dh-stage-hint">اینجا دیگر خبری از کلیشه نیست — کدام کارها بی‌دلیل در تو کشش ایجاد می‌کنند؟</p>
+      <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${selCount > 0 ? selCount + ' مسیر انتخاب شده' : 'حداقل ۱ مسیر انتخاب کن'}</div>
+    </div>
+    <div class="grid dh-route-grid" id="pathGrid">`;
   paths.forEach(p => {
     const isComplete = state.completedPaths.has(p.id);
-    html += `<div class="option dh-path-card ${state.selectedNarrowPaths.includes(p.id) ? 'selected' : ''} ${isComplete ? 'dh-path-done' : ''}" 
-      onclick="${isComplete ? '' : `togglePath('${p.id}')`}" 
-      style="${isComplete ? 'opacity:0.42;pointer-events:none;filter:grayscale(0.7);' : ''}">
-      <p style="color:${isComplete ? '#666' : '#d4af37'};">${escapeHtml(p.motto || '')}${isComplete ? ' (انجام شد)' : ''}</p><small style="color:${isComplete ? '#666' : ''};">${isComplete ? 'جرقه‌های این مسیر ثبت شده — مسیر دیگری را انتخاب کن.' : escapeHtml(p.description || '')}</small></div>`;
+    html += renderRouteCardHTML({
+      extraCls: 'dh-path-card',
+      isSelected: state.selectedNarrowPaths.includes(p.id),
+      isComplete: isComplete,
+      onclickExpr: `togglePath('${p.id}')`,
+      motto: p.motto,
+      description: p.description,
+      doneDescription: 'جرقه‌های این مسیر ثبت شده — مسیر دیگری را انتخاب کن.'
+    });
   });
   html += `</div>
-    <button class="btn" onclick="goBack()">⬅️ بازگشت</button>
-    <button class="btn btn-primary" onclick="if(state.selectedNarrowPaths.length>=1) goTo('introSwipe')">مشاهدهٔ جرقه‌های انرژی</button>`;
+    <div class="dh-stage-actions">
+      <button type="button" class="btn btn-primary" onclick="if(state.selectedNarrowPaths.length>=1) goTo('introSwipe'); else alert('حداقل یک مسیر را انتخاب کن');">مشاهدهٔ جرقه‌های انرژی</button>
+      <button type="button" class="btn" onclick="goBack()">بازگشت</button>
+    </div>`;
   app.innerHTML = html;
 }
 

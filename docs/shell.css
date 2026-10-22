@@ -2245,3 +2245,271 @@ body {
   font: inherit;
   cursor: pointer;
 }
+
+/* ===== Phase 2: City of Dreams Gen-Z Visual Polish (Mobile-First 360px) ===== */
+body {
+  background: radial-gradient(circle at 50% 0%, rgba(240, 192, 64, 0.05) 0%, rgba(14, 16, 23, 0) 44%), #0e1017 !important;
+  color: #ece8df;
+}
+
+/* هدر پیشرفت و نوار جرقه — یکپارچه و خوانا */
+.dh-progress-wrap,
+.dh-edu-header {
+  background: rgba(20, 23, 34, 0.94) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 16px !important;
+  padding: 12px 14px 10px !important;
+  margin: 6px 0 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.dh-step {
+  font-size: 0.68rem;
+  color: #8f8a7e;
+}
+.dh-step i {
+  background: #232736;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.dh-step.done {
+  color: #cbb06a;
+}
+
+#app .dh-spark-chip {
+  display: block !important;
+  width: 100%;
+  background: #151824 !important;
+  border: 1px solid rgba(240, 192, 64, 0.24) !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  margin: 0 0 14px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+}
+#app .dh-spark-top {
+  margin-bottom: 7px;
+  font-size: 0.86rem;
+  color: #f0c95c;
+}
+#app .dh-spark-hint {
+  color: #b7b1a4;
+  font-size: 0.76rem;
+}
+
+/* سرصفحه مرحله و شمارشگر انتخاب */
+.dh-stage-head {
+  margin: 2px 0 14px;
+  text-align: center;
+}
+#app .dh-stage-title {
+  margin: 4px 0 6px !important;
+  font-size: 1.28rem !important;
+  font-weight: 800;
+  color: #f5efe2 !important;
+  letter-spacing: -0.015em;
+}
+#app .dh-stage-head .dh-stage-hint {
+  margin: 0 auto 10px !important;
+  max-width: 42ch;
+  color: #b8b3a6 !important;
+  font-size: 0.85rem !important;
+  line-height: 1.75 !important;
+}
+.dh-selection-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a9a497;
+  font-size: 0.77rem;
+  font-weight: 600;
+  transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+.dh-selection-pill.has-selection {
+  background: rgba(240, 192, 64, 0.12);
+  border-color: rgba(240, 192, 64, 0.42);
+  color: #f5d472;
+}
+
+/* شبکه تک‌ستونه موبایل‌اول برای کارت‌های مسیر (خوانایی کامل در ~360px تا 500px) */
+#app .grid,
+#app .dh-route-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  margin: 12px 0 18px !important;
+}
+
+/* کارت مسیر (محله / گذر / مسیر باریک) — تمایز سطح، سلسله‌مراتب نجوا و متن، حالت‌های یکدست */
+#app .option.dh-route-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  min-height: 76px;
+  padding: 16px 16px 15px !important;
+  background: #171a25 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+  text-align: right;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+@media (hover: hover) {
+  #app .option.dh-route-card:hover:not(.disabled):not(.dh-path-done) {
+    background: #1c202e !important;
+    border-color: rgba(240, 192, 64, 0.36) !important;
+  }
+}
+#app .option.dh-route-card:focus-visible {
+  outline: 2px solid #f0c040 !important;
+  outline-offset: 2px;
+}
+
+.dh-route-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+#app .option.dh-route-card .dh-route-motto {
+  flex: 1 1 auto;
+  margin: 0 !important;
+  color: #f5efe2 !important;
+  font-size: 0.97rem !important;
+  font-weight: 700 !important;
+  line-height: 1.65 !important;
+}
+#app .option.dh-route-card .dh-route-desc {
+  display: block;
+  margin: 0;
+  color: #bdb8ab !important;
+  font-size: 0.855rem !important;
+  font-weight: 400;
+  line-height: 1.82 !important;
+}
+
+/* نشانگر انتخاب هندسی تمیز (بدون ایموجی) */
+.dh-route-check {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.02);
+  position: relative;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+.dh-route-check::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 7px;
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid #14141b;
+  border-bottom: 2px solid #14141b;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.15s ease;
+}
+
+/* حالت انتخاب‌شده (selected) — یکدست در هر ۳ سطح */
+#app .option.dh-route-card.selected {
+  background: #20222f !important;
+  border-color: rgba(240, 192, 64, 0.82) !important;
+  box-shadow: 0 0 0 1px rgba(240, 192, 64, 0.2), 0 8px 22px rgba(0, 0, 0, 0.34) !important;
+  transform: none;
+}
+#app .option.dh-route-card.selected .dh-route-motto {
+  color: #fff6df !important;
+}
+#app .option.dh-route-card.selected .dh-route-desc {
+  color: #dcd6c8 !important;
+}
+#app .option.dh-route-card.selected .dh-route-check {
+  background: #f0c040;
+  border-color: #f0c040;
+}
+#app .option.dh-route-card.selected .dh-route-check::after {
+  transform: rotate(45deg) scale(1);
+}
+
+/* حالت انجام‌شده / غیرفعال (disabled & dh-path-done) — خوانا و یکدست */
+#app .option.dh-route-card.disabled,
+#app .option.dh-route-card.dh-path-done {
+  background: #13151e !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  opacity: 0.66 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  cursor: default;
+}
+#app .option.dh-route-card.disabled .dh-route-motto,
+#app .option.dh-route-card.dh-path-done .dh-route-motto {
+  color: #9397a5 !important;
+}
+#app .option.dh-route-card.disabled .dh-route-desc,
+#app .option.dh-route-card.dh-path-done .dh-route-desc {
+  color: #7f8492 !important;
+}
+.dh-route-badge {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a0a4b2;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* نوار دکمه‌های پایین مراحل مسیر */
+.dh-stage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 8px;
+}
+.dh-stage-actions .btn {
+  width: 100%;
+  margin: 0 !important;
+  min-height: 48px !important;
+  touch-action: manipulation;
+}
+@media (min-width: 440px) {
+  .dh-stage-actions {
+    flex-direction: row-reverse;
+  }
+  .dh-stage-actions .btn-primary {
+    flex: 1.65 1 0;
+  }
+  .dh-stage-actions .btn:not(.btn-primary) {
+    flex: 1 1 0;
+  }
+}
+
+/* هماهنگی بصری کارت سوایپ جرقه با زبان جدید */
+#app .swipe-card {
+  background: #171a25 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.34);
+}
+#app .swipe-card #dh-swipe-text {
+  color: #f5efe2 !important;
+  font-size: 1.05rem !important;
+  line-height: 1.92 !important;
+}
+#app .swipe-card .btn-skip {
+  background: #1e2230 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #c8c3b7 !important;
+}
+

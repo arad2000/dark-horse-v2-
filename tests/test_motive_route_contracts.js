@@ -206,4 +206,80 @@ assert.deepEqual(
   'every active major except documented hybrid major #100 (IT-/DS-) must map to exactly 1 NARROW_PATH'
 );
 
-console.log(`R2 motive-route contract: PASS (S1 6-32-105, ${prefixes.length} unique route entries, 0 duplicates, 1393/1393 1-to-1 motives, 202/202 active majors reachable, WOOD-/WW- distinct, Grade-9 copy validated)`);
+// Phase 2 Gen-Z UI & Mobile-First Route Card Contracts
+const shellCssSource = fs.readFileSync(path.join(root, 'docs', 'shell.css'), 'utf8');
+const appSource = fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8');
+
+assert.match(
+  indexSource,
+  /href="shell\.css\?v=66" media="print"/,
+  'docs/index.html must cache-bust shell.css for Phase 2 visual polish'
+);
+assert.match(
+  indexSource,
+  /src="app\.js\?v=72&poles-fix=1&quota-fix=1&copy=grade9-v1&genz=phase2-v1"/,
+  'docs/index.html must cache-bust app.js for Phase 2 visual polish'
+);
+for (const selector of [
+  '.dh-route-grid',
+  '.dh-route-card',
+  '.dh-route-motto',
+  '.dh-route-desc',
+  '.dh-route-check',
+  '.dh-selection-pill',
+  '.dh-stage-actions'
+]) {
+  assert.ok(shellCssSource.includes(selector), `docs/shell.css must define ${selector}`);
+}
+
+const appEl = { innerHTML: '', style: {} };
+const uiSandbox = {
+  console: { log() {}, warn() {}, error() {} },
+  setTimeout: () => 0,
+  clearTimeout: () => {},
+  requestAnimationFrame: () => 0,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  alert: () => {},
+  localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {}, clear: () => {} },
+  sessionStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {}, clear: () => {} },
+  location: { search: '', pathname: '/', href: 'https://asbe-siah.ir/', reload: () => {} },
+  history: { pushState: () => {}, replaceState: () => {} },
+  navigator: { userAgent: 'Mozilla/5.0' },
+  document: {
+    getElementById: (id) => (id === 'app' ? appEl : { style: {}, innerHTML: '', classList: { add() {}, remove() {} }, addEventListener() {} }),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    createElement: () => ({ style: {}, classList: { add() {}, remove() {} }, appendChild() {}, setAttribute() {} }),
+    head: { appendChild() {} },
+    body: { appendChild() {}, classList: { add() {}, remove() {} } },
+    addEventListener: () => {},
+    readyState: 'complete'
+  },
+  fetch: async () => ({ ok: true, json: async () => [] })
+};
+uiSandbox.window = uiSandbox;
+uiSandbox.globalThis = uiSandbox;
+vm.createContext(uiSandbox);
+vm.runInContext(dataSource, uiSandbox);
+vm.runInContext(
+  appSource + '\nglobalThis.__ui = { state, renderRealm, toggleRealm, renderSubRealm, toggleSub, renderNarrowPath, togglePath };',
+  uiSandbox
+);
+
+uiSandbox.__ui.toggleRealm('explorer');
+assert.ok(appEl.innerHTML.includes('dh-route-grid') && appEl.innerHTML.includes('dh-route-card selected'), 'Realm stage must render selected Gen-Z route card');
+assert.ok(appEl.innerHTML.includes('aria-pressed="true"'), 'Selected realm card must set aria-pressed="true"');
+assert.ok(!appEl.innerHTML.includes('option-icon') && !emojiRegex.test(appEl.innerHTML), 'Realm stage must contain zero emojis and zero option-icon');
+
+uiSandbox.__ui.state.completedSubRealms.add('explorer-cosmos');
+uiSandbox.__ui.toggleSub('explorer-life', 3);
+assert.ok(appEl.innerHTML.includes('dh-route-card selected') && appEl.innerHTML.includes('disabled dh-path-done'), 'SubRealm stage must render both selected and completed states uniformly');
+assert.ok(!appEl.innerHTML.includes('option-icon') && !emojiRegex.test(appEl.innerHTML), 'SubRealm stage must contain zero emojis and zero option-icon');
+
+uiSandbox.__ui.state.completedPaths = new Set(['life-nature']);
+uiSandbox.__ui.togglePath('life-bioinfo');
+assert.ok(appEl.innerHTML.includes('dh-route-card dh-path-card selected') && appEl.innerHTML.includes('dh-route-badge'), 'NarrowPath stage must render selected and completed badge states cleanly');
+assert.ok(!appEl.innerHTML.includes('option-icon') && !emojiRegex.test(appEl.innerHTML), 'NarrowPath stage must contain zero emojis and zero option-icon');
+
+console.log(`R2 motive-route & Phase2 Gen-Z UI contract: PASS (S1 6-32-105, ${prefixes.length} unique route entries, 0 duplicates, 1393/1393 1-to-1 motives, 202/202 active majors reachable, mobile-first cards & states verified)`);
