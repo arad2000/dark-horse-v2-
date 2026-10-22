@@ -2570,7 +2570,7 @@ function displayResults(data, type) {
 
   let html = progressHTML('results') + `
     <div class="dh-stage-head">
-      <h2 class="dh-stage-title">${isBranch ? 'نتیجهٔ هدایت تحصیلی' : 'نتیجهٔ انتخاب رشته'}</h2>
+      <h2 class="dh-stage-title">${isBranch ? 'نتیجه هدایت تحصیلی' : 'نتیجه انتخاب رشته'}</h2>
       <p class="dh-stage-hint">این گزارش بر پایهٔ رتبه نیست؛ نقشه‌ای از فعالیت‌ها، راهبردها و ارزش‌هایی است که به تو انرژی می‌دهند.</p>
     </div>
     <div class="dh-share-box">✦ ${dhFaNum(state.likedCodes.length)} خرده‌انگیزه از خودت ثبت شد.<br>این پایان مسیر نیست؛ نقطهٔ شروعی روشن برای شناخت دقیق‌تر خودت است.</div>
