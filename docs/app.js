@@ -618,15 +618,26 @@ async function dhCopyShare() {
 
 
 function durableJourneySessionIdForSave() {
+  var authorizedSessionId = null;
   var pendingSessionId = null;
   var chargedSessionId = null;
   var savedSessionId = null;
+  try { authorizedSessionId = String(window.__dhCommercialJourneyAuthorizedSessionId || ''); } catch (_) {}
   try { pendingSessionId = String(localStorage.getItem('dh_pending_journey_session_id') || ''); } catch (_) {}
   try { chargedSessionId = String(localStorage.getItem('dh_quota_charged_session_v1') || ''); } catch (_) {}
   try {
     var persisted = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
     savedSessionId = persisted && persisted.sessionId ? String(persisted.sessionId) : '';
   } catch (_) {}
+  // If commercial gate just authorized a specific session ID for starting/resuming a journey,
+  // ALWAYS keep state.sessionId and storage strictly aligned with that authorized ID!
+  if (authorizedSessionId) {
+    state.sessionId = authorizedSessionId;
+    return authorizedSessionId;
+  }
+  if (pendingSessionId && state && state.sessionId === pendingSessionId) {
+    return pendingSessionId;
+  }
   // During confirmed charge recovery, the matching pending UUID intentionally
   // rebinds the unfinished journey. Without that marker, never rewrite a
   // different, non-empty persisted UUID merely because in-memory state differs.
@@ -3952,11 +3963,20 @@ async function init() {
     window.__dhHasSavedSession = false;
     window.__dhShouldResumeJourney = false;
   }
+  // اگر در حین بارگذاری اولیه کاربر وارد سفر شده باشد، وضعیت جاری سفر را دست‌نخورده نگه دار
+  if (window.__dhJourneyStarting || window.__dhInJourney) {
+    render();
+    return;
+  }
   // اگر سفر ناتمام بازیابی شد، stage را روی splash نگذار (داده می‌ماند)
   if (!restored) {
     state.stage = 'splash';
     state.history = [];
   }
-  render();
+  if (window.DHShell && typeof window.DHShell.renderHome === 'function') {
+    window.DHShell.renderHome();
+  } else {
+    render();
+  }
 }
 init();
