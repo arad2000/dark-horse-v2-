@@ -1,4 +1,4 @@
-/* pwa-boot.js v70 — instant cached HTML shell + one reload */
+/* pwa-boot.js v71 — instant cached HTML shell + one reload */
 (function () {
   'use strict';
 
@@ -14,7 +14,7 @@
   if (window.__dhIsInstalled) document.documentElement.classList.add('dh-installed');
 
   if ('serviceWorker' in navigator) {
-    var SW_URL = './sw.js?v=70';
+    var SW_URL = './sw.js?v=71';
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
         try { reg.update(); } catch (e) {}
@@ -28,8 +28,8 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v70') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v70', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v71') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v71', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();

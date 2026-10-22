@@ -9,15 +9,10 @@
     if (!root) return;
     window.__dhInJourney = false;
 
-    var activeSummary = (typeof window.dhGetActivePlaceSummary === 'function')
-      ? window.dhGetActivePlaceSummary()
-      : { resumable: false };
-
     root.innerHTML =
       '<div class="dh-home-wrap dh-parents-wrap">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">' +
           '<button type="button" class="dh-back-link" id="dh-par-back">← بازگشت به صفحه اول</button>' +
-          (activeSummary.resumable ? '<button type="button" class="dh-back-link" id="dh-par-resume-place">بازگشت به همان صفحه ‹</button>' : '') +
         '</div>' +
         '<h2 class="dh-par-title">سخنی با والدین</h2>' +
         '<p class="dh-par-lead">این بخش برای پدر و مادر است — نه برای فشار بیشتر روی فرزند، بلکه برای همراهی هوشمندانه.</p>' +
@@ -65,11 +60,6 @@
     $('dh-par-home').onclick = function () {
       if (window.DHShell && DHShell.renderHome) DHShell.renderHome();
     };
-    if ($('dh-par-resume-place')) {
-      $('dh-par-resume-place').onclick = function () {
-        if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
-      };
-    }
     $('dh-par-share').onclick = function () {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(shareText).then(function () {

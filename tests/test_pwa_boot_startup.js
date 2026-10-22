@@ -58,7 +58,7 @@ function makeServiceWorker() {
       assert.ok(pendingResolve, 'expected pending network request');
       const resolve = pendingResolve; pendingResolve = null; resolve(response(body));
     },
-    async cached(url) { return (await caches.open('darkhorse-v70')).match({ url }); },
+    async cached(url) { return (await caches.open('darkhorse-v71')).match({ url }); },
     async dispatch(url) {
       let responsePromise;
       const waiters = [];
@@ -88,15 +88,20 @@ async function testStartupMarkup() {
     'startup shell must be present before deferred data/app scripts');
   assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1/);
   assert.match(indexSource, /app\.js\?v=72/);
-  assert.match(indexSource, /shell\.js\?v=88/);
+  assert.match(indexSource, /shell\.js\?v=89/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
-  assert.match(indexSource, /pwa-boot\.js\?v=70/);
-  assert.match(indexSource, /shell\.css\?v=67&ux=phase4-live-v2" media="print"/);
+  assert.match(indexSource, /pwa-boot\.js\?v=71/);
+  assert.match(indexSource, /shell\.css\?v=69&ux=phase4-live-v2&home-genz=1" media="print"/);
   assert.match(indexSource, /journey_experience\.css\?v=2">/);
   assert.match(indexSource, /journey_experience\.js\?v=2">/);
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=72'),
     'payment hop bootstrap must precede app.js');
+  assert.doesNotMatch(indexSource, /home_update_banner_1405|dh-banner-1405-v1|dh-active-place-banner/);
+  assert.ok(!fs.existsSync('docs/home_update_banner_1405.js'),
+    'Dead home_update_banner_1405.js file must be removed');
+  assert.ok(!fs.existsSync('docs/home_update_banner_1405.css'),
+    'Dead home_update_banner_1405.css file must be removed');
   assert.doesNotMatch(indexSource, /phase3-161-176-1|۱۱۰۰|1100/);
   console.log('startup markup and cache-bust preservation: PASS');
 }
@@ -200,7 +205,7 @@ async function testPwaRegistrationAndSingleReload() {
   windowListeners.load();
   await Promise.resolve();
   await Promise.resolve();
-  assert.deepStrictEqual(registered, ['./sw.js?v=70']);
+  assert.deepStrictEqual(registered, ['./sw.js?v=71']);
   swListeners.controllerchange();
   swListeners.controllerchange();
   assert.strictEqual(reloads, 1, 'controller changes must not cause repeated reloads');

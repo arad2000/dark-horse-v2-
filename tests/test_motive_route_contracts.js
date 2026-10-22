@@ -213,13 +213,13 @@ const appSource = fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8');
 
 assert.match(
   indexSource,
-  /href="shell\.css\?v=67&ux=phase4-live-v2" media="print"/,
-  'docs/index.html must cache-bust shell.css for visual polish'
+  /href="shell\.css\?v=69&ux=phase4-live-v2&home-genz=1" media="print"/,
+  'docs/index.html must cache-bust shell.css for Gen-Z Home visual polish'
 );
 assert.match(
   indexSource,
-  /src="app\.js\?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2"/,
-  'docs/index.html must cache-bust app.js for visual & navigation UX polish'
+  /src="app\.js\?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2&home-genz=1"/,
+  'docs/index.html must cache-bust app.js for Home cleanup & UX polish'
 );
 assert.match(shellCssSource, /#app \.option\.dh-route-card \.dh-route-motto[\s\S]*?font-size:\s*1\.05rem/, 'Route motto must use teen-readable 1.05rem typography');
 assert.match(shellCssSource, /#app \.option\.dh-route-card \.dh-route-desc[\s\S]*?font-size:\s*0\.935rem/, 'Route description must use readable 0.935rem typography');
