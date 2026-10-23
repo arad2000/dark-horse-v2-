@@ -61,9 +61,12 @@
       if (window.DHShell && DHShell.renderHome) DHShell.renderHome();
     };
     $('dh-par-share').onclick = function () {
+      if (typeof window.dhHaptic === 'function') window.dhHaptic('light');
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(shareText).then(function () {
-          alert('متن کپی شد — می‌توانید در گروه والدین بفرستید.');
+          if (typeof window.dhToast === 'function') {
+            window.dhToast('متن کپی شد ✨ آماده ارسال در گروه والدین');
+          }
         }).catch(function () {
           prompt('متن را کپی کنید:', shareText);
         });
@@ -73,5 +76,12 @@
     };
   }
 
-  window.DHParents = { open: renderParents };
+  window.DHParents = {
+    open: function (opts) {
+      if (!opts || !opts.fromPopState) {
+        if (typeof window.dhPushSubView === 'function') window.dhPushSubView('parents');
+      }
+      renderParents();
+    }
+  };
 })();

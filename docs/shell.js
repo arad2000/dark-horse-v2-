@@ -408,6 +408,270 @@
     return true;
   }
 
+  /* ===== Native App Feedback, Toast, Bottom Sheet & Hardware Back Navigation ===== */
+  function dhPrefersReducedMotion() {
+    try {
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function dhHaptic(kind) {
+    if (dhPrefersReducedMotion()) return;
+    try {
+      if (navigator && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(kind === 'success' ? [10, 28, 12] : 8);
+      }
+    } catch (_) {}
+  }
+  window.dhHaptic = dhHaptic;
+
+  var __dhToastTimer = null;
+  function dhToast(message, durationMs) {
+    try {
+      if (!document || typeof document.createElement !== 'function' || !document.body || typeof document.body.appendChild !== 'function') return;
+      var el = document.getElementById('dh-native-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'dh-native-toast';
+        el.className = 'dh-native-toast';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        document.body.appendChild(el);
+      }
+      el.textContent = String(message || '');
+      if (el.classList) el.classList.add('is-open');
+      if (__dhToastTimer) clearTimeout(__dhToastTimer);
+      __dhToastTimer = setTimeout(function () {
+        try { if (el && el.classList) el.classList.remove('is-open'); } catch (_) {}
+      }, durationMs || 2600);
+    } catch (_) {}
+  }
+  window.dhToast = dhToast;
+
+  function dhCloseActiveSheet() {
+    try {
+      var sheet = document.getElementById('dh-native-sheet');
+      if (sheet && typeof sheet.remove === 'function') {
+        sheet.remove();
+        return true;
+      }
+      if (window.DHSparkGame && typeof DHSparkGame.isOpen === 'function' && DHSparkGame.isOpen()) {
+        DHSparkGame.close();
+        return true;
+      }
+      var guide = document.getElementById('dh-sys-guide');
+      if (guide && typeof guide.remove === 'function') {
+        guide.remove();
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function dhPushSubView(viewName) {
+    try {
+      if (window.history && typeof window.history.pushState === 'function') {
+        window.history.pushState({ dhSubView: String(viewName || 'sub') }, '');
+      }
+    } catch (_) {}
+  }
+  window.dhPushSubView = dhPushSubView;
+
+  function dhOpenBottomSheet(opts) {
+    opts = opts || {};
+    try {
+      if (!document || typeof document.createElement !== 'function' || !document.body || typeof document.body.appendChild !== 'function') return null;
+      dhCloseActiveSheet();
+      dhHaptic('light');
+      dhPushSubView('sheet');
+      var ov = document.createElement('div');
+      ov.id = 'dh-native-sheet';
+      ov.className = 'dh-sheet-ov';
+      ov.setAttribute('dir', 'rtl');
+      ov.setAttribute('role', 'dialog');
+      ov.setAttribute('aria-modal', 'true');
+      ov.innerHTML =
+        '<div class="dh-sheet-panel" id="dh-native-sheet-panel">' +
+          '<div class="dh-sheet-handle" aria-hidden="true"></div>' +
+          (opts.title ? '<h2 class="dh-sheet-title">' + opts.title + '</h2>' : '') +
+          (opts.bodyHtml || '') +
+        '</div>';
+      var dismiss = function () {
+        try { ov.remove(); } catch (_) {}
+      };
+      ov.onclick = function (e) { if (e && e.target === ov) dismiss(); };
+      document.body.appendChild(ov);
+
+      // Native touch swipe-down to dismiss
+      try {
+        var panel = document.getElementById('dh-native-sheet-panel');
+        var startY = 0;
+        var deltaY = 0;
+        if (panel && typeof panel.addEventListener === 'function') {
+          panel.addEventListener('touchstart', function (ev) {
+            if (panel.scrollTop > 0) { startY = 0; return; }
+            startY = ev.touches && ev.touches[0] ? ev.touches[0].clientY : 0;
+            deltaY = 0;
+          }, { passive: true });
+          panel.addEventListener('touchmove', function (ev) {
+            if (!startY) return;
+            var cur = ev.touches && ev.touches[0] ? ev.touches[0].clientY : 0;
+            deltaY = Math.max(0, cur - startY);
+            if (deltaY > 0) panel.style.transform = 'translateY(' + Math.min(deltaY, 260) + 'px)';
+          }, { passive: true });
+          panel.addEventListener('touchend', function () {
+            if (deltaY > 95) {
+              dismiss();
+            } else if (panel) {
+              panel.style.transform = '';
+            }
+            startY = 0;
+            deltaY = 0;
+          }, { passive: true });
+        }
+      } catch (_) {}
+
+      if (typeof opts.onMount === 'function') opts.onMount(dismiss);
+      return ov;
+    } catch (_) {
+      return null;
+    }
+  }
+  window.dhOpenBottomSheet = dhOpenBottomSheet;
+
+  /* 6 Worlds of City of Dreams preview metadata (100% local, zero extra network cost) */
+  var DH_HOME_WORLDS = [
+    {
+      id: 'healer',
+      icon: '🩺',
+      title: 'درمان و زندگی',
+      short: 'سلامت، ذهن و جان انسان',
+      desc: 'جایی برای کسانی که از التیام دادن، کشف رازهای بدن و ذهن انسان و مراقبت از زندگی انرژی می‌گیرند.',
+      majors: ['پزشکی و دندان‌پزشکی', 'روان‌شناسی', 'داروسازی', 'زیست‌فناوری و ژنتیک', 'فیزیوتراپی و توان‌بخشی']
+    },
+    {
+      id: 'builder',
+      icon: '⚡',
+      title: 'ساخت و فناوری',
+      short: 'کد، هوش مصنوعی و مهندسی',
+      desc: 'مخصوص ذهن‌هایی که عاشق ساختن سیستم، حل معماهای فنی، برنامه‌نویسی، رباتیک و خلق ابزارهای آینده‌اند.',
+      majors: ['مهندسی کامپیوتر و هوش مصنوعی', 'مهندسی برق و مکانیک', 'هوافضا و پهپاد', 'مهندسی صنایع', 'علم داده']
+    },
+    {
+      id: 'creator',
+      icon: '🎨',
+      title: 'هنر و روایت',
+      short: 'طراحی، سینما، معماری و فرم',
+      desc: 'برای کسانی که دنیا را با تصویر، داستان، فرم، فضا و صدا می‌بینند و از خلق اثر امضادار شارژ می‌شوند.',
+      majors: ['معماری و طراحی صنعتی', 'سینما و پویانمایی', 'ارتباط تصویری (گرافیک)', 'موسیقی و نمایش', 'طراحی لباس و فضا']
+    },
+    {
+      id: 'society',
+      icon: '⚖️',
+      title: 'انسان و جامعه',
+      short: 'حقوق، رسانه، زبان و فرهنگ',
+      desc: 'برای کسانی که دغدغهٔ آدم‌ها، عدالت، متقاعدسازی، ارتباطات انسانی، آموزش و فهم فرهنگ‌ها را دارند.',
+      majors: ['حقوق و علوم قضایی', 'علوم ارتباطات و رسانه', 'روابط بین‌الملل', 'زبان‌های خارجی', 'جامعه‌شناسی و آموزش']
+    },
+    {
+      id: 'leader',
+      icon: '🚀',
+      title: 'کسب‌وکار و رهبری',
+      short: 'استارتاپ، اقتصاد و استراتژی',
+      desc: 'میدان کسانی که از تصمیم‌گیری در ابهام، ساختن تیم، مذاکره، تحلیل بازار و تبدیل ایده به ارزش لذت می‌برند.',
+      majors: ['مدیریت کسب‌وکار و بازرگانی', 'اقتصاد و مالی', 'مدیریت مالی و فین‌تک', 'کارآفرینی', 'حسابداری تحلیلی']
+    },
+    {
+      id: 'explorer',
+      icon: '🔭',
+      title: 'کشف و طبیعت',
+      short: 'کیهان، زمین و علوم بنیادین',
+      desc: 'برای کنجکاوهایی که از کشف ناشناخته‌ها، طبیعت، فیزیک، نجوم، دریا و قوانین پنهان جهان سیر نمی‌شوند.',
+      majors: ['فیزیک و اخترفیزیک', 'ریاضیات و کاربردها', 'شیمی محض و کاربردی', 'زیست‌شناسی دریا و طبیعت', 'زمین‌شناسی']
+    }
+  ];
+
+  /* 8 relatable Gen-Z live taster sparks ("Play First, Sign Up Second") */
+  var DH_LIVE_SPARKS = [
+    { q: 'وقتی یک باگ یا معمای پیچیده جلوته و بقیه بی‌خیال شدن، تازه موتور ذهنت روشن می‌شه تا حلش کنی.', world: 'ساخت و فناوری ⚡' },
+    { q: 'وقتی یکی از دوستات حالش بده، ناخودآگاه طوری باهاش حرف می‌زنی که آروم می‌شه و مسیرش براش شفاف می‌شه.', world: 'درمان و زندگی 🩺' },
+    { q: 'موقع دیدن یک فیلم، پوستر یا فضا، سریع متوجه نور، زاویه، ریتم تدوین و جزئیاتی می‌شی که بقیه نمی‌بینن.', world: 'هنر و روایت 🎨' },
+    { q: 'تو جمع دوست داری ایده بدی، کارها رو هماهنگ کنی و یه پروژهٔ صفرکیلومتر رو واقعاً به نتیجه برسونی.', world: 'کسب‌وکار و رهبری 🚀' },
+    { q: 'از دفاع کردن از حق، استدلال دقیق آوردن تو بحث و قانع کردن آدم‌ها با منطق قوی کیف می‌کنی.', world: 'انسان و جامعه ⚖️' },
+    { q: 'سؤال‌های عمیق دربارهٔ فضا، طبیعت یا چرایی پدیده‌ها ساعت‌ها ذهنت رو درگیر نگه می‌داره.', world: 'کشف و طبیعت 🔭' }
+  ];
+
+  var __dhPeekIdx = 0;
+  var __dhPeekLikes = 0;
+
+  function openWorldPreviewSheet(worldId) {
+    var w = null;
+    for (var i = 0; i < DH_HOME_WORLDS.length; i++) {
+      if (DH_HOME_WORLDS[i].id === worldId) { w = DH_HOME_WORLDS[i]; break; }
+    }
+    if (!w) return;
+    var chips = w.majors.map(function (m) {
+      return '<span class="dh-sheet-chip">' + escape(m) + '</span>';
+    }).join('');
+    dhOpenBottomSheet({
+      title: w.icon + ' دنیای «' + escape(w.title) + '»',
+      bodyHtml:
+        '<p class="dh-sheet-desc">' + escape(w.desc) + '</p>' +
+        '<div style="font-size:.78rem;color:#b8b2a4;font-weight:700;margin-bottom:8px;">نمونه مسیرها در شهر رؤیاها:</div>' +
+        '<div class="dh-sheet-chips">' + chips + '</div>' +
+        '<button type="button" class="dh-mk2-cta" id="dh-sheet-start-world" style="width:100%;min-height:50px;">کشف همخوانی من با این دنیا در سفر ›</button>',
+      onMount: function (dismiss) {
+        var btn = document.getElementById('dh-sheet-start-world');
+        if (btn) {
+          btn.onclick = function () {
+            dismiss();
+            startJourneyFromShell();
+          };
+        }
+      }
+    });
+  }
+
+  function openInstallAppSheet() {
+    if (window.__dhInstallPromptEvent) {
+      var promptEv = window.__dhInstallPromptEvent;
+      window.__dhInstallPromptEvent = null;
+      try {
+        promptEv.prompt();
+        if (promptEv.userChoice && typeof promptEv.userChoice.then === 'function') {
+          promptEv.userChoice.then(function (choice) {
+            if (choice && choice.outcome === 'accepted') {
+              dhToast('اپ اسب سیاه به صفحه اصلی گوشی اضافه شد ✨');
+            }
+          }).catch(function () {});
+        }
+        return;
+      } catch (_) {}
+    }
+    var isIOS = false;
+    try { isIOS = /iPad|iPhone|iPod/i.test(navigator.userAgent || ''); } catch (_) {}
+    var steps = isIOS
+      ? '<p class="dh-sheet-desc">در مرورگر <strong>Safari</strong> دکمهٔ <strong>Share (اشتراک‌گذاری ⬆️ پایین صفحه)</strong> را بزن و گزینهٔ <strong>Add to Home Screen</strong> را انتخاب کن تا اسب سیاه مثل اپ تمام‌صفحه روی آیفونت نصب شود.</p>'
+      : '<p class="dh-sheet-desc">از منوی مرورگر (<strong>⋮</strong> بالا سمت چپ/راست) گزینهٔ <strong>Install app / افزودن به صفحه اصلی (Add to Home screen)</strong> را بزن تا اپ اسب سیاه تمام‌صفحه، سریع و بدون نوار آدرس روی گوشی‌ات نصب شود.</p>';
+    dhOpenBottomSheet({
+      title: '📲 نصب نسخه اپ موبایل اسب سیاه',
+      bodyHtml:
+        steps +
+        '<div class="dh-sheet-chips">' +
+          '<span class="dh-sheet-chip">⚡ باز شدن فوری زیر ۱ ثانیه</span>' +
+          '<span class="dh-sheet-chip">📱 تمام‌صفحه بدون نوار مرورگر</span>' +
+          '<span class="dh-sheet-chip">💾 بدون اشغال حافظه سنگین</span>' +
+        '</div>' +
+        '<button type="button" class="dh-mk2-cta" id="dh-install-sheet-ok" style="width:100%;min-height:48px;">متوجه شدم</button>',
+      onMount: function (dismiss) {
+        var ok = document.getElementById('dh-install-sheet-ok');
+        if (ok) ok.onclick = dismiss;
+      }
+    });
+  }
+
   function renderHome() {
     try { shellScrollTop(); } catch (eS) {}
 
@@ -417,8 +681,11 @@
     try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}
 
     var u = getDisplayUser();
-    var name = (u && u.name) ? u.name : 'مسافر';
-    var canContinue = hasUnfinishedJourney();
+    var hasUser = !!(u && (u.name || u.phone || u.email));
+    var displayFirstName = (u && u.name) ? String(u.name).trim() : '';
+    var greetLine = displayFirstName
+      ? (greeting() + '، ' + escape(displayFirstName) + ' ✨')
+      : (greeting() + ' · مسیرت از فردیت شروع می‌شه');
 
     var quote = { t: 'هیچ راهی به سوی موفقیت وجود ندارد، موفقیت خود یک راه است.', tag: 'وینستون چرچیل' };
     try {
@@ -449,32 +716,87 @@
 
     var heroUrl = base + 'hero-journey.jpg';
     var heroUrl2x = base + 'hero-journey@2x.jpg';
+    var showInstallBtn = !window.__dhIsInstalled;
+    var curSpark = DH_LIVE_SPARKS[__dhPeekIdx % DH_LIVE_SPARKS.length];
+    var worldsHtml = DH_HOME_WORLDS.map(function (w) {
+      return '<button type="button" class="dh-world-chip-card" data-world-id="' + w.id + '">' +
+        '<span class="dh-world-chip-ico" aria-hidden="true">' + w.icon + '</span>' +
+        '<strong>' + escape(w.title) + '</strong>' +
+        '<span>' + escape(w.short) + '</span>' +
+      '</button>';
+    }).join('');
 
     root.innerHTML =
-      '<div class="dh-home-wrap dh-mk2">' +
-        '<header class="dh-mk2-brand">' +
-          '<div class="dh-mk2-logo-ring"><img src="' + base + 'icon-192.png" alt="" width="96" height="96" decoding="async"></div>' +
-          '<div class="dh-mk2-word">DARK HORSE</div>' +
-          '<div class="dh-mk2-fa"><i></i><span>اسب سیاه</span><i></i></div>' +
-          '<h1 class="dh-mk2-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</h1>' +
-          '<p class="dh-mk2-sub">بر اساس <strong class="dh-fardiyat">فردیت</strong></p>' +
+      '<div class="dh-home-wrap dh-mk2 dh-view-enter">' +
+        '<header class="dh-appbar" aria-label="نوار بالای اسب سیاه">' +
+          '<div class="dh-appbar-brand">' +
+            '<div class="dh-appbar-logo"><img src="' + base + 'icon-192.png" alt="اسب سیاه" width="42" height="42" decoding="async"></div>' +
+            '<div class="dh-appbar-titles">' +
+              '<div class="dh-appbar-name-row"><span class="dh-appbar-title">اسب سیاه</span><span class="dh-appbar-en">DARK HORSE</span></div>' +
+              '<div class="dh-appbar-greet">' + greetLine + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="dh-appbar-actions">' +
+            (showInstallBtn ? '<button type="button" class="dh-appbar-pill dh-appbar-pill--gold" id="dh-open-install" aria-label="نصب اپ">📲 نصب اپ</button>' : '') +
+            '<button type="button" class="dh-appbar-pill" id="dh-appbar-profile" aria-label="حساب کاربری">' +
+              (hasUser ? '👤 حساب من' : 'ورود / پروفایل') +
+            '</button>' +
+          '</div>' +
         '</header>' +
+
         '<div class="dh-fardiyat-ticker" id="dh-fardiyat-ticker" aria-live="polite">' +
           '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
           '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
+
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
           '<div class="dh-mk2-hero-body">' +
             '<div class="dh-mk2-hero-top">' +
-              '<span class="dh-mk2-compass"><img src="' + base + 'ico-compass.svg" alt="" width="40" height="40"></span>' +
+              '<span class="dh-mk2-compass"><img src="' + base + 'ico-compass.svg" alt="" width="40" height="40" decoding="async"></span>' +
               '<div><div class="dh-mk2-hero-title">سفر اکتشافی</div>' +
               '<div class="dh-mk2-hero-sub">کشف رشته و شاخه بر اساس فردیت</div></div>' +
+            '</div>' +
+            '<div class="dh-hero-pills">' +
+              '<span class="dh-hero-pill">⚡ حدود ۷ دقیقه</span>' +
+              '<span class="dh-hero-pill">🎮 تعاملی و بدون نمره</span>' +
+              '<span class="dh-hero-pill">🎯 ۲۳۰ رشته + شاخه دبیرستان</span>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
               'شروع سفر <span>›</span></button>' +
           '</div></section>' +
+
+        '<section class="dh-peek-card" id="dh-live-spark-peek" aria-label="تست زنده جرقه">' +
+          '<div class="dh-peek-head">' +
+            '<span class="dh-peek-kicker">⚡ همین الان یه جرقه‌ات رو تست کن</span>' +
+            '<span class="dh-peek-badge" id="dh-peek-counter">' +
+              (__dhPeekLikes > 0 ? ('🔥 ' + __dhPeekLikes + ' جرقه روشن شد') : ('جرقه ۱ از ' + DH_LIVE_SPARKS.length)) +
+            '</span>' +
+          '</div>' +
+          '<div class="dh-peek-stage" id="dh-peek-stage">' +
+            '<span class="dh-peek-world-tag" id="dh-peek-world">' + escape(curSpark.world) + '</span>' +
+            '<p class="dh-peek-text" id="dh-peek-text">' + escape(curSpark.q) + '</p>' +
+          '</div>' +
+          '<p class="dh-peek-feedback" id="dh-peek-feedback" hidden></p>' +
+          '<div class="dh-peek-actions">' +
+            '<button type="button" class="dh-peek-btn dh-peek-btn--yes" id="dh-peek-like">🔥 دقیقاً خودمم!</button>' +
+            '<button type="button" class="dh-peek-btn dh-peek-btn--next" id="dh-peek-skip">فعلاً نه · بعدی ↻</button>' +
+          '</div>' +
+          '<div class="dh-peek-bridge" id="dh-peek-bridge"' + (__dhPeekLikes >= 2 ? '' : ' hidden') + '>' +
+            '<button type="button" id="dh-peek-open-lab">🎮 بازی ۶۰ ثانیه‌ای جرقه‌یاب</button>' +
+            '<button type="button" id="dh-peek-go-journey">🧭 کشف کامل مسیر من ›</button>' +
+          '</div>' +
+        '</section>' +
+
+        '<section class="dh-worlds-section" aria-label="۶ دنیای شهر رؤیاها">' +
+          '<div class="dh-sec-head">' +
+            '<h2 class="dh-sec-title">۶ دنیای شهر رؤیاها</h2>' +
+            '<span class="dh-sec-sub">ورق بزن و لمس کن ‹</span>' +
+          '</div>' +
+          '<div class="dh-worlds-strip" id="dh-worlds-strip">' + worldsHtml + '</div>' +
+        '</section>' +
+
         '<section class="dh-home-sanjesh-entry" aria-labelledby="dh-home-sanjesh-title">' +
           '<div class="dh-home-entry-top">' +
             '<span class="dh-home-entry-icon" aria-hidden="true">🎓</span>' +
@@ -486,17 +808,13 @@
             '<div class="dh-home-sanjesh-mount" id="dh-home-sanjesh-mount"></div>' +
           '</div>' +
         '</section>' +
-        '<section class="dh-mk2-quote">' +
-          '<div class="dh-mk2-quote-top">' + ico('ico-quill.svg') +
-          '<span class="dh-mk2-quote-label">پیام امروز</span><span class="dh-mk2-qq">”</span></div>' +
-          '<p class="dh-mk2-quote-text">' + escape(quote.t) + '</p>' +
-          '<div class="dh-mk2-quote-by">' + escape(quote.tag) + '</div></section>' +
+
         '<section class="dh-mk2-more">' +
           '<div class="dh-mk2-sep"><i></i><span>کشف بیشتر</span><i></i></div>' +
           '<button type="button" class="dh-mk2-row dh-mk2-row-hot" id="dh-open-spark">' +
             feat('spark-feature.jpg') +
-            '<div class="dh-mk2-row-t"><strong>جرقه‌یاب</strong><span>کشف انگیزه‌هایی که تو را به حرکت درمی‌آورند</span></div>' +
-            '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18"></span></button>' +
+            '<div class="dh-mk2-row-t"><strong>جرقه‌یاب <span class="dh-bento-pill">رایگان · ۶۰ ثانیه</span></strong><span>مینی‌گیم سریع کشف انگیزه‌هایی که بهت انرژی می‌دن</span></div>' +
+            '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18" decoding="async"></span></button>' +
           '<div class="dh-mk2-duo">' +
             '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' + feat('stories-feature.jpg') +
             '<strong>داستان‌ها</strong><span>روایت مسیرهای واقعی</span></button>' +
@@ -506,8 +824,18 @@
             '<button type="button" class="dh-mk2-tile" id="dh-open-parents">' + feat('parents-feature.jpg') +
             '<strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></button>' +
             '<button type="button" class="dh-mk2-tile" id="dh-open-guide">' + ico('ico-compass.svg') +
-            '<strong>راهنمای سامانه</strong><span>مشاور و معرفی سامانه</span></button></div>' +
+            '<strong>راهنمای اپ</strong><span>چطور در ۳ لایه کار می‌کند؟</span></button></div>' +
         '</section>' +
+
+        '<section class="dh-mk2-quote">' +
+          '<div class="dh-mk2-quote-top">' + ico('ico-quill.svg') +
+          '<span class="dh-mk2-quote-label">پیام امروز</span><span class="dh-mk2-qq">”</span></div>' +
+          '<p class="dh-mk2-quote-text">' + escape(quote.t) + '</p>' +
+          '<div class="dh-mk2-quote-foot">' +
+            '<button type="button" class="dh-quote-share-btn" id="dh-copy-quote">کپی / استوری ✨</button>' +
+            '<div class="dh-mk2-quote-by">' + escape(quote.tag) + '</div>' +
+          '</div></section>' +
+
         '<section class="dh-sanjesh-box" id="dh-sanjesh-box">' +
           '<p class="dh-sanjesh-title">اخبار و اطلاع‌رسانی سازمان سنجش</p>' +
           '<p class="dh-sanjesh-desc">زمان‌بندی دفترچه، انتخاب رشته و اطلاعیه‌های رسمی را از پرتال سنجش دنبال کنید.</p>' +
@@ -519,8 +847,101 @@
 
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
     try { startFardiyatTicker(); } catch (eTicker) {}
-    on('dh-start-journey', function () { startJourneyFromShell(); });
+
+    on('dh-open-install', function () { openInstallAppSheet(); });
+    on('dh-appbar-profile', function () {
+      dhHaptic('light');
+      switchTab('profile');
+    });
+    on('dh-start-journey', function () {
+      dhHaptic('light');
+      startJourneyFromShell();
+    });
+
+    function advancePeekSpark(liked) {
+      var prevSpark = DH_LIVE_SPARKS[__dhPeekIdx % DH_LIVE_SPARKS.length];
+      __dhPeekIdx = (__dhPeekIdx + 1) % DH_LIVE_SPARKS.length;
+      if (liked) {
+        __dhPeekLikes += 1;
+        dhHaptic('success');
+      } else {
+        dhHaptic('light');
+      }
+      var stageEl = $('dh-peek-stage');
+      var textEl = $('dh-peek-text');
+      var worldEl = $('dh-peek-world');
+      var counterEl = $('dh-peek-counter');
+      var fbEl = $('dh-peek-feedback');
+      var bridgeEl = $('dh-peek-bridge');
+      if (liked && fbEl) {
+        fbEl.hidden = false;
+        fbEl.textContent = '✨ باحال! این جرقه مستقیم به دنیای «' + prevSpark.world + '» وصل می‌شه.';
+      }
+      if (counterEl) {
+        counterEl.textContent = __dhPeekLikes > 0
+          ? ('🔥 ' + __dhPeekLikes + ' جرقه روشن شد')
+          : ('جرقه ' + ((__dhPeekIdx % DH_LIVE_SPARKS.length) + 1) + ' از ' + DH_LIVE_SPARKS.length);
+      }
+      if (bridgeEl && __dhPeekLikes >= 2) {
+        bridgeEl.hidden = false;
+      }
+      var nextSpark = DH_LIVE_SPARKS[__dhPeekIdx % DH_LIVE_SPARKS.length];
+      if (stageEl && stageEl.classList) {
+        stageEl.classList.add(liked ? 'is-liked' : 'is-swapping');
+        setTimeout(function () {
+          try {
+            stageEl.classList.remove('is-liked');
+            stageEl.classList.add('is-swapping');
+          } catch (_) {}
+          setTimeout(function () {
+            if (textEl) textEl.textContent = nextSpark.q;
+            if (worldEl) worldEl.textContent = nextSpark.world;
+            try { stageEl.classList.remove('is-swapping'); } catch (_) {}
+          }, 120);
+        }, liked ? 140 : 10);
+      } else {
+        if (textEl) textEl.textContent = nextSpark.q;
+        if (worldEl) worldEl.textContent = nextSpark.world;
+      }
+    }
+
+    on('dh-peek-like', function () { advancePeekSpark(true); });
+    on('dh-peek-skip', function () { advancePeekSpark(false); });
+    on('dh-peek-open-lab', function () {
+      dhHaptic('light');
+      if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
+    });
+    on('dh-peek-go-journey', function () {
+      dhHaptic('light');
+      startJourneyFromShell();
+    });
+
+    try {
+      var strip = $('dh-worlds-strip');
+      if (strip && typeof strip.addEventListener === 'function') {
+        strip.addEventListener('click', function (ev) {
+          var card = ev.target && ev.target.closest ? ev.target.closest('[data-world-id]') : null;
+          if (card) openWorldPreviewSheet(card.getAttribute('data-world-id'));
+        });
+      }
+    } catch (_) {}
+
+    on('dh-copy-quote', function () {
+      dhHaptic('light');
+      var qShare = '«' + quote.t + '»\n— ' + quote.tag + '\n\nاسب سیاه · https://asbe-siah.ir/';
+      if (navigator.share) {
+        navigator.share({ title: 'پیام امروز · اسب سیاه', text: qShare }).catch(function () {});
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(qShare).then(function () {
+          dhToast('پیام امروز کپی شد ✨ آماده اشتراک‌گذاری');
+        }).catch(function () {});
+      }
+    });
+
     on('dh-open-sanjesh', function () {
+      dhHaptic('light');
       var panel = $('dh-home-sanjesh-panel');
       var button = $('dh-open-sanjesh');
       if (!panel) return;
@@ -531,6 +952,7 @@
         button.textContent = shouldOpen ? 'بستن بخش سنجش' : 'ورود به بخش سنجش';
       }
       if (shouldOpen) {
+        dhPushSubView('sanjesh');
         var mount = $('dh-home-sanjesh-mount');
         if (mount && window.DHAdmissionChanceUI &&
             typeof window.DHAdmissionChanceUI.openHome === 'function') {
@@ -548,28 +970,38 @@
       }
     });
     on('dh-open-spark', function () {
+      dhHaptic('light');
       try { shellScrollTop(); } catch (eS) {}
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
-      else alert('ماژول جرقه‌یاب بارگذاری نشده.');
+      else dhToast('در حال آماده‌سازی جرقه‌یاب… یک لحظه دیگر امتحان کن.');
       try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
     });
     on('dh-open-stories', function () {
+      dhHaptic('light');
       try { shellScrollTop(); } catch (eS) {}
       if (window.DHStories && DHStories.open) DHStories.open();
-      else alert('بخش داستان‌ها بارگذاری نشده.');
+      else dhToast('در حال بارگذاری داستان‌ها…');
       try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
     });
     on('dh-open-poems', function () {
+      dhHaptic('light');
       if (window.DHPoems && DHPoems.open) DHPoems.open();
-      else alert('بخش سخن بزرگان بارگذاری نشده.');
+      else dhToast('در حال بارگذاری سخن بزرگان…');
     });
     on('dh-open-parents', function () {
+      dhHaptic('light');
       try { shellScrollTop(); } catch (eS) {}
       if (window.DHParents && DHParents.open) DHParents.open();
-      else alert('بخش والدین بارگذاری نشده.');
+      else dhToast('در حال بارگذاری بخش والدین…');
       try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
     });
-    on('dh-open-guide', function () { try { shellScrollTop(); } catch (eS) {} openSystemGuide(); try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {} });
+    on('dh-open-guide', function () {
+      dhHaptic('light');
+      try { shellScrollTop(); } catch (eS) {}
+      dhPushSubView('guide');
+      openSystemGuide();
+      try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
+    });
   }
 
   function authorizedCommercialJourneySessionId() {
@@ -791,7 +1223,7 @@
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(function () {
-        alert('متن نتیجه کپی شد؛ در تلگرام یا ایتا بچسبان.');
+        dhToast('نتیجه کپی شد ✨ آماده اشتراک‌گذاری');
       }).catch(function () {
         prompt('کپی کن:', text);
       });
@@ -1066,7 +1498,7 @@
           try { window.dispatchEvent(new CustomEvent('dh-open-purchase')); opened = true; } catch (e2) {}
         }
         if (!opened) {
-          alert('ماژول خرید لود نشده. کش را پاک کنید یا از کروم با حالت ناشناس تست کنید.');
+          dhToast('درگاه خرید در حال آماده‌سازی است؛ یک لحظه دیگر امتحان کنید.');
         }
       };
     }
@@ -1077,12 +1509,12 @@
         qq.premium = false;
         saveQuota(qq);
         if (lu) { lu.is_premium = false; saveLocalUser(lu); }
-        alert('اشتراک محلی خاموش شد.');
+        dhToast('اشتراک آزمایشی محلی خاموش شد.');
       } else {
         qq.premium = true;
         saveQuota(qq);
         if (lu) { lu.is_premium = true; saveLocalUser(lu); }
-        alert('اشتراک محلی فقط تست آفلاین است؛ پرداخت واقعی نیست.');
+        dhToast('اشتراک آزمایشی محلی فعال شد (فقط تست آفلاین).');
       }
       renderProfile();
     };
@@ -1107,7 +1539,8 @@
     } catch (e5) {}
   }
 
-  function switchTab(tab) {
+  function switchTab(tab, opts) {
+    dhHaptic('light');
     try { if (tab !== 'home') stopFardiyatTicker(); } catch (e) {}
     try { shellScrollTop(); } catch (eS) {}
 
@@ -1116,9 +1549,40 @@
       window.__dhInJourney = false;
       renderHome();
     }
-    else if (tab === 'profile') renderProfile();
+    else if (tab === 'profile') {
+      if (!opts || !opts.fromPopState) dhPushSubView('profile');
+      renderProfile();
+    }
     else if (tab === 'journey') startJourneyFromShell();
   }
+
+  /* Android / Browser Hardware Back Button Handler for True Native App Navigation */
+  try {
+    if (!window.__dhPopStateBound && typeof window.addEventListener === 'function') {
+      window.__dhPopStateBound = true;
+      window.addEventListener('popstate', function () {
+        if (dhCloseActiveSheet()) return;
+        var sanjPanel = $('dh-home-sanjesh-panel');
+        if (sanjPanel && !sanjPanel.hidden) {
+          sanjPanel.hidden = true;
+          var sanjBtn = $('dh-open-sanjesh');
+          if (sanjBtn) {
+            sanjBtn.setAttribute('aria-expanded', 'false');
+            sanjBtn.textContent = 'ورود به بخش سنجش';
+          }
+          return;
+        }
+        if (window.__dhInJourney && typeof window.goBack === 'function') {
+          window.goBack();
+          return;
+        }
+        var root = $('app');
+        if (root && root.querySelector && !root.querySelector('#dh-start-journey')) {
+          renderHome();
+        }
+      });
+    }
+  } catch (_) {}
 
   function patchRender() {
     if (typeof window.render !== 'function' || window.__dhShellRenderPatched) return;

@@ -256,5 +256,13 @@
     };
   }
 
-  window.DHPoems = { open: renderPoems, count: VERSES.length };
+  window.DHPoems = {
+    open: function (opts) {
+      if (!opts || !opts.fromPopState) {
+        if (typeof window.dhPushSubView === 'function') window.dhPushSubView('poems');
+      }
+      renderPoems();
+    },
+    count: VERSES.length
+  };
 })();

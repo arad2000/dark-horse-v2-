@@ -1,4 +1,4 @@
-/* pwa-boot.js v73 — instant cached HTML shell + non-blocking SW registration */
+/* pwa-boot.js v74 — instant cached HTML shell + native install prompt capture */
 (function () {
   'use strict';
 
@@ -13,8 +13,22 @@
   window.__dhIsInstalled = isStandalone();
   if (window.__dhIsInstalled) document.documentElement.classList.add('dh-installed');
 
+  window.__dhInstallPromptEvent = null;
+  try {
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__dhInstallPromptEvent = e;
+      try { window.dispatchEvent(new CustomEvent('dh-install-ready')); } catch (_) {}
+    });
+    window.addEventListener('appinstalled', function () {
+      window.__dhInstallPromptEvent = null;
+      window.__dhIsInstalled = true;
+      try { document.documentElement.classList.add('dh-installed'); } catch (_) {}
+    });
+  } catch (ePrompt) {}
+
   if ('serviceWorker' in navigator) {
-    var SW_URL = './sw.js?v=73';
+    var SW_URL = './sw.js?v=74';
     var swRegistered = false;
     function registerSwOnce() {
       if (swRegistered) return;
@@ -30,8 +44,8 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v73') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v73', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v74') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v74', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();
