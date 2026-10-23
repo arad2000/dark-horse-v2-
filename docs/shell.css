@@ -2911,5 +2911,604 @@ body {
   transform: none !important;
 }
 
+/* =========================================================================
+   Phase 4: Global Gen-Z (<20) & Native iOS/Android App Experience (PR #269)
+   Preserves 100% signature Obsidian (#0e1017 / #151824) + Warm Gold (#f0c040)
+   brand identity while transforming Home & Shell into a true native mobile app.
+   ========================================================================= */
+
+html, body {
+  background: radial-gradient(circle at 50% -10%, rgba(240, 192, 64, 0.08) 0%, rgba(14, 16, 23, 0) 46%), #0e1017 !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth GPU view entrance when switching tabs/screens */
+@keyframes dhNativeViewIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dh-view-enter {
+  animation: dhNativeViewIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ۱) نوار بالای اپ واقعی (Compact Glass Top App Bar) */
+.dh-appbar {
+  position: sticky;
+  top: max(0px, env(safe-area-inset-top, 0px));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: -4px -2px 10px;
+  padding: 9px 11px;
+  border-radius: 18px;
+  background: rgba(16, 19, 29, 0.84);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(240, 192, 64, 0.18);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+}
+.dh-appbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.dh-appbar-logo {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  overflow: hidden;
+  border: 1.5px solid rgba(246, 217, 122, 0.6);
+  box-shadow: 0 0 20px rgba(240, 192, 64, 0.28);
+  background: #121420;
+}
+.dh-appbar-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.dh-appbar-titles {
+  min-width: 0;
+  text-align: right;
+}
+.dh-appbar-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.dh-appbar-title {
+  font-size: 1.02rem;
+  font-weight: 900;
+  color: #f8f2e4;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.dh-appbar-en {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #d4af37;
+  opacity: 0.9;
+}
+.dh-appbar-greet {
+  font-size: 0.75rem;
+  color: #b8b2a4;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dh-appbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.dh-appbar-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f4efe6 !important;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.16s ease, background 0.16s ease;
+}
+.dh-appbar-pill--gold {
+  background: rgba(240, 192, 64, 0.14);
+  border-color: rgba(240, 192, 64, 0.42);
+  color: #ffe08a !important;
+}
+.dh-appbar-pill:active {
+  transform: scale(0.95);
+}
+
+/* نوار الهام زنده زیر App Bar — ظریف و یک‌خطی تا کارت اصلی کاملاً بالای صفحه بماند */
+.dh-mk2 .dh-fardiyat-ticker {
+  min-height: 38px;
+  margin: 0 0 12px !important;
+  padding: 7px 12px !important;
+  border-radius: 13px !important;
+  background: linear-gradient(90deg, rgba(240, 192, 64, 0.05), rgba(240, 192, 64, 0.12), rgba(240, 192, 64, 0.05)) !important;
+  border: 1px solid rgba(240, 192, 64, 0.24) !important;
+}
+.dh-mk2 #dh-fardiyat-ticker-text {
+  font-size: 0.82rem !important;
+  line-height: 1.55 !important;
+}
+
+/* ۲) کارت Hero سفر اکتشافی با چیپ‌های شفاف نسل زد + دکمه استاندارد ۵۲ پیکسلی */
+.dh-mk2 .dh-mk2-hero {
+  position: relative;
+  min-height: 206px !important;
+  margin-bottom: 14px !important;
+  padding: 18px 16px 16px !important;
+  border-radius: 22px !important;
+  border: 1.5px solid rgba(246, 217, 122, 0.52) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), 0 0 32px rgba(212, 175, 55, 0.16) !important;
+}
+.dh-mk2 .dh-mk2-hero-shade {
+  background: linear-gradient(180deg, rgba(10, 12, 19, 0.58) 0%, rgba(10, 12, 19, 0.84) 58%, rgba(10, 12, 19, 0.95) 100%) !important;
+}
+.dh-mk2 .dh-mk2-hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dh-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dh-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(14, 16, 23, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(246, 217, 122, 0.28);
+  color: #ede6d6 !important;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+.dh-mk2 .dh-mk2-cta {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-height: 52px !important;
+  padding: 13px 22px !important;
+  border-radius: 15px !important;
+  font-size: 1.02rem !important;
+  font-weight: 900 !important;
+  color: #151107 !important;
+  background: linear-gradient(180deg, #ffe799 0%, #f0c040 50%, #cfa024 100%) !important;
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+  touch-action: manipulation;
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease !important;
+}
+.dh-mk2 .dh-mk2-cta:active {
+  transform: scale(0.975) !important;
+}
+
+/* ۳) ویجت تعاملی زنده «همین الان یک جرقه‌ات رو تست کن!» (الگوی Play-First دولینگو) */
+.dh-peek-card {
+  margin: 0 0 16px;
+  padding: 15px 15px 14px;
+  border-radius: 20px;
+  background: linear-gradient(155deg, #181b28 0%, #121420 100%);
+  border: 1px solid rgba(240, 192, 64, 0.28);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  text-align: right;
+}
+.dh-peek-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dh-peek-kicker {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #f5d777 !important;
+}
+.dh-peek-badge {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(240, 192, 64, 0.12);
+  border: 1px solid rgba(240, 192, 64, 0.3);
+  color: #f0c040 !important;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.dh-peek-stage {
+  position: relative;
+  min-height: 82px;
+  padding: 13px 14px;
+  margin-bottom: 10px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease, border-color 0.18s ease;
+}
+.dh-peek-stage.is-liked {
+  border-color: rgba(240, 192, 64, 0.65);
+  transform: scale(1.015);
+}
+.dh-peek-stage.is-swapping {
+  opacity: 0.35;
+  transform: translateX(8px);
+}
+.dh-peek-world-tag {
+  align-self: flex-start;
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: #c9b888 !important;
+  opacity: 0.92;
+}
+.dh-peek-text {
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  line-height: 1.75 !important;
+  color: #f8f3e6 !important;
+}
+.dh-peek-feedback {
+  margin: 0 0 10px !important;
+  padding: 8px 11px;
+  border-radius: 12px;
+  background: rgba(240, 192, 64, 0.1);
+  border: 1px solid rgba(240, 192, 64, 0.28);
+  font-size: 0.79rem !important;
+  line-height: 1.65 !important;
+  color: #f5e6be !important;
+}
+.dh-peek-actions {
+  display: flex;
+  gap: 8px;
+}
+.dh-peek-btn {
+  appearance: none;
+  flex: 1;
+  min-height: 46px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.13s cubic-bezier(0.22, 1, 0.36, 1), background 0.15s ease;
+}
+.dh-peek-btn:active {
+  transform: scale(0.965);
+}
+.dh-peek-btn--yes {
+  background: linear-gradient(135deg, #f5d472, #d4af37);
+  border: none;
+  color: #161208 !important;
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.28);
+}
+.dh-peek-btn--next {
+  background: #1d2130;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d6d1c4 !important;
+}
+.dh-peek-bridge {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.dh-peek-bridge button {
+  appearance: none;
+  flex: 1;
+  min-height: 40px;
+  padding: 7px 10px;
+  border-radius: 11px;
+  border: 1px solid rgba(240, 192, 64, 0.36);
+  background: rgba(240, 192, 64, 0.09);
+  color: #ffe08a !important;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ۴) اسلایدر افقی اسنپ‌شونده «۶ دنیای شهر رؤیاها» */
+.dh-worlds-section {
+  margin: 0 0 18px;
+  text-align: right;
+}
+.dh-sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 2px 10px;
+}
+.dh-sec-title {
+  margin: 0 !important;
+  font-size: 0.96rem !important;
+  font-weight: 800 !important;
+  color: #f5efe2 !important;
+}
+.dh-sec-sub {
+  font-size: 0.74rem;
+  color: #9e9788 !important;
+}
+.dh-worlds-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 2px 4px 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.dh-worlds-strip::-webkit-scrollbar {
+  display: none;
+}
+.dh-world-chip-card {
+  appearance: none;
+  flex: 0 0 148px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 13px 12px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, #191c29, #12141e);
+  border: 1px solid rgba(240, 192, 64, 0.2);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+  text-align: right;
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.16s ease;
+}
+.dh-world-chip-card:active {
+  transform: scale(0.965);
+  border-color: rgba(240, 192, 64, 0.55);
+}
+.dh-world-chip-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: rgba(240, 192, 64, 0.12);
+  border: 1px solid rgba(240, 192, 64, 0.3);
+  font-size: 1.08rem;
+}
+.dh-world-chip-card strong {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #f7f1e3 !important;
+  line-height: 1.4;
+}
+.dh-world-chip-card span {
+  font-size: 0.72rem;
+  color: #9f9888 !important;
+  line-height: 1.5;
+}
+
+/* ۵) Bento Grid کشف بیشتر + کارت نقل‌قول قابل اشتراک‌گذاری + فیدبک فنری */
+.dh-mk2-row,
+.dh-mk2-tile,
+.dh-home-sanjesh-toggle {
+  touch-action: manipulation;
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.16s ease !important;
+}
+.dh-mk2-row:active,
+.dh-mk2-tile:active,
+.dh-home-sanjesh-toggle:active {
+  transform: scale(0.975) !important;
+}
+.dh-bento-pill {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(240, 192, 64, 0.16);
+  border: 1px solid rgba(240, 192, 64, 0.4);
+  color: #ffe08a !important;
+  font-size: 0.68rem;
+  font-weight: 800;
+  vertical-align: middle;
+}
+.dh-mk2-quote-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+.dh-mk2-quote-foot .dh-mk2-quote-by {
+  margin-top: 0 !important;
+}
+.dh-quote-share-btn {
+  appearance: none;
+  min-height: 34px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 192, 64, 0.3);
+  background: rgba(240, 192, 64, 0.08);
+  color: #f0c040 !important;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dh-quote-share-btn:active {
+  transform: scale(0.95);
+}
+
+/* ۶) تب‌بار شیشه‌ای مدرن با نشانگر کپسولی فعال (Native Floating Glass Tabbar) */
+#dh-tabbar {
+  background: rgba(14, 16, 24, 0.92) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+  border-top: 1px solid rgba(240, 192, 64, 0.2) !important;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.42) !important;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+}
+#dh-tabbar button {
+  position: relative;
+  padding: 6px 8px !important;
+  border-radius: 14px !important;
+  transition: transform 0.13s cubic-bezier(0.22, 1, 0.36, 1), color 0.16s ease !important;
+}
+#dh-tabbar button:active {
+  transform: scale(0.93);
+}
+#dh-tabbar button .ico {
+  width: 44px;
+  height: 28px;
+  border-radius: 999px;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+#dh-tabbar button.active .ico {
+  background: rgba(240, 192, 64, 0.16);
+  box-shadow: 0 0 14px rgba(240, 192, 64, 0.18);
+  transform: translateY(-1px);
+}
+#dh-tabbar button.active .lbl {
+  font-weight: 800;
+}
+
+/* ۷) Bottom Sheet کشویی نیتیو + Toast شیشه‌ای اپ (جایگزین alert مرورگر) */
+.dh-sheet-ov {
+  position: fixed;
+  inset: 0;
+  z-index: 10090;
+  background: rgba(5, 7, 12, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  animation: dhFadeBackdrop 0.18s ease;
+}
+@keyframes dhFadeBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dhSlideUpSheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.dh-sheet-panel {
+  width: 100%;
+  max-width: 500px;
+  max-height: 86vh;
+  overflow-y: auto;
+  background: linear-gradient(170deg, #1b1e2c 0%, #11131d 100%);
+  border-top: 1px solid rgba(240, 192, 64, 0.38);
+  border-radius: 24px 24px 0 0;
+  padding: 10px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.55);
+  text-align: right;
+  color: #f5efe2;
+  animation: dhSlideUpSheet 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.18s ease;
+}
+.dh-sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  margin: 4px auto 16px;
+}
+.dh-sheet-title {
+  margin: 0 0 8px !important;
+  font-size: 1.14rem !important;
+  font-weight: 900 !important;
+  color: #ffe08a !important;
+}
+.dh-sheet-desc {
+  margin: 0 0 14px !important;
+  font-size: 0.9rem !important;
+  line-height: 1.85 !important;
+  color: #d6d1c4 !important;
+}
+.dh-sheet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+.dh-sheet-chip {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(240, 192, 64, 0.11);
+  border: 1px solid rgba(240, 192, 64, 0.3);
+  color: #f4e6bf !important;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.dh-native-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) translateY(14px);
+  z-index: 10120;
+  max-width: min(90vw, 400px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(22, 25, 38, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(240, 192, 64, 0.45);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.48);
+  color: #fff6db !important;
+  font-family: Vazirmatn, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dh-native-toast.is-open {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dh-view-enter,
+  .dh-sheet-ov,
+  .dh-sheet-panel {
+    animation: none !important;
+  }
+}
+
+
 
 

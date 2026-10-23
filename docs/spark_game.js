@@ -391,7 +391,13 @@
   }
 
   window.DHSparkGame = {
-    open: function () { startSession(); },
-    close: closeLab
+    open: function (opts) {
+      if (!opts || !opts.fromPopState) {
+        if (typeof window.dhPushSubView === 'function') window.dhPushSubView('spark');
+      }
+      startSession();
+    },
+    close: closeLab,
+    isOpen: function () { return Boolean(overlay && overlay.parentNode); }
   };
 })();
