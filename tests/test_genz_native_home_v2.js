@@ -38,8 +38,8 @@ assert.strictEqual(manifestJson.background_color, '#0e1017', 'manifest backgroun
 assert.strictEqual(manifestJson.theme_color, '#0e1017', 'manifest theme_color must match #0e1017 status bar');
 assert.match(indexHtml, /<meta name="theme-color" content="#0e1017">/, 'index.html theme-color must be #0e1017');
 assert.match(mobilePwaCss, /calc\(92px \+ var\(--safe-bottom\)\)/, 'mobile-pwa.css must clear floating glass bottom tabbar');
-assert.match(swJs, /const CACHE = 'darkhorse-v77'/, 'sw.js cache version must be bumped to darkhorse-v77');
-assert.match(pwaBootJs, /\.\/sw\.js\?v=77/, 'pwa-boot.js must register ./sw.js?v=77');
+assert.match(swJs, /const CACHE = 'darkhorse-v78'/, 'sw.js cache version must be bumped to darkhorse-v78');
+assert.match(pwaBootJs, /\.\/sw\.js\?v=78/, 'pwa-boot.js must register ./sw.js?v=78');
 
 /* Strict Horizontal Lock & Non-Overflow Grid Contracts */
 assert.match(indexHtml, /html\{[^}]*overflow-x:clip;overscroll-behavior-x:none/, 'index.html critical CSS must lock html horizontally from First Paint');

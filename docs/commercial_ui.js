@@ -2,8 +2,65 @@
 (function (global) {
   'use strict';
   if (global.__dhCommercialUIReady) return;
-  var USER_KEY='dh_local_user_v1',QUOTA_KEY='dh_local_quota_v1',PENDING_SESSION_KEY='dh_pending_journey_session_id',CHARGED_SESSION_KEY='dh_quota_charged_session_v1',JOURNEY_KEY='darkhorse_session_v2',BUSY=false;
+  var USER_KEY='dh_local_user_v1',QUOTA_KEY='dh_local_quota_v1',PENDING_SESSION_KEY='dh_pending_journey_session_id',CHARGED_SESSION_KEY='dh_quota_charged_session_v1',CONSUMED_SESSIONS_KEY='dh_consumed_journey_sessions_v1',JOURNEY_KEY='darkhorse_session_v2',BUSY=false;
   var SERVER_GATE={token:'',remaining:null,authorizedSessionId:'',consumedSessions:Object.create(null)};
+  function readPersistedConsumedMap(){
+    try {
+      var raw = JSON.parse(localStorage.getItem(CONSUMED_SESSIONS_KEY) || 'null');
+      return raw && typeof raw === 'object' ? raw : {};
+    } catch (_) { return {}; }
+  }
+  function hasConsumedSession(sid){
+    var clean = String(sid || '').trim();
+    if (!clean) return false;
+    if (SERVER_GATE.consumedSessions[clean] === true) return true;
+    var map = readPersistedConsumedMap();
+    if (map[clean] === true) {
+      SERVER_GATE.consumedSessions[clean] = true;
+      return true;
+    }
+    return false;
+  }
+  function markConsumedSession(sid){
+    var clean = String(sid || '').trim();
+    if (!clean) return;
+    SERVER_GATE.consumedSessions[clean] = true;
+    try {
+      var map = readPersistedConsumedMap();
+      map[clean] = true;
+      var keys = Object.keys(map);
+      if (keys.length > 120) {
+        var trimmed = {};
+        keys.slice(-120).forEach(function (k) { trimmed[k] = true; });
+        map = trimmed;
+      }
+      localStorage.setItem(CONSUMED_SESSIONS_KEY, JSON.stringify(map));
+    } catch (_) {}
+  }
+  function unmarkConsumedSession(sid){
+    var clean = String(sid || '').trim();
+    if (!clean) return;
+    delete SERVER_GATE.consumedSessions[clean];
+    try {
+      var map = readPersistedConsumedMap();
+      if (Object.prototype.hasOwnProperty.call(map, clean)) {
+        delete map[clean];
+        localStorage.setItem(CONSUMED_SESSIONS_KEY, JSON.stringify(map));
+      }
+    } catch (_) {}
+  }
+  function purgeFinishedSessionMarkers(finishedSid){
+    var clean = String(finishedSid || '').trim();
+    if (clean) markConsumedSession(clean);
+    try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
+    try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+    try { localStorage.removeItem('dh_quota_p0_charge_v1'); } catch (_) {}
+    try {
+      if (global.DHQuotaEnforcement && typeof global.DHQuotaEnforcement.resetJourneyChargeState === 'function') {
+        global.DHQuotaEnforcement.resetJourneyChargeState(clean);
+      }
+    } catch (_) {}
+  }
   function currentAuthToken(){try{return global.DHAuth&&typeof global.DHAuth.token==='function'?String(global.DHAuth.token()||'').trim():'';}catch(_){return '';}}
   function syncGateToken(){var t=currentAuthToken();if(t!==SERVER_GATE.token){SERVER_GATE.token=t;SERVER_GATE.remaining=null;SERVER_GATE.authorizedSessionId='';SERVER_GATE.consumedSessions=Object.create(null);}return t;}
   function el(id){return document.getElementById(id);} function text(v){return String(v==null?'':v);} function digits(v){return text(v).replace(/[۰-۹]/g,function(d){return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d));});} function escapeHtml(v){return text(v).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');}
@@ -206,19 +263,28 @@
     return !!(journey && !journey.journeyFinished && stages.indexOf(journey.stage) >= 0);
   }
 
-  function createCommercialJourneyId() {
-    try {
-      if (global.crypto && typeof global.crypto.randomUUID === 'function') return global.crypto.randomUUID();
-    } catch (_) {}
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = Math.random() * 16 | 0;
-      var v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
+  function createCommercialJourneyId(excludeId) {
+    var blocked = String(excludeId || '').trim();
+    for (var attempt = 0; attempt < 8; attempt++) {
+      var candidate = '';
+      try {
+        if (global.crypto && typeof global.crypto.randomUUID === 'function') candidate = String(global.crypto.randomUUID() || '');
+      } catch (_) {}
+      if (!candidate || candidate === blocked || hasConsumedSession(candidate)) {
+        candidate = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = Math.random() * 16 | 0;
+          var v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+      if (candidate && candidate !== blocked && !hasConsumedSession(candidate)) return candidate;
+    }
+    return 'dh-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   }
 
   function prepareCommercialJourneyId() {
     var journey = readCommercialJourney();
+    var priorId = journey && journey.sessionId ? String(journey.sessionId) : '';
     var finished = !!(journey && journey.journeyFinished);
     var pendingSessionId = '';
     var chargedSessionId = '';
@@ -227,37 +293,36 @@
 
     var resumable = isResumableCommercialJourney();
     var resumableSessionId = resumable && journey && journey.sessionId ? String(journey.sessionId) : '';
-    if (resumableSessionId && SERVER_GATE.consumedSessions[resumableSessionId] === true) {
+    if (resumableSessionId && hasConsumedSession(resumableSessionId)) {
       resumable = false;
       resumableSessionId = '';
     }
 
     if (finished || !resumable) {
-      // Starting a new journey must clear any completed/consumed session marker
-      // without consuming a new credit yet.
-      if (finished || (chargedSessionId && SERVER_GATE.consumedSessions[chargedSessionId] === true)) {
-        try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
-        try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+      // Starting a new journey after completion MUST deterministically purge
+      // CHARGED + pending markers of the finished session and mint a brand-new UUID.
+      if (finished || hasConsumedSession(chargedSessionId) || (!resumable && chargedSessionId && pendingSessionId !== chargedSessionId)) {
+        purgeFinishedSessionMarkers(finished ? (priorId || chargedSessionId) : chargedSessionId);
         chargedSessionId = '';
         pendingSessionId = '';
       }
     }
 
     if (!finished && pendingSessionId && pendingSessionId === chargedSessionId &&
-        SERVER_GATE.consumedSessions[pendingSessionId] !== true) {
+        !hasConsumedSession(pendingSessionId)) {
       return pendingSessionId;
     }
 
     var sessionId = '';
-    if (resumable && chargedSessionId && SERVER_GATE.consumedSessions[chargedSessionId] !== true &&
+    if (resumable && chargedSessionId && !hasConsumedSession(chargedSessionId) &&
         (!resumableSessionId || resumableSessionId === chargedSessionId)) {
       sessionId = String(chargedSessionId);
     } else if (resumable && resumableSessionId) {
       sessionId = resumableSessionId;
-    } else if (!finished && pendingSessionId && SERVER_GATE.consumedSessions[pendingSessionId] !== true) {
+    } else if (!finished && pendingSessionId && !hasConsumedSession(pendingSessionId)) {
       sessionId = pendingSessionId;
     } else {
-      sessionId = createCommercialJourneyId();
+      sessionId = createCommercialJourneyId(priorId);
     }
     try { localStorage.setItem(PENDING_SESSION_KEY, sessionId); } catch (_) {}
     return sessionId;
@@ -268,8 +333,22 @@
     if (!stableId) stableId = createCommercialJourneyId();
     var journey = readCommercialJourney() || {};
     var priorId = journey && journey.sessionId ? String(journey.sessionId) : '';
-    if (journey.journeyFinished || (priorId && priorId !== stableId && SERVER_GATE.consumedSessions[priorId] === true)) {
+    var resetFromFinished = !!(journey.journeyFinished ||
+      (priorId && priorId !== stableId && hasConsumedSession(priorId)) ||
+      (typeof state !== 'undefined' && state && state.journeyFinished));
+    if (resetFromFinished) {
+      if (typeof fullResetState === 'function') {
+        try { fullResetState(true); } catch (_) {}
+      }
       journey = { sessionId: stableId, stage: 'splash', journeyFinished: false };
+      if (typeof state !== 'undefined' && state) {
+        state.stage = 'splash';
+        state.journeyFinished = false;
+        state.majorsResult = null;
+        state.branchesResult = null;
+      }
+      global.__dhJourneyFinished = false;
+      global.__dhHasSavedSession = false;
     } else {
       journey.sessionId = stableId;
     }
@@ -286,7 +365,7 @@
   function recordServerConsume(sessionUuid, quotaBody) {
     syncGateToken();
     var sid = String(sessionUuid || '').trim();
-    if (sid) SERVER_GATE.consumedSessions[sid] = true;
+    if (sid) markConsumedSession(sid);
     var rem = Number(quotaBody && quotaBody.credits_remaining);
     if (Number.isFinite(rem) && rem >= 0) {
       SERVER_GATE.remaining = rem;
@@ -297,7 +376,7 @@
   function recordConsumeFailure(sessionUuid, status, quotaExhausted) {
     syncGateToken();
     var sid = String(sessionUuid || '').trim();
-    if (sid) delete SERVER_GATE.consumedSessions[sid];
+    if (sid) unmarkConsumedSession(sid);
     if (quotaExhausted || Number(status) === 402) {
       SERVER_GATE.remaining = 0;
       SERVER_GATE.authorizedSessionId = '';
@@ -327,14 +406,14 @@
     var stg = String(targetStage || '').trim();
     var isPostExplorationStage = stg === 'choice' || stg === 'results';
     if (isFinished) {
-      return SERVER_GATE.consumedSessions[sid] === true && isPostExplorationStage;
+      return hasConsumedSession(sid) && isPostExplorationStage;
     }
     if (SERVER_GATE.authorizedSessionId === sid &&
-        SERVER_GATE.consumedSessions[sid] !== true &&
+        !hasConsumedSession(sid) &&
         Number.isFinite(SERVER_GATE.remaining) && SERVER_GATE.remaining > 0) {
       return true;
     }
-    if (SERVER_GATE.consumedSessions[sid] === true && isPostExplorationStage) {
+    if (hasConsumedSession(sid) && isPostExplorationStage) {
       return true;
     }
     return false;
@@ -344,7 +423,7 @@
     syncGateToken();
     var sid = String(sessionUuid || '').trim();
     if (!sid) return false;
-    if (SERVER_GATE.consumedSessions[sid] === true) return true;
+    if (hasConsumedSession(sid)) return true;
     try {
       return String(localStorage.getItem(CHARGED_SESSION_KEY) || '') === sid;
     } catch (_) {
@@ -464,7 +543,12 @@
         }
       }
 
-      var approvedId = candidateSessionId || (forceNew ? createCommercialJourneyId() : prepareCommercialJourneyId());
+      if (forceNew) {
+        var priorFinishedId = String((journey && journey.sessionId) || '');
+        purgeFinishedSessionMarkers(priorFinishedId);
+      }
+
+      var approvedId = candidateSessionId || (forceNew ? createCommercialJourneyId(journey && journey.sessionId) : prepareCommercialJourneyId());
       if (remaining > 0) {
         SERVER_GATE.authorizedSessionId = approvedId;
       }
@@ -534,13 +618,18 @@
       if(remaining <= 0){
         SERVER_GATE.authorizedSessionId = '';
         global.__dhInJourney = false;
-        try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
-        try {
-          var staleCharged0 = String(localStorage.getItem(CHARGED_SESSION_KEY) || '').trim();
-          if (staleCharged0 && SERVER_GATE.consumedSessions[staleCharged0] !== true) {
-            localStorage.removeItem(CHARGED_SESSION_KEY);
-          }
-        } catch (_) {}
+        var prevFinished0 = readCommercialJourney();
+        if (prevFinished0 && prevFinished0.journeyFinished) {
+          purgeFinishedSessionMarkers(prevFinished0.sessionId);
+        } else {
+          try { localStorage.removeItem(PENDING_SESSION_KEY); } catch (_) {}
+          try {
+            var staleCharged0 = String(localStorage.getItem(CHARGED_SESSION_KEY) || '').trim();
+            if (staleCharged0 && !hasConsumedSession(staleCharged0)) {
+              localStorage.removeItem(CHARGED_SESSION_KEY);
+            }
+          } catch (_) {}
+        }
         await openPurchaseModal('اعتبار سفر اکتشافی شما به پایان رسیده است. برای شروع سفر جدید، بستهٔ اعتبار تهیه کنید.');
         return;
       }
@@ -816,6 +905,7 @@
     ensureCanEnterJourney:ensureCanEnterJourney,
     isActiveStageAuthorized:isActiveStageAuthorized,
     isSessionConsumedLocallyOrServer:isSessionConsumedLocallyOrServer,
+    purgeFinishedSessionMarkers:purgeFinishedSessionMarkers,
     recordServerConsume:recordServerConsume,
     recordConsumeFailure:recordConsumeFailure,
     logout:doLogout,

@@ -28,7 +28,7 @@
   } catch (ePrompt) {}
 
   if ('serviceWorker' in navigator) {
-    var SW_URL = './sw.js?v=77';
+    var SW_URL = './sw.js?v=78';
     var swRegistered = false;
     function registerSwOnce() {
       if (swRegistered) return;
@@ -44,8 +44,8 @@
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v77') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v77', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v78') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v78', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();

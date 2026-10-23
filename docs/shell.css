@@ -3057,8 +3057,21 @@ html, body {
   border: 1.5px solid rgba(246, 217, 122, 0.55) !important;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), 0 0 32px rgba(212, 175, 55, 0.16) !important;
 }
+.dh-mk2 .dh-mk2-hero-bg {
+  opacity: 1 !important;
+  filter: none !important;
+  background-size: cover !important;
+  background-position: center 42% !important;
+}
 .dh-mk2 .dh-mk2-hero-shade {
-  background: linear-gradient(180deg, rgba(10, 12, 19, 0.56) 0%, rgba(10, 12, 19, 0.84) 58%, rgba(10, 12, 19, 0.95) 100%) !important;
+  background: linear-gradient(105deg, rgba(10, 12, 19, 0.16) 0%, rgba(10, 12, 19, 0.36) 46%, rgba(10, 12, 19, 0.62) 100%) !important;
+}
+.dh-mk2 .dh-mk2-hero-title {
+  color: #FFF0BE !important;
+  text-shadow: 0 2px 12px rgba(6, 8, 15, 0.86), 0 0 18px rgba(246, 217, 122, 0.24) !important;
+}
+.dh-mk2 .dh-mk2-hero-sub {
+  text-shadow: 0 2px 10px rgba(6, 8, 15, 0.88), 0 1px 3px rgba(0, 0, 0, 0.72) !important;
 }
 .dh-mk2 .dh-mk2-hero-body {
   display: flex;

@@ -62,19 +62,31 @@
     document.head.appendChild(s);
   }
 
+  /** فیلتر صریح خرده‌انگیزه‌های متعلق به مسیرهای فعال و motive_driven (بدون تغییر وزن موتور) */
+  function filterMotiveDrivenSparks(all, pathIndex) {
+    var list = Array.isArray(all) ? all : [];
+    var idx = pathIndex || buildPathIndex();
+    var hasRoutes = idx && Object.keys(idx).length > 0;
+    return list.filter(function (item) {
+      if (!item || !item.code || !item.description_fa) return false;
+      if (!hasRoutes) return true;
+      return resolveCode(item.code, idx).length > 0;
+    });
+  }
+
   function fetchMotives() {
     if (motivesCache) return Promise.resolve(motivesCache);
     return fetch('data/micro_motives.json')
       .then(function (r) { return r.json(); })
       .then(function (arr) {
-        motivesCache = Array.isArray(arr) ? arr : [];
+        motivesCache = filterMotiveDrivenSparks(Array.isArray(arr) ? arr : []);
         return motivesCache;
       })
       .catch(function () {
         // fallback مسیرهای رایج
         return fetch('./data/micro_motives.json').then(function (r) { return r.json(); })
           .then(function (arr) {
-            motivesCache = Array.isArray(arr) ? arr : [];
+            motivesCache = filterMotiveDrivenSparks(Array.isArray(arr) ? arr : []);
             return motivesCache;
           });
       });
@@ -279,7 +291,9 @@
     $('dh-lab-done').onclick = closeLab;
     $('dh-lab-start-journey').onclick = function () {
       closeLab();
-      if (window.DHShell && typeof window.DHShell.startJourney === 'function') {
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
+        window.DHCommercialUI.startServerAuthorizedJourney();
+      } else if (window.DHShell && typeof window.DHShell.startJourney === 'function') {
         window.DHShell.startJourney();
       }
     };
@@ -412,6 +426,8 @@
       return { likedCount: cnt, played: Boolean(saved && saved.lastAt) };
     },
     close: closeLab,
+    filterMotiveDrivenSparks: filterMotiveDrivenSparks,
+    buildPathIndex: buildPathIndex,
     isOpen: function () { return Boolean(overlay && overlay.parentNode); }
   };
 })();

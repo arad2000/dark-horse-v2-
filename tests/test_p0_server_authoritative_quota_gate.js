@@ -753,7 +753,128 @@ async function run() {
     'Soft 1x recovery MUST succeed without showing error modal');
   sandbox.DHShell.startJourney = origStartJourney;
 
-  console.log('P0 server-authoritative quota gate E2E regression: PASS (all 6 mandatory contracts verified)');
+  // =========================================================================
+  // 7. Supervisor Post-Home Audit Regression Suite (A: Multi-Journey Consume & Reload Guard, B: Hero Shade, C: Spark × motive_driven)
+  // =========================================================================
+
+  // 7a. Complete current authorized journey (remaining: 1 -> 0, consumed: 1),
+  // simulate full page exit/background events on Home, verify finished session is NEVER resurrected,
+  // and verify second attempt with remaining=0 opens ONLY Purchase Modal.
+  const sessionBeforeReload = sandbox.state.sessionId;
+  const consumeCountBefore7a = consumeTestRequests;
+  sandbox.startNewJourney();
+  sandbox.state.likedCodes = [motivesRaw[0].code, motivesRaw[2].code];
+  sandbox.goTo('choice');
+  await sandbox.analyzeMajors();
+  assert.equal(sandbox.state.stage, 'results');
+  assert.equal(sandbox.state.journeyFinished, true);
+  assert.equal(consumeTestRequests, consumeCountBefore7a + 1, 'Completed new journey MUST issue a real POST /me/consume-test');
+  assert.equal(userQuotaDetails(101).credits_remaining, 0, 'remaining=1 MUST decrement to remaining=0 after results');
+
+  // Simulate user returning to Home, reloading/hiding app (`persistSessionOnExit` trap regression):
+  sandbox.__dhInJourney = false;
+  sandbox.DHShell.renderHome();
+  sandbox.persistSessionOnExit();
+  assert.equal(
+    JSON.parse(localStorage.getItem('darkhorse_session_v2')).journeyFinished,
+    true,
+    'persistSessionOnExit on Home MUST NEVER overwrite journeyFinished=true with false'
+  );
+
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHCommercialUI.startServerAuthorizedJourney();
+  await flushMicrotasks();
+  assert.equal(sandbox.__dhInJourney, false, 'With remaining=0 after journey completion, City of Dreams MUST NOT open');
+  assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
+    'Second attempt with remaining=0 MUST open ONLY Purchase Modal');
+  assert.equal(localStorage.getItem('dh_quota_charged_session_v1'), null,
+    'Finished session CHARGED marker must be purged on new-journey attempt');
+  assert.equal(localStorage.getItem('dh_pending_journey_session_id'), null,
+    'Finished session pending marker must be purged on new-journey attempt');
+
+  // 7b. Two consecutive journeys with 2 credits (granted goes +2 -> remaining=2):
+  // Journey A and Journey B MUST have strictly distinct sessionIds AND MUST consume 2 real server credits (NEVER free on second session!).
+  const curGranted = grantedByUser.get(101) || 0;
+  grantedByUser.set(101, curGranted + 2);
+  assert.equal(userQuotaDetails(101).credits_remaining, 2);
+
+  // Journey A (remaining: 2 -> 1)
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHCommercialUI.startServerAuthorizedJourney();
+  await flushMicrotasks();
+  const journeyAId = sandbox.state.sessionId;
+  assert.ok(journeyAId && journeyAId !== sessionBeforeReload, 'Journey A must receive a brand-new sessionId before entering City');
+  assert.equal(localStorage.getItem('dh_quota_charged_session_v1'), null, 'CHARGED must be cleared before Journey A starts');
+  sandbox.startNewJourney();
+  sandbox.state.likedCodes = [motivesRaw[3].code, motivesRaw[4].code];
+  sandbox.goTo('choice');
+  const reqBeforeA = consumeTestRequests;
+  const discBeforeA = discoverRequests;
+  await sandbox.analyzeMajors();
+  assert.equal(consumeTestRequests, reqBeforeA + 1, 'Journey A MUST send POST /me/consume-test');
+  assert.equal(discoverRequests, discBeforeA + 1, 'Journey A MUST complete server POST /v2/darkhorse/discover');
+  assert.equal(userQuotaDetails(101).credits_remaining, 1, 'Journey A MUST decrement remaining 2 -> 1');
+
+  // Journey B started immediately after Journey A finishes (remaining: 1 -> 0)
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHCommercialUI.startServerAuthorizedJourney();
+  await flushMicrotasks();
+  const journeyBId = sandbox.state.sessionId;
+  assert.ok(journeyBId && journeyBId !== journeyAId, 'Journey B MUST mint a new sessionId distinct from Journey A');
+  assert.equal(localStorage.getItem('dh_quota_charged_session_v1'), null, 'CHARGED from Journey A MUST be purged before Journey B');
+  sandbox.startNewJourney();
+  assert.equal(sandbox.state.sessionId, journeyBId, 'startNewJourney MUST preserve authorized fresh journeyBId synchronously');
+  // Even if someone forges localStorage dh_quota_charged_session_v1 = journeyBId before results,
+  // ensureJourneyChargedForResults MUST STILL hit POST /me/consume-test on the server!
+  localStorage.setItem('dh_quota_charged_session_v1', journeyBId);
+  sandbox.state.likedCodes = [motivesRaw[5].code, motivesRaw[6].code];
+  sandbox.goTo('choice');
+  const reqBeforeB = consumeTestRequests;
+  const discBeforeB = discoverRequests;
+  await sandbox.analyzeMajors();
+  assert.equal(consumeTestRequests, reqBeforeB + 1,
+    'Journey B MUST still send real POST /me/consume-test even if dh_quota_charged_session_v1 was pre-set');
+  assert.equal(discoverRequests, discBeforeB + 1,
+    'Journey B MUST complete server POST /v2/darkhorse/discover cleanly with journeyBId (zero session mismatch)');
+  assert.equal(userQuotaDetails(101).credits_remaining, 0,
+    'Two completed journeys with distinct sessions MUST NEVER both be free (remaining: 2 -> 1 -> 0)');
+
+  // Immediate 3rd attempt with remaining=0 -> strictly blocked with Purchase Modal ONLY
+  elements.delete('dh-commercial-overlay');
+  await sandbox.DHCommercialUI.startServerAuthorizedJourney();
+  await flushMicrotasks();
+  assert.equal(sandbox.__dhInJourney, false, '3rd attempt with remaining=0 MUST NOT enter City of Dreams');
+  assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
+    '3rd attempt with remaining=0 MUST open Purchase Modal ONLY');
+
+  // 7c. Hero background shade contract (B): gentler gradient (<0.65 max alpha), readable text, untouched hero images
+  const shellCssSrc = fs.readFileSync(path.join(root, 'docs', 'shell.css'), 'utf8');
+  const heroShadeMatch = shellCssSrc.match(/\.dh-mk2\s+\.dh-mk2-hero-shade\s*\{([\s\S]*?)\}/);
+  assert.ok(heroShadeMatch, '.dh-mk2 .dh-mk2-hero-shade rule must exist');
+  const alphas = [...heroShadeMatch[1].matchAll(/rgba\([^)]*,\s*([0-9.]+)\s*\)/g)].map(m => Number(m[1]));
+  assert.ok(alphas.length >= 2 && alphas.every(a => a <= 0.65) && Math.max(...alphas) >= 0.45,
+    `Hero shade must keep image clearly visible while preserving readable text contrast (alphas=${JSON.stringify(alphas)})`);
+
+  // 7d. Spark Lab × motive_driven coverage & explicit route filter contract (C)
+  const majorsDb = JSON.parse(fs.readFileSync(path.join(root, 'majors_database_v2.json'), 'utf8'));
+  const majorsArr = Array.isArray(majorsDb) ? majorsDb : majorsDb.majors;
+  const motiveDrivenMajors = majorsArr.filter(m => m.motive_driven === true);
+  const motiveSet = new Set(motivesRaw.map(m => m.code));
+  const missingMajors = motiveDrivenMajors.filter(m => !(m.micro_motive_codes || []).some(c => motiveSet.has(c)));
+  assert.equal(motiveDrivenMajors.length, 202, 'Catalog must contain 202 motive_driven=true majors');
+  assert.equal(missingMajors.length, 0, 'All 202 motive_driven=true majors have sparks in micro_motives.json');
+
+  const sparkSrc = fs.readFileSync(path.join(root, 'docs', 'spark_game.js'), 'utf8');
+  vm.runInContext(sparkSrc, sandbox);
+  const filteredReal = sandbox.DHSparkGame.filterMotiveDrivenSparks([
+    ...motivesRaw,
+    { code: 'NON_MOTIVE_SANJESH-999', description_fa: 'رشته صرفاً سنجشی بدون خرده‌انگیزه' }
+  ]);
+  assert.equal(filteredReal.length, motivesRaw.length,
+    'Spark Lab filterMotiveDrivenSparks must retain 100% of 1,393 motive_driven sparks and drop unrouted codes');
+
+  console.log('P0 server-authoritative quota gate E2E regression: PASS (all 7 mandatory contracts verified)');
+  process.exit(0);
 }
 
 run().catch((err) => {
