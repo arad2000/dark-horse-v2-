@@ -236,34 +236,40 @@
     var existing = document.getElementById('dh-sys-guide');
     if (existing) existing.remove();
     var page = 0;
+    var weightMode = 'uni';
     var pages = [
       {
-        title: 'راهنمای سفر اکتشافی',
-        body:
-          '<p class="dh-g-quote">«موفقیت از تقلید دیگران به دست نمی‌آید؛ از شناخت فردیت و ساختن مسیر شخصی می‌آید.»</p>' +
-          '<p class="dh-g-src">— تاد رز و اگی اوگاس، کتاب اسب سیاه. این سامانه محصول یا تأیید دانشگاه هاروارد نیست.</p>' +
-          '<h3>مشکل از کجاست؟</h3>' +
-          '<p>هر سال هزاران دانش‌آموز می‌پرسند «چه رشته‌ای بخوانم؟» پاسخ‌های رایج معمولاً بر پایه رتبه، پرستیژ یا بازار کار کلیشه‌ای است و <strong>فردیت تو را نادیده می‌گیرند</strong>.</p>' +
-          '<h3>راه‌حل این سامانه</h3>' +
-          '<p>بر اساس کتاب اسب سیاه، به‌جای «چه نمره‌ای آوردی؟» می‌پرسد: <strong>«از چه چیزی واقعاً انرژی می‌گیری؟»</strong></p>' +
-          '<h3>سه لایه شناخت</h3>' +
-          '<ul><li><strong>خرده‌انگیزه‌ها</strong> — جرقه‌های لذت روزمره</li>' +
-          '<li><strong>راهبردهای شخصی</strong> — سبک فکر و یادگیری</li>' +
-          '<li><strong>ارزش‌های بنیادین</strong> — معنای رضایت‌بخش کار</li></ul>' +
-          '<p class="dh-g-note">این تست شخصیت نیست؛ سفر کوتاهی برای کشف خودت است.</p>'
+        tab: '۱. فلسفه فردیت',
+        title: 'چرا اسب سیاه متفاوت است؟',
+        body: function () {
+          return '<p class="dh-g-quote">«موفقیت از تقلید دیگران به دست نمی‌آید؛ از شناخت فردیت و ساختن مسیر شخصی می‌آید.»</p>' +
+            '<p class="dh-g-src">— تاد رز و اگی اوگاس، کتاب اسب سیاه. این سامانه محصول یا تأیید دانشگاه هاروارد نیست.</p>' +
+            '<h3>مشکل نگاه سنتی چیست؟</h3>' +
+            '<p>پاسخ‌های رایج معمولاً فقط بر پایه رتبه، پرستیژ بیرونی یا تقلید از دیگران است و <strong>فردیت منحصر‌به‌فرد تو</strong> را نادیده می‌گیرند.</p>' +
+            '<h3>پرسش بنیادین اسب سیاه</h3>' +
+            '<p>به‌جای «چقدر شبیه میانگین هستی؟» می‌پرسد: <strong>«از چه کاری واقعاً انرژی می‌گیری و شکوفا می‌شوی؟»</strong></p>';
+        }
       },
       {
-        title: '',
-        body:
-          '<p>این یک تست نیست؛ <strong>سفری برای شناخت انگیزه، سبک فکر و ارزش‌های خودت</strong> است.</p>' +
-          '<h3>مسیر سفر</h3>' +
-          '<p><strong>۱) خرده‌انگیزه‌ها</strong><br>از میان بیش از ۱۳۰۰ جرقه، موارد انرژی‌بخش را انتخاب کن (حدود ۲۰ تا ۸۰).</p>' +
-          '<p><strong>۲) راهبردهای شخصی</strong><br>حدود ۲۵ موقعیت کوتاه درباره سبک حل مسئله.</p>' +
-          '<p><strong>۳) ارزش‌های بنیادین</strong><br>۱۵ دوگانه برای فهم رضایت بلندمدت.</p>' +
-          '<h3>وزن‌ها</h3>' +
-          '<p><strong>رشته دانشگاهی:</strong> خرده‌انگیزه ۵۵٪ · ارزش ۳۰٪ · راهبرد ۱۵٪</p>' +
-          '<p><strong>شاخه دبیرستان:</strong> خرده‌انگیزه ۶۰٪ · راهبرد ۲۰٪ · ارزش ۲۰٪</p>' +
-          '<p class="dh-g-note">انگیزه و ارزش پایدارترند؛ راهبرد را می‌توان ساخت.</p>'
+        tab: '۲. سه لایه شناخت',
+        title: 'سه لایهٔ عمیق شناخت خودت',
+        body: function () {
+          var weightsHtml = weightMode === 'uni'
+            ? '<div class="dh-sc-box dh-sc-box--good"><strong>دانشگاه (۲۳۰ رشته):</strong> خرده‌انگیزه ۵۵٪ · ارزش بنیادین ۳۰٪ · راهبرد شخصی ۱۵٪</div>'
+            : '<div class="dh-sc-box dh-sc-box--good"><strong>هدایت تحصیلی دبیرستان:</strong> خرده‌انگیزه ۶۰٪ · راهبرد شخصی ۲۰٪ · ارزش بنیادین ۲۰٪</div>';
+          return '<p>این یک آزمون نمره‌دار نیست؛ <strong>سفری سه‌لایه برای کشف موتور درونی توست:</strong></p>' +
+            '<ul>' +
+              '<li><strong>۱) خرده‌انگیزه‌ها</strong> — جرقه‌های واقعی انرژی در جزئیات کار روزمره</li>' +
+              '<li><strong>۲) راهبردهای شخصی</strong> — سبک طبیعی فکر کردن، یادگیری و حل مسئله</li>' +
+              '<li><strong>۳) ارزش‌های بنیادین</strong> — معنایی که رضایت عمیق بلندمدت می‌سازد</li>' +
+            '</ul>' +
+            '<div style="display:flex;gap:6px;margin:10px 0 8px;">' +
+              '<button type="button" class="dh-mod-chip' + (weightMode === 'uni' ? ' is-active' : '') + '" id="dh-g-mode-uni">وزن‌دهی رشته‌های دانشگاهی</button>' +
+              '<button type="button" class="dh-mod-chip' + (weightMode === 'hs' ? ' is-active' : '') + '" id="dh-g-mode-hs">وزن‌دهی شاخه دبیرستان</button>' +
+            '</div>' +
+            weightsHtml +
+            '<p class="dh-g-note">انگیزه و ارزش پایدارترند؛ راهبرد را می‌توان آگاهانه ساخت.</p>';
+        }
       }
     ];
     var ov = document.createElement('div');
@@ -272,23 +278,40 @@
     ov.setAttribute('dir', 'rtl');
     function paint() {
       var p = pages[page];
+      var tabsHtml = pages.map(function (it, i) {
+        return '<button type="button" class="dh-mod-chip' + (i === page ? ' is-active' : '') + '" data-guide-tab="' + i + '">' + it.tab + '</button>';
+      }).join('');
       ov.innerHTML =
         '<div class="dh-guide-panel">' +
           '<button type="button" class="dh-guide-x" id="dh-guide-close">×</button>' +
           (p.title ? '<h2 class="dh-guide-title">' + p.title + '</h2>' : '') +
-          '<div class="dh-guide-body">' + p.body + '</div>' +
+          '<div class="dh-mod-strip" id="dh-guide-tabs" style="margin-bottom:8px;">' + tabsHtml + '</div>' +
+          '<div class="dh-guide-body">' + p.body() + '</div>' +
           '<div class="dh-guide-dots"><span class="' + (page === 0 ? 'on' : '') + '"></span><span class="' + (page === 1 ? 'on' : '') + '"></span></div>' +
           '<div class="dh-guide-actions">' +
             (page === 0
-              ? '<button type="button" class="dh-guide-btn" id="dh-guide-next">ادامه راهنما</button>'
-              : '<button type="button" class="dh-guide-btn secondary" id="dh-guide-prev">قبلی</button><button type="button" class="dh-guide-btn" id="dh-guide-done">متوجه شدم</button>') +
+              ? '<button type="button" class="dh-guide-btn" id="dh-guide-next">لایه بعدی شناخت ›</button>'
+              : '<button type="button" class="dh-guide-btn secondary" id="dh-guide-prev">‹ قبلی</button><button type="button" class="dh-guide-btn" id="dh-guide-go-journey">شروع سفر ›</button><button type="button" class="dh-guide-btn secondary" id="dh-guide-done">بستن</button>') +
           '</div></div>';
       var close = function () { ov.remove(); };
       var el;
       el = document.getElementById('dh-guide-close'); if (el) el.onclick = close;
-      el = document.getElementById('dh-guide-next'); if (el) el.onclick = function () { page = 1; paint(); };
-      el = document.getElementById('dh-guide-prev'); if (el) el.onclick = function () { page = 0; paint(); };
+      el = document.getElementById('dh-guide-next'); if (el) el.onclick = function () { dhHaptic('light'); page = 1; paint(); };
+      el = document.getElementById('dh-guide-prev'); if (el) el.onclick = function () { dhHaptic('light'); page = 0; paint(); };
       el = document.getElementById('dh-guide-done'); if (el) el.onclick = close;
+      el = document.getElementById('dh-guide-go-journey'); if (el) el.onclick = function () { close(); startJourneyFromShell(); };
+      el = document.getElementById('dh-g-mode-uni'); if (el) el.onclick = function () { dhHaptic('light'); weightMode = 'uni'; paint(); };
+      el = document.getElementById('dh-g-mode-hs'); if (el) el.onclick = function () { dhHaptic('light'); weightMode = 'hs'; paint(); };
+      var tabBox = document.getElementById('dh-guide-tabs');
+      if (tabBox) {
+        tabBox.onclick = function (ev) {
+          var b = ev.target && ev.target.closest ? ev.target.closest('[data-guide-tab]') : null;
+          if (!b) return;
+          dhHaptic('light');
+          page = parseInt(b.getAttribute('data-guide-tab'), 10) || 0;
+          paint();
+        };
+      }
       ov.onclick = function (e) { if (e.target === ov) close(); };
     }
     document.body.appendChild(ov);
@@ -533,135 +556,14 @@
   }
   window.dhOpenBottomSheet = dhOpenBottomSheet;
 
-  /* 6 Worlds of City of Dreams preview metadata (100% local, zero extra network cost) */
-  var DH_HOME_WORLDS = [
-    {
-      id: 'healer',
-      icon: '🩺',
-      title: 'درمان و زندگی',
-      short: 'سلامت، ذهن و جان انسان',
-      desc: 'جایی برای کسانی که از التیام دادن، کشف رازهای بدن و ذهن انسان و مراقبت از زندگی انرژی می‌گیرند.',
-      majors: ['پزشکی و دندان‌پزشکی', 'روان‌شناسی', 'داروسازی', 'زیست‌فناوری و ژنتیک', 'فیزیوتراپی و توان‌بخشی']
-    },
-    {
-      id: 'builder',
-      icon: '⚡',
-      title: 'ساخت و فناوری',
-      short: 'کد، هوش مصنوعی و مهندسی',
-      desc: 'مخصوص ذهن‌هایی که عاشق ساختن سیستم، حل معماهای فنی، برنامه‌نویسی، رباتیک و خلق ابزارهای آینده‌اند.',
-      majors: ['مهندسی کامپیوتر و هوش مصنوعی', 'مهندسی برق و مکانیک', 'هوافضا و پهپاد', 'مهندسی صنایع', 'علم داده']
-    },
-    {
-      id: 'creator',
-      icon: '🎨',
-      title: 'هنر و روایت',
-      short: 'طراحی، سینما، معماری و فرم',
-      desc: 'برای کسانی که دنیا را با تصویر، داستان، فرم، فضا و صدا می‌بینند و از خلق اثر امضادار شارژ می‌شوند.',
-      majors: ['معماری و طراحی صنعتی', 'سینما و پویانمایی', 'ارتباط تصویری (گرافیک)', 'موسیقی و نمایش', 'طراحی لباس و فضا']
-    },
-    {
-      id: 'society',
-      icon: '⚖️',
-      title: 'انسان و جامعه',
-      short: 'حقوق، رسانه، زبان و فرهنگ',
-      desc: 'برای کسانی که دغدغهٔ آدم‌ها، عدالت، متقاعدسازی، ارتباطات انسانی، آموزش و فهم فرهنگ‌ها را دارند.',
-      majors: ['حقوق و علوم قضایی', 'علوم ارتباطات و رسانه', 'روابط بین‌الملل', 'زبان‌های خارجی', 'جامعه‌شناسی و آموزش']
-    },
-    {
-      id: 'leader',
-      icon: '🚀',
-      title: 'کسب‌وکار و رهبری',
-      short: 'استارتاپ، اقتصاد و استراتژی',
-      desc: 'میدان کسانی که از تصمیم‌گیری در ابهام، ساختن تیم، مذاکره، تحلیل بازار و تبدیل ایده به ارزش لذت می‌برند.',
-      majors: ['مدیریت کسب‌وکار و بازرگانی', 'اقتصاد و مالی', 'مدیریت مالی و فین‌تک', 'کارآفرینی', 'حسابداری تحلیلی']
-    },
-    {
-      id: 'explorer',
-      icon: '🔭',
-      title: 'کشف و طبیعت',
-      short: 'کیهان، زمین و علوم بنیادین',
-      desc: 'برای کنجکاوهایی که از کشف ناشناخته‌ها، طبیعت، فیزیک، نجوم، دریا و قوانین پنهان جهان سیر نمی‌شوند.',
-      majors: ['فیزیک و اخترفیزیک', 'ریاضیات و کاربردها', 'شیمی محض و کاربردی', 'زیست‌شناسی دریا و طبیعت', 'زمین‌شناسی']
-    }
-  ];
+  var DAILY_SAVED_KEY = 'dh_daily_quote_saved_v1';
+  var __dhQuoteCursor = 0;
 
-  /* 8 relatable Gen-Z live taster sparks ("Play First, Sign Up Second") */
-  var DH_LIVE_SPARKS = [
-    { q: 'وقتی یک باگ یا معمای پیچیده جلوته و بقیه بی‌خیال شدن، تازه موتور ذهنت روشن می‌شه تا حلش کنی.', world: 'ساخت و فناوری ⚡' },
-    { q: 'وقتی یکی از دوستات حالش بده، ناخودآگاه طوری باهاش حرف می‌زنی که آروم می‌شه و مسیرش براش شفاف می‌شه.', world: 'درمان و زندگی 🩺' },
-    { q: 'موقع دیدن یک فیلم، پوستر یا فضا، سریع متوجه نور، زاویه، ریتم تدوین و جزئیاتی می‌شی که بقیه نمی‌بینن.', world: 'هنر و روایت 🎨' },
-    { q: 'تو جمع دوست داری ایده بدی، کارها رو هماهنگ کنی و یه پروژهٔ صفرکیلومتر رو واقعاً به نتیجه برسونی.', world: 'کسب‌وکار و رهبری 🚀' },
-    { q: 'از دفاع کردن از حق، استدلال دقیق آوردن تو بحث و قانع کردن آدم‌ها با منطق قوی کیف می‌کنی.', world: 'انسان و جامعه ⚖️' },
-    { q: 'سؤال‌های عمیق دربارهٔ فضا، طبیعت یا چرایی پدیده‌ها ساعت‌ها ذهنت رو درگیر نگه می‌داره.', world: 'کشف و طبیعت 🔭' }
-  ];
-
-  var __dhPeekIdx = 0;
-  var __dhPeekLikes = 0;
-
-  function openWorldPreviewSheet(worldId) {
-    var w = null;
-    for (var i = 0; i < DH_HOME_WORLDS.length; i++) {
-      if (DH_HOME_WORLDS[i].id === worldId) { w = DH_HOME_WORLDS[i]; break; }
-    }
-    if (!w) return;
-    var chips = w.majors.map(function (m) {
-      return '<span class="dh-sheet-chip">' + escape(m) + '</span>';
-    }).join('');
-    dhOpenBottomSheet({
-      title: w.icon + ' دنیای «' + escape(w.title) + '»',
-      bodyHtml:
-        '<p class="dh-sheet-desc">' + escape(w.desc) + '</p>' +
-        '<div style="font-size:.78rem;color:#b8b2a4;font-weight:700;margin-bottom:8px;">نمونه مسیرها در شهر رؤیاها:</div>' +
-        '<div class="dh-sheet-chips">' + chips + '</div>' +
-        '<button type="button" class="dh-mk2-cta" id="dh-sheet-start-world" style="width:100%;min-height:50px;">کشف همخوانی من با این دنیا در سفر ›</button>',
-      onMount: function (dismiss) {
-        var btn = document.getElementById('dh-sheet-start-world');
-        if (btn) {
-          btn.onclick = function () {
-            dismiss();
-            startJourneyFromShell();
-          };
-        }
-      }
-    });
+  function loadSavedQuotes() {
+    try { return JSON.parse(localStorage.getItem(DAILY_SAVED_KEY) || '[]'); } catch (_) { return []; }
   }
-
-  function openInstallAppSheet() {
-    if (window.__dhInstallPromptEvent) {
-      var promptEv = window.__dhInstallPromptEvent;
-      window.__dhInstallPromptEvent = null;
-      try {
-        promptEv.prompt();
-        if (promptEv.userChoice && typeof promptEv.userChoice.then === 'function') {
-          promptEv.userChoice.then(function (choice) {
-            if (choice && choice.outcome === 'accepted') {
-              dhToast('اپ اسب سیاه به صفحه اصلی گوشی اضافه شد ✨');
-            }
-          }).catch(function () {});
-        }
-        return;
-      } catch (_) {}
-    }
-    var isIOS = false;
-    try { isIOS = /iPad|iPhone|iPod/i.test(navigator.userAgent || ''); } catch (_) {}
-    var steps = isIOS
-      ? '<p class="dh-sheet-desc">در مرورگر <strong>Safari</strong> دکمهٔ <strong>Share (اشتراک‌گذاری ⬆️ پایین صفحه)</strong> را بزن و گزینهٔ <strong>Add to Home Screen</strong> را انتخاب کن تا اسب سیاه مثل اپ تمام‌صفحه روی آیفونت نصب شود.</p>'
-      : '<p class="dh-sheet-desc">از منوی مرورگر (<strong>⋮</strong> بالا سمت چپ/راست) گزینهٔ <strong>Install app / افزودن به صفحه اصلی (Add to Home screen)</strong> را بزن تا اپ اسب سیاه تمام‌صفحه، سریع و بدون نوار آدرس روی گوشی‌ات نصب شود.</p>';
-    dhOpenBottomSheet({
-      title: '📲 نصب نسخه اپ موبایل اسب سیاه',
-      bodyHtml:
-        steps +
-        '<div class="dh-sheet-chips">' +
-          '<span class="dh-sheet-chip">⚡ باز شدن فوری زیر ۱ ثانیه</span>' +
-          '<span class="dh-sheet-chip">📱 تمام‌صفحه بدون نوار مرورگر</span>' +
-          '<span class="dh-sheet-chip">💾 بدون اشغال حافظه سنگین</span>' +
-        '</div>' +
-        '<button type="button" class="dh-mk2-cta" id="dh-install-sheet-ok" style="width:100%;min-height:48px;">متوجه شدم</button>',
-      onMount: function (dismiss) {
-        var ok = document.getElementById('dh-install-sheet-ok');
-        if (ok) ok.onclick = dismiss;
-      }
-    });
+  function saveSavedQuotes(arr) {
+    try { localStorage.setItem(DAILY_SAVED_KEY, JSON.stringify(arr)); } catch (_) {}
   }
 
   function renderHome() {
@@ -672,24 +574,31 @@
     window.__dhInJourney = false;
     try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}
 
-    var u = getDisplayUser();
-    var hasUser = !!(u && (u.name || u.phone || u.email));
-    var displayFirstName = (u && u.name) ? String(u.name).trim() : '';
-    var greetLine = displayFirstName
-      ? (greeting() + '، ' + escape(displayFirstName) + ' ✨')
-      : (greeting() + ' · مسیرت از فردیت شروع می‌شه');
-
-    var quote = { t: 'هیچ راهی به سوی موفقیت وجود ندارد، موفقیت خود یک راه است.', tag: 'وینستون چرچیل' };
+    var quotesDeck = [];
+    var fallbackQuotes = [
+      { t: 'هیچ راهی به سوی موفقیت وجود ندارد، موفقیت خود یک راه است.', tag: 'وینستون چرچیل' },
+      { t: 'شناخت دقیقِ آنچه به تو انرژی می‌دهد، مهم‌ترین قطب‌نمای زندگی است.', tag: 'نگاه فردیت' },
+      { t: 'به جای تقلید از مسیر میانگین، راهی را بساز که با سرشت تو همخوان است.', tag: 'فلسفه اسب سیاه' }
+    ];
     try {
-      var bundle = [];
-      if (window.DHQuote && DHQuote.todayBundle) bundle = DHQuote.todayBundle() || [];
-      if (!bundle.length && window.DH_QUOTES && DH_QUOTES.length) {
-        bundle = [DH_QUOTES[new Date().getDate() % DH_QUOTES.length]];
-      }
-      if (bundle[0]) {
-        quote = { t: bundle[0].t || bundle[0].text || quote.t, tag: bundle[0].tag || bundle[0].a || quote.tag };
+      var rawBundle = getBundle() || [];
+      for (var qi = 0; qi < rawBundle.length; qi++) {
+        if (rawBundle[qi] && (rawBundle[qi].t || rawBundle[qi].text)) {
+          quotesDeck.push({
+            t: rawBundle[qi].t || rawBundle[qi].text,
+            tag: rawBundle[qi].tag || rawBundle[qi].a || 'اسب سیاه'
+          });
+        }
       }
     } catch (e2) {}
+    while (quotesDeck.length < 3) {
+      quotesDeck.push(fallbackQuotes[quotesDeck.length % fallbackQuotes.length]);
+    }
+    quotesDeck = quotesDeck.slice(0, 3);
+
+    var curQIdx = __dhQuoteCursor % quotesDeck.length;
+    var quote = quotesDeck[curQIdx];
+    var dateLabel = faDate();
 
     var root = $('app');
     if (!root) return;
@@ -706,34 +615,50 @@
       return '<span class="dh-mk2-feat"><img src="' + base + file + '" alt="" loading="lazy" decoding="async"></span>';
     }
 
+    /* Live deep-module preview metadata */
+    var sparkPeek = { likedCount: 0, played: false };
+    var storyPeek = { name: 'سوزان راجرز', index: 1, total: 8 };
+    var poemPeek = { poet: 'مولوی', tag: 'خودشناسی', count: 64 };
+    var parentPeek = { checked: 0, total: 5 };
+    try { if (window.DHSparkGame && DHSparkGame.peek) sparkPeek = DHSparkGame.peek(); } catch (_) {}
+    try { if (window.DHStories && DHStories.peek) storyPeek = DHStories.peek(); } catch (_) {}
+    try { if (window.DHPoems && DHPoems.peek) poemPeek = DHPoems.peek(); } catch (_) {}
+    try { if (window.DHParents && DHParents.peek) parentPeek = DHParents.peek(); } catch (_) {}
+
+    var sparkBadgeText = sparkPeek.played && sparkPeek.likedCount > 0
+      ? ('🔥 ' + sparkPeek.likedCount + ' جرقه کشف شد')
+      : '۱٬۳۹۳ خرده‌انگیزه زنده';
+    var storyBadgeText = 'روایت امروز: ' + escape(storyPeek.name);
+    var poemBadgeText = escape(poemPeek.poet) + ' · ' + escape(poemPeek.tag);
+    var parentBadgeText = parentPeek.checked > 0
+      ? ('✓ ' + parentPeek.checked + ' از ' + parentPeek.total + ' عهد همراهی')
+      : 'میثاق خانواده و نوجوان';
+
     var heroUrl = base + 'hero-journey.jpg';
     var heroUrl2x = base + 'hero-journey@2x.jpg';
-    var showInstallBtn = !window.__dhIsInstalled;
-    var curSpark = DH_LIVE_SPARKS[__dhPeekIdx % DH_LIVE_SPARKS.length];
-    var worldsHtml = DH_HOME_WORLDS.map(function (w) {
-      return '<button type="button" class="dh-world-chip-card" data-world-id="' + w.id + '">' +
-        '<span class="dh-world-chip-ico" aria-hidden="true">' + w.icon + '</span>' +
-        '<strong>' + escape(w.title) + '</strong>' +
-        '<span>' + escape(w.short) + '</span>' +
-      '</button>';
-    }).join('');
+
+    function buildDotsHtml(activeI) {
+      var dHtml = '';
+      for (var di = 0; di < quotesDeck.length; di++) {
+        dHtml += '<i class="' + (di === activeI ? 'on' : '') + '"></i>';
+      }
+      return dHtml;
+    }
+
+    var isQuoteSaved = loadSavedQuotes().indexOf(quote.t) >= 0;
 
     root.innerHTML =
       '<div class="dh-home-wrap dh-mk2 dh-view-enter">' +
-        '<header class="dh-appbar" aria-label="نوار بالای اسب سیاه">' +
-          '<div class="dh-appbar-brand">' +
-            '<div class="dh-appbar-logo"><img src="' + base + 'icon-192.png" srcset="' + base + 'icon-192.png 1x, ' + base + 'icon-512.png 2x, ' + base + 'icon-512.png 3x" alt="اسب سیاه" width="42" height="42" decoding="async"></div>' +
-            '<div class="dh-appbar-titles">' +
-              '<div class="dh-appbar-name-row"><span class="dh-appbar-title">اسب سیاه</span><span class="dh-appbar-en">DARK HORSE</span></div>' +
-              '<div class="dh-appbar-greet">' + greetLine + '</div>' +
+        /* ۱. هدر مجلل و باشکوه برند اسب سیاه */
+        '<header class="dh-regal-brand" aria-label="هویت برند اسب سیاه">' +
+          '<div class="dh-regal-crest">' +
+            '<div class="dh-regal-crest-inner">' +
+              '<img src="' + base + 'icon-192.png" srcset="' + base + 'icon-192.png 1x, ' + base + 'icon-512.png 2x, ' + base + 'icon-512.png 3x" alt="اسب سیاه" width="70" height="70" decoding="async">' +
             '</div>' +
           '</div>' +
-          '<div class="dh-appbar-actions">' +
-            (showInstallBtn ? '<button type="button" class="dh-appbar-pill dh-appbar-pill--gold" id="dh-open-install" aria-label="نصب اپ">📲 نصب اپ</button>' : '') +
-            '<button type="button" class="dh-appbar-pill" id="dh-appbar-profile" aria-label="حساب کاربری">' +
-              (hasUser ? '👤 حساب من' : 'ورود / پروفایل') +
-            '</button>' +
-          '</div>' +
+          '<div class="dh-regal-en">DARK HORSE</div>' +
+          '<div class="dh-regal-fa-row"><i></i><h1 class="dh-regal-fa">اسب سیاه</h1><i></i></div>' +
+          '<p class="dh-regal-tagline">هدایت تحصیلی و انتخاب رشته بر اساس <strong class="dh-fardiyat">فردیت</strong></p>' +
         '</header>' +
 
         '<div class="dh-fardiyat-ticker" id="dh-fardiyat-ticker" aria-live="polite">' +
@@ -741,6 +666,7 @@
           '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
 
+        /* ۲. کارت سفر اکتشافی (فقط نشان ۲۳۰ رشته و شاخه) */
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
@@ -751,44 +677,13 @@
               '<div class="dh-mk2-hero-sub">کشف رشته و شاخه بر اساس فردیت</div></div>' +
             '</div>' +
             '<div class="dh-hero-pills">' +
-              '<span class="dh-hero-pill">⚡ حدود ۷ دقیقه</span>' +
-              '<span class="dh-hero-pill">🎮 تعاملی و بدون نمره</span>' +
-              '<span class="dh-hero-pill">🎯 ۲۳۰ رشته + شاخه دبیرستان</span>' +
+              '<span class="dh-hero-pill">۲۳۰ رشته و شاخه</span>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
               'شروع سفر <span>›</span></button>' +
           '</div></section>' +
 
-        '<section class="dh-peek-card" id="dh-live-spark-peek" aria-label="تست زنده جرقه">' +
-          '<div class="dh-peek-head">' +
-            '<span class="dh-peek-kicker">⚡ همین الان یه جرقه‌ات رو تست کن</span>' +
-            '<span class="dh-peek-badge" id="dh-peek-counter">' +
-              (__dhPeekLikes > 0 ? ('🔥 ' + __dhPeekLikes + ' جرقه روشن شد') : ('جرقه ۱ از ' + DH_LIVE_SPARKS.length)) +
-            '</span>' +
-          '</div>' +
-          '<div class="dh-peek-stage" id="dh-peek-stage">' +
-            '<span class="dh-peek-world-tag" id="dh-peek-world">' + escape(curSpark.world) + '</span>' +
-            '<p class="dh-peek-text" id="dh-peek-text">' + escape(curSpark.q) + '</p>' +
-          '</div>' +
-          '<p class="dh-peek-feedback" id="dh-peek-feedback" hidden></p>' +
-          '<div class="dh-peek-actions">' +
-            '<button type="button" class="dh-peek-btn dh-peek-btn--yes" id="dh-peek-like">🔥 دقیقاً خودمم!</button>' +
-            '<button type="button" class="dh-peek-btn dh-peek-btn--next" id="dh-peek-skip">فعلاً نه · بعدی ↻</button>' +
-          '</div>' +
-          '<div class="dh-peek-bridge" id="dh-peek-bridge"' + (__dhPeekLikes >= 2 ? '' : ' hidden') + '>' +
-            '<button type="button" id="dh-peek-open-lab">🎮 بازی ۶۰ ثانیه‌ای جرقه‌یاب</button>' +
-            '<button type="button" id="dh-peek-go-journey">🧭 کشف کامل مسیر من ›</button>' +
-          '</div>' +
-        '</section>' +
-
-        '<section class="dh-worlds-section" aria-label="۶ دنیای شهر رؤیاها">' +
-          '<div class="dh-sec-head">' +
-            '<h2 class="dh-sec-title">۶ دنیای شهر رؤیاها</h2>' +
-            '<span class="dh-sec-sub">ورق بزن و لمس کن ‹</span>' +
-          '</div>' +
-          '<div class="dh-worlds-strip" id="dh-worlds-strip">' + worldsHtml + '</div>' +
-        '</section>' +
-
+        /* ۳. بلافاصله زیر سفر اکتشافی: انتخاب رشته با منطق سنجش */
         '<section class="dh-home-sanjesh-entry" aria-labelledby="dh-home-sanjesh-title">' +
           '<div class="dh-home-entry-top">' +
             '<span class="dh-home-entry-icon" aria-hidden="true">🎓</span>' +
@@ -801,32 +696,55 @@
           '</div>' +
         '</section>' +
 
+        /* ۴. پیام روزانه در جایگاه استاندارد اپ‌های مدرن جهان (بین ناحیه تصمیم‌گیری و کاوش عمیق) */
+        '<section class="dh-mk2-quote dh-daily-wisdom" id="dh-daily-wisdom" aria-label="پیام روزانه">' +
+          '<div class="dh-mk2-quote-top">' +
+            ico('ico-quill.svg') +
+            '<span class="dh-mk2-quote-label">پیام روزانه</span>' +
+            (dateLabel ? '<span class="dh-daily-date">' + escape(dateLabel) + '</span>' : '') +
+            '<span class="dh-daily-dots" id="dh-daily-dots">' + buildDotsHtml(curQIdx) + '</span>' +
+          '</div>' +
+          '<div class="dh-daily-text-wrap" id="dh-daily-wrap">' +
+            '<p class="dh-mk2-quote-text" id="dh-daily-text">' + escape(quote.t) + '</p>' +
+          '</div>' +
+          '<div class="dh-mk2-quote-foot">' +
+            '<div class="dh-daily-actions">' +
+              '<button type="button" class="dh-quote-share-btn" id="dh-next-quote" aria-label="پیام بعدی">پیام بعدی ↻</button>' +
+              '<button type="button" class="dh-quote-share-btn' + (isQuoteSaved ? ' is-saved' : '') + '" id="dh-like-quote">' + (isQuoteSaved ? '♥ پسندیده شد' : '♡ پسندیدم') + '</button>' +
+              '<button type="button" class="dh-quote-share-btn" id="dh-copy-quote">اشتراک ↗</button>' +
+            '</div>' +
+            '<div class="dh-mk2-quote-by" id="dh-daily-by">' + escape(quote.tag) + '</div>' +
+          '</div></section>' +
+
+        /* ۵. بخش‌های اصیل و عمیق اپ به فرم مدرن و تعاملی */
         '<section class="dh-mk2-more">' +
-          '<div class="dh-mk2-sep"><i></i><span>کشف بیشتر</span><i></i></div>' +
+          '<div class="dh-mk2-sep"><i></i><span>کاوش عمیق‌تر در فردیت</span><i></i></div>' +
           '<button type="button" class="dh-mk2-row dh-mk2-row-hot" id="dh-open-spark">' +
             feat('spark-feature.jpg') +
-            '<div class="dh-mk2-row-t"><strong>جرقه‌یاب <span class="dh-bento-pill">رایگان · ۶۰ ثانیه</span></strong><span>مینی‌گیم سریع کشف انگیزه‌هایی که بهت انرژی می‌دن</span></div>' +
+            '<div class="dh-mk2-row-t">' +
+              '<strong>جرقه‌یاب <span class="dh-bento-pill">' + sparkBadgeText + '</span></strong>' +
+              '<span>آزمایشگاه زندهٔ کشف خرده‌انگیزه‌هایی که واقعاً به جانت انرژی می‌دهند</span>' +
+            '</div>' +
             '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18" decoding="async"></span></button>' +
           '<div class="dh-mk2-duo">' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' + feat('stories-feature.jpg') +
-            '<strong>داستان‌ها</strong><span>روایت مسیرهای واقعی</span></button>' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-poems">' + feat('wisdom-feature.jpg') +
-            '<strong>سخن بزرگان</strong><span>یک فکر ارزشمند برای امروز</span></button></div>' +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-stories">' +
+              feat('stories-feature.jpg') +
+              '<span class="dh-tile-live-pill">' + storyBadgeText + '</span>' +
+              '<strong>داستان‌ها</strong><span>سرگذشت واقعی مسیرهای غیرخطی و اصیل</span></button>' +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-poems">' +
+              feat('wisdom-feature.jpg') +
+              '<span class="dh-tile-live-pill">' + poemBadgeText + '</span>' +
+              '<strong>سخن بزرگان</strong><span>تأمل موضوعی در حکمت شاعران بزرگ</span></button></div>' +
           '<div class="dh-mk2-duo">' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-parents">' + feat('parents-feature.jpg') +
-            '<strong>والدین</strong><span>همراهی بهتر در انتخاب مسیر</span></button>' +
-            '<button type="button" class="dh-mk2-tile" id="dh-open-guide">' + ico('ico-compass.svg') +
-            '<strong>راهنمای اپ</strong><span>چطور در ۳ لایه کار می‌کند؟</span></button></div>' +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-parents">' +
+              feat('parents-feature.jpg') +
+              '<span class="dh-tile-live-pill">' + parentBadgeText + '</span>' +
+              '<strong>والدین</strong><span>همراهی هوشمندانه به‌جای فشار مقایسه</span></button>' +
+            '<button type="button" class="dh-mk2-tile" id="dh-open-guide">' +
+              ico('ico-compass.svg') +
+              '<span class="dh-tile-live-pill">سه لایه شناخت</span>' +
+              '<strong>راهنمای سامانه</strong><span>فلسفهٔ انگیزه، راهبرد شخصی و ارزش بنیادین</span></button></div>' +
         '</section>' +
-
-        '<section class="dh-mk2-quote">' +
-          '<div class="dh-mk2-quote-top">' + ico('ico-quill.svg') +
-          '<span class="dh-mk2-quote-label">پیام امروز</span><span class="dh-mk2-qq">”</span></div>' +
-          '<p class="dh-mk2-quote-text">' + escape(quote.t) + '</p>' +
-          '<div class="dh-mk2-quote-foot">' +
-            '<button type="button" class="dh-quote-share-btn" id="dh-copy-quote">کپی / استوری ✨</button>' +
-            '<div class="dh-mk2-quote-by">' + escape(quote.tag) + '</div>' +
-          '</div></section>' +
 
         '<section class="dh-sanjesh-box" id="dh-sanjesh-box">' +
           '<p class="dh-sanjesh-title">اخبار و اطلاع‌رسانی سازمان سنجش</p>' +
@@ -840,94 +758,69 @@
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
     try { startFardiyatTicker(); } catch (eTicker) {}
 
-    on('dh-open-install', function () { openInstallAppSheet(); });
-    on('dh-appbar-profile', function () {
-      dhHaptic('light');
-      switchTab('profile');
-    });
     on('dh-start-journey', function () {
       dhHaptic('light');
       startJourneyFromShell();
     });
 
-    function advancePeekSpark(liked) {
-      var prevSpark = DH_LIVE_SPARKS[__dhPeekIdx % DH_LIVE_SPARKS.length];
-      __dhPeekIdx = (__dhPeekIdx + 1) % DH_LIVE_SPARKS.length;
-      if (liked) {
-        __dhPeekLikes += 1;
-        dhHaptic('success');
+    function paintDailyQuote() {
+      var qNow = quotesDeck[__dhQuoteCursor % quotesDeck.length];
+      var wrapEl = $('dh-daily-wrap');
+      var tEl = $('dh-daily-text');
+      var byEl = $('dh-daily-by');
+      var dotsEl = $('dh-daily-dots');
+      var likeEl = $('dh-like-quote');
+      var applyNow = function () {
+        if (tEl) tEl.textContent = qNow.t;
+        if (byEl) byEl.textContent = qNow.tag;
+        if (dotsEl) dotsEl.innerHTML = buildDotsHtml(__dhQuoteCursor % quotesDeck.length);
+        if (likeEl) {
+          var savedNow = loadSavedQuotes().indexOf(qNow.t) >= 0;
+          likeEl.textContent = savedNow ? '♥ پسندیده شد' : '♡ پسندیدم';
+          if (likeEl.classList) likeEl.classList.toggle('is-saved', savedNow);
+        }
+        if (wrapEl && wrapEl.classList) wrapEl.classList.remove('is-fading');
+      };
+      if (wrapEl && wrapEl.classList) {
+        wrapEl.classList.add('is-fading');
+        setTimeout(applyNow, 130);
       } else {
-        dhHaptic('light');
-      }
-      var stageEl = $('dh-peek-stage');
-      var textEl = $('dh-peek-text');
-      var worldEl = $('dh-peek-world');
-      var counterEl = $('dh-peek-counter');
-      var fbEl = $('dh-peek-feedback');
-      var bridgeEl = $('dh-peek-bridge');
-      if (liked && fbEl) {
-        fbEl.hidden = false;
-        fbEl.textContent = '✨ باحال! این جرقه مستقیم به دنیای «' + prevSpark.world + '» وصل می‌شه.';
-      }
-      if (counterEl) {
-        counterEl.textContent = __dhPeekLikes > 0
-          ? ('🔥 ' + __dhPeekLikes + ' جرقه روشن شد')
-          : ('جرقه ' + ((__dhPeekIdx % DH_LIVE_SPARKS.length) + 1) + ' از ' + DH_LIVE_SPARKS.length);
-      }
-      if (bridgeEl && __dhPeekLikes >= 2) {
-        bridgeEl.hidden = false;
-      }
-      var nextSpark = DH_LIVE_SPARKS[__dhPeekIdx % DH_LIVE_SPARKS.length];
-      if (stageEl && stageEl.classList) {
-        stageEl.classList.add(liked ? 'is-liked' : 'is-swapping');
-        setTimeout(function () {
-          try {
-            stageEl.classList.remove('is-liked');
-            stageEl.classList.add('is-swapping');
-          } catch (_) {}
-          setTimeout(function () {
-            if (textEl) textEl.textContent = nextSpark.q;
-            if (worldEl) worldEl.textContent = nextSpark.world;
-            try { stageEl.classList.remove('is-swapping'); } catch (_) {}
-          }, 120);
-        }, liked ? 140 : 10);
-      } else {
-        if (textEl) textEl.textContent = nextSpark.q;
-        if (worldEl) worldEl.textContent = nextSpark.world;
+        applyNow();
       }
     }
 
-    on('dh-peek-like', function () { advancePeekSpark(true); });
-    on('dh-peek-skip', function () { advancePeekSpark(false); });
-    on('dh-peek-open-lab', function () {
+    on('dh-next-quote', function () {
       dhHaptic('light');
-      if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
-    });
-    on('dh-peek-go-journey', function () {
-      dhHaptic('light');
-      startJourneyFromShell();
+      __dhQuoteCursor = (__dhQuoteCursor + 1) % quotesDeck.length;
+      paintDailyQuote();
     });
 
-    try {
-      var strip = $('dh-worlds-strip');
-      if (strip && typeof strip.addEventListener === 'function') {
-        strip.addEventListener('click', function (ev) {
-          var card = ev.target && ev.target.closest ? ev.target.closest('[data-world-id]') : null;
-          if (card) openWorldPreviewSheet(card.getAttribute('data-world-id'));
-        });
+    on('dh-like-quote', function () {
+      dhHaptic('success');
+      var qNow = quotesDeck[__dhQuoteCursor % quotesDeck.length];
+      var list = loadSavedQuotes();
+      var pos = list.indexOf(qNow.t);
+      if (pos >= 0) {
+        list.splice(pos, 1);
+      } else {
+        list.push(qNow.t);
+        dhToast('پیام روزانه در برگزیده‌های تو ذخیره شد ✨');
       }
-    } catch (_) {}
+      saveSavedQuotes(list);
+      paintDailyQuote();
+    });
 
     on('dh-copy-quote', function () {
       dhHaptic('light');
-      var qShare = '«' + quote.t + '»\n— ' + quote.tag + '\n\nاسب سیاه · https://asbe-siah.ir/';
+      var qNow = quotesDeck[__dhQuoteCursor % quotesDeck.length];
+      var qShare = '«' + qNow.t + '»\n— ' + qNow.tag + '\n\nاسب سیاه · https://asbe-siah.ir/';
       if (navigator.share) {
-        navigator.share({ title: 'پیام امروز · اسب سیاه', text: qShare }).catch(function () {});
+        navigator.share({ title: 'پیام روزانه · اسب سیاه', text: qShare }).catch(function () {});
         return;
       }
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(qShare).then(function () {
-          dhToast('پیام امروز کپی شد ✨ آماده اشتراک‌گذاری');
+          dhToast('پیام روزانه کپی شد ✨ آماده اشتراک‌گذاری');
         }).catch(function () {});
       }
     });

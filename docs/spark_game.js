@@ -269,13 +269,20 @@
       html += '<p class="lab-note">اگر این جرقه‌ها را دوست داشتی، در سفر اکتشافی از همان محله‌ها و مسیرهای باریک وارد شو.</p>';
     }
 
-    html += '<button type="button" class="lab-cta" id="dh-lab-again">یک دقیقهٔ دیگر</button>';
-    html += '<button type="button" class="lab-ghost" id="dh-lab-done">بازگشت</button>';
+    html += '<button type="button" class="lab-cta" id="dh-lab-start-journey">🧭 ورود به سفر اکتشافی کامل ›</button>';
+    html += '<button type="button" class="lab-ghost" id="dh-lab-again">یک دور دیگر جرقه‌یابی ↻</button>';
+    html += '<button type="button" class="lab-ghost" id="dh-lab-done">بازگشت به صفحه اول</button>';
     html += '</div>';
 
     overlay.innerHTML = html;
     $('dh-lab-x').onclick = closeLab;
     $('dh-lab-done').onclick = closeLab;
+    $('dh-lab-start-journey').onclick = function () {
+      closeLab();
+      if (window.DHShell && typeof window.DHShell.startJourney === 'function') {
+        window.DHShell.startJourney();
+      }
+    };
     $('dh-lab-again').onclick = function () { startSession(); };
 
     // نشان ساده
@@ -358,12 +365,14 @@
 
         $('dh-lab-x').onclick = closeLab;
         $('dh-lab-like').onclick = function () {
+          if (typeof window.dhHaptic === 'function') window.dhHaptic('success');
           state.liked.push(card.code);
           state.likedItems.push(card);
           state.index++;
           paint();
         };
         $('dh-lab-skip').onclick = function () {
+          if (typeof window.dhHaptic === 'function') window.dhHaptic('light');
           state.index++;
           paint();
         };
@@ -396,6 +405,11 @@
         if (typeof window.dhPushSubView === 'function') window.dhPushSubView('spark');
       }
       startSession();
+    },
+    peek: function () {
+      var saved = loadLab();
+      var cnt = (saved && Array.isArray(saved.likedCodes)) ? saved.likedCodes.length : 0;
+      return { likedCount: cnt, played: Boolean(saved && saved.lastAt) };
     },
     close: closeLab,
     isOpen: function () { return Boolean(overlay && overlay.parentNode); }
