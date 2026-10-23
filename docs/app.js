@@ -617,12 +617,54 @@ function loadSession() {
     state.completedPaths = new Set(data.completedPaths || []);
     state.completedSubRealms = new Set(data.completedSubRealms || []);
     state.likedCodesSet = new Set(data.likedCodes || []);
+    state.journeyFinished = !!data.journeyFinished;
+    if (!state.journeyFinished) {
+      state.majorsResult = null;
+      state.branchesResult = null;
+    }
     return true;
   } catch (e) { return false; }
 }
 
+function dhPurgeFinishedSessionCharge(prevSessionId) {
+  var prev = String(prevSessionId || '').trim();
+  if (prev) {
+    try {
+      var map = JSON.parse(localStorage.getItem('dh_consumed_journey_sessions_v1') || 'null');
+      map = map && typeof map === 'object' ? map : {};
+      map[prev] = true;
+      localStorage.setItem('dh_consumed_journey_sessions_v1', JSON.stringify(map));
+    } catch (_) {}
+  }
+  try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (_) {}
+  try {
+    var pending = String(localStorage.getItem('dh_pending_journey_session_id') || '').trim();
+    if (pending && (!prev || pending === prev)) {
+      localStorage.removeItem('dh_pending_journey_session_id');
+    }
+  } catch (_) {}
+  try { localStorage.removeItem('dh_quota_p0_charge_v1'); } catch (_) {}
+  try {
+    if (typeof window !== 'undefined' && window && window.DHQuotaEnforcement &&
+        typeof window.DHQuotaEnforcement.resetJourneyChargeState === 'function') {
+      window.DHQuotaEnforcement.resetJourneyChargeState(prev);
+    }
+  } catch (_) {}
+}
+
 function clearSession() {
+  var priorId = '';
+  var wasFinished = Boolean(state && state.journeyFinished);
+  try {
+    var oldData = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
+    if (oldData && oldData.sessionId) priorId = String(oldData.sessionId);
+    if (oldData && oldData.journeyFinished) wasFinished = true;
+  } catch (_) {}
+  if (!priorId && state && state.sessionId) priorId = String(state.sessionId);
   localStorage.removeItem('darkhorse_session_v2');
+  if (wasFinished) {
+    dhPurgeFinishedSessionCharge(priorId);
+  }
   window.__dhHasSavedSession = false;
   window.__dhSavedSession = null;
   window.__dhJourneyFinished = false;
@@ -708,14 +750,15 @@ function dhEnsureServerQuotaGate(opts) {
 }
 
 function dhExecuteStartNewJourney(approvedSessionId, prevWasFinished, prevUnchargedId) {
+  var prevId = state && state.sessionId ? String(state.sessionId) : '';
   fullResetState(true);
   if (approvedSessionId) {
     if (prevWasFinished) {
-      try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (eClr0) {}
+      dhPurgeFinishedSessionCharge(prevId);
     }
     state.sessionId = String(approvedSessionId);
   } else if (prevWasFinished) {
-    try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (eClr) {}
+    dhPurgeFinishedSessionCharge(prevId);
     if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
       try { state.sessionId = window.DHQuotaEnforcement.ensureJourneySession(); } catch (eNewId) {}
     }
@@ -1011,6 +1054,7 @@ function dhApplyStageTransition(stage) {
 
 function goTo(stage) {
   const needsNewCredit = Boolean(state.journeyFinished && stage !== 'choice' && stage !== 'results');
+  const prevSid = state && state.sessionId ? String(state.sessionId) : '';
   const gateOk = dhEnsureServerQuotaGate({
     mode: needsNewCredit ? 'new' : 'resume',
     sessionId: needsNewCredit ? '' : state.sessionId,
@@ -1018,8 +1062,8 @@ function goTo(stage) {
     targetStage: stage,
     onAuthorized: function (approvedId) {
       if (needsNewCredit) {
+        dhPurgeFinishedSessionCharge(prevSid);
         fullResetState(true);
-        try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (_) {}
       }
       if (approvedId) state.sessionId = String(approvedId);
       dhApplyStageTransition(stage);
@@ -1105,7 +1149,8 @@ function render(opts) {
         }
         return;
       }
-      if (window.DHCommercialUI &&
+      if (!(opts && opts._afterGateAuth) &&
+          window.DHCommercialUI &&
           typeof window.DHCommercialUI.isActiveStageAuthorized === 'function' &&
           !window.DHCommercialUI.isActiveStageAuthorized(state.sessionId, Boolean(state.journeyFinished), state.stage)) {
         const pendingStage = state.stage || 'splash';
@@ -1121,14 +1166,14 @@ function render(opts) {
             sessionId: wasFin ? '' : pendingId,
             onAuthorized: function (approvedId) {
               if (wasFin) {
+                dhPurgeFinishedSessionCharge(pendingId);
                 fullResetState(true);
-                try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (_) {}
               }
               if (approvedId) state.sessionId = approvedId;
               state.stage = pendingStage;
               window.__dhInJourney = true;
               saveSession();
-              render({ preserveScroll: preserveScroll });
+              render({ preserveScroll: preserveScroll, _afterGateAuth: true });
             }
           });
         }
@@ -2867,19 +2912,14 @@ async function ensureJourneyChargedForResults() {
   var journeySessionId = journey && journey.sessionId ? String(journey.sessionId) : '';
   var stateSessionId = state && state.sessionId ? String(state.sessionId) : '';
 
-  if (chargedSessionId) {
-    if (pendingChargedId || !journeySessionId || journeySessionId === String(chargedSessionId)) {
-      var existingCharged = pendingChargedId || String(chargedSessionId);
-      if (state) state.sessionId = existingCharged;
-      try { if (typeof saveSession === 'function') saveSession(); } catch (_) {}
-      return existingCharged;
-    }
+  if (chargedSessionId && journeySessionId && journeySessionId !== String(chargedSessionId) && !pendingChargedId) {
     var conflictError = new Error('شناسهٔ سفر شارژشده با سفر ذخیره‌شده تطبیق ندارد؛ از خانه سفر را از مسیر تجاری شروع کنید.');
     conflictError.code = 'JOURNEY_SESSION_REQUIRED';
     throw conflictError;
   }
 
-  var candidateId = stateSessionId || journeySessionId ||
+  var candidateId = pendingChargedId || stateSessionId || journeySessionId ||
+    (chargedSessionId ? String(chargedSessionId) : '') ||
     (typeof window !== 'undefined' && window && window.DHQuotaEnforcement &&
      typeof window.DHQuotaEnforcement.ensureJourneySession === 'function'
        ? String(window.DHQuotaEnforcement.ensureJourneySession() || '')
@@ -3262,6 +3302,13 @@ function displayResults(data, type) {
   // تا «شروع دوباره» تیک‌های قبلی را نیاورد؛ فقط سفر ناتمام قابل ادامه است
   state.journeyFinished = true;
   try {
+    const finSid = state && state.sessionId ? String(state.sessionId) : '';
+    if (finSid) {
+      const map = JSON.parse(localStorage.getItem('dh_consumed_journey_sessions_v1') || 'null') || {};
+      map[finSid] = true;
+      localStorage.setItem('dh_consumed_journey_sessions_v1', JSON.stringify(map));
+    }
+    localStorage.removeItem('dh_pending_journey_session_id');
     const raw = localStorage.getItem('darkhorse_session_v2');
     if (raw) {
       const d = JSON.parse(raw);
@@ -3785,13 +3832,14 @@ function resetJourney() {
   if (isPreResultsInProgress()) {
     if (!confirm('هنوز نتایج را ندیده‌ای. سفر فعلی پاک شود؟')) return;
   }
+  const prevSid = state && state.sessionId ? String(state.sessionId) : '';
   const gateOk = dhEnsureServerQuotaGate({
     mode: 'new',
     sessionId: '',
     isFinished: true,
     onAuthorized: function (approvedId) {
+      dhPurgeFinishedSessionCharge(prevSid);
       fullResetState(true);
-      try { localStorage.removeItem('dh_quota_charged_session_v1'); } catch (_) {}
       if (approvedId) {
         state.sessionId = String(approvedId);
       } else if (window.DHQuotaEnforcement && typeof window.DHQuotaEnforcement.ensureJourneySession === 'function') {
@@ -3805,6 +3853,7 @@ function resetJourney() {
     }
   });
   if (!gateOk) return;
+  dhPurgeFinishedSessionCharge(prevSid);
   fullResetState(true);
   state.stage = 'splash';
   window.__dhInJourney = true;
@@ -3813,10 +3862,11 @@ function resetJourney() {
 }
 window.resetJourney = resetJourney;
 
-// با خروج/بستن اپ، سشن وسط سفر حفظ شود
+// با خروج/بستن اپ، سشن وسط سفر حفظ شود (فقط وقتی واقعاً وسط سفر فعال هستیم — نه روی صفحهٔ خانه پس از اتمام سفر!)
 function persistSessionOnExit() {
   try {
-    if (typeof state !== 'undefined' && state && !state.journeyFinished) {
+    if (window.__dhInJourney && typeof state !== 'undefined' && state &&
+        !state.journeyFinished && state.stage && state.stage !== 'splash' && state.stage !== 'results') {
       if (typeof saveSession === 'function') saveSession();
     }
   } catch (e) {}
@@ -3838,8 +3888,11 @@ async function init() {
       window.__dhSavedSession = data;
       window.__dhJourneyFinished = !!data.journeyFinished;
       window.__dhHasSavedSession = !data.journeyFinished;
-      // سفر ناتمام: کامل در state بارگذاری شود تا با رفرش/خروج پاک نشود
-      if (!data.journeyFinished && data.stage) {
+      if (data.journeyFinished) {
+        state.journeyFinished = true;
+        if (data.sessionId) state.sessionId = String(data.sessionId);
+      } else if (data.stage) {
+        // سفر ناتمام: کامل در state بارگذاری شود تا با رفرش/خروج پاک نشود
         const mid = ['realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
           'introStrategies', 'strategies', 'introValues', 'values', 'choice'];
         if (mid.indexOf(data.stage) >= 0) {

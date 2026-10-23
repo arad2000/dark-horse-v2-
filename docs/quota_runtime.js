@@ -90,7 +90,9 @@
   var JOURNEY_KEY = 'darkhorse_session_v2';
   var QUOTA_KEY = 'dh_local_quota_v1';
   var CHARGED_SESSION_KEY = 'dh_quota_charged_session_v1';
+  var CONSUMED_SESSIONS_KEY = 'dh_consumed_journey_sessions_v1';
   var SESSION_MEMORY = null;
+  var CONFIRMED_SERVER_CHARGES = Object.create(null);
   var IN_FLIGHT_CONSUME = Object.create(null);
 
   function parse(raw) {
@@ -115,6 +117,15 @@
     });
   }
 
+  function hasPersistedConsumed(sid) {
+    var clean = String(sid || '').trim();
+    if (!clean) return false;
+    try {
+      var map = parse(localStorage.getItem(CONSUMED_SESSIONS_KEY)) || {};
+      return map[clean] === true;
+    } catch (_) { return false; }
+  }
+
   function ensureJourneySession() {
     var j = readJourney();
     var pending = '';
@@ -123,18 +134,18 @@
     // A matching pending+charged UUID authorizes an explicit rebind; a missing
     // persisted UUID can be recovered from the confirmed charge. A conflicting
     // non-empty saved UUID is not resumable once the hand-off window is gone.
-    if (charged && (pending === String(charged) || !j.sessionId || String(j.sessionId) === String(charged))) {
+    if (charged && (String(j.sessionId) === String(charged) || (!j.journeyFinished && (pending === String(charged) || !j.sessionId)))) {
       SESSION_MEMORY = String(charged);
       j.sessionId = SESSION_MEMORY;
       try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}
       try { if (typeof state !== 'undefined' && state) state.sessionId = SESSION_MEMORY; } catch (_) {}
       return SESSION_MEMORY;
     }
-    if (charged && j.sessionId && String(j.sessionId) !== String(charged)) {
+    if (charged && !j.journeyFinished && j.sessionId && String(j.sessionId) !== String(charged)) {
       SESSION_MEMORY = null;
       return null;
     }
-    if (j.sessionId) {
+    if (j.sessionId && !j.journeyFinished && !hasPersistedConsumed(j.sessionId)) {
       SESSION_MEMORY = String(j.sessionId);
       return SESSION_MEMORY;
     }
@@ -142,7 +153,9 @@
       SESSION_MEMORY = null;
       return null;
     }
-    SESSION_MEMORY = uuid();
+    var generated = uuid();
+    while (hasPersistedConsumed(generated)) generated = uuid();
+    SESSION_MEMORY = generated;
     j.sessionId = SESSION_MEMORY;
     try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(j)); } catch (_) {}
     return SESSION_MEMORY;
@@ -175,7 +188,44 @@
   }
 
   function markCharged(sessionId) {
-    try { localStorage.setItem(CHARGED_SESSION_KEY, String(sessionId)); } catch (_) {}
+    var sid = String(sessionId || '').trim();
+    if (!sid) return;
+    CONFIRMED_SERVER_CHARGES[sid] = true;
+    try { localStorage.setItem(CHARGED_SESSION_KEY, sid); } catch (_) {}
+    try {
+      var map = parse(localStorage.getItem(CONSUMED_SESSIONS_KEY)) || {};
+      map[sid] = true;
+      var keys = Object.keys(map);
+      if (keys.length > 120) {
+        var trimmed = {};
+        keys.slice(-120).forEach(function (k) { trimmed[k] = true; });
+        map = trimmed;
+      }
+      localStorage.setItem(CONSUMED_SESSIONS_KEY, JSON.stringify(map));
+    } catch (_) {}
+  }
+
+  function resetJourneyChargeState(finishedSessionId) {
+    var prev = String(finishedSessionId || '').trim();
+    if (prev) {
+      delete CONFIRMED_SERVER_CHARGES[prev];
+      try {
+        var map = parse(localStorage.getItem(CONSUMED_SESSIONS_KEY)) || {};
+        map[prev] = true;
+        localStorage.setItem(CONSUMED_SESSIONS_KEY, JSON.stringify(map));
+      } catch (_) {}
+    }
+    var curCharged = chargedSessionId() || '';
+    if (curCharged) delete CONFIRMED_SERVER_CHARGES[curCharged];
+    SESSION_MEMORY = null;
+    try { localStorage.removeItem(CHARGED_SESSION_KEY); } catch (_) {}
+    try {
+      var pending = String(localStorage.getItem('dh_pending_journey_session_id') || '').trim();
+      if (pending && (!prev || pending === prev || pending === curCharged)) {
+        localStorage.removeItem('dh_pending_journey_session_id');
+      }
+    } catch (_) {}
+    try { localStorage.removeItem('dh_quota_p0_charge_v1'); } catch (_) {}
   }
 
   function persistQuota(data) {
@@ -252,7 +302,7 @@
   async function consumeForJourney(sessionId) {
     if (!loggedIn() || !sessionId) return null;
     sessionId = String(sessionId);
-    if (chargedSessionId() === sessionId) {
+    if (CONFIRMED_SERVER_CHARGES[sessionId] === true && chargedSessionId() === sessionId) {
       var existingJourney = readJourney();
       existingJourney.sessionId = sessionId;
       try { localStorage.setItem(JOURNEY_KEY, JSON.stringify(existingJourney)); } catch (_) {}
@@ -280,8 +330,9 @@
         consumeErr.quotaExhausted = consumeErr.status === 402 ||
           (consumeErr.status === 409 && /credit|quota|remaining|اعتبار|سهمیه/i.test(msgStr));
         if (consumeErr.quotaExhausted || consumeErr.status === 403) {
+          delete CONFIRMED_SERVER_CHARGES[sessionId];
           try {
-            if (chargedSessionId() === sessionId) localStorage.removeItem(CHARGED_KEY);
+            if (chargedSessionId() === sessionId) localStorage.removeItem(CHARGED_SESSION_KEY);
           } catch (_) {}
           try {
             if (global.DHCommercialUI && typeof global.DHCommercialUI.recordConsumeFailure === 'function') {
@@ -394,6 +445,7 @@
     ensureJourneySession: ensureJourneySession,
     refresh: refreshQuota,
     consumeForJourney: consumeForJourney,
+    resetJourneyChargeState: resetJourneyChargeState,
     getSnapshot: function () { return parse(localStorage.getItem(QUOTA_KEY)); }
   };
 

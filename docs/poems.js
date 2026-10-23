@@ -263,7 +263,11 @@
       if (window.DHShell && DHShell.renderHome) DHShell.renderHome();
     };
     $('dh-po-go').onclick = function () {
-      if (window.DHShell && DHShell.startJourney) DHShell.startJourney();
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
+        window.DHCommercialUI.startServerAuthorizedJourney();
+      } else if (window.DHShell && DHShell.startJourney) {
+        DHShell.startJourney();
+      }
     };
     $('dh-po-next').onclick = function () {
       if (typeof window.dhHaptic === 'function') window.dhHaptic('light');

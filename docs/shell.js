@@ -976,7 +976,8 @@
         return;
       }
 
-      if (wasInJourney && typeof saveSession === 'function') {
+      if (wasInJourney && typeof saveSession === 'function' &&
+          !(typeof state !== 'undefined' && state && state.journeyFinished)) {
         try { saveSession(); } catch (e1) {}
       }
       if (typeof window.ensureJourneyDataLoaded === 'function') {

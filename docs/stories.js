@@ -201,7 +201,11 @@
       if (window.DHShell && DHShell.renderHome) DHShell.renderHome();
     };
     $('dh-st-go').onclick = function () {
-      if (window.DHShell && DHShell.startJourney) DHShell.startJourney();
+      if (window.DHCommercialUI && typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
+        window.DHCommercialUI.startServerAuthorizedJourney();
+      } else if (window.DHShell && DHShell.startJourney) {
+        DHShell.startJourney();
+      }
     };
     $('dh-st-prev').onclick = function () {
       if (typeof window.dhHaptic === 'function') window.dhHaptic('light');
