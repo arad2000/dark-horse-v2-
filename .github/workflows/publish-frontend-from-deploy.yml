@@ -22,6 +22,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Block Sanjesh capacity dumps from public docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/ci/check_no_public_sanjesh_dumps.sh --self-test
+          bash scripts/ci/check_no_public_sanjesh_dumps.sh .
+
       - name: Verify publish artifact
         shell: bash
         run: |
@@ -88,6 +95,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+
+      - name: Block Sanjesh capacity dumps before artifact upload
+        shell: bash
+        run: bash scripts/ci/check_no_public_sanjesh_dumps.sh .
 
       - name: Upload docs/ as site root
         uses: actions/upload-pages-artifact@v3
