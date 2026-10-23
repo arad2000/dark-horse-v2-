@@ -178,7 +178,7 @@ class DarkHorseEngineV2:
         return codes
 
     # ──────────────────────────────────────────────────────────────
-    # محاسبه M-Score برای شاخه‌ها (کالیبره‌شده بر اساس اندازه مخزن فعال هر شاخه)
+    # محاسبه M-Score برای شاخه‌ها (نرمال‌شده بر اساس بودجه جرقه‌های کاربر - گزینه ۲-الف)
     # ──────────────────────────────────────────────────────────────
     def _compute_branch_m_score(self, user_motives: List[str], branch_data: Dict) -> Tuple[float, List[Dict]]:
         if not user_motives:
@@ -196,14 +196,7 @@ class DarkHorseEngineV2:
             return 0.0, []
 
         denom_limit = branch_data.get("m_score_denom_limit", 30)
-        pool_sizes = [
-            len(self._active_branch_code_set(b.get("micro_motive_codes", [])))
-            for b in self.school_branches.values()
-            if b.get("micro_motive_codes")
-        ]
-        mean_pool = (sum(pool_sizes) / len(pool_sizes)) if len(pool_sizes) > 1 else float(len(branch_set))
-        pool_scale = (len(branch_set) / mean_pool) if mean_pool > 0 else 1.0
-        denom = min(float(len(branch_set)), max(1.0, float(denom_limit) * pool_scale))
+        denom = min(float(denom_limit), max(15.0, float(len(user_set))))
         score = len(matched) / denom
 
         matched_details = []

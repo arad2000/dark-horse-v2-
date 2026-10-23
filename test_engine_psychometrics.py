@@ -129,24 +129,97 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
                 msg=f"Major {major['id']} ({major['name']}) failed to reach 1.0 V-Score ceiling",
             )
 
-    def test_p1_school_branch_m_score_calibrates_active_pool_size(self) -> None:
-        rng = random.Random(42)
-        all_codes = [m["code"] for m in self.motives]
-        self.assertEqual(len(all_codes), 1393)
+    def test_p1_school_branch_m_score_option_2a_neutralizes_pool_scale_bias(self) -> None:
+        sjt = {f"sjt_{i}": "C" for i in range(1, 26)}
+        conj = {f"conj_{i}": f"Q{i}{'A' if i % 2 == 1 else 'B'}" for i in range(1, 16)}
 
-        sums = {name: 0.0 for name in self.engine.school_branches}
-        trials = 4000
-        for _ in range(trials):
-            sample = rng.sample(all_codes, 30)
-            for name, bdata in self.engine.school_branches.items():
-                m_val, _ = self.engine._compute_branch_m_score(sample, bdata)
-                sums[name] += m_val
+        # 1) Profile A (10 pure Riazi) vs Profile B (10 pure Fani): |m_fani - m_riazi| < 1% (~0%)
+        prof_a = [
+            "AERO-001", "AERO-002", "AERO-003", "AERO-005", "AERO-006",
+            "AERO-007", "AERO-008", "AGM-001", "AGM-002", "AGM-003",
+        ]
+        prof_b = [
+            "ARCHA-001", "ARCHA-002", "ARCHA-003", "ARCHA-004", "ARCHA-005",
+            "ARCHA-006", "ARCHA-007", "FAS-001", "FAS-002", "FAS-003",
+        ]
+        res_a = {b["branch_name"]: b for b in self.engine.recommend_school_branch(prof_a, sjt, conj)["recommended_branches"]}
+        res_b = {b["branch_name"]: b for b in self.engine.recommend_school_branch(prof_b, sjt, conj)["recommended_branches"]}
+        m_riazi = res_a["ریاضی فیزیک"]["avg_components"]["m_score"]
+        m_fani = res_b["فنی و حرفه‌ای"]["avg_components"]["m_score"]
+        self.assertLess(abs(m_fani - m_riazi), 1.0)
+        self.assertEqual(m_riazi, m_fani)
 
-        means = {name: val / trials for name, val in sums.items()}
-        spread = max(means.values()) - min(means.values())
-        self.assertLess(spread, 0.015, f"Unexpected branch spread: {means}")
-        for name, mean_val in means.items():
-            self.assertAlmostEqual(mean_val, 0.25, delta=0.015, msg=f"Branch {name} mean={mean_val}")
+        # 2) Profile C1 (5 Riazi + 5 Fani): both branches M >= 15% and Total >= 30%
+        prof_c1 = prof_a[:5] + prof_b[:5]
+        res_c1 = {b["branch_name"]: b for b in self.engine.recommend_school_branch(prof_c1, sjt, conj)["recommended_branches"]}
+        self.assertGreaterEqual(res_c1["ریاضی فیزیک"]["avg_components"]["m_score"], 15.0)
+        self.assertGreaterEqual(res_c1["فنی و حرفه‌ای"]["avg_components"]["m_score"], 15.0)
+        self.assertEqual(
+            res_c1["ریاضی فیزیک"]["avg_components"]["m_score"],
+            res_c1["فنی و حرفه‌ای"]["avg_components"]["m_score"],
+        )
+
+        # 3) Profile C2 (3+3+3+3 across all 4 branches): non-empty UI and all 4 branches M >= 15%
+        prof_c2 = [
+            "ANB-001", "ANB-002", "ANB-003",
+            "AERO-001", "AERO-002", "AERO-003",
+            "ACC-001", "ACC-002", "ACC-003",
+            "ARCHA-001", "ARCHA-002", "ARCHA-003",
+        ]
+        out_c2 = self.engine.recommend_school_branch(prof_c2, sjt, conj)
+        visible_c2 = [
+            b for b in out_c2["recommended_branches"]
+            if b["average_score"] >= 30.0 and b["avg_components"]["m_score"] >= 15.0
+        ]
+        self.assertEqual(len(visible_c2), 4)
+        self.assertIsNotNone(out_c2["best_branch"])
+
+        # 4) Regression guard: 100 fixed-seed profiles have 0 major-score / order diff vs legacy pool_scale
+        def _legacy_pool_scale_branch_m_score(user_motives, branch_data):
+            if not user_motives:
+                return 0.0, []
+            raw_codes = branch_data.get("micro_motive_codes", [])
+            if not raw_codes:
+                return 0.0, []
+            user_set = {str(m).strip().lower() for m in user_motives if m and str(m).strip()}
+            branch_set = self.engine._active_branch_code_set(raw_codes)
+            matched = user_set & branch_set
+            if not matched:
+                return 0.0, []
+            denom_limit = branch_data.get("m_score_denom_limit", 30)
+            pool_sizes = [
+                len(self.engine._active_branch_code_set(b.get("micro_motive_codes", [])))
+                for b in self.engine.school_branches.values()
+                if b.get("micro_motive_codes")
+            ]
+            mean_pool = (sum(pool_sizes) / len(pool_sizes)) if len(pool_sizes) > 1 else float(len(branch_set))
+            pool_scale = (len(branch_set) / mean_pool) if mean_pool > 0 else 1.0
+            denom = min(float(len(branch_set)), max(1.0, float(denom_limit) * pool_scale))
+            return min(1.0, len(matched) / denom), []
+
+        active_majors = [
+            m for m in self.majors if m.get("motive_driven") is not False and m.get("micro_motive_codes")
+        ]
+        rng = random.Random(20261023)
+        orig_fn = self.engine._compute_branch_m_score
+        try:
+            for _ in range(100):
+                chosen = rng.sample(active_majors, k=4)
+                motives_in = [c for mj in chosen for c in mj["micro_motive_codes"][:4]]
+                sjt_in = {f"sjt_{i}": rng.choice("ABCDE") for i in range(1, 26)}
+                conj_in = {f"conj_{i}": f"Q{i}{rng.choice('AB')}" for i in range(1, 16)}
+
+                after_res = self.engine.discover_individuality(motives_in, sjt_in, conj_in)
+                self.engine._compute_branch_m_score = _legacy_pool_scale_branch_m_score
+                before_res = self.engine.discover_individuality(motives_in, sjt_in, conj_in)
+                self.engine._compute_branch_m_score = orig_fn
+
+                self.assertEqual(
+                    [(m["major_id"], m["individuality_fit"]["score"]) for m in before_res["discovered_majors"]],
+                    [(m["major_id"], m["individuality_fit"]["score"]) for m in after_res["discovered_majors"]],
+                )
+        finally:
+            self.engine._compute_branch_m_score = orig_fn
 
 
 if __name__ == "__main__":
