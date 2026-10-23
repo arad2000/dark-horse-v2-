@@ -2,7 +2,7 @@
  * Preserves previously cached static assets across SW upgrades instead of wiping
  * the user's cache on every version bump.
  */
-const CACHE = 'darkhorse-v76';
+const CACHE = 'darkhorse-v77';
 
 self.addEventListener('install', function () {
   self.skipWaiting();

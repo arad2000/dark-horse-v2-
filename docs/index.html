@@ -35,8 +35,8 @@
   <script defer src="payment_hop_boot.js?v=3" onerror="document.documentElement.style.visibility='';document.documentElement.style.removeProperty('visibility')"></script>
   <link rel="manifest" href="manifest.json">
   <link rel="preload" href="fonts/Vazirmatn-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="mobile-pwa.css?v=2&r=271" media="print" onload="this.onload=null;this.media='all'">
-  <link rel="stylesheet" href="shell.css?v=70&ux=phase4-live-v2&r=271" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="mobile-pwa.css?v=2&r=272" media="print" onload="this.onload=null;this.media='all'">
+  <link rel="stylesheet" href="shell.css?v=70&ux=phase4-live-v2&r=272" media="print" onload="this.onload=null;this.media='all'">
   <link rel="stylesheet" href="profile_ux_v1.css?v=7" media="print" onload="this.onload=null;this.media='all'">
   <link rel="stylesheet" href="genz_results_layer.css?v=ux-v3" media="print" onload="this.onload=null;this.media='all'">
   <link rel="stylesheet" href="journey_experience.css?v=2" media="print" onload="this.onload=null;this.media='all'">
@@ -50,8 +50,8 @@
       font-display: swap;
     }
     :root { --bg-primary:#0e1017; --bg-card:#171a25; --accent:#f0c040; --accent-dim:#d4af37; --text-primary:#f5efe2; --text-secondary:#b8b2a4; --font-main:'Vazirmatn',sans-serif; --radius-sm:8px; --radius-md:14px; --shadow-card:0 6px 24px rgba(0,0,0,.35); --shadow-glow:0 0 20px rgba(240,192,64,.25); }
-    *{box-sizing:border-box;margin:0;padding:0} body{font-family:var(--font-main);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow-x:hidden;user-select:none;-webkit-tap-highlight-color:transparent}
-    .container{max-width:500px;width:100%;padding:20px;text-align:center} h1{font-size:1.8rem;color:var(--accent);margin-bottom:8px} h2{font-size:1.4rem;color:var(--accent-dim);margin:15px 0 10px} p{line-height:2;margin-bottom:12px;color:var(--text-primary);font-size:.95rem}.quote{font-style:italic;color:var(--text-secondary);margin:15px 0;border-right:3px solid var(--accent-dim);padding-right:12px}
+    *{box-sizing:border-box;margin:0;padding:0} html{width:100%;max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x:none} body{font-family:var(--font-main);background:var(--bg-primary);color:var(--text-primary);width:100%;max-width:100%;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x:none;user-select:none;-webkit-tap-highlight-color:transparent}
+    .container{max-width:min(480px,100%);width:100%;min-width:0;padding:20px 14px;text-align:center;overflow-x:clip} h1{font-size:1.8rem;color:var(--accent);margin-bottom:8px} h2{font-size:1.4rem;color:var(--accent-dim);margin:15px 0 10px} p{line-height:2;margin-bottom:12px;color:var(--text-primary);font-size:.95rem}.quote{font-style:italic;color:var(--text-secondary);margin:15px 0;border-right:3px solid var(--accent-dim);padding-right:12px}
     .card{background:var(--bg-card);border:1px solid rgba(212,175,55,.15);border-radius:var(--radius-md);padding:25px 18px;margin:15px 0;box-shadow:var(--shadow-card)}
     .btn{display:inline-block;padding:12px 28px;border:none;border-radius:50px;font-family:inherit;font-size:.95rem;cursor:pointer;transition:all .25s;background:#2a2a42;color:#e0e0e0;box-shadow:0 4px 12px rgba(0,0,0,.4);margin:6px}.btn-primary{background:var(--accent);color:var(--bg-primary);font-weight:bold;box-shadow:0 4px 15px rgba(240,192,64,.3)}.btn-heart{background:linear-gradient(135deg,var(--accent),var(--accent-dim));color:var(--bg-primary);font-weight:bold;font-size:1.1rem;padding:14px 32px;box-shadow:0 4px 15px rgba(240,192,64,.3)}.btn-skip{background:transparent;color:#888;border:1px solid #333;padding:12px 24px;border-radius:var(--radius-sm);width:100%;margin-top:8px;cursor:pointer}
     .grid{display:grid;grid-template-columns:1fr;gap:12px;margin:15px 0}@media(min-width:420px){.grid{grid-template-columns:1fr 1fr}} .option{background:var(--bg-card);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:15px 12px;cursor:pointer;text-align:right;transition:all .2s;color:#ccc}.option.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);color:var(--accent)}.option-icon{font-size:1.8rem;display:block;margin-bottom:4px}
@@ -72,8 +72,7 @@
     .dh-startup-brand-name{margin:0;font-size:1.18rem;font-weight:900;color:#fbf6e9;line-height:1.3}
     .dh-startup-card{padding:18px 16px;margin:6px 0 12px;text-align:right;background:linear-gradient(150deg,#1a1d2b,#12141f);border:1px solid rgba(240,192,64,.4);border-radius:20px;box-shadow:0 12px 32px rgba(0,0,0,.32)}
     .dh-startup-card h1{margin:0 0 4px;font-size:1.32rem;color:#ffe08a;font-weight:900}
-    .dh-startup-subtitle{font-size:.9rem;color:#f0c040;font-weight:800;line-height:1.7;margin:0 0 10px}
-    .dh-startup-badge{display:inline-flex;align-items:center;padding:4px 11px;margin:0 0 14px;border-radius:999px;font-size:.76rem;font-weight:700;color:#ece5d5;background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.3)}
+    .dh-startup-subtitle{font-size:.9rem;color:#f0c040;font-weight:800;line-height:1.7;margin:0 0 14px}
     .dh-startup-cta{width:100%;min-height:52px;padding:13px 18px;border:0;border-radius:14px;background:linear-gradient(180deg,#ffe08a 0%,#f0c040 50%,#d4af37 100%);color:#15130b;font:inherit;font-size:1rem;font-weight:800;cursor:pointer}
     .dh-startup-cta:disabled{opacity:.8;cursor:wait}
     .dh-startup-sanj{padding:15px 16px;margin:10px 0;text-align:right;background:#151824;border:1px solid rgba(240,192,64,.24);border-radius:18px}
@@ -154,7 +153,6 @@
       <section class="dh-startup-card" aria-label="سفر اکتشافی">
         <h1>سفر اکتشافی</h1>
         <p class="dh-startup-subtitle">کشف رشته و شاخه بر اساس فردیت</p>
-        <div class="dh-startup-badge">۲۳۰ رشته و شاخه</div>
         <button type="button" class="dh-startup-cta" id="dh-startup-start" onclick="window.__dhRequestStartupJourney()">شروع سفر</button>
       </section>
       <section class="dh-startup-sanj" aria-label="انتخاب رشته با منطق سنجش">
@@ -165,7 +163,7 @@
     </main>
   </div>
   <script defer src="data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=grade9-v1"></script>
-  <script defer src="app.js?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2&r=271"></script>
+  <script defer src="app.js?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2&r=272"></script>
   <script defer src="journey_experience.js?v=2"></script>
   <script defer src="feedback_bridge.js?v=2"></script>
   <script defer src="ux_v2_patch.js?v=ux-v3"></script>
@@ -173,21 +171,21 @@
   <script defer src="auth_api_client.js?v=10&timeout-fix=1"></script>
   <script defer src="quota_state_reconciler.js?v=4"></script>
   <script defer src="shell_runtime_fix.js?v=1"></script>
-  <script defer src="shell.js?v=90&quota-fix=4&ux=phase4-live-v2&r=271"></script>
+  <script defer src="shell.js?v=90&quota-fix=4&ux=phase4-live-v2&r=272"></script>
   <script defer src="quota_runtime.js?v=4&quota-fix=4"></script>
   <script defer src="profile_ux_v1.js?v=7"></script>
   <script defer src="admin_feedback_ui_v1.js?v=2"></script>
-  <script defer src="commercial_ui.js?v=46&quota-fix=4&r=271"></script>
+  <script defer src="commercial_ui.js?v=46&quota-fix=4&r=272"></script>
   <script defer src="external_links_fix_v1.js?v=6"></script>
   <script defer src="purchase_ui_fix.js?v=11"></script>
   <script defer src="password_reset_ui.js?v=1"></script>
-  <script defer src="spark_game.js?v=grade9-v1&genz=phase2-v1&r=271"></script>
-  <script defer src="parents.js?v=ux-v9"></script>
-  <script defer src="stories.js?v=ux-v9"></script>
-  <script defer src="poems.js?v=ux-v9"></script>
+  <script defer src="spark_game.js?v=grade9-v1&genz=phase2-v1&r=272"></script>
+  <script defer src="parents.js?v=ux-v10"></script>
+  <script defer src="stories.js?v=ux-v10"></script>
+  <script defer src="poems.js?v=ux-v10"></script>
   <script defer src="payment_return_reconcile.js?v=1"></script>
   <script defer src="post_auth_flow_policy.js?v=3"></script>
-  <script defer src="pwa-boot.js?v=72&r=271"></script>
+  <script defer src="pwa-boot.js?v=72&r=272"></script>
   <script defer src="genz_results_enhance.js?v=ux-v3"></script>
   <script defer src="admission_chance_ui.js?v=20"></script>
 </body>

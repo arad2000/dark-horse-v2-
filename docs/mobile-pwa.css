@@ -9,12 +9,22 @@
 html {
   height: 100%;
   height: -webkit-fill-available;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 body {
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
   padding-top: var(--safe-top);
   padding-bottom: var(--safe-bottom);
   padding-left: var(--safe-left);
@@ -24,8 +34,11 @@ body {
 }
 
 .container {
-  max-width: 500px;
+  max-width: min(480px, 100%);
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: clip;
   padding: 12px 14px calc(92px + var(--safe-bottom));
   text-align: center;
 }

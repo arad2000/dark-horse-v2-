@@ -64,7 +64,7 @@ function makeServiceWorker() {
       assert.ok(pendingResolve, 'expected pending network request');
       const resolve = pendingResolve; pendingResolve = null; resolve(response(body));
     },
-    async cached(url) { return (await caches.open('darkhorse-v76')).match({ url }); },
+    async cached(url) { return (await caches.open('darkhorse-v77')).match({ url }); },
     async triggerLifecycle(name) {
       const waiters = [];
       listeners[name]({ waitUntil(value) { waiters.push(Promise.resolve(value)); } });
@@ -218,7 +218,7 @@ async function testPwaRegistrationAndSingleReload() {
   windowListeners.load();
   await Promise.resolve();
   await Promise.resolve();
-  assert.deepStrictEqual(registered, ['./sw.js?v=76']);
+  assert.deepStrictEqual(registered, ['./sw.js?v=77']);
   swListeners.controllerchange();
   swListeners.controllerchange();
   assert.strictEqual(reloads, 1, 'controller changes must not cause repeated reloads');
@@ -268,16 +268,16 @@ async function testColdWarmOfflineOnline() {
     'JSON must keep cache:no-store');
   await Promise.all(json.waiters);
   // Non-destructive SW upgrade contract: install MUST NOT wipe existing caches, and activate
-  // must carry forward unchanged cached assets from darkhorse-v75 into darkhorse-v76.
-  const oldCache = await sw.caches.open('darkhorse-v75');
+  // must carry forward unchanged cached assets from darkhorse-v76 into darkhorse-v77.
+  const oldCache = await sw.caches.open('darkhorse-v76');
   const heavyAssetUrl = 'https://asbe-siah.ir/data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=grade9-v1';
   await oldCache.put({ url: heavyAssetUrl }, response('/* cached-data-js */'));
   await sw.triggerLifecycle('install');
-  assert.ok((await sw.caches.open('darkhorse-v75')).match({ url: heavyAssetUrl }),
+  assert.ok((await sw.caches.open('darkhorse-v76')).match({ url: heavyAssetUrl }),
     'SW install MUST NOT wipe user cache during version upgrade');
   await sw.triggerLifecycle('activate');
   assert.strictEqual((await sw.cached(heavyAssetUrl)).body, '/* cached-data-js */',
-    'SW activate must carry cached static assets forward into darkhorse-v76 without cold re-download');
+    'SW activate must carry cached static assets forward into darkhorse-v77 without cold re-download');
   console.log('non-destructive SW cache migration: PASS');
   console.log('cold/warm open, offline/online recovery, JSON no-store: PASS');
 }
