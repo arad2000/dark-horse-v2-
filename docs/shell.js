@@ -666,7 +666,7 @@
           '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
 
-        /* ۲. کارت سفر اکتشافی (فقط نشان ۲۳۰ رشته و شاخه) */
+        /* ۲. کارت سفر اکتشافی (تمیز و متمرکز، بدون بج‌های اضافه) */
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
@@ -675,9 +675,6 @@
               '<span class="dh-mk2-compass"><img src="' + base + 'ico-compass.svg" alt="" width="40" height="40" decoding="async"></span>' +
               '<div><div class="dh-mk2-hero-title">سفر اکتشافی</div>' +
               '<div class="dh-mk2-hero-sub">کشف رشته و شاخه بر اساس فردیت</div></div>' +
-            '</div>' +
-            '<div class="dh-hero-pills">' +
-              '<span class="dh-hero-pill">۲۳۰ رشته و شاخه</span>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
               'شروع سفر <span>›</span></button>' +
@@ -706,6 +703,7 @@
           '</div>' +
           '<div class="dh-daily-text-wrap" id="dh-daily-wrap">' +
             '<p class="dh-mk2-quote-text" id="dh-daily-text">' + escape(quote.t) + '</p>' +
+            '<div class="dh-mk2-quote-by" id="dh-daily-by">— ' + escape(quote.tag) + '</div>' +
           '</div>' +
           '<div class="dh-mk2-quote-foot">' +
             '<div class="dh-daily-actions">' +
@@ -713,7 +711,6 @@
               '<button type="button" class="dh-quote-share-btn' + (isQuoteSaved ? ' is-saved' : '') + '" id="dh-like-quote">' + (isQuoteSaved ? '♥ پسندیده شد' : '♡ پسندیدم') + '</button>' +
               '<button type="button" class="dh-quote-share-btn" id="dh-copy-quote">اشتراک ↗</button>' +
             '</div>' +
-            '<div class="dh-mk2-quote-by" id="dh-daily-by">' + escape(quote.tag) + '</div>' +
           '</div></section>' +
 
         /* ۵. بخش‌های اصیل و عمیق اپ به فرم مدرن و تعاملی */
@@ -772,7 +769,7 @@
       var likeEl = $('dh-like-quote');
       var applyNow = function () {
         if (tEl) tEl.textContent = qNow.t;
-        if (byEl) byEl.textContent = qNow.tag;
+        if (byEl) byEl.textContent = '— ' + qNow.tag;
         if (dotsEl) dotsEl.innerHTML = buildDotsHtml(__dhQuoteCursor % quotesDeck.length);
         if (likeEl) {
           var savedNow = loadSavedQuotes().indexOf(qNow.t) >= 0;

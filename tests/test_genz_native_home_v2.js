@@ -38,8 +38,16 @@ assert.strictEqual(manifestJson.background_color, '#0e1017', 'manifest backgroun
 assert.strictEqual(manifestJson.theme_color, '#0e1017', 'manifest theme_color must match #0e1017 status bar');
 assert.match(indexHtml, /<meta name="theme-color" content="#0e1017">/, 'index.html theme-color must be #0e1017');
 assert.match(mobilePwaCss, /calc\(92px \+ var\(--safe-bottom\)\)/, 'mobile-pwa.css must clear floating glass bottom tabbar');
-assert.match(swJs, /const CACHE = 'darkhorse-v76'/, 'sw.js cache version must be bumped to darkhorse-v76');
-assert.match(pwaBootJs, /\.\/sw\.js\?v=76/, 'pwa-boot.js must register ./sw.js?v=76');
+assert.match(swJs, /const CACHE = 'darkhorse-v77'/, 'sw.js cache version must be bumped to darkhorse-v77');
+assert.match(pwaBootJs, /\.\/sw\.js\?v=77/, 'pwa-boot.js must register ./sw.js?v=77');
+
+/* Strict Horizontal Lock & Non-Overflow Grid Contracts */
+assert.match(indexHtml, /html\{[^}]*overflow-x:clip;overscroll-behavior-x:none/, 'index.html critical CSS must lock html horizontally from First Paint');
+assert.match(mobilePwaCss, /html\s*\{[\s\S]*?overflow-x:\s*clip;/, 'mobile-pwa.css must lock html horizontally');
+assert.match(shellCss, /html,\s*body\s*\{[\s\S]*?overflow-x:\s*clip\s*!important;[\s\S]*?touch-action:\s*pan-y\s+pinch-zoom;/, 'shell.css must lock html, body horizontally and restrict horizontal pan wobble');
+assert.match(shellCss, /\.dh-mk2-duo\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)\s*!important;/, '.dh-mk2-duo must use minmax(0, 1fr) tracks so nowrap pills never blow out mobile width');
+assert.match(shellCss, /\.dh-mk2-row,\s*\.dh-mk2-tile,\s*\.dh-home-sanjesh-toggle\s*\{[\s\S]*?min-width:\s*0\s*!important;/, 'Grid/flex cards must enforce min-width: 0 !important');
+assert.ok(!/\.dh-native-toast\s*\{[\s\S]*?left:\s*50%/.test(shellCss), '.dh-native-toast must not use left: 50% overhang in RTL');
 
 /* Regal Logo object-fit: contain + Retina srcset */
 assert.match(
@@ -280,9 +288,11 @@ assert.strictEqual(idMap.has('dh-open-install'), false, 'Top header must NOT inc
 assert.strictEqual(idMap.has('dh-appbar-profile'), false, 'Top header must NOT include profile button');
 assert.ok(!/هاروارد|harvard/i.test(homeMarkup), 'Rendered Home DOM must contain ZERO Harvard mentions');
 
-/* Verify Requirement 2: Hero has ONLY '۲۳۰ رشته و شاخه' — NO '۷ دقیقه' & NO 'تعاملی و بدون نمره' */
+/* Verify Requirement 2: Clean Hero card — ZERO pills/badges ('۲۳۰ رشته و شاخه', '۷ دقیقه', 'تعاملی و بدون نمره' ALL removed) */
 assert.ok(homeMarkup.includes('کشف رشته و شاخه بر اساس فردیت'), 'Hero sub-headline brand contract intact');
-assert.ok(homeMarkup.includes('<span class="dh-hero-pill">۲۳۰ رشته و شاخه</span>'), 'Hero must keep ONLY ۲۳۰ رشته و شاخه pill');
+assert.ok(!indexHtml.includes('۲۳۰ رشته و شاخه'), 'Fast-paint index.html Hero must NOT contain ۲۳۰ رشته و شاخه badge');
+assert.ok(!homeMarkup.includes('۲۳۰ رشته و شاخه'), 'Runtime Home Hero must NOT contain ۲۳۰ رشته و شاخه badge');
+assert.ok(!homeMarkup.includes('dh-hero-pills') && !homeMarkup.includes('dh-hero-pill'), 'Hero must render ZERO pill wrappers');
 assert.ok(!homeMarkup.includes('۷ دقیقه'), '۷ دقیقه badge must be completely removed from Hero');
 assert.ok(!homeMarkup.includes('تعاملی و بدون نمره'), 'تعاملی و بدون نمره badge must be completely removed from Hero');
 
