@@ -2968,7 +2968,7 @@ html, body {
 .dh-appbar-logo img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 .dh-appbar-titles {

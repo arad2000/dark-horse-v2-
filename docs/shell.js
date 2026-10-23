@@ -299,26 +299,19 @@
   var __dhFardiyatTickerTimer = null;
   var __dhFardiyatTickerIdx = 0;
   var DH_FARDIYAT_LINES = [
-    'این سامانه بر پایه <strong class="dh-fardiyat">پژوهش هاروارد</strong> درباره اسب‌های سیاه است',
     'مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز',
-    'نه حدس مشاور؛ <strong class="dh-fardiyat">علم هاروارد</strong> درباره <strong class="dh-fardiyat">فردیت‌ات</strong>',
     'رتبه مقصد نیست؛ <strong class="dh-fardiyat">جرقه</strong> مسیر است',
-    'پروژه <strong class="dh-fardiyat">Dark Horse</strong> در <strong class="dh-fardiyat">هاروارد</strong>؛ الهام مسیر ما',
     'استاندارد برای همه ساخته شد؛ تو <strong class="dh-fardiyat">ناهمواری</strong>',
-    'موفقیت شخصی را <strong class="dh-fardiyat">هاروارد</strong> این‌طور دید: <strong class="dh-fardiyat">فردیت</strong> + رضایت',
     'موفقیت شخصی یعنی <strong class="dh-fardiyat">رضایت</strong> همراه با <strong class="dh-fardiyat">فردیت‌ات</strong>',
-    'همان منطق <strong class="dh-fardiyat">پژوهش علمی هاروارد</strong>؛ نه فقط تجربه یک مشاور',
     'مثل بقیه، فقط بهتر؟ این همان <strong class="dh-fardiyat">میثاق استاندارد</strong> است',
     'اسب‌های سیاه اول <strong class="dh-fardiyat">رضایت</strong> را می‌جویند، بعد اوج می‌گیرند',
     '<strong class="dh-fardiyat">خرده‌انگیزه‌ات</strong> را بشناس؛ موتور پنهان تو همان است',
-    'چارچوب ما از <strong class="dh-fardiyat">پژوهش هاروارد</strong> می‌آید؛ مزیت ما همین است',
     'استعداد یک قالب نیست؛ <strong class="dh-fardiyat">فردیت‌ات</strong> راهش را می‌سازد',
     'مقصد را رها کن؛ <strong class="dh-fardiyat">انتخاب‌های</strong> هم‌راستا با خودت را جدی بگیر',
     'راهبرد واحد برای همه وجود ندارد؛ فقط بهترین راهبرد برای <strong class="dh-fardiyat">تو</strong>',
     'شوق را فقط دنبال نکن؛ با شناخت جرقه‌ها <strong class="dh-fardiyat">مهندسی</strong>اش کن',
     'تقلید مسیر دیگران، <strong class="dh-fardiyat">فردیت‌ات</strong> را خاموش می‌کند',
     'انرژی‌ات کجاست؟ همان‌جا <strong class="dh-fardiyat">نقشه</strong> شروع می‌شود',
-    'جامعه می‌گوید یکسان باش؛ <strong class="dh-fardiyat">هاروارد</strong> می‌گوید <strong class="dh-fardiyat">ناهموار</strong> بمان',
     '<strong class="dh-fardiyat">جرقه</strong> کوچک امروز، مسیر بزرگ فرداست',
     'امتیاز کنکور برچسب است؛ <strong class="dh-fardiyat">رضایت</strong> جهت است',
     'فرصت وقتی معنا دارد که با <strong class="dh-fardiyat">فردیت‌ات</strong> جور باشد',
@@ -328,7 +321,6 @@
     'استاندارد وعده امنیت داد؛ <strong class="dh-fardiyat">فردیت‌ات</strong> وعده زندگی می‌دهد',
     'اگر پرانرژی نیستی، شاید مسیر از آنِ <strong class="dh-fardiyat">تو</strong> نیست',
     'شناخت خود، کوتاه‌ترین راه به <strong class="dh-fardiyat">انتخاب درست</strong> است',
-    'جرقه‌هایت را با چارچوب <strong class="dh-fardiyat">پژوهش هاروارد</strong> جدی بگیر',
     'امروز یک سؤال: از چه چیزی واقعاً <strong class="dh-fardiyat">انرژی</strong> می‌گیری؟'
   ];
 
@@ -730,7 +722,7 @@
       '<div class="dh-home-wrap dh-mk2 dh-view-enter">' +
         '<header class="dh-appbar" aria-label="نوار بالای اسب سیاه">' +
           '<div class="dh-appbar-brand">' +
-            '<div class="dh-appbar-logo"><img src="' + base + 'icon-192.png" alt="اسب سیاه" width="42" height="42" decoding="async"></div>' +
+            '<div class="dh-appbar-logo"><img src="' + base + 'icon-192.png" srcset="' + base + 'icon-192.png 1x, ' + base + 'icon-512.png 2x, ' + base + 'icon-512.png 3x" alt="اسب سیاه" width="42" height="42" decoding="async"></div>' +
             '<div class="dh-appbar-titles">' +
               '<div class="dh-appbar-name-row"><span class="dh-appbar-title">اسب سیاه</span><span class="dh-appbar-en">DARK HORSE</span></div>' +
               '<div class="dh-appbar-greet">' + greetLine + '</div>' +

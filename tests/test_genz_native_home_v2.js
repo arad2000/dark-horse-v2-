@@ -26,7 +26,24 @@ assert.strictEqual(manifestJson.theme_color, '#0e1017', 'manifest theme_color mu
 assert.match(indexHtml, /<meta name="theme-color" content="#0e1017">/, 'index.html theme-color must be #0e1017');
 assert.match(mobilePwaCss, /calc\(92px \+ var\(--safe-bottom\)\)/, 'mobile-pwa.css must clear floating glass bottom tabbar + safe-area');
 assert.match(pwaBootJs, /beforeinstallprompt/, 'pwa-boot.js must capture native beforeinstallprompt event');
-assert.match(swJs, /const CACHE = 'darkhorse-v74'/, 'sw.js cache version must be bumped to darkhorse-v74');
+assert.match(swJs, /const CACHE = 'darkhorse-v75'/, 'sw.js cache version must be bumped to darkhorse-v75');
+assert.match(
+  shellCss,
+  /\.dh-appbar-logo img\s*\{[\s\S]*?object-fit:\s*contain;/,
+  'Appbar logo must use object-fit: contain so icon-192 / icon-512 never crops'
+);
+assert.match(
+  shellJs,
+  /class="dh-appbar-logo"><img[^>]*srcset="[^"]*icon-512\.png 2x/,
+  'Appbar logo must include Retina srcset with icon-512.png'
+);
+const tickerArrayBlock = (shellJs.match(/var DH_FARDIYAT_LINES = \[[\s\S]*?\];/) || [''])[0];
+assert.ok(tickerArrayBlock.length > 50, 'DH_FARDIYAT_LINES array must exist');
+assert.strictEqual(
+  (tickerArrayBlock.match(/هاروارد|harvard/gi) || []).length,
+  0,
+  'Home ticker DH_FARDIYAT_LINES must contain ZERO Harvard claims'
+);
 
 for (const rel of ['docs/shell.js', 'docs/parents.js', 'docs/stories.js', 'docs/poems.js', 'docs/spark_game.js']) {
   const src = fs.readFileSync(path.join(root, rel), 'utf8');
@@ -184,6 +201,9 @@ const storage = new Map();
 const pushedStates = [];
 const windowEvents = {};
 let journeyStarts = 0;
+let remainingQuota = 0;
+let consumeCalls = 0;
+let purchaseModalOpens = 0;
 let copiedClipboard = '';
 let installPromptCalled = 0;
 
@@ -224,7 +244,17 @@ const ctx = {
   },
   scrollTo: () => {},
   DHCommercialUI: {
-    startServerAuthorizedJourney: () => { journeyStarts += 1; }
+    startServerAuthorizedJourney: () => {
+      journeyStarts += 1;
+      return ctx.ensureCanEnterJourney();
+    }
+  },
+  ensureCanEnterJourney: () => {
+    if (remainingQuota <= 0) {
+      purchaseModalOpens += 1;
+      return Promise.resolve({ allowed: false });
+    }
+    return Promise.resolve({ allowed: true });
   },
   DHAdmissionChanceUI: {
     openHome: (mountId) => {
@@ -246,18 +276,23 @@ ctx.document = {
 
 vm.runInNewContext(shellJs, ctx);
 
-/* Verify Axis A1 + A2 Home DOM */
+/* Verify Axis A1 + A2 Home DOM + 0 Harvard Ticker */
 assert.ok(appRoot.innerHTML.includes('class="dh-appbar"'), 'Compact native top app bar must render');
 assert.ok(!appRoot.innerHTML.includes('class="dh-mk2-brand"'), 'Legacy tall static poster header must be replaced');
+assert.ok(!/هاروارد|harvard/i.test(appRoot.innerHTML), 'Rendered Home DOM must contain ZERO Harvard mentions');
 assert.ok(appRoot.innerHTML.includes('کشف رشته و شاخه بر اساس فردیت'), 'Hero sub-headline brand contract must remain intact');
 assert.ok(appRoot.innerHTML.includes('⚡ حدود ۷ دقیقه'), 'Hero clarity badge (7 min) must render');
 assert.ok(appRoot.innerHTML.includes('🎮 تعاملی و بدون نمره'), 'Hero clarity badge (interactive & score-free) must render');
 assert.ok(appRoot.innerHTML.includes('🎯 ۲۳۰ رشته + شاخه دبیرستان'), 'Hero clarity badge (230 majors + Grade 9) must render');
 assert.strictEqual((appRoot.innerHTML.match(/data-world-id="/g) || []).length, 6, 'All 6 Worlds of City of Dreams must render in horizontal strip');
 
-/* Verify Axis A3 Live Spark Taster Interaction */
+/* Verify Axis A3 Live Spark Taster Interaction + P0 Quota Non-Consume & Non-Bypass */
 const initialPeekText = idMap.get('dh-peek-text').textContent;
 idMap.get('dh-peek-like').onclick();
+idMap.get('dh-peek-skip').onclick();
+assert.strictEqual(consumeCalls, 0, 'Home spark teaser must NEVER consume quota');
+assert.strictEqual(purchaseModalOpens, 0, 'Home spark teaser must be free to interact with');
+assert.strictEqual(ctx.__dhInJourney, false, 'Home spark teaser must not enter full City of Dreams');
 assert.strictEqual(idMap.get('dh-peek-feedback').hidden, false, 'Liking a spark must reveal instant world-connection insight');
 assert.ok(idMap.get('dh-peek-counter').textContent.includes('1'), 'Spark counter must update after 1st like');
 assert.notStrictEqual(idMap.get('dh-peek-text').textContent, initialPeekText, 'Spark card must advance immediately without network roundtrip');
@@ -266,19 +301,38 @@ assert.strictEqual(idMap.get('dh-peek-bridge').hidden, true, 'Bridge actions sta
 idMap.get('dh-peek-like').onclick();
 assert.strictEqual(idMap.get('dh-peek-bridge').hidden, false, 'Bridge actions unlock immediately after 2 liked sparks');
 idMap.get('dh-peek-go-journey').onclick();
-assert.strictEqual(journeyStarts, 1, 'Tapping journey bridge button launches authorized journey');
+assert.strictEqual(journeyStarts, 1, 'Tapping journey bridge button routes through startServerAuthorizedJourney');
+assert.strictEqual(purchaseModalOpens, 1, 'With remaining=0, bridge CTA opens Purchase Modal via ensureCanEnterJourney');
+assert.strictEqual(ctx.__dhInJourney, false, 'With remaining=0, 0 stages of City of Dreams run');
 
-/* Verify Axis A4 World Preview Native Bottom Sheet + Android Back Close */
+/* Verify Axis A4 World Preview Native Bottom Sheet + P0 Gate + Android Back Close */
 const stripEl = idMap.get('dh-worlds-strip');
 stripEl.dispatchEvent('click', {
   target: {
     closest: () => ({ getAttribute: () => 'builder' })
   }
 });
+assert.strictEqual(consumeCalls, 0, 'Browsing 6 Worlds strip & opening World sheet must NEVER consume quota');
 assert.ok(idMap.get('dh-native-sheet'), 'Tapping a World card must open native Bottom Sheet');
 assert.ok(idMap.get('dh-native-sheet').innerHTML.includes('ساخت و فناوری'), 'World Bottom Sheet must render world details & sample majors');
+idMap.get('dh-sheet-start-world').onclick();
+assert.strictEqual(journeyStarts, 2, 'World Sheet full-journey button routes through startServerAuthorizedJourney');
+assert.strictEqual(purchaseModalOpens, 2, 'With remaining=0, World Sheet CTA opens Purchase Modal via ensureCanEnterJourney');
+assert.strictEqual(ctx.__dhInJourney, false, 'With remaining=0, World Sheet CTA runs 0 stages of City of Dreams');
+
+stripEl.dispatchEvent('click', {
+  target: {
+    closest: () => ({ getAttribute: () => 'healer' })
+  }
+});
+assert.ok(idMap.get('dh-native-sheet'), 'Second World Bottom Sheet opens cleanly');
 (windowEvents.popstate || []).forEach(fn => fn());
 assert.strictEqual(idMap.get('dh-native-sheet'), undefined, 'Android hardware Back (popstate) must close open Bottom Sheet cleanly');
+
+idMap.get('dh-start-journey').onclick();
+assert.strictEqual(journeyStarts, 3, 'Hero primary CTA routes through startServerAuthorizedJourney');
+assert.strictEqual(purchaseModalOpens, 3, 'With remaining=0, Hero primary CTA opens Purchase Modal via ensureCanEnterJourney');
+assert.strictEqual(ctx.__dhInJourney, false, 'With remaining=0, Hero primary CTA runs 0 stages of City of Dreams');
 
 /* Verify Axis B Native 1-Tap PWA Install Prompt + Sanjesh Back Navigation + Quote Toast */
 ctx.__dhInstallPromptEvent = {
