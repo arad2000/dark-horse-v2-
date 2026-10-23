@@ -2912,17 +2912,16 @@ body {
 }
 
 /* =========================================================================
-   Phase 4: Global Gen-Z (<20) & Native iOS/Android App Experience (PR #269)
-   Preserves 100% signature Obsidian (#0e1017 / #151824) + Warm Gold (#f0c040)
-   brand identity while transforming Home & Shell into a true native mobile app.
+/* =========================================================================
+   Phase 4 Luxury Edition: Regal Dark-Gold Crest + Interactive Deep Modules +
+   Modern Daily Wisdom Card + 100% Native App Feel (iOS / Android PWA)
    ========================================================================= */
 
 html, body {
-  background: radial-gradient(circle at 50% -10%, rgba(240, 192, 64, 0.08) 0%, rgba(14, 16, 23, 0) 46%), #0e1017 !important;
+  background: radial-gradient(ellipse at 50% -6%, rgba(240, 192, 64, 0.11) 0%, rgba(14, 16, 23, 0) 48%), #0e1017 !important;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Smooth GPU view entrance when switching tabs/screens */
 @keyframes dhNativeViewIn {
   from { opacity: 0; transform: translateY(7px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -2931,111 +2930,86 @@ html, body {
   animation: dhNativeViewIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* ۱) نوار بالای اپ واقعی (Compact Glass Top App Bar) */
-.dh-appbar {
-  position: sticky;
-  top: max(0px, env(safe-area-inset-top, 0px));
-  z-index: 40;
+/* ۱) هدر مجلل و باشکوه برند اسب سیاه (بدون دکمه نصب/پروفایل در بالا) */
+.dh-regal-brand {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: -4px -2px 10px;
-  padding: 9px 11px;
-  border-radius: 18px;
-  background: rgba(16, 19, 29, 0.84);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(240, 192, 64, 0.18);
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+  text-align: center;
+  margin: -2px 0 10px;
+  padding: 10px 12px 12px;
+  border-radius: 22px;
+  background: radial-gradient(circle at 50% 12%, rgba(240, 192, 64, 0.12) 0%, rgba(17, 19, 29, 0.45) 62%, transparent 100%);
 }
-.dh-appbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+.dh-regal-crest {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff0b8 0%, #d4af37 38%, #8f6e18 68%, #ffe18c 100%);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    0 0 30px rgba(240, 192, 64, 0.24),
+    inset 0 1px 1px rgba(255, 255, 255, 0.65);
+  margin-bottom: 10px;
 }
-.dh-appbar-logo {
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  border-radius: 13px;
+.dh-regal-crest-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #1c1f2e 0%, #0d0f17 85%);
+  border: 1px solid rgba(255, 224, 138, 0.28);
+  padding: 5px;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  border: 1.5px solid rgba(246, 217, 122, 0.6);
-  box-shadow: 0 0 20px rgba(240, 192, 64, 0.28);
-  background: #121420;
 }
-.dh-appbar-logo img {
+.dh-regal-crest-inner img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
 }
-.dh-appbar-titles {
-  min-width: 0;
-  text-align: right;
-}
-.dh-appbar-name-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.dh-appbar-title {
-  font-size: 1.02rem;
-  font-weight: 900;
-  color: #f8f2e4;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-.dh-appbar-en {
-  font-size: 0.62rem;
+.dh-regal-en {
+  font-size: 0.67rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #d4af37;
-  opacity: 0.9;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: #e4c164 !important;
+  text-transform: uppercase;
 }
-.dh-appbar-greet {
-  font-size: 0.75rem;
-  color: #b8b2a4;
-  line-height: 1.45;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.dh-appbar-actions {
+.dh-regal-fa-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+  justify-content: center;
+  gap: 11px;
+  margin-top: 3px;
 }
-.dh-appbar-pill {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 36px;
-  padding: 6px 11px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: #f4efe6 !important;
-  font-family: inherit;
-  font-size: 0.76rem;
-  font-weight: 700;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.16s ease, background 0.16s ease;
+.dh-regal-fa-row i {
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240, 192, 64, 0.65), transparent);
 }
-.dh-appbar-pill--gold {
-  background: rgba(240, 192, 64, 0.14);
-  border-color: rgba(240, 192, 64, 0.42);
-  color: #ffe08a !important;
+.dh-regal-fa {
+  margin: 0 !important;
+  font-size: 1.24rem !important;
+  font-weight: 900 !important;
+  color: #fcf7ea !important;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  text-shadow: 0 2px 14px rgba(240, 192, 64, 0.16);
 }
-.dh-appbar-pill:active {
-  transform: scale(0.95);
+.dh-regal-tagline {
+  margin: 4px 0 0 !important;
+  font-size: 0.78rem !important;
+  color: #b9b2a2 !important;
+  line-height: 1.5 !important;
 }
 
-/* نوار الهام زنده زیر App Bar — ظریف و یک‌خطی تا کارت اصلی کاملاً بالای صفحه بماند */
+/* نوار الهام زنده زیر هدر مجلل */
 .dh-mk2 .dh-fardiyat-ticker {
   min-height: 38px;
   margin: 0 0 12px !important;
@@ -3049,18 +3023,18 @@ html, body {
   line-height: 1.55 !important;
 }
 
-/* ۲) کارت Hero سفر اکتشافی با چیپ‌های شفاف نسل زد + دکمه استاندارد ۵۲ پیکسلی */
+/* ۲) کارت Hero سفر اکتشافی (فقط نشان ۲۳۰ رشته و شاخه + دکمه استاندارد ۵۲ پیکسلی) */
 .dh-mk2 .dh-mk2-hero {
   position: relative;
-  min-height: 206px !important;
-  margin-bottom: 14px !important;
+  min-height: 204px !important;
+  margin-bottom: 13px !important;
   padding: 18px 16px 16px !important;
   border-radius: 22px !important;
-  border: 1.5px solid rgba(246, 217, 122, 0.52) !important;
+  border: 1.5px solid rgba(246, 217, 122, 0.55) !important;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), 0 0 32px rgba(212, 175, 55, 0.16) !important;
 }
 .dh-mk2 .dh-mk2-hero-shade {
-  background: linear-gradient(180deg, rgba(10, 12, 19, 0.58) 0%, rgba(10, 12, 19, 0.84) 58%, rgba(10, 12, 19, 0.95) 100%) !important;
+  background: linear-gradient(180deg, rgba(10, 12, 19, 0.56) 0%, rgba(10, 12, 19, 0.84) 58%, rgba(10, 12, 19, 0.95) 100%) !important;
 }
 .dh-mk2 .dh-mk2-hero-body {
   display: flex;
@@ -3075,16 +3049,16 @@ html, body {
 .dh-hero-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 5px 12px;
   border-radius: 999px;
-  background: rgba(14, 16, 23, 0.72);
+  background: rgba(14, 16, 23, 0.76);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(246, 217, 122, 0.28);
-  color: #ede6d6 !important;
-  font-size: 0.74rem;
-  font-weight: 700;
+  border: 1px solid rgba(246, 217, 122, 0.36);
+  color: #f4ebd4 !important;
+  font-size: 0.76rem;
+  font-weight: 800;
 }
 .dh-mk2 .dh-mk2-cta {
   display: flex !important;
@@ -3107,231 +3081,120 @@ html, body {
   transform: scale(0.975) !important;
 }
 
-/* ۳) ویجت تعاملی زنده «همین الان یک جرقه‌ات رو تست کن!» (الگوی Play-First دولینگو) */
-.dh-peek-card {
-  margin: 0 0 16px;
-  padding: 15px 15px 14px;
-  border-radius: 20px;
-  background: linear-gradient(155deg, #181b28 0%, #121420 100%);
-  border: 1px solid rgba(240, 192, 64, 0.28);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
-  text-align: right;
+/* ۳) کارت انتخاب رشته با منطق سنجش — بلافاصله زیر سفر اکتشافی */
+.dh-mk2 .dh-home-sanjesh-entry {
+  margin: 0 0 14px !important;
+  padding: 16px 16px 15px !important;
+  border-radius: 20px !important;
+  background: linear-gradient(155deg, #191d2c 0%, #121520 100%) !important;
+  border: 1px solid rgba(240, 192, 64, 0.34) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32) !important;
 }
-.dh-peek-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
+
+/* ۴) کارت تعاملی «پیام روزانه» در جایگاه استاندارد اپ‌های مدرن جهان (Calm / Stoic) */
+.dh-daily-wisdom {
+  margin: 0 0 18px !important;
+  padding: 16px 16px 14px !important;
+  border-radius: 20px !important;
+  background: radial-gradient(circle at 100% 0%, rgba(240, 192, 64, 0.1) 0%, transparent 55%), linear-gradient(160deg, #181b28 0%, #12141e 100%) !important;
+  border: 1px solid rgba(240, 192, 64, 0.28) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28) !important;
 }
-.dh-peek-kicker {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #f5d777 !important;
-}
-.dh-peek-badge {
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: rgba(240, 192, 64, 0.12);
-  border: 1px solid rgba(240, 192, 64, 0.3);
-  color: #f0c040 !important;
+.dh-daily-date {
   font-size: 0.72rem;
   font-weight: 700;
-}
-.dh-peek-stage {
-  position: relative;
-  min-height: 82px;
-  padding: 13px 14px;
-  margin-bottom: 10px;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.035);
+  color: #b9b09d !important;
+  margin-right: auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dh-daily-text-wrap {
+  min-height: 62px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.dh-daily-text-wrap.is-fading {
+  opacity: 0.28;
+  transform: translateY(4px);
+}
+.dh-daily-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.dh-daily-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: block;
+  transition: all 0.18s ease;
+}
+.dh-daily-dots i.on {
+  width: 16px;
+  border-radius: 99px;
+  background: #f0c040;
+}
+.dh-daily-actions {
+  display: flex;
+  align-items: center;
   gap: 6px;
-  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease, border-color 0.18s ease;
-}
-.dh-peek-stage.is-liked {
-  border-color: rgba(240, 192, 64, 0.65);
-  transform: scale(1.015);
-}
-.dh-peek-stage.is-swapping {
-  opacity: 0.35;
-  transform: translateX(8px);
-}
-.dh-peek-world-tag {
-  align-self: flex-start;
-  font-size: 0.71rem;
-  font-weight: 700;
-  color: #c9b888 !important;
-  opacity: 0.92;
-}
-.dh-peek-text {
-  margin: 0 !important;
-  font-size: 0.95rem !important;
-  font-weight: 700 !important;
-  line-height: 1.75 !important;
-  color: #f8f3e6 !important;
-}
-.dh-peek-feedback {
-  margin: 0 0 10px !important;
-  padding: 8px 11px;
-  border-radius: 12px;
-  background: rgba(240, 192, 64, 0.1);
-  border: 1px solid rgba(240, 192, 64, 0.28);
-  font-size: 0.79rem !important;
-  line-height: 1.65 !important;
-  color: #f5e6be !important;
-}
-.dh-peek-actions {
-  display: flex;
-  gap: 8px;
-}
-.dh-peek-btn {
-  appearance: none;
-  flex: 1;
-  min-height: 46px;
-  padding: 10px 12px;
-  border-radius: 13px;
-  font-family: inherit;
-  font-size: 0.86rem;
-  font-weight: 800;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: transform 0.13s cubic-bezier(0.22, 1, 0.36, 1), background 0.15s ease;
-}
-.dh-peek-btn:active {
-  transform: scale(0.965);
-}
-.dh-peek-btn--yes {
-  background: linear-gradient(135deg, #f5d472, #d4af37);
-  border: none;
-  color: #161208 !important;
-  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.28);
-}
-.dh-peek-btn--next {
-  background: #1d2130;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #d6d1c4 !important;
-}
-.dh-peek-bridge {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-.dh-peek-bridge button {
-  appearance: none;
-  flex: 1;
-  min-height: 40px;
-  padding: 7px 10px;
-  border-radius: 11px;
-  border: 1px solid rgba(240, 192, 64, 0.36);
-  background: rgba(240, 192, 64, 0.09);
-  color: #ffe08a !important;
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 800;
-  cursor: pointer;
-  touch-action: manipulation;
+  flex-wrap: wrap;
 }
 
-/* ۴) اسلایدر افقی اسنپ‌شونده «۶ دنیای شهر رؤیاها» */
-.dh-worlds-section {
-  margin: 0 0 18px;
-  text-align: right;
-}
-.dh-sec-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0 2px 10px;
-}
-.dh-sec-title {
-  margin: 0 !important;
-  font-size: 0.96rem !important;
-  font-weight: 800 !important;
-  color: #f5efe2 !important;
-}
-.dh-sec-sub {
-  font-size: 0.74rem;
-  color: #9e9788 !important;
-}
-.dh-worlds-strip {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  margin: 0 -4px;
-  padding: 2px 4px 8px;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.dh-worlds-strip::-webkit-scrollbar {
-  display: none;
-}
-.dh-world-chip-card {
-  appearance: none;
-  flex: 0 0 148px;
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 13px 12px;
-  border-radius: 18px;
-  background: linear-gradient(160deg, #191c29, #12141e);
-  border: 1px solid rgba(240, 192, 64, 0.2);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
-  text-align: right;
-  font-family: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.16s ease;
-}
-.dh-world-chip-card:active {
-  transform: scale(0.965);
-  border-color: rgba(240, 192, 64, 0.55);
-}
-.dh-world-chip-ico {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  background: rgba(240, 192, 64, 0.12);
-  border: 1px solid rgba(240, 192, 64, 0.3);
-  font-size: 1.08rem;
-}
-.dh-world-chip-card strong {
-  font-size: 0.86rem;
-  font-weight: 800;
-  color: #f7f1e3 !important;
-  line-height: 1.4;
-}
-.dh-world-chip-card span {
-  font-size: 0.72rem;
-  color: #9f9888 !important;
-  line-height: 1.5;
-}
-
-/* ۵) Bento Grid کشف بیشتر + کارت نقل‌قول قابل اشتراک‌گذاری + فیدبک فنری */
+/* ۵) کارت‌های مدرن و تعاملی بخش‌های عمیق و اصیل اپ (جرقه‌یاب، داستان‌ها، سخن بزرگان، والدین، راهنما) */
 .dh-mk2-row,
 .dh-mk2-tile,
 .dh-home-sanjesh-toggle {
   touch-action: manipulation;
-  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.16s ease !important;
+  transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.18s ease, box-shadow 0.18s ease !important;
 }
 .dh-mk2-row:active,
 .dh-mk2-tile:active,
 .dh-home-sanjesh-toggle:active {
   transform: scale(0.975) !important;
 }
+.dh-mk2 .dh-mk2-row-hot {
+  padding: 15px 14px !important;
+  border-radius: 20px !important;
+  background: radial-gradient(circle at 0% 0%, rgba(240, 192, 64, 0.13) 0%, transparent 58%), linear-gradient(155deg, #1a1d2c 0%, #121520 100%) !important;
+  border: 1px solid rgba(240, 192, 64, 0.38) !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3) !important;
+}
+.dh-mk2 .dh-mk2-tile {
+  position: relative;
+  align-items: flex-start !important;
+  text-align: right !important;
+  padding: 13px 12px 14px !important;
+  border-radius: 19px !important;
+  background: linear-gradient(160deg, #191c2a 0%, #12141e 100%) !important;
+  border: 1px solid rgba(240, 192, 64, 0.22) !important;
+}
+.dh-tile-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(240, 192, 64, 0.11);
+  border: 1px solid rgba(240, 192, 64, 0.28);
+  color: #f3d77d !important;
+  font-size: 0.69rem;
+  font-weight: 700;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .dh-bento-pill {
   display: inline-block;
   margin-right: 6px;
-  padding: 2px 8px;
+  padding: 2px 9px;
   border-radius: 999px;
   background: rgba(240, 192, 64, 0.16);
   border: 1px solid rgba(240, 192, 64, 0.4);
@@ -3346,6 +3209,7 @@ html, body {
   justify-content: space-between;
   gap: 10px;
   margin-top: 12px;
+  flex-wrap: wrap;
 }
 .dh-mk2-quote-foot .dh-mk2-quote-by {
   margin-top: 0 !important;
@@ -3353,19 +3217,162 @@ html, body {
 .dh-quote-share-btn {
   appearance: none;
   min-height: 34px;
-  padding: 5px 12px;
+  padding: 5px 11px;
   border-radius: 999px;
   border: 1px solid rgba(240, 192, 64, 0.3);
   background: rgba(240, 192, 64, 0.08);
   color: #f0c040 !important;
   font-family: inherit;
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   font-weight: 700;
   cursor: pointer;
   touch-action: manipulation;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.dh-quote-share-btn.is-saved {
+  background: rgba(240, 192, 64, 0.22);
+  border-color: rgba(240, 192, 64, 0.6);
+  color: #fff2c2 !important;
 }
 .dh-quote-share-btn:active {
   transform: scale(0.95);
+}
+
+/* استایل مشترک تعاملی زیرصفحه‌های داستان‌ها، سخن بزرگان، والدین و راهنما */
+.dh-mod-strip {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 2px 1px 10px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.dh-mod-strip::-webkit-scrollbar { display: none; }
+.dh-mod-chip {
+  appearance: none;
+  flex: 0 0 auto;
+  min-height: 35px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: #171a26;
+  color: #cfc9ba !important;
+  font-family: inherit;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+}
+.dh-mod-chip.is-active {
+  background: linear-gradient(135deg, rgba(240, 192, 64, 0.24), rgba(212, 175, 55, 0.14));
+  border-color: rgba(240, 192, 64, 0.65);
+  color: #ffe597 !important;
+}
+.dh-mod-reflect {
+  margin: 14px 0 12px;
+  padding: 13px 13px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(240, 192, 64, 0.22);
+  text-align: right;
+}
+.dh-mod-reflect-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #f5df96;
+  margin-bottom: 9px;
+}
+.dh-mod-reflect-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.dh-mod-pill {
+  appearance: none;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #1a1d2b;
+  color: #e4ded0 !important;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dh-mod-pill.is-active {
+  border-color: #f0c040;
+  background: rgba(240, 192, 64, 0.16);
+  color: #ffe494 !important;
+}
+.dh-mod-reflect-ans {
+  margin: 10px 0 0 !important;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(240, 192, 64, 0.1);
+  color: #f7eed6 !important;
+  font-size: 0.81rem !important;
+  line-height: 1.75 !important;
+}
+.dh-sc-box {
+  padding: 10px 12px;
+  border-radius: 13px;
+  font-size: 0.82rem;
+  line-height: 1.8;
+  margin-bottom: 8px;
+}
+.dh-sc-box--bad {
+  background: rgba(255, 110, 95, 0.08);
+  border: 1px solid rgba(255, 120, 105, 0.25);
+  color: #ebd4d1;
+}
+.dh-sc-box--good {
+  background: rgba(240, 192, 64, 0.09);
+  border: 1px solid rgba(240, 192, 64, 0.34);
+  color: #f6eed9;
+}
+.dh-pact-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dh-pact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.83rem;
+  line-height: 1.75;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.dh-pact-item.is-checked {
+  background: rgba(240, 192, 64, 0.11);
+  border-color: rgba(240, 192, 64, 0.48);
+}
+.dh-pact-box {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(240, 192, 64, 0.55);
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #151208;
+  background: transparent;
+}
+.dh-pact-item.is-checked .dh-pact-box {
+  background: #f0c040;
 }
 
 /* ۶) تب‌بار شیشه‌ای مدرن با نشانگر کپسولی فعال (Native Floating Glass Tabbar) */

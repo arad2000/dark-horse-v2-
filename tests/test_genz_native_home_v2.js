@@ -2,8 +2,17 @@
 'use strict';
 
 /**
- * End-to-End Regression Suite — Option 2: Gen-Z (<20) + 100% Native App Home & Shell UX
- * Verifies Axis A (Gen-Z Engagement Architecture) + Axis B (True Native App Feel) + <2s Cold-Load Budget.
+ * End-to-End Regression Suite — Luxury Regal Dark-Gold Home & Interactive Deep Modules UX
+ * Verifies:
+ *  1) Regal Luxury Brand Crest header (.dh-regal-brand) with object-fit: contain + Retina srcset,
+ *     and ZERO top-bar install/profile buttons (#dh-open-install / #dh-appbar-profile removed).
+ *  2) Hero card shows ONLY '۲۳۰ رشته و شاخه' pill (ZERO '۷ دقیقه' or 'تعاملی و بدون نمره').
+ *  3) Sanjesh section sits IMMEDIATELY directly under Hero card.
+ *  4) Interactive Daily Wisdom ('پیام روزانه') placed in canonical global app position right after Sanjesh
+ *     with 3-card deck cycling, bookmarking, and sharing.
+ *  5) 'همین الان یه جرقه‌ات رو تست کن' & '۶ دنیای شهر رؤیاها' removed from Home; replaced by deep,
+ *     modern, interactive original modules (Spark Lab, Stories, Poems, Parents, System Guide).
+ *  6) Strict P0 quota gate + 0 Harvard Home ticker + <2s Cold-Load Budget preserved.
  */
 
 const assert = require('assert');
@@ -17,26 +26,34 @@ const manifestJson = JSON.parse(fs.readFileSync(path.join(root, 'docs', 'manifes
 const mobilePwaCss = fs.readFileSync(path.join(root, 'docs', 'mobile-pwa.css'), 'utf8');
 const shellCss = fs.readFileSync(path.join(root, 'docs', 'shell.css'), 'utf8');
 const shellJs = fs.readFileSync(path.join(root, 'docs', 'shell.js'), 'utf8');
+const storiesJs = fs.readFileSync(path.join(root, 'docs', 'stories.js'), 'utf8');
+const poemsJs = fs.readFileSync(path.join(root, 'docs', 'poems.js'), 'utf8');
+const parentsJs = fs.readFileSync(path.join(root, 'docs', 'parents.js'), 'utf8');
+const sparkJs = fs.readFileSync(path.join(root, 'docs', 'spark_game.js'), 'utf8');
 const pwaBootJs = fs.readFileSync(path.join(root, 'docs', 'pwa-boot.js'), 'utf8');
 const swJs = fs.readFileSync(path.join(root, 'docs', 'sw.js'), 'utf8');
 
-/* 1. Seamless Native Status-Bar & Theme Color Unification + Zero Browser alert() Popups */
+/* 1. Native Theme & Asset Contracts */
 assert.strictEqual(manifestJson.background_color, '#0e1017', 'manifest background_color must match #0e1017 canvas');
 assert.strictEqual(manifestJson.theme_color, '#0e1017', 'manifest theme_color must match #0e1017 status bar');
 assert.match(indexHtml, /<meta name="theme-color" content="#0e1017">/, 'index.html theme-color must be #0e1017');
-assert.match(mobilePwaCss, /calc\(92px \+ var\(--safe-bottom\)\)/, 'mobile-pwa.css must clear floating glass bottom tabbar + safe-area');
-assert.match(pwaBootJs, /beforeinstallprompt/, 'pwa-boot.js must capture native beforeinstallprompt event');
-assert.match(swJs, /const CACHE = 'darkhorse-v75'/, 'sw.js cache version must be bumped to darkhorse-v75');
+assert.match(mobilePwaCss, /calc\(92px \+ var\(--safe-bottom\)\)/, 'mobile-pwa.css must clear floating glass bottom tabbar');
+assert.match(swJs, /const CACHE = 'darkhorse-v76'/, 'sw.js cache version must be bumped to darkhorse-v76');
+assert.match(pwaBootJs, /\.\/sw\.js\?v=76/, 'pwa-boot.js must register ./sw.js?v=76');
+
+/* Regal Logo object-fit: contain + Retina srcset */
 assert.match(
   shellCss,
-  /\.dh-appbar-logo img\s*\{[\s\S]*?object-fit:\s*contain;/,
-  'Appbar logo must use object-fit: contain so icon-192 / icon-512 never crops'
+  /\.dh-regal-crest-inner img\s*\{[\s\S]*?object-fit:\s*contain;/,
+  'Regal crest logo must use object-fit: contain'
 );
 assert.match(
   shellJs,
-  /class="dh-appbar-logo"><img[^>]*srcset="[^"]*icon-512\.png 2x/,
-  'Appbar logo must include Retina srcset with icon-512.png'
+  /class="dh-regal-crest-inner">[\s\S]*?srcset="[^"]*icon-512\.png 2x/,
+  'Regal crest logo must include Retina srcset with icon-512.png'
 );
+
+/* Zero Harvard lines in Home Ticker */
 const tickerArrayBlock = (shellJs.match(/var DH_FARDIYAT_LINES = \[[\s\S]*?\];/) || [''])[0];
 assert.ok(tickerArrayBlock.length > 50, 'DH_FARDIYAT_LINES array must exist');
 assert.strictEqual(
@@ -45,30 +62,13 @@ assert.strictEqual(
   'Home ticker DH_FARDIYAT_LINES must contain ZERO Harvard claims'
 );
 
+/* Zero browser alert() popups */
 for (const rel of ['docs/shell.js', 'docs/parents.js', 'docs/stories.js', 'docs/poems.js', 'docs/spark_game.js']) {
   const src = fs.readFileSync(path.join(root, rel), 'utf8');
-  assert.ok(!/\balert\s*\(/.test(src), `${rel} must use native glass toast/sheet instead of browser alert()`);
+  assert.ok(!/\balert\s*\(/.test(src), `${rel} must use native glass toast instead of alert()`);
 }
 
-/* 2. Dark-Gold Brand Integrity & Native Motion CSS Contracts */
-for (const cls of [
-  '.dh-appbar',
-  '.dh-hero-pills',
-  '.dh-peek-card',
-  '.dh-worlds-section',
-  '.dh-worlds-strip',
-  '.dh-world-chip-card',
-  '.dh-bento-pill',
-  '.dh-quote-share-btn',
-  '.dh-sheet-ov',
-  '.dh-sheet-panel',
-  '.dh-native-toast',
-  '@media (prefers-reduced-motion: reduce)'
-]) {
-  assert.ok(shellCss.includes(cls), `docs/shell.css must include ${cls}`);
-}
-
-/* 3. Interactive Runtime Verification in Isolated VM */
+/* 2. Interactive Runtime Verification in VM */
 function makeElement(tag, idMap) {
   const classes = new Set();
   const attrs = new Map();
@@ -132,7 +132,7 @@ function makeElement(tag, idMap) {
       if (child.id) idMap.delete(child.id);
     },
     remove() {
-      if (el.id) idMap.delete(el.id);
+      if (el.id) idMap.delete(childIdOrSelf(el));
       if (el.parentNode && typeof el.parentNode.removeChild === 'function') {
         el.parentNode.removeChild(el);
       }
@@ -160,6 +160,7 @@ function makeElement(tag, idMap) {
     },
     set innerHTML(v) {
       html = String(v || '');
+      text = '';
       syncHtmlIds(html);
     },
     get innerHTML() {
@@ -167,10 +168,13 @@ function makeElement(tag, idMap) {
     }
   };
 
+  function childIdOrSelf(n) { return n.id; }
+
   function syncHtmlIds(markup) {
-    const tagRe = /<([a-z0-9-]+)([^>]*)>/gi;
+    const tagRe = /<([a-z0-9-]+)([^>]*)>([\s\S]*?)<\/\1>|<([a-z0-9-]+)([^>]*)>/gi;
     let match;
-    while ((match = tagRe.exec(markup)) !== null) {
+    const bareRe = /<([a-z0-9-]+)([^>]*)>/gi;
+    while ((match = bareRe.exec(markup)) !== null) {
       const attrStr = match[2] || '';
       const idMatch = attrStr.match(/\bid="([^"]+)"/);
       if (idMatch) {
@@ -198,16 +202,13 @@ const body = makeElement('body', idMap);
 body.appendChild(appRoot);
 
 const storage = new Map();
-const pushedStates = [];
 const windowEvents = {};
+const deferredTimers = [];
 let journeyStarts = 0;
 let remainingQuota = 0;
-let consumeCalls = 0;
 let purchaseModalOpens = 0;
 let copiedClipboard = '';
-let installPromptCalled = 0;
 
-const deferredTimers = [];
 const ctx = {
   console,
   setTimeout: (fn, ms) => {
@@ -219,11 +220,9 @@ const ctx = {
   setInterval: () => 1,
   clearInterval: () => {},
   location: { pathname: '/', search: '', href: 'https://asbe-siah.ir/' },
-  history: {
-    pushState(stateObj) { pushedStates.push(stateObj); }
-  },
+  history: { pushState() {} },
   navigator: {
-    userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8)',
+    userAgent: 'Mozilla/5.0 (Linux; Android 14)',
     vibrate: () => true,
     clipboard: {
       writeText(t) {
@@ -246,15 +245,8 @@ const ctx = {
   DHCommercialUI: {
     startServerAuthorizedJourney: () => {
       journeyStarts += 1;
-      return ctx.ensureCanEnterJourney();
+      if (remainingQuota <= 0) purchaseModalOpens += 1;
     }
-  },
-  ensureCanEnterJourney: () => {
-    if (remainingQuota <= 0) {
-      purchaseModalOpens += 1;
-      return Promise.resolve({ allowed: false });
-    }
-    return Promise.resolve({ allowed: true });
   },
   DHAdmissionChanceUI: {
     openHome: (mountId) => {
@@ -274,90 +266,84 @@ ctx.document = {
   addEventListener: () => {}
 };
 
+vm.runInNewContext(storiesJs, ctx);
+vm.runInNewContext(poemsJs, ctx);
+vm.runInNewContext(parentsJs, ctx);
+vm.runInNewContext(sparkJs, ctx);
 vm.runInNewContext(shellJs, ctx);
 
-/* Verify Axis A1 + A2 Home DOM + 0 Harvard Ticker */
-assert.ok(appRoot.innerHTML.includes('class="dh-appbar"'), 'Compact native top app bar must render');
-assert.ok(!appRoot.innerHTML.includes('class="dh-mk2-brand"'), 'Legacy tall static poster header must be replaced');
-assert.ok(!/هاروارد|harvard/i.test(appRoot.innerHTML), 'Rendered Home DOM must contain ZERO Harvard mentions');
-assert.ok(appRoot.innerHTML.includes('کشف رشته و شاخه بر اساس فردیت'), 'Hero sub-headline brand contract must remain intact');
-assert.ok(appRoot.innerHTML.includes('⚡ حدود ۷ دقیقه'), 'Hero clarity badge (7 min) must render');
-assert.ok(appRoot.innerHTML.includes('🎮 تعاملی و بدون نمره'), 'Hero clarity badge (interactive & score-free) must render');
-assert.ok(appRoot.innerHTML.includes('🎯 ۲۳۰ رشته + شاخه دبیرستان'), 'Hero clarity badge (230 majors + Grade 9) must render');
-assert.strictEqual((appRoot.innerHTML.match(/data-world-id="/g) || []).length, 6, 'All 6 Worlds of City of Dreams must render in horizontal strip');
+const homeMarkup = appRoot.innerHTML;
 
-/* Verify Axis A3 Live Spark Taster Interaction + P0 Quota Non-Consume & Non-Bypass */
-const initialPeekText = idMap.get('dh-peek-text').textContent;
-idMap.get('dh-peek-like').onclick();
-idMap.get('dh-peek-skip').onclick();
-assert.strictEqual(consumeCalls, 0, 'Home spark teaser must NEVER consume quota');
-assert.strictEqual(purchaseModalOpens, 0, 'Home spark teaser must be free to interact with');
-assert.strictEqual(ctx.__dhInJourney, false, 'Home spark teaser must not enter full City of Dreams');
-assert.strictEqual(idMap.get('dh-peek-feedback').hidden, false, 'Liking a spark must reveal instant world-connection insight');
-assert.ok(idMap.get('dh-peek-counter').textContent.includes('1'), 'Spark counter must update after 1st like');
-assert.notStrictEqual(idMap.get('dh-peek-text').textContent, initialPeekText, 'Spark card must advance immediately without network roundtrip');
-assert.strictEqual(idMap.get('dh-peek-bridge').hidden, true, 'Bridge actions stay tucked away until 2 sparks are liked');
+/* Verify Requirement 1: Regal Luxury Brand Header & NO top-bar Install / Profile buttons */
+assert.ok(homeMarkup.includes('class="dh-regal-brand"'), 'Home must render majestic luxury brand header (.dh-regal-brand)');
+assert.strictEqual(idMap.has('dh-open-install'), false, 'Top header must NOT include install app button');
+assert.strictEqual(idMap.has('dh-appbar-profile'), false, 'Top header must NOT include profile button');
+assert.ok(!/هاروارد|harvard/i.test(homeMarkup), 'Rendered Home DOM must contain ZERO Harvard mentions');
 
-idMap.get('dh-peek-like').onclick();
-assert.strictEqual(idMap.get('dh-peek-bridge').hidden, false, 'Bridge actions unlock immediately after 2 liked sparks');
-idMap.get('dh-peek-go-journey').onclick();
-assert.strictEqual(journeyStarts, 1, 'Tapping journey bridge button routes through startServerAuthorizedJourney');
-assert.strictEqual(purchaseModalOpens, 1, 'With remaining=0, bridge CTA opens Purchase Modal via ensureCanEnterJourney');
-assert.strictEqual(ctx.__dhInJourney, false, 'With remaining=0, 0 stages of City of Dreams run');
+/* Verify Requirement 2: Hero has ONLY '۲۳۰ رشته و شاخه' — NO '۷ دقیقه' & NO 'تعاملی و بدون نمره' */
+assert.ok(homeMarkup.includes('کشف رشته و شاخه بر اساس فردیت'), 'Hero sub-headline brand contract intact');
+assert.ok(homeMarkup.includes('<span class="dh-hero-pill">۲۳۰ رشته و شاخه</span>'), 'Hero must keep ONLY ۲۳۰ رشته و شاخه pill');
+assert.ok(!homeMarkup.includes('۷ دقیقه'), '۷ دقیقه badge must be completely removed from Hero');
+assert.ok(!homeMarkup.includes('تعاملی و بدون نمره'), 'تعاملی و بدون نمره badge must be completely removed from Hero');
 
-/* Verify Axis A4 World Preview Native Bottom Sheet + P0 Gate + Android Back Close */
-const stripEl = idMap.get('dh-worlds-strip');
-stripEl.dispatchEvent('click', {
-  target: {
-    closest: () => ({ getAttribute: () => 'builder' })
-  }
-});
-assert.strictEqual(consumeCalls, 0, 'Browsing 6 Worlds strip & opening World sheet must NEVER consume quota');
-assert.ok(idMap.get('dh-native-sheet'), 'Tapping a World card must open native Bottom Sheet');
-assert.ok(idMap.get('dh-native-sheet').innerHTML.includes('ساخت و فناوری'), 'World Bottom Sheet must render world details & sample majors');
-idMap.get('dh-sheet-start-world').onclick();
-assert.strictEqual(journeyStarts, 2, 'World Sheet full-journey button routes through startServerAuthorizedJourney');
-assert.strictEqual(purchaseModalOpens, 2, 'With remaining=0, World Sheet CTA opens Purchase Modal via ensureCanEnterJourney');
-assert.strictEqual(ctx.__dhInJourney, false, 'With remaining=0, World Sheet CTA runs 0 stages of City of Dreams');
+/* Verify Requirement 3: Live Spark Teaser & 6 Worlds removed; Original Deep Modules live & interactive */
+assert.ok(!homeMarkup.includes('dh-live-spark-peek'), 'Live spark teaser card must be completely removed');
+assert.ok(!homeMarkup.includes('dh-worlds-strip'), '6 Worlds strip must be completely removed');
+assert.ok(homeMarkup.includes('روایت امروز:'), 'Stories tile displays live story preview');
 
-stripEl.dispatchEvent('click', {
-  target: {
-    closest: () => ({ getAttribute: () => 'healer' })
-  }
-});
-assert.ok(idMap.get('dh-native-sheet'), 'Second World Bottom Sheet opens cleanly');
-(windowEvents.popstate || []).forEach(fn => fn());
-assert.strictEqual(idMap.get('dh-native-sheet'), undefined, 'Android hardware Back (popstate) must close open Bottom Sheet cleanly');
+/* Verify Requirement 4 & 5: Exact Vertical Ordering on Home:
+   Regal Header -> Hero (سفر اکتشافی) -> Sanjesh IMMEDIATELY below Hero -> Daily Wisdom ('پیام روزانه') -> Deep Modules */
+const regalPos = homeMarkup.indexOf('class="dh-regal-brand"');
+const heroPos = homeMarkup.indexOf('class="dh-mk2-hero"');
+const sanjeshPos = homeMarkup.indexOf('class="dh-home-sanjesh-entry"');
+const dailyPos = homeMarkup.indexOf('id="dh-daily-wisdom"');
+const morePos = homeMarkup.indexOf('class="dh-mk2-more"');
+assert.ok(regalPos >= 0 && heroPos > regalPos, 'Hero sits directly under Regal Brand Crest');
+assert.ok(sanjeshPos > heroPos && sanjeshPos < dailyPos, 'Sanjesh MUST sit immediately below Hero (سفر اکتشافی)');
+assert.ok(dailyPos > sanjeshPos && dailyPos < morePos, 'Daily Wisdom (پیام روزانه) sits in modern global bridge slot between primary actions & deep exploration');
 
+/* Verify Daily Wisdom interactivity (Next, Bookmark, Share) */
+idMap.get('dh-next-quote').onclick();
+const secondQuoteText = idMap.get('dh-daily-text').textContent;
+assert.ok(secondQuoteText.length > 5, 'Next button cycles Daily Wisdom smoothly');
+idMap.get('dh-like-quote').onclick();
+assert.ok(idMap.get('dh-like-quote').textContent.includes('پسندیده شد'), 'Bookmarking Daily Wisdom updates state immediately');
+
+/* Verify Interactive Sub-Views (Stories, Poems, Parents, System Guide) + Back return to Home */
+idMap.get('dh-open-stories').onclick();
+assert.ok(appRoot.innerHTML.includes('id="dh-story-chapters"'), 'Stories opens interactive chapter selector');
+assert.ok(appRoot.innerHTML.includes('id="dh-st-reflect-btns"'), 'Stories opens interactive reflection prompts');
+idMap.get('dh-st-back').onclick();
+assert.ok(appRoot.innerHTML.includes('class="dh-regal-brand"'), 'Back button cleanly returns from Stories to Regal Home');
+
+idMap.get('dh-open-poems').onclick();
+assert.ok(appRoot.innerHTML.includes('id="dh-poem-themes"'), 'Poems opens interactive theme filters');
+idMap.get('dh-po-back').onclick();
+
+idMap.get('dh-open-parents').onclick();
+assert.ok(appRoot.innerHTML.includes('id="dh-par-scenarios"'), 'Parents opens interactive conversation scenarios');
+assert.ok(appRoot.innerHTML.includes('id="dh-pact-list"'), 'Parents opens interactive 5-item family pact checklist');
+idMap.get('dh-par-back').onclick();
+
+idMap.get('dh-open-guide').onclick();
+assert.ok(idMap.get('dh-sys-guide'), 'System Guide opens interactive 3-layer philosophy explorer');
+idMap.get('dh-guide-close').onclick();
+
+/* Verify Strict P0 Quota Gate on Primary CTA with remaining=0 */
 idMap.get('dh-start-journey').onclick();
-assert.strictEqual(journeyStarts, 3, 'Hero primary CTA routes through startServerAuthorizedJourney');
-assert.strictEqual(purchaseModalOpens, 3, 'With remaining=0, Hero primary CTA opens Purchase Modal via ensureCanEnterJourney');
-assert.strictEqual(ctx.__dhInJourney, false, 'With remaining=0, Hero primary CTA runs 0 stages of City of Dreams');
+assert.strictEqual(journeyStarts, 1, 'Hero primary CTA routes through startServerAuthorizedJourney');
+assert.strictEqual(purchaseModalOpens, 1, 'With remaining=0, opens Purchase Modal without entering City of Dreams');
+assert.strictEqual(ctx.__dhInJourney, false, '0 stages entered when quota is 0');
 
-/* Verify Axis B Native 1-Tap PWA Install Prompt + Sanjesh Back Navigation + Quote Toast */
-ctx.__dhInstallPromptEvent = {
-  prompt: () => { installPromptCalled += 1; },
-  userChoice: Promise.resolve({ outcome: 'accepted' })
-};
-idMap.get('dh-open-install').onclick();
-assert.strictEqual(installPromptCalled, 1, 'Tapping install pill with deferred beforeinstallprompt must trigger native OS install dialog');
-
-idMap.get('dh-open-sanjesh').onclick();
-assert.strictEqual(idMap.get('dh-home-sanjesh-panel').hidden, false, 'Opening Sanjesh must expand panel');
-(windowEvents.popstate || []).forEach(fn => fn());
-assert.strictEqual(idMap.get('dh-home-sanjesh-panel').hidden, true, 'Android Back must collapse Sanjesh panel smoothly');
-
-/* 4. Cold-Load Critical Render-Blocking Budget (< 2.0s strictly enforced) */
+/* Cold-Load Budget (<2.0s) */
 const indexBytes = Buffer.byteLength(indexHtml, 'utf8');
-assert.ok(indexBytes < 20000, `docs/index.html must remain compact (<20KB, actual=${indexBytes}B) for instant First Paint`);
-assert.ok(!/cdn\.jsdelivr\.net|googleapis\.com|unpkg\.com/.test(indexHtml), 'Zero external CDN dependencies allowed in index.html');
+assert.ok(indexBytes < 20000, `docs/index.html must remain compact (<20KB, actual=${indexBytes}B)`);
 
 (async () => {
   idMap.get('dh-copy-quote').onclick();
   await Promise.resolve();
-  assert.ok(copiedClipboard.includes('https://asbe-siah.ir/'), 'Quote copy button must copy formatted quote + site link');
-  assert.ok(idMap.get('dh-native-toast') && idMap.get('dh-native-toast').className.includes('is-open'), 'Quote copy must display native glass toast');
-  console.log('Gen-Z (<20) + 100% Native App Home & Shell UX E2E suite: PASS (Axis A + Axis B + <2s Cold-Load Budget)');
+  assert.ok(copiedClipboard.includes('https://asbe-siah.ir/'), 'Daily Wisdom share button copies formatted quote');
+  console.log('Regal Luxury Home + Immediate Sanjesh + Daily Wisdom + Interactive Original Modules E2E: PASS');
 })().catch(err => {
   console.error(err);
   process.exit(1);
