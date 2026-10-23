@@ -302,145 +302,6 @@ function dhGoHomeKeepPlace() {
 }
 window.dhGoHomeKeepPlace = dhGoHomeKeepPlace;
 
-function dhGetActivePlaceSummary() {
-  const commercialActive = typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime();
-  if (commercialActive && (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn())) {
-    return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-  }
-  if (window.__dhCachedResultsPlace && (state.majorsResult || state.branchesResult)) {
-    const resultSid = (state && state.sessionId) ? String(state.sessionId) : '';
-    if (commercialActive && window.DHCommercialUI && typeof window.DHCommercialUI.isBannerReturnAllowed === 'function') {
-      if (!window.DHCommercialUI.isBannerReturnAllowed({ isResults: true, sessionId: resultSid })) {
-        return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-      }
-    }
-    const isBr = window.__dhCachedResultsPlace.kind === 'branches';
-    return {
-      resumable: true,
-      isResults: true,
-      stage: 'results',
-      label: isBr ? 'نتیجهٔ هدایت تحصیلی' : 'نتیجهٔ انتخاب رشته',
-      cta: isBr ? 'بازگشت به نتیجهٔ هدایت تحصیلی' : 'بازگشت به نتیجهٔ انتخاب رشته'
-    };
-  }
-  try {
-    const raw = localStorage.getItem('darkhorse_session_v2');
-    if (raw) {
-      const d = JSON.parse(raw);
-      if (d && !d.journeyFinished && d.stage) {
-        if (commercialActive && window.DHCommercialUI && typeof window.DHCommercialUI.isBannerReturnAllowed === 'function') {
-          if (!window.DHCommercialUI.isBannerReturnAllowed({ isResults: false, sessionId: d.sessionId || '' })) {
-            return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-          }
-        }
-        const sTotal = (state.strategyQuestions && state.strategyQuestions.length) || 25;
-        const vTotal = (state.valueQuestions && state.valueQuestions.length) || 15;
-        let lbl = 'شهر رؤیاها';
-        if (d.stage === 'realm') lbl = (d.selectedRealms && d.selectedRealms.length) ? `محله‌ها (${dhFaNum(d.selectedRealms.length)} انتخاب)` : 'انتخاب محله';
-        else if (d.stage === 'subRealm') lbl = (d.selectedSubRealms && d.selectedSubRealms.length) ? `گذرها (${dhFaNum(d.selectedSubRealms.length)} انتخاب)` : 'انتخاب گذر';
-        else if (d.stage === 'narrowPath') lbl = (d.selectedNarrowPaths && d.selectedNarrowPaths.length) ? `مسیرهای باریک (${dhFaNum(d.selectedNarrowPaths.length)} انتخاب)` : 'مسیرهای باریک';
-        else if (d.stage === 'introSwipe' || d.stage === 'swipe') {
-          const totalC = (d.swipeDeckCodes && d.swipeDeckCodes.length) || d.totalSwipes || 0;
-          const idxC = Math.min((d.swipeIndex || 0) + 1, Math.max(totalC, 1));
-          lbl = totalC > 0 && (d.swipeIndex || 0) < totalC
-            ? `خرده‌انگیزه‌ها (کارت ${dhFaNum(idxC)} از ${dhFaNum(totalC)})`
-            : `خرده‌انگیزه‌ها (${dhFaNum((d.likedCodes || []).length)} جرقه)`;
-        } else if (d.stage === 'introStrategies' || d.stage === 'strategies') {
-          lbl = `سؤالات راهبرد (سؤال ${dhFaNum((d.currentQuestion || 0) + 1)} از ${dhFaNum(sTotal)})`;
-        } else if (d.stage === 'introValues' || d.stage === 'values') {
-          lbl = `سؤالات ارزش (سؤال ${dhFaNum((d.currentValueQuestion || 0) + 1)} از ${dhFaNum(vTotal)})`;
-        } else if (d.stage === 'choice') {
-          lbl = 'انتخاب نوع تحلیل';
-        }
-        return {
-          resumable: true,
-          isResults: false,
-          stage: d.stage,
-          label: lbl,
-          cta: `ادامه از همان‌جا · ${lbl}`
-        };
-      }
-    }
-  } catch (_) {}
-  return { resumable: false, isResults: false, stage: null, label: '', cta: '' };
-}
-window.dhGetActivePlaceSummary = dhGetActivePlaceSummary;
-
-async function dhReturnToActivePage() {
-  if (window.__dhCachedResultsPlace && (state.majorsResult || state.branchesResult)) {
-    const resultSid = (state && state.sessionId) ? String(state.sessionId) : '';
-    if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
-      if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
-        window.__dhInJourney = false;
-        if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
-          window.DHCommercialUI.showAuth('login');
-        }
-        return;
-      }
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
-        const okResults = await window.DHCommercialUI.ensureCanEnterJourney({
-          mode: resultSid ? 'resume' : 'new',
-          sessionId: resultSid
-        });
-        if (!okResults) return;
-      }
-    }
-    const kind = window.__dhCachedResultsPlace.kind === 'branches' && state.branchesResult ? 'branches' : 'majors';
-    const payload = kind === 'branches' ? state.branchesResult : state.majorsResult;
-    const savedY = window.__dhCachedResultsPlace.scrollY || 0;
-    window.__dhInJourney = true;
-    try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (_) {}
-    displayResults(payload, kind);
-    if (savedY > 0) {
-      setTimeout(() => { try { window.scrollTo(0, savedY); } catch (_) {} }, 40);
-    }
-    return;
-  }
-  let candidateSessionId = (state && state.sessionId) ? String(state.sessionId) : '';
-  let candidateFinished = !!(state && state.journeyFinished);
-  try {
-    const rawSaved = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
-    if (rawSaved && typeof rawSaved === 'object') {
-      candidateSessionId = rawSaved.sessionId ? String(rawSaved.sessionId) : '';
-      candidateFinished = Boolean(rawSaved.journeyFinished);
-    }
-  } catch (_) {}
-  if (typeof dhHasCommercialRuntime === 'function' && dhHasCommercialRuntime()) {
-    if (!window.DHAuth || typeof window.DHAuth.isLoggedIn !== 'function' || !window.DHAuth.isLoggedIn()) {
-      window.__dhInJourney = false;
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.showAuth === 'function') {
-        window.DHCommercialUI.showAuth('login');
-      }
-      return;
-    }
-    if (window.DHCommercialUI && typeof window.DHCommercialUI.ensureCanEnterJourney === 'function') {
-      const allowed = await window.DHCommercialUI.ensureCanEnterJourney({
-        mode: candidateFinished ? 'new' : 'resume',
-        sessionId: candidateFinished ? '' : candidateSessionId
-      });
-      if (!allowed) {
-        try {
-          const staleBanner = document.getElementById('dh-active-place-banner');
-          if (staleBanner) staleBanner.remove();
-        } catch (_) {}
-        return;
-      }
-    }
-  }
-  const ok = loadSession();
-  const savedY = state.lastScrollY || 0;
-  window.__dhInJourney = true;
-  try { if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') window.DHShell.setActiveTab('journey'); } catch (_) {}
-  if (!ok) {
-    state.stage = 'splash';
-  }
-  render({ preserveScroll: savedY > 0 });
-  if (savedY > 0) {
-    setTimeout(() => { try { window.scrollTo(0, savedY); } catch (_) {} }, 40);
-  }
-}
-window.dhReturnToActivePage = dhReturnToActivePage;
-
 async function dhJumpToStage(targetId) {
   if (!targetId) return;
   if (state.journeyFinished && targetId !== 'choice' && targetId !== 'results') {
@@ -944,55 +805,87 @@ function resumeJourney() {
 }
 
 // ==================== بارگذاری داده‌ها ====================
+let _motivesLoadPromise = null;
+let _questionsLoadPromise = null;
+let _traitMapLoadPromise = null;
+
 async function loadMicroMotivesMap() {
-  try {
-    const res = await fetch(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
-    const all = await res.json();
-    all.forEach(m => { state.microMotivesMap[m.code] = m.description_fa; });
-    state.motivesReady = true;
-  } catch (e) {
-    console.error('خطا در بارگذاری میکروموتیوها:', e);
-    state.motivesReady = false;
-  }
+  if (state.motivesReady && Array.isArray(state.cachedMotives) && state.cachedMotives.length > 0) return;
+  if (_motivesLoadPromise) return _motivesLoadPromise;
+  _motivesLoadPromise = (async () => {
+    try {
+      const res = await fetch(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
+      const all = await res.json();
+      state.cachedMotives = all;
+      all.forEach(m => { state.microMotivesMap[m.code] = m.description_fa; });
+      state.motivesReady = true;
+    } catch (e) {
+      console.error('خطا در بارگذاری میکروموتیوها:', e);
+      state.motivesReady = false;
+    } finally {
+      _motivesLoadPromise = null;
+    }
+  })();
+  return _motivesLoadPromise;
 }
 
 async function loadQuestions() {
-  try {
-    const res = await fetch(DATA_BASE + 'questions_v2.json');
-    const data = await res.json();
-    state.strategyQuestions = data.layers.strategies.questions;
-    state.valueQuestions = data.layers.values.questions;
-    state.questionsReady = true;
-  } catch (e) {
-    console.error('خطا در بارگذاری سوالات V2:', e);
-    state.questionsReady = false;
-  }
+  if (state.questionsReady &&
+      Array.isArray(state.strategyQuestions) && state.strategyQuestions.length > 0 &&
+      Array.isArray(state.valueQuestions) && state.valueQuestions.length > 0) return;
+  if (_questionsLoadPromise) return _questionsLoadPromise;
+  _questionsLoadPromise = (async () => {
+    try {
+      const res = await fetch(DATA_BASE + 'questions_v2.json');
+      const data = await res.json();
+      state.strategyQuestions = data.layers.strategies.questions;
+      state.valueQuestions = data.layers.values.questions;
+      state.questionsReady = true;
+    } catch (e) {
+      console.error('خطا در بارگذاری سوالات V2:', e);
+      state.questionsReady = false;
+    } finally {
+      _questionsLoadPromise = null;
+    }
+  })();
+  return _questionsLoadPromise;
 }
 
 // نگاشت واقعی برچسب شخصیتی هر سؤال-گزینه (S01..S25 × index 0..4)
 // این فایل جایگزین فرضِ نادرستِ «موقعیت index معنی ثابت دارد» می‌شود —
 // چون trait_map_v3.json نشان داده در سؤالات مختلف، همان index معنی متفاوتی دارد.
 async function loadTraitMap() {
-  const candidates = [DATA_BASE + 'trait_map_v3.json', './trait_map_v3.json'];
-  for (const url of candidates) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data && typeof data === 'object' && (data.S01 || data.s01)) {
-        state.traitMap = data;
-        state.traitMapReady = true;
-        console.log('trait_map loaded from', url);
-        return;
+  if (state.traitMapReady && state.traitMap && Object.keys(state.traitMap).length > 0) return;
+  if (_traitMapLoadPromise) return _traitMapLoadPromise;
+  _traitMapLoadPromise = (async () => {
+    const candidates = [DATA_BASE + 'trait_map_v3.json', './trait_map_v3.json'];
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data && typeof data === 'object' && (data.S01 || data.s01)) {
+          state.traitMap = data;
+          state.traitMapReady = true;
+          return;
+        }
+      } catch (e) {
+        console.warn('trait_map try failed', url, e);
       }
-    } catch (e) {
-      console.warn('trait_map try failed', url, e);
     }
-  }
-  console.error('نقشهٔ صفات بارگذاری نشد');
-  state.traitMapReady = false;
-  state.traitMap = {};
+    console.error('نقشهٔ صفات بارگذاری نشد');
+    state.traitMapReady = false;
+    state.traitMap = {};
+  })().finally(() => {
+    _traitMapLoadPromise = null;
+  });
+  return _traitMapLoadPromise;
 }
+
+function ensureJourneyDataLoaded() {
+  return Promise.all([loadQuestions(), loadMicroMotivesMap(), loadTraitMap()]);
+}
+window.ensureJourneyDataLoaded = ensureJourneyDataLoaded;
 
 // ==================== NAVIGATION ====================
 
@@ -3610,7 +3503,7 @@ function displayResults(data, type) {
           مشاهدهٔ نتایج رشته‌های دانشگاهی
         </button>` : ''}
       <button type="button" class="btn" onclick="goTo('choice')">بازگشت به صفحهٔ انتخاب تحلیل</button>
-      <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">رفتن به صفحه اول (امکان بازگشت به همین نتیجه)</button>
+      <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
     </div>
 
     <div id="feedbackSection" class="card dh-surface-card" style="padding:20px;margin:24px 0 15px 0;text-align:right;">
@@ -3937,7 +3830,6 @@ document.addEventListener('visibilitychange', function () {
 
 
 async function init() {
-  await Promise.all([loadQuestions(), loadMicroMotivesMap(), loadTraitMap()]);
   const saved = localStorage.getItem('darkhorse_session_v2');
   let restored = false;
   if (saved) {
@@ -3963,12 +3855,12 @@ async function init() {
     window.__dhHasSavedSession = false;
     window.__dhShouldResumeJourney = false;
   }
-  // اگر در حین بارگذاری اولیه کاربر وارد سفر شده باشد، وضعیت جاری سفر را دست‌نخورده نگه دار
+  // رندر فوری صفحهٔ خانه بدون معطلی برای ۲۸۱ کیلوبایت فایل‌های JSON
   if (window.__dhJourneyStarting || window.__dhInJourney) {
+    await ensureJourneyDataLoaded();
     render();
     return;
   }
-  // اگر سفر ناتمام بازیابی شد، stage را روی splash نگذار (داده می‌ماند)
   if (!restored) {
     state.stage = 'splash';
     state.history = [];
@@ -3977,6 +3869,25 @@ async function init() {
     window.DHShell.renderHome();
   } else {
     render();
+  }
+
+  // در محیط تست/سند کامل‌شده بلافاصله بارگذاری کن؛ در مرورگر واقعی بعد از اتمام بالا آمدن خانه
+  if (typeof document === 'undefined' || document.readyState === 'complete') {
+    await ensureJourneyDataLoaded();
+  } else {
+    let warmed = false;
+    const warmOnce = () => {
+      if (warmed) return;
+      warmed = true;
+      const run = () => { ensureJourneyDataLoaded().catch(() => {}); };
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 1200 });
+      } else {
+        setTimeout(run, 120);
+      }
+    };
+    window.addEventListener('load', warmOnce, { once: true });
+    setTimeout(warmOnce, 2000);
   }
 }
 init();
