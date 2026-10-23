@@ -1,23 +1,36 @@
-/* Dark Horse SW v72 — instant cached HTML shell + fresh network updates.
- * JSON stays network-only with cache: 'no-store'; versioned assets stay guarded SWR.
+/* Dark Horse SW v73 — instant cached HTML shell + non-destructive cache migration.
+ * Preserves previously cached static assets across SW upgrades instead of wiping
+ * the user's cache on every version bump.
  */
-const CACHE = 'darkhorse-v72';
+const CACHE = 'darkhorse-v73';
 
-self.addEventListener('install', function (e) {
+self.addEventListener('install', function () {
   self.skipWaiting();
-  e.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-    })
-  );
 });
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (k) {
-        if (k !== CACHE) return caches.delete(k);
-      }));
+    caches.open(CACHE).then(function (nextCache) {
+      return caches.keys().then(function (keys) {
+        var oldKeys = keys.filter(function (k) { return k !== CACHE; });
+        return Promise.all(oldKeys.map(function (oldKey) {
+          return caches.open(oldKey).then(function (oldCache) {
+            if (typeof oldCache.keys !== 'function') return null;
+            return oldCache.keys().then(function (requests) {
+              return Promise.all(requests.map(function (req) {
+                return nextCache.match(req).then(function (already) {
+                  if (already) return null;
+                  return oldCache.match(req).then(function (res) {
+                    return res ? nextCache.put(req, res).catch(function () {}) : null;
+                  });
+                });
+              }));
+            });
+          }).catch(function () {}).then(function () {
+            return caches.delete(oldKey);
+          });
+        }));
+      });
     }).then(function () { return self.clients.claim(); })
   );
 });
@@ -71,28 +84,29 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  // Versioned assets (?v=) and static media: stale-while-revalidate —
-  // serve cached content immediately, while keeping the background refresh alive.
+  // Versioned assets (?v=), fonts, and static media: instant cache hit; allow browser HTTP cache on miss.
   if (!isJson && (/[?&]v=/.test(url.search) || /\.(png|jpe?g|svg|webp|woff2?)$/i.test(url.pathname))) {
-    var cachePromise = caches.open(CACHE);
-    var networkPromise = cachePromise.then(function (c) {
-      return fetch(req, { cache: 'no-store' }).then(function (res) {
-        if (res && res.status === 200 && res.type === 'basic') {
-          return c.put(req, res.clone()).catch(function () {}).then(function () { return res; });
-        }
-        return res;
-      });
-    });
-    e.waitUntil(networkPromise.then(function () {}, function () {}));
-    e.respondWith(cachePromise.then(function (c) {
-      return c.match(req).then(function (cached) {
-        return cached || networkPromise;
-      });
-    }));
+    e.respondWith(
+      caches.open(CACHE).then(function (c) {
+        return c.match(req).then(function (cached) {
+          var net = fetch(req).then(function (res) {
+            if (res && res.status === 200 && res.type === 'basic') {
+              c.put(req, res.clone()).catch(function () {});
+            }
+            return res;
+          });
+          if (cached) {
+            e.waitUntil(net.catch(function () {}));
+            return cached;
+          }
+          return net;
+        });
+      })
+    );
     return;
   }
 
-  // Everything else: network-first with cache fallback.
+  // Everything else (including JSON with no-store): network-first with cache fallback.
   var networkFetch = isJson ? fetch(req, { cache: 'no-store' }) : fetch(req);
   e.respondWith(
     networkFetch.then(function (res) {

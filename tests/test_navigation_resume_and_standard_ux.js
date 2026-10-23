@@ -228,22 +228,23 @@ async function run() {
   assert.deepEqual(Array.from(sandbox.state.selectedSubRealms), [s1]);
   assert.deepEqual(Array.from(sandbox.state.selectedNarrowPaths), [p1]);
 
-  // 4. Direct jump to narrowPath -> Home return with scrollY = 340 -> exact return!
+  // 4. Direct jump to narrowPath -> Home clean layout (NO active-page banner) -> standard resume via DHShell.startJourney()!
   await sandbox.dhJumpToStage('narrowPath');
   assert.equal(sandbox.state.stage, 'narrowPath');
   currentScrollY = 340;
   sandbox.dhGoHomeKeepPlace();
-  assert.ok(getEl('app').innerHTML.includes('dh-active-place-banner'),
-    'Home must display active-page return banner');
-  assert.ok(getEl('app').innerHTML.includes('مسیرهای باریک'),
-    'Home active-page banner must name exact active stage');
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
+    'Home must NEVER render dh-active-place-banner (removed per UX simplification)');
+  assert.strictEqual(typeof sandbox.dhReturnToActivePage, 'undefined',
+    'dhReturnToActivePage must be completely removed');
+  assert.strictEqual(typeof sandbox.dhGetActivePlaceSummary, 'undefined',
+    'dhGetActivePlaceSummary must be completely removed');
 
-  await sandbox.dhReturnToActivePage();
+  await sandbox.DHShell.startJourney();
   assert.equal(sandbox.state.stage, 'narrowPath');
-  assert.equal(lastScrolledToY, 340, 'Returning from Home must restore exact scrollY');
   assert.deepEqual(Array.from(sandbox.state.selectedNarrowPaths), [p1]);
 
-  // 5. Load Swipe cards -> advance to card #4 -> simulate hard reload (swipeCards = []) -> Home & back!
+  // 5. Load Swipe cards -> advance to card #4 -> simulate hard reload (swipeCards = []) -> Home & back via DHShell.startJourney()!
   await sandbox.loadSwipeCards();
   assert.equal(sandbox.state.stage, 'swipe');
   assert.ok(!getEl('app').innerHTML.includes('قلمروها'), 'Swipe UI must not contain legacy قلمروها term');
@@ -258,8 +259,8 @@ async function run() {
   // Simulate cold reload wiping in-memory arrays before resuming
   sandbox.state.swipeCards = [];
   sandbox.dhGoHomeKeepPlace();
-  assert.ok(getEl('app').innerHTML.includes('کارت ۴'), 'Home banner must show exact card ۴');
-  await sandbox.dhReturnToActivePage();
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'), 'Home must stay free of active-page banner');
+  await sandbox.DHShell.startJourney();
   assert.equal(sandbox.state.stage, 'swipe');
   assert.equal(sandbox.state.swipeIndex, 3, 'Must resume on exact card index 3');
   assert.equal(sandbox.state.swipeCards[3].code, expectedCardCode, 'Exact swipe deck order must be restored');
@@ -285,16 +286,15 @@ async function run() {
   assert.ok(getEl('app').innerHTML.includes('dh-q-jumper'), 'Strategies must render interactive question jumper');
 
   sandbox.dhGoHomeKeepPlace();
-  assert.ok(getEl('app').innerHTML.includes('سؤال ۹ از ۲۵'), 'Home must show exact question ۹ از ۲۵');
-  assert.ok(getEl('app').innerHTML.includes('dh-active-place-banner') && getEl('app').innerHTML.includes('بازگشت به همان صفحه'),
-    'Home must keep exact active-page resume banner');
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
+    'Home must omit active-page resume banner completely');
   assert.ok(!getEl('app').innerHTML.includes('dh-mk2-progress'),
     'Home must completely omit legacy dh-mk2-progress / آخرین فعالیت block from DOM');
   sandbox.DHStories.open();
   assert.ok(!getEl('app').innerHTML.includes('→Excellence'), 'BiDi defect in stories.js must be fixed');
-  assert.ok(getEl('app').innerHTML.includes('dh-st-resume-place'), 'Secondary pages must offer 1-tap return to active page');
+  assert.ok(!getEl('app').innerHTML.includes('dh-st-resume-place'), 'Secondary pages must omit active-place return button');
 
-  await sandbox.dhReturnToActivePage();
+  await sandbox.DHShell.startJourney();
   assert.equal(sandbox.state.stage, 'strategies');
   assert.equal(sandbox.state.currentQuestion, 8, 'Must return straight to Question #9');
 
@@ -354,11 +354,10 @@ async function run() {
   assert.ok(getEl('app').innerHTML.includes('dh-story-id-card'), 'Results must render Shareable Gen-Z Story Identity Card');
 
   sandbox.dhGoHomeKeepPlace();
-  assert.ok(getEl('app').innerHTML.includes('مشاهدهٔ دوبارهٔ نتیجه'),
-    'Home must allow returning directly to just-viewed Results page');
-  await sandbox.dhReturnToActivePage();
-  assert.equal(sandbox.state.stage, 'results');
-  assert.ok(getEl('app').innerHTML.includes('مهندسی کامپیوتر'));
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
+    'Home must omit active-page banner even after viewing Results');
+  assert.ok(!getEl('app').innerHTML.includes('مشاهدهٔ دوبارهٔ نتیجه'),
+    'Home must not display extra active-page result button');
 
   console.log('Frontend seamless stage navigation, Home exact-return & standard UX E2E contract: PASS');
 }

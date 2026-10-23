@@ -213,12 +213,12 @@ const appSource = fs.readFileSync(path.join(root, 'docs', 'app.js'), 'utf8');
 
 assert.match(
   indexSource,
-  /href="shell\.css\?v=70&ux=phase4-live-v2" media="print"/,
+  /href="shell\.css\?v=70&ux=phase4-live-v2(&r=\d+)?" media="print"/,
   'docs/index.html must cache-bust shell.css for visual polish'
 );
 assert.match(
   indexSource,
-  /src="app\.js\?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2&r=265"/,
+  /src="app\.js\?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2&r=268"/,
   'docs/index.html must cache-bust app.js for visual & navigation UX polish'
 );
 assert.match(shellCssSource, /#app \.option\.dh-route-card \.dh-route-motto[\s\S]*?font-size:\s*1\.05rem/, 'Route motto must use teen-readable 1.05rem typography');

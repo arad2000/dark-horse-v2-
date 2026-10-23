@@ -1,4 +1,4 @@
-/* pwa-boot.js v72 — instant cached HTML shell + one reload */
+/* pwa-boot.js v73 — instant cached HTML shell + non-blocking SW registration */
 (function () {
   'use strict';
 
@@ -14,27 +14,33 @@
   if (window.__dhIsInstalled) document.documentElement.classList.add('dh-installed');
 
   if ('serviceWorker' in navigator) {
-    var SW_URL = './sw.js?v=72';
-    window.addEventListener('load', function () {
+    var SW_URL = './sw.js?v=73';
+    var swRegistered = false;
+    function registerSwOnce() {
+      if (swRegistered) return;
+      swRegistered = true;
       navigator.serviceWorker.register(SW_URL).then(function (reg) {
         try { reg.update(); } catch (e) {}
         if (reg.waiting) {
           try { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
         }
-        try { reg.update(); } catch (e2) {}
       }).catch(function () {});
 
       var refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (refreshing) return;
         try {
-          if (sessionStorage.getItem('dh_sw_reloaded_v72') === '1') return;
-          sessionStorage.setItem('dh_sw_reloaded_v72', '1');
+          if (sessionStorage.getItem('dh_sw_reloaded_v73') === '1') return;
+          sessionStorage.setItem('dh_sw_reloaded_v73', '1');
         } catch (e) {}
         refreshing = true;
         window.location.reload();
       });
-    });
+    }
+    window.addEventListener('load', registerSwOnce);
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(registerSwOnce, 0);
+    }
   }
 
   if (isStandalone()) {

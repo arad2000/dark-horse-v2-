@@ -441,32 +441,19 @@
     } catch (e0) {}
 
     function ico(file) {
-      return '<span class="dh-mk2-orb"><img src="' + base + file + '" alt="" width="24" height="24"></span>';
+      return '<span class="dh-mk2-orb"><img src="' + base + file + '" alt="" width="24" height="24" decoding="async"></span>';
     }
     function feat(file) {
-      return '<span class="dh-mk2-feat"><img src="' + base + file + '" alt="" loading="lazy"></span>';
+      return '<span class="dh-mk2-feat"><img src="' + base + file + '" alt="" loading="lazy" decoding="async"></span>';
     }
 
     var heroUrl = base + 'hero-journey.jpg';
     var heroUrl2x = base + 'hero-journey@2x.jpg';
-    var activePlace = (typeof window.dhGetActivePlaceSummary === 'function')
-      ? window.dhGetActivePlaceSummary()
-      : { resumable: false, label: '', cta: '' };
-    var activeBannerHtml = activePlace && activePlace.resumable
-      ? '<section class="dh-active-return-card" id="dh-active-place-banner" aria-label="بازگشت به آخرین صفحه فعال">' +
-          '<div class="dh-active-return-meta">' +
-            '<span class="dh-active-return-kicker">آخرین صفحهٔ فعال تو</span>' +
-            '<strong class="dh-active-return-title">' + escape(activePlace.label) + '</strong>' +
-          '</div>' +
-          '<button type="button" class="dh-active-return-btn" id="dh-return-exact-page">' +
-            (activePlace.isResults ? 'مشاهدهٔ دوبارهٔ نتیجه' : 'بازگشت به همان صفحه') + ' ‹</button>' +
-        '</section>'
-      : '';
 
     root.innerHTML =
       '<div class="dh-home-wrap dh-mk2">' +
         '<header class="dh-mk2-brand">' +
-          '<div class="dh-mk2-logo-ring"><img src="' + base + 'icon-192.png" alt="" width="96" height="96"></div>' +
+          '<div class="dh-mk2-logo-ring"><img src="' + base + 'icon-192.png" alt="" width="96" height="96" decoding="async"></div>' +
           '<div class="dh-mk2-word">DARK HORSE</div>' +
           '<div class="dh-mk2-fa"><i></i><span>اسب سیاه</span><i></i></div>' +
           '<h1 class="dh-mk2-sys">سامانه هدایت تحصیلی و انتخاب رشته دانشگاهی</h1>' +
@@ -476,7 +463,6 @@
           '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
           '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
-        activeBannerHtml +
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
           '<div class="dh-mk2-hero-shade"></div>' +
@@ -533,23 +519,6 @@
 
     function on(id, fn) { var el = $(id); if (el) el.onclick = fn; }
     try { startFardiyatTicker(); } catch (eTicker) {}
-    on('dh-return-exact-page', function () {
-      if (typeof window.dhReturnToActivePage === 'function') window.dhReturnToActivePage();
-      else startJourneyFromShell();
-    });
-    if (!window.__dhActiveBannerQuotaSyncBound) {
-      window.__dhActiveBannerQuotaSyncBound = true;
-      window.addEventListener('dh-quota-updated', function () {
-        if (window.__dhInJourney) return;
-        var summary = (typeof window.dhGetActivePlaceSummary === 'function')
-          ? window.dhGetActivePlaceSummary()
-          : { resumable: false };
-        if (!summary || !summary.resumable) {
-          var staleBanner = $('dh-active-place-banner');
-          if (staleBanner && typeof staleBanner.remove === 'function') staleBanner.remove();
-        }
-      });
-    }
     on('dh-start-journey', function () { startJourneyFromShell(); });
     on('dh-open-sanjesh', function () {
       var panel = $('dh-home-sanjesh-panel');
@@ -613,8 +582,9 @@
 
   async function startJourneyFromShell() {
     if (window.__dhJourneyStarting) return;
+    var commercialRuntime = typeof window.dhHasCommercialRuntime !== 'function' || window.dhHasCommercialRuntime();
     var authorizedSessionId = authorizedCommercialJourneySessionId();
-    if (!authorizedSessionId) {
+    if (commercialRuntime && !authorizedSessionId) {
       try {
         if (window.DHCommercialUI &&
             typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
@@ -625,7 +595,8 @@
       try { setActiveTab('home'); renderHome(); } catch (_) {}
       return;
     }
-    if (typeof state !== 'undefined' && state) state.sessionId = authorizedSessionId;
+    if (authorizedSessionId && typeof state !== 'undefined' && state) state.sessionId = authorizedSessionId;
+    var wasInJourney = Boolean(window.__dhInJourney);
     window.__dhJourneyStarting = true;
 
     try { shellScrollTop(); } catch (eS) {}
@@ -647,7 +618,7 @@
 
     try {
       // The commercial gate already checked server quota and authorized this exact UUID.
-      var allowed = !!authorizedSessionId;
+      var allowed = commercialRuntime ? !!authorizedSessionId : canRunTest();
       var u = getDisplayUser();
 
       var quotaRefreshPromise = null;
@@ -691,8 +662,11 @@
         return;
       }
 
-      if (typeof saveSession === 'function') {
+      if (wasInJourney && typeof saveSession === 'function') {
         try { saveSession(); } catch (e1) {}
+      }
+      if (typeof window.ensureJourneyDataLoaded === 'function') {
+        try { await window.ensureJourneyDataLoaded(); } catch (eLoad) {}
       }
 
       var data = null;
@@ -730,6 +704,9 @@
         if (typeof state !== 'undefined') {
           if (!state.stage || ['manifesto', 'guide', 'results'].indexOf(state.stage) >= 0) {
             state.stage = data.stage || 'splash';
+          }
+          if (state.stage === 'swipe' && typeof ensureSwipeDeckHydrated === 'function') {
+            try { await ensureSwipeDeckHydrated(false); } catch (eDeck) {}
           }
         }
         var resumeY = Number((data && data.lastScrollY) || (typeof state !== 'undefined' && state && state.lastScrollY) || 0);
@@ -871,7 +848,7 @@
         '<p id="dh-p-err" style="color:#f66;min-height:1.2em;font-size:0.85rem;"></p>' +
         '<button class="btn" style="width:100%;" id="dh-p-save">ثبت پروفایل محلی</button>' +
         '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
-        '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#c9b896;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#c9b896;font-size:.8rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
+        '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#c9b896;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#c9b896;font-size:.8rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" loading="lazy" decoding="async" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
         '</div></div>';
       $('dh-p-home').onclick = function () { switchTab('home'); };
       var __dhAuthUiLoad = null;
@@ -1046,7 +1023,7 @@
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;color:#c08080;border-color:#543;" id="dh-p-exit">خروج از اپ</button>' +
-      '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#c9b896;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#c9b896;font-size:.8rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
+      '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#c9b896;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#c9b896;font-size:.8rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" loading="lazy" decoding="async" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
       '</div></div>';
 
     $('dh-p-home').onclick = function () { switchTab('home'); };
@@ -1198,16 +1175,11 @@
     patchRender();
     patchConsumeOnResults();
     if (window.__dhInJourney || window.__dhJourneyStarting) return;
-    // همیشه از صفحه خانه باز شو
-    // سشن ناتمام تا دیدن نتایج حفظ می‌شود؛ ادامه فقط با دکمه «ادامه سفر»
     window.__dhInJourney = false;
-    renderHome();
-    setTimeout(function () {
-      if (!window.__dhInJourney && !window.__dhJourneyStarting) renderHome();
-    }, 200);
-    setTimeout(function () {
-      if (!window.__dhInJourney && !window.__dhJourneyStarting) renderHome();
-    }, 700);
+    var root = $('app');
+    if (!root || !root.querySelector || !root.querySelector('#dh-start-journey')) {
+      renderHome();
+    }
   }
 
   window.DHShell = {

@@ -417,13 +417,16 @@ async function run() {
   };
 
   // Unauthenticated direct attempts must ALL open login modal and NEVER enter journey stages
+  assert.strictEqual(typeof sandbox.dhReturnToActivePage, 'undefined',
+    'dhReturnToActivePage active-banner entry helper must not exist');
+  assert.strictEqual(typeof sandbox.dhGetActivePlaceSummary, 'undefined',
+    'dhGetActivePlaceSummary active-banner helper must not exist');
   for (const fn of [
     () => sandbox.DHCommercialUI.startServerAuthorizedJourney(),
     () => sandbox.DHShell.startJourney(),
     () => sandbox.startNewJourney(),
     () => sandbox.resetJourney(),
-    () => sandbox.dhResumeFromSplash(),
-    () => sandbox.dhReturnToActivePage()
+    () => sandbox.dhResumeFromSplash()
   ]) {
     elements.delete('dh-commercial-overlay');
     await fn();
@@ -472,10 +475,10 @@ async function run() {
       sandbox.state.likedCodesSet.add(code);
     }
   }
-  // Leave to Home mid-exploration and resume exact stage — still 0 credits consumed!
+  // Leave to Home mid-exploration and resume exact stage via standard startJourney — still 0 credits consumed!
   sandbox.dhGoHomeKeepPlace();
   assert.equal(sandbox.__dhInJourney, false);
-  await sandbox.dhReturnToActivePage();
+  await sandbox.DHShell.startJourney();
   assert.equal(sandbox.state.stage, 'swipe');
   assert.equal(consumeTestRequests, 0, 'Exploring neighborhoods + Home resume MUST NOT consume credit');
   assert.equal(userQuotaDetails(101).credits_remaining, 1);
@@ -519,8 +522,11 @@ async function run() {
   assert.equal(userQuotaDetails(101).credits_consumed, 1);
 
   sandbox.dhGoHomeKeepPlace();
-  await sandbox.dhReturnToActivePage();
-  assert.equal(sandbox.state.stage, 'results', 'Returning to completed Results from Home must stay allowed without extra charge');
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
+    'Home MUST NOT render active-page banner in any state');
+  sandbox.__dhInJourney = true;
+  sandbox.dhReturnToFinishedResults();
+  assert.equal(sandbox.state.stage, 'results', 'Finished Results can be re-displayed in-journey without extra charge');
   assert.equal(userQuotaDetails(101).credits_consumed, 1);
 
   // ==================== POST-#263 MANDATORY DOM DELETION & BANNER AUTH CONTRACTS ====================
@@ -541,18 +547,13 @@ async function run() {
   assert.ok(!getEl('app').innerHTML.includes('dh-stage-nav'),
     'Finished Results screen MUST omit pre-result stage jump pills from DOM');
 
-  // Verify Home banner rules when remaining=0:
-  // (A) Consumed session + existing results -> #dh-active-place-banner (`مشاهدهٔ دوبارهٔ نتیجه`) IS allowed on Home!
+  // Verify Home clean contract when remaining=0:
   await sandbox.DHCommercialUI.syncQuota();
   sandbox.dhGoHomeKeepPlace();
-  assert.ok(getEl('app').innerHTML.includes('dh-active-place-banner') && getEl('app').innerHTML.includes('مشاهدهٔ دوبارهٔ نتیجه'),
-    'Home MUST allow #dh-active-place-banner ONLY for consumed session with existing Results when remaining=0');
+  assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
+    'Home MUST NEVER render #dh-active-place-banner');
   assert.ok(!getEl('app').innerHTML.includes('dh-mk2-progress') && !getEl('app').innerHTML.includes('آخرین فعالیت'),
     'Home DOM MUST NOT contain dh-mk2-progress or آخرین فعالیت');
-
-  // Return to Results via #dh-active-place-banner (`مشاهدهٔ دوبارهٔ نتیجه`) -> 0 extra credits deducted
-  await sandbox.dhReturnToActivePage();
-  assert.equal(sandbox.state.stage, 'results', 'Returning to consumed Results from Home must stay on results');
 
   // ==================== 1) REMAINING = 0 -> BLOCK ALL 2ND JOURNEY ENTRY VECTORS & ZERO STAGE MUTATION ====================
   // Even if someone tampers with EVERY localStorage key in DevTools (`remaining: 99`, `premium: true`, forged `dh_quota_charged_session_v1`)!
@@ -610,7 +611,7 @@ async function run() {
   assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
     'Tabbar journey button with remaining=0 MUST open Purchase Modal');
 
-  // 1d. Uncharged session + `remaining=0`: Home MUST NOT render `#dh-active-place-banner` AND `dhReturnToActivePage()` MUST NOT open journey or mutate stage!
+  // 1d. Uncharged session + `remaining=0`: Home MUST NOT render `#dh-active-place-banner` AND `DHShell.startJourney()` MUST NOT open journey or mutate stage!
   sandbox.__dhCachedResultsPlace = null;
   localStorage.setItem('darkhorse_session_v2', JSON.stringify({
     sessionId: 'forged-uncharged-session-999',
@@ -624,10 +625,10 @@ async function run() {
     'Home MUST NOT render #dh-active-place-banner when remaining=0 and session is uncharged');
   const stageBeforeBlockedReturn = sandbox.state.stage;
   elements.delete('dh-commercial-overlay');
-  await sandbox.dhReturnToActivePage();
+  await sandbox.DHShell.startJourney();
   await flushMicrotasks();
   assert.equal(sandbox.__dhInJourney, false, 'Forged localStorage charge marker MUST be rejected by server check');
-  assert.equal(sandbox.state.stage, stageBeforeBlockedReturn, 'Blocked dhReturnToActivePage() MUST NOT mutate state.stage');
+  assert.equal(sandbox.state.stage, stageBeforeBlockedReturn, 'Blocked startJourney() MUST NOT mutate state.stage');
   assert.equal(localStorage.getItem('dh_quota_charged_session_v1'), null, 'Forged charge marker must be purged');
   assert.ok(getEl('dh-commercial-overlay').innerHTML.includes('خرید بسته ۳ تست'),
     'Resuming forged uncharged session with remaining=0 MUST open Purchase Modal');

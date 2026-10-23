@@ -1,6 +1,8 @@
 const fs = require('fs');
+const path = require('path');
 const vm = require('vm');
 const assert = require('assert');
+const root = process.cwd();
 
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const bootSource = fs.readFileSync('docs/pwa-boot.js', 'utf8');
@@ -26,7 +28,11 @@ function makeServiceWorker() {
     async open(name) {
       if (!store.has(name)) store.set(name, new Map());
       const map = store.get(name);
-      return { async match(req) { return map.get(key(req)); }, async put(req, res) { map.set(key(req), res.clone ? res.clone() : res); } };
+      return {
+        async keys() { return Array.from(map.keys()).map(url => ({ url })); },
+        async match(req) { return map.get(key(req)); },
+        async put(req, res) { map.set(key(req), res.clone ? res.clone() : res); }
+      };
     },
     async match(req) {
       const target = key(req);
@@ -58,7 +64,12 @@ function makeServiceWorker() {
       assert.ok(pendingResolve, 'expected pending network request');
       const resolve = pendingResolve; pendingResolve = null; resolve(response(body));
     },
-    async cached(url) { return (await caches.open('darkhorse-v72')).match({ url }); },
+    async cached(url) { return (await caches.open('darkhorse-v73')).match({ url }); },
+    async triggerLifecycle(name) {
+      const waiters = [];
+      listeners[name]({ waitUntil(value) { waiters.push(Promise.resolve(value)); } });
+      await Promise.all(waiters);
+    },
     async dispatch(url) {
       let responsePromise;
       const waiters = [];
@@ -91,9 +102,16 @@ async function testStartupMarkup() {
   assert.match(indexSource, /shell\.js\?v=90/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
   assert.match(indexSource, /pwa-boot\.js\?v=72/);
-  assert.match(indexSource, /shell\.css\?v=70&ux=phase4-live-v2" media="print"/);
-  assert.match(indexSource, /journey_experience\.css\?v=2">/);
+  assert.match(indexSource, /shell\.css\?v=70&ux=phase4-live-v2(&r=\d+)?" media="print"/);
+  assert.match(indexSource, /journey_experience\.css\?v=2" media="print"/);
   assert.match(indexSource, /journey_experience\.js\?v=2">/);
+  assert.match(indexSource, /fonts\/Vazirmatn-Variable\.woff2/);
+  assert.doesNotMatch(indexSource, /cdn\.jsdelivr\.net/);
+  assert.doesNotMatch(indexSource, /home_update_banner_1405/);
+  assert.strictEqual(fs.existsSync(path.join(root, 'docs', 'home_update_banner_1405.js')), false,
+    'home_update_banner_1405.js must be completely removed');
+  assert.strictEqual(fs.existsSync(path.join(root, 'docs', 'home_update_banner_1405.css')), false,
+    'home_update_banner_1405.css must be completely removed');
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
   assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=72'),
     'payment hop bootstrap must precede app.js');
@@ -200,7 +218,7 @@ async function testPwaRegistrationAndSingleReload() {
   windowListeners.load();
   await Promise.resolve();
   await Promise.resolve();
-  assert.deepStrictEqual(registered, ['./sw.js?v=72']);
+  assert.deepStrictEqual(registered, ['./sw.js?v=73']);
   swListeners.controllerchange();
   swListeners.controllerchange();
   assert.strictEqual(reloads, 1, 'controller changes must not cause repeated reloads');
@@ -249,6 +267,18 @@ async function testColdWarmOfflineOnline() {
   assert.ok(sw.fetchCalls.some(call => call.url === jsonUrl && call.options.cache === 'no-store'),
     'JSON must keep cache:no-store');
   await Promise.all(json.waiters);
+  // Non-destructive SW upgrade contract: install MUST NOT wipe existing caches, and activate
+  // must carry forward unchanged cached assets from darkhorse-v72 into darkhorse-v73.
+  const oldCache = await sw.caches.open('darkhorse-v72');
+  const heavyAssetUrl = 'https://asbe-siah.ir/data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=grade9-v1';
+  await oldCache.put({ url: heavyAssetUrl }, response('/* cached-data-js */'));
+  await sw.triggerLifecycle('install');
+  assert.ok((await sw.caches.open('darkhorse-v72')).match({ url: heavyAssetUrl }),
+    'SW install MUST NOT wipe user cache during version upgrade');
+  await sw.triggerLifecycle('activate');
+  assert.strictEqual((await sw.cached(heavyAssetUrl)).body, '/* cached-data-js */',
+    'SW activate must carry cached static assets forward into darkhorse-v73 without cold re-download');
+  console.log('non-destructive SW cache migration: PASS');
   console.log('cold/warm open, offline/online recovery, JSON no-store: PASS');
 }
 
