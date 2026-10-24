@@ -242,6 +242,25 @@ V_TEXT = {
 }
 
 
+# Semantic review sets chosen from task/content evidence, NOT numeric similarity.
+# (peer, relation, own witness, peer witness, rationale); not an exhaustive taxonomy.
+SEMANTIC = {
+161: [(10, 'همسایهٔ محتوایی مستقیم', 'SPORT-003', 'PHYSIO-004', 'مشاهده و تحلیل اختلال الگوی حرکت؛ برنامهٔ تمرین/بازتوانی فردی'),
+      (11, 'حوزهٔ مجاور توانبخشی، نه معادل رشته', 'SPORT-005', 'OCT-004', 'تنظیم مداخلهٔ حرکتی برای پیشگیری آسیب/دفورمیتی'),
+      (27, 'حوزهٔ مجاور عملکرد ورزشکار', 'SPORT-001', 'NUT-005', 'تنظیم برنامه برای حفظ/بهبود عملکرد بدن؛ تمرین در برابر تغذیه')],
+162: [(136, 'همسایهٔ محتوایی مستقیم', 'ARCH-003', 'ARCHA-004', 'ساخت مدل/ماکت و طراحی تناسب و تجربهٔ فضا'),
+      (172, 'همسایهٔ محتوایی مستقیم', 'ARCH-005', 'INTARCH-006', 'بازطراحی فضا با کنترل تناسب و نیاز استفاده‌کننده'),
+      (52, 'حوزهٔ مجاور ساخت و سازه', 'ARCH-001', 'CE-005', 'محدودیت سازه و کنترل نقشهٔ اجرایی؛ نه لزوماً خلق تجربهٔ فضایی یکسان')],
+163: [(121, 'همسایهٔ محتوایی مستقیم', 'TOURISM-006', 'TOUR-001', 'طراحی تجربه/تور و رضایت مسافر'),
+      (171, 'حوزهٔ مجاور خدمات مهمان', 'TOURISM-004', 'HOTEL-003', 'حل بحران اجرایی خدمت‌رسانی؛ تور در برابر اقامت')],
+164: [(173, 'همسایهٔ محتوایی مستقیم', 'QURAN-002', 'RELIG-006', 'بازبینی ادعا با متن و منبع دینی اولیه'),
+      (105, 'حوزهٔ مجاور استدلال فقهی', 'QURAN-004', 'FLAW-003', 'استخراج/دفاع مستند از پاسخ با متن کهن؛ موضوع حقوقی متمایز است'),
+      (149, 'حوزهٔ ابزاری مجاور، نه همتای کامل', 'QURAN-003', 'ARAB-001', 'خواندن متن عربی اصلی و تحلیل آن؛ ادبیات با تفسیر/سند یکسان نیست')],
+165: [(56, 'همسایهٔ محتوایی مستقیم', 'WATER-001', 'WW-002', 'مدل‌سازی جریان/فشار شبکه و بهبود دسترسی آب'),
+      (74, 'حوزهٔ مجاور آبخیز و منابع', 'WATER-006', 'RAN-002', 'طرح سازهٔ آبی با اثر میدانی؛ شبکه/دبی با احیای آبخیز یکسان نیست')]
+}
+
+
 def parse(text):
     return [(list(map(float, a.split())), b.split(',') if b != '-' else [], c)
             for a, b, c in (line.split('|') for line in text.strip().splitlines())]
@@ -312,9 +331,17 @@ def build():
     active, scores, suspicious = validate(candidate)
     assert not suspicious, suspicious
     for mid in S:
-        result[mid]['neighbors'] = sorted(
+        result[mid]['statistical_neighbors'] = sorted(
             [(other, sum(a == b for a, b in zip(scores[mid], sig))) for other, sig in scores.items() if other != mid],
             key=lambda x: (-x[1], x[0]))[:5]
+    for mid, peers in SEMANTIC.items():
+        result[mid]['semantic_neighbors'] = []
+        for peer, relation, own_code, peer_code, reason in peers:
+            assert peer in active and peer != mid
+            assert own_code in original[mid]['micro_motive_codes']
+            assert peer_code in original[peer]['micro_motive_codes']
+            agree = sum(a == b for a,b in zip(scores[mid],scores[peer]))
+            result[mid]['semantic_neighbors'].append((peer, agree, relation, own_code, peer_code, reason))
     # Verify only two fields of exactly five majors would change.
     changed = [m['id'] for m in candidate if m != original[m['id']]]
     assert changed == list(range(161, 166))
@@ -336,7 +363,7 @@ def render():
         f'مبنای کاتالوگ و سؤال‌ها: `{BASE}`؛ ۲۳۰ مدخل، ۲۰۲ فعال و ۲۸ غیرفعال.',
         'این سند از نو با متن منابع Git بازسازی شده است؛ نسخهٔ محلیِ مفقودشده بازیابی نشده و ادعای برابری با آن نداریم.',
         'کارشناسی فقط از هفت جملهٔ خود رشته و متن دقیق سؤال/گزینه انجام شده؛ اعداد انتخاب کارشناسی‌اند، نه برآورد آماری از پاسخ کاربران.',
-        'هرجا انتقال از موقعیت حرفه‌ای به سؤال مدرسه غیرمستقیم است، در دلیل صریح آمده است؛ هم‌خانواده‌ها فقط پس از طراحی برای ممیزی مقایسه شده‌اند.', '',
+        'هرجا انتقال از موقعیت حرفه‌ای به سؤال مدرسه غیرمستقیم است، در دلیل صریح آمده است؛ همسایهٔ محتوایی از شواهد کار/موضوع انتخاب می‌شود، نه از فاصلهٔ آماری؛ وزن آن رشته منبع وزن‌دهی نیست.', '',
         '## سیاست جدید EQUAL و گذر سریع', '',
         'شیب بی‌شاهد ممنوع؛ EQUAL_NO_EVIDENCE مجاز است. بیش از ۶ سؤال برابر: شواهد ناکافی/نیاز میکرو‌موتیو غنی‌تر و عدم نوشتن آن major.',
         'بین ۳ تا ۶ برابر: قابل اعمال فقط پس از تأیید ناظر روی همین دسته. نوشتن روی شاخهٔ Draft به معنی اعمال در deploy نیست.',
@@ -360,10 +387,10 @@ def render():
         lines += [f"- `{o['code']}` ({poles[o['code']]}): {o['text']}" for o in q['options']]
         lines.append('')
     lines += ['## خلاصهٔ شرط اعمال و جدول تمایز پس از پنج جایگزینی', '',
-              '| major_id | نام | EQUAL | سؤال‌های برابر | نزدیک‌ترین (agree) | وضعیت |',
+              '| major_id | نام | EQUAL | سؤال‌های برابر | همسایه‌های محتوایی منتخب (agree؛ نه رتبهٔ ماهیتی) | وضعیت |',
               '|---:|---|---:|---|---|---|']
     for mid, result in results.items():
-        near = '; '.join(f"{other} {original[other]['name']} ({n}/25)" for other, n in result['neighbors'][:3])
+        near = '; '.join(f"{other} {original[other]['name']} ({n}/25)" for other, n, *_ in result['semantic_neighbors'])
         eqs = ', '.join(f'S{i:02d}' for i in result['equal'])
         lines.append(f"| {mid} | {original[mid]['name']} | {len(result['equal'])} | {eqs} | {near} | قابل اعمال پس از تأیید ناظر؛ فعلاً Draft |")
     for mid in S:
@@ -412,9 +439,18 @@ def render():
                   f'- EQUAL={flat} (۳ تا ۶): **قابل اعمال پس از تأیید ناظر روی همین دسته**؛ بیش از ۶ نیست، پس قاعدهٔ منع درجِ شواهد ناکافی فعال نمی‌شود.',
                   f'- کف ناشی فقط از این ردیف‌های برابر S در صورت پاسخ به همهٔ آن‌ها: {flat*4} نقطه از S. این محدودیت صریح است و با دست‌کاری فرمول یا شیب بی‌شاهد پنهان نشده.',
                   '- signature مطابق پروتکل اولین بیشینه را انتخاب می‌کند؛ در ردیف نامعلوم این فقط قرارداد tie-break است، نه ترجیح واقعی گزینهٔ صفر.', '',
-                  '| همسایه بعد از پیشنهاد | نام | agree/25 | نتیجه |', '|---:|---|---:|---|']
-        for other, n in results[mid]['neighbors']:
-            lines.append(f"| {other} | {original[other]['name']} | {n} | فاقد هشدار ۲۰–۲۴ و تصادف کامل؛ نه اثبات اعتبار روان‌سنجی |")
+                  '#### الف) همسایهٔ محتوایی/ماهیتی — انتخاب مستقل از امتیاز', '',
+                  'این مجموعه منتخب و قابل بازبینی ناظر است، نه فهرست جامع یا رتبه‌بندی قطعی رشته‌ها. حوزهٔ مجاور از همتای مستقیم جدا شده است.', '',
+                  '| رشته | نوع رابطه | شاهد کاملِ رشتهٔ هدف | شاهد کاملِ رشتهٔ مقایسه | مبنای محتوایی | agree/25 |', '|---|---|---|---|---|---:|']
+        for other, n, relation, own_code, peer_code, reason in results[mid]['semantic_neighbors']:
+            own_text=motives[own_code]['description_fa']
+            peer_text=motives[peer_code]['description_fa']
+            lines.append(f"| {other} {original[other]['name']} | {relation} | {own_code}: {own_text} | {peer_code}: {peer_text} | {reason} | {n} |")
+        lines += ['', '#### ب) بیشترین شباهت آماری در کل ۲۰۲ — فقط کشف تصادف/سوگیری', '',
+                  'این جدول **همسایهٔ ماهیتی نیست**. ورود رشتهٔ نامرتبط هشدار برای بررسی الگوی وزن است، نه اثبات خویشاوندی و نه مجوز تغییر مصنوعی وزن.', '',
+                  '| رشته | نام | agree/25 | تفسیر |', '|---:|---|---:|---|']
+        for other, n in results[mid]['statistical_neighbors']:
+            lines.append(f"| {other} | {original[other]['name']} | {n} | فقط شباهت آماری؛ ماهیت از این عدد استنتاج نمی‌شود |")
     lines += ['', '## اثر ساختاری S و تمایز V با فرمول‌های فعلی (بدون تغییر موتور)', '',
               'کف S = میانگین min(row)/max(row)؛ امید S تصادفیِ پنج‌گزینه‌ای = میانگین mean(row)/max(row). این اعداد اعتبارسنجی تجربی نیستند.',
               '| major_id | کف S قبل→بعد (%) | امید S تصادفی قبل→بعد (%) | زوج V با range≥0.02 قبل→بعد |',
@@ -443,7 +479,7 @@ def render():
     target.write_text('\n'.join(lines) + '\n')
     print('Wrote', target.relative_to(ROOT))
     for mid, result in results.items():
-        print(mid, 'EQUAL=', len(result['equal']), 'nearest=', result['neighbors'][0])
+        print(mid, 'EQUAL=', len(result['equal']), 'global_statistical_max=', result['statistical_neighbors'][0])
 
 
 def check_catalog():
