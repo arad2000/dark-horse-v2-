@@ -4,7 +4,6 @@ review document. All proposals are pending supervisor approval.
 """
 from pathlib import Path
 from decimal import Decimal
-import ast
 import hashlib
 import itertools
 import json
@@ -416,6 +415,19 @@ def render():
                   '| همسایه بعد از پیشنهاد | نام | agree/25 | نتیجه |', '|---:|---|---:|---|']
         for other, n in results[mid]['neighbors']:
             lines.append(f"| {other} | {original[other]['name']} | {n} | فاقد هشدار ۲۰–۲۴ و تصادف کامل؛ نه اثبات اعتبار روان‌سنجی |")
+    lines += ['', '## اثر ساختاری S و تمایز V با فرمول‌های فعلی (بدون تغییر موتور)', '',
+              'کف S = میانگین min(row)/max(row)؛ امید S تصادفیِ پنج‌گزینه‌ای = میانگین mean(row)/max(row). این اعداد اعتبارسنجی تجربی نیستند.',
+              '| major_id | کف S قبل→بعد (%) | امید S تصادفی قبل→بعد (%) | زوج V با range≥0.02 قبل→بعد |',
+              '|---:|---:|---:|---:|']
+    for mid in S:
+        def stats(rows):
+            return (100*sum(min(row)/max(row) for row in rows)/25,
+                    100*sum(sum(row)/len(row)/max(row) for row in rows)/25)
+        b_floor,b_mean=stats(original[mid]['strategy_weights'])
+        a_floor,a_mean=stats(patches[mid]['strategy_weights'])
+        def informative(values):
+            return sum(round(abs(values[f'Q{i}A']-values[f'Q{i}B']),12)>=.02 for i in range(1,16))
+        lines.append(f"| {mid} | {b_floor:.2f}→{a_floor:.2f} | {b_mean:.2f}→{a_mean:.2f} | {informative(original[mid]['value_weights'])}→{informative(patches[mid]['value_weights'])} |")
     lines += ['', '## گیت نهایی و دامنهٔ Draft', '',
               '- پس از هر یک از پنج جایگزینی، تمام ۲۰۲ signature بررسی شدند: هیچ تصادف کامل وجود ندارد؛ هیچ جفت مشکوک ۲۰–۲۴ مرتبط با پیشنهادهای واردشده باقی نماند.',
               '- پس از جایگزینی همزمان هر پنج: هیچ تصادف کامل یا جفت مشکوک مرتبط با این پنج در کل ۲۰۲ نیست. آستانهٔ Pearson هدف‌گذاری نشده و وزن برای کاهش شباهت مصنوعی تغییر نکرده است.',
@@ -425,7 +437,7 @@ def render():
               '- مرز انتشار: هنوز **No-Go برای Merge و استقرار**؛ Draft وزن‌ها فقط برای تصمیم ناظر است. دستهٔ بعدی تا Merge دستهٔ ۱ شروع نمی‌شود.',
               '- تست‌های تاریخی fingerprint کاتالوگ و audit برابری reference با main ممکن است تغییر عمدی این پنج وزن را رد کنند؛ در این Draft آن گیت‌ها دور زده/ضعیف نشده‌اند. نتیجهٔ CI باید صریح گزارش شود، نه سبز فرض شود.', '',
               '## بازتولید سند و ممیزی', '', '```bash',
-              'python docs/weight-review/dh013_batch1_design.py', '```',
+              'python docs/weight-review/dh013_batch1_design.py', 'python docs/weight-review/dh013_batch1_design.py --check-catalog', '```',
               'این فرمان فقط همین Markdown را می‌سازد؛ JSON اجرایی را نمی‌نویسد. اعداد و ارجاع‌های هر سؤال به‌صورت صریح در اسکریپت ثبت‌اند؛ تولید خودکار از نام رشته یا کپی هم‌خانواده وجود ندارد.']
     target = ROOT / 'docs/weight-review/DH013_BATCH1_161_165.md'
     target.write_text('\n'.join(lines) + '\n')
@@ -434,5 +446,26 @@ def render():
         print(mid, 'EQUAL=', len(result['equal']), 'nearest=', result['neighbors'][0])
 
 
+def check_catalog():
+    original, _, _, _, patches, _ = build()
+    current = json.loads((ROOT/'majors_database_v2.json').read_text())
+    assert len(current) == 230 and len({m['id'] for m in current}) == 230
+    changed=[]
+    for m in current:
+        old=original[m['id']]
+        if m != old:
+            changed.append(m['id'])
+            assert m['id'] in patches
+            assert {k for k in old if m[k] != old[k]} == {'strategy_weights','value_weights'}
+            assert all(m[k] == value for k,value in patches[m['id']].items())
+    assert changed == list(range(161,166)), changed
+    validate(current)
+    print('PASS: exactly five majors, only S/V fields; other 225 rows unchanged; 202 signatures checked')
+
+
 if __name__ == '__main__':
-    render()
+    import sys
+    if '--check-catalog' in sys.argv:
+        check_catalog()
+    else:
+        render()
