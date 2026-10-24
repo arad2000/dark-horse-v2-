@@ -2,7 +2,7 @@
 Dark Horse Engine — نسخه نهایی (D_last_final.py)
 - انتخاب رشته دانشگاهی: Total = 0.55×M + 0.30×V + 0.15×S
 - هدایت تحصیلی پایه نهم: Total = 0.60×M + 0.20×S + 0.20×V
-- M-Score شاخه‌ها با مخرج ۳۰ محاسبه می‌شود
+- M-Score شاخه‌ها با مخرج min(30, max(15, |U|)) محاسبه می‌شود
 - ✅ فقط از فیلدهای archetype و fulfillment_source دیتابیس استفاده می‌کند
 - ✅ هیچ تولید داخلی برای کهن‌الگو و منبع رضایت وجود ندارد
 """
@@ -11,7 +11,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
-from math import sqrt
+from math import sqrt, isfinite
 
 logger = logging.getLogger("darkhorse_engine_final")
 
@@ -246,42 +246,86 @@ class DarkHorseEngineV2:
         final_score = (total_score / question_count) if question_count > 0 else 0.0
         return final_score, highlights
 
-    # ── V-Score (نرمال‌سازی زوجی Conjoint برای حذف سوگیری سقف بین گروه‌ها) ──
+    # V range normalization: aggregate evidence, never average pair ratios.
+    V_EPSILON = 0.02
+
     @staticmethod
-    def _pairwise_value_score(choice: str, value_weights: Dict[str, float]) -> Tuple[float, float]:
-        code = choice.strip().upper()
-        chosen_w = float(value_weights.get(code, 0.0) or 0.0)
-        if len(code) >= 3 and code.startswith("Q") and code[-1] in ("A", "B"):
-            base = code[:-1]
-            pair_max = max(
-                float(value_weights.get(base + "A", 0.0) or 0.0),
-                float(value_weights.get(base + "B", 0.0) or 0.0),
-            )
-            normalized = (chosen_w / pair_max) if pair_max > 0.0 else 0.0
-            return normalized, chosen_w
-        return chosen_w, chosen_w
+    def _valid_value_code(value):
+        if not isinstance(value, str):
+            return None
+        code = value.strip().upper()
+        return code if code in {f"Q{i}{side}" for i in range(1, 16) for side in "AB"} else None
 
-    def _compute_v_score(self, value_choices: List[str], value_weights: Dict[str, float]) -> Tuple[float, List[str]]:
-        if not value_choices or not value_weights:
-            return 0.0, []
+    @classmethod
+    def _pairwise_value_score(cls, choice, value_weights):
+        code = cls._valid_value_code(choice)
+        if not code:
+            return 0.0, 0.0
+        try:
+            a, b = (float(value_weights[code[:-1] + side]) for side in "AB")
+        except (KeyError, TypeError, ValueError):
+            return 0.0, 0.0
+        if not all(isfinite(x) and 0 <= x <= 1 for x in (a, b)):
+            return 0.0, 0.0
+        span = round(abs(a - b), 12)
+        chosen = a if code[-1] == "A" else b
+        if span < cls.V_EPSILON:
+            return 0.0, chosen
+        return (chosen - min(a, b)) / span, chosen
 
-        total = 0.0
-        valid = 0
+    def _compute_v_result(self, value_choices, value_weights):
+        # Repeated identical answers count once; conflicting answers invalidate
+        # the question rather than making the result depend on input order.
+        answers = {}
+        for value in value_choices or []:
+            code = self._valid_value_code(value)
+            if code:
+                answers.setdefault(code[:-1], set()).add(code)
+        answered = sum(len(codes) == 1 for codes in answers.values())
+        numerator = denominator = 0.0
+        informative = 0
         highlights = []
-
-        for v in value_choices:
-            if not v or not v.strip():
+        for base, codes in answers.items():
+            if len(codes) != 1:
                 continue
-            code = v.strip().upper()
-            normalized, raw_weight = self._pairwise_value_score(code, value_weights)
-            total += normalized
-            valid += 1
-            if raw_weight > 0.7 or (normalized >= 0.85 and raw_weight >= 0.55):
-                pole = self.value_poles.get(code, v.strip())
+            code = next(iter(codes))
+            try:
+                a, b = (float(value_weights[base + side]) for side in "AB")
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not all(isfinite(x) and 0 <= x <= 1 for x in (a, b)):
+                continue
+            span = round(abs(a - b), 12)
+            if span < self.V_EPSILON:
+                continue
+            chosen = a if code[-1] == "A" else b
+            numerator += chosen - min(a, b)
+            denominator += span
+            informative += 1
+            if chosen > min(a, b):
+                pole = self.value_poles.get(code, code)
                 highlights.append(f"ارزش «{pole}»: هم‌راستایی قوی")
+        score = min(1.0, max(0.0, numerator / denominator)) if denominator else None
+        return {
+            "score": score,
+            "status": ("complete" if answered == 15 else "partial") if score is not None
+                      else ("no_discriminative_evidence" if answered else "incomplete"),
+            "coverage": {"answered": answered, "total": 15,
+                         "discriminative_answered": informative},
+            "highlights": highlights,
+        }
 
-        score = min(1.0, total / valid) if valid > 0 else 0.0
-        return score, highlights
+    def _compute_v_score(self, value_choices, value_weights):
+        result = self._compute_v_result(value_choices, value_weights)
+        return result["score"], result["highlights"]
+
+    @classmethod
+    def _v_method(cls):
+        return {"version": "3.1-v-range-norm",
+                "v_formula": "sum(w_chosen-min(wA,wB))/sum(max(wA,wB)-min(wA,wB)); answered pairs only; range < 0.02 excluded; zero denominator => null",
+                "v_epsilon": cls.V_EPSILON,
+                "v_previous_formula": "mean(w_chosen/max(wA,wB)) at deploy 45e61bc5ed0f83a69ec36aff9de7a24a1ce45b90",
+                "score_label": "امتیاز هم‌خوانی مدل"}
 
     # ──────────────────────────────────────────────────────────────
     # ابزارهای فاصله برای مسیرهای جایگزین
@@ -597,12 +641,13 @@ class DarkHorseEngineV2:
         for i in range(1, 16):
             key = f"conj_{i}"
             val = (conjoint_choices or {}).get(key, "").strip().upper()
-            if val and val.startswith('Q'):
+            if val in (f'Q{i}A', f'Q{i}B'):
                 value_choices.append(val)
             else:
                 value_choices.append("")
 
         discovered = []
+        incomplete = []
         for major_id, major_data in self.majors_db.items():
             try:
                 # ایمنی داده: رشته‌هایی که هنوز motive واقعی و وزن‌دهی معتبر ندارند
@@ -617,7 +662,12 @@ class DarkHorseEngineV2:
                     continue
 
                 s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
-                v_score, v_high = self._compute_v_score(value_choices, major_data.get("value_weights", {}))
+                v_result = self._compute_v_result(value_choices, major_data.get("value_weights", {}))
+                v_score, v_high = v_result["score"], v_result["highlights"]
+                if v_score is None or not any(0 <= a <= 4 for a in strategy_answers) or not major_data.get("strategy_weights"):
+                    incomplete.append({"major_id": major_id, "score": None, "status": "incomplete",
+                                       "v_result": v_result})
+                    continue
 
                 total = (0.55 * m_score) + (0.30 * v_score) + (0.15 * s_score)
                 final_score = round(total * 100, 1)
@@ -669,6 +719,8 @@ class DarkHorseEngineV2:
                     "realm_fa": major_data.get("group", ""),
                     "individuality_fit": {
                         "score": final_score,
+                        "status": v_result["status"],
+                        "value_assessment": v_result,
                         "level": self._get_fit_level(final_score),
                         # توجه: فیلد prestige_level در majors_database_v2.json فعلاً وجود ندارد.
                         # قبلاً اینجا مقدار ثابت ۲ برای همهٔ ۱۶۰ رشته برمی‌گشت (داده جعلی).
@@ -701,6 +753,8 @@ class DarkHorseEngineV2:
 
         return {
             "discovered_majors": discovered,
+            "incomplete_assessments": incomplete,
+            "status": "incomplete" if incomplete else "complete",
             "summary": {
                 "total_majors_analyzed": len(self.majors_db),
                 "active_majors_analyzed": active_majors_count,
@@ -715,7 +769,7 @@ class DarkHorseEngineV2:
                 "s_score_formula": "S = (1/25) * Σ(chosen_w / max_w)",
                 "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
                 "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15% (سخت)",
-                "version": "3.1-alternative-paths",
+                **self._v_method(),
                 "trait_map_version": "v3 (چند ویژگی در هر گزینه)",
                 "features": ["کهن‌الگو و منبع رضایت از دیتابیس", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy", "سناریوهای ۸ گانه"]
             },
@@ -725,7 +779,7 @@ class DarkHorseEngineV2:
     # ──────────────────────────────────────────────────────────────
     #  متد ۲: هدایت تحصیلی پایه نهم (توصیه شاخه)
     #  فرمول: Total = 0.60×M + 0.20×S + 0.20×V
-    #  M-Score با مخرج ۳۰ محاسبه می‌شود
+    #  M-Score denominator = min(30, max(15, |U|))
     # ──────────────────────────────────────────────────────────────
     def recommend_school_branch(self, user_motives, sjt_answers, conjoint_choices) -> Dict:
         strategy_answers = []
@@ -738,21 +792,29 @@ class DarkHorseEngineV2:
         for i in range(1, 16):
             key = f"conj_{i}"
             val = (conjoint_choices or {}).get(key, "").strip().upper()
-            if val and val.startswith('Q'):
+            if val in (f'Q{i}A', f'Q{i}B'):
                 value_choices.append(val)
             else:
                 value_choices.append("")
 
         branch_scores = []
+        incomplete = []
 
         for branch_name, branch_data in self.school_branches.items():
             m_score, m_ev = self._compute_branch_m_score(user_motives, branch_data)
             s_score, s_high = self._compute_s_score(strategy_answers, branch_data.get("strategy_weights", []))
-            v_score, v_high = self._compute_v_score(value_choices, branch_data.get("value_weights", {}))
+            v_result = self._compute_v_result(value_choices, branch_data.get("value_weights", {}))
+            v_score, v_high = v_result["score"], v_result["highlights"]
+            if v_score is None or not any(0 <= a <= 4 for a in strategy_answers) or not branch_data.get("strategy_weights"):
+                incomplete.append({"branch_name": branch_name, "score": None, "status": "incomplete",
+                                   "v_result": v_result})
+                continue
             total = (0.60 * m_score) + (0.20 * v_score) + (0.20 * s_score)
 
             branch_info = {
                 "branch_name": branch_name,
+                "status": v_result["status"],
+                "value_assessment": v_result,
                 "average_score": round(total * 100, 1),
                 "count": len(branch_data.get("micro_motive_codes", [])),
                 "max_score": round(total * 100, 1),
@@ -788,19 +850,21 @@ class DarkHorseEngineV2:
 
         return {
             "recommended_branches": branch_scores,
+            "incomplete_assessments": incomplete,
+            "status": "incomplete" if incomplete else "complete",
             "best_branch": best_branch,
             "summary": {
                 "total_majors_analyzed": len(self.majors_db),
-                "branches_analyzed": len(branch_scores)
+                "branches_analyzed": len(self.school_branches)
             },
             "method": {
                 "principle": "هدایت تحصیلی — توصیه شاخه دبیرستانی",
                 "scoring": "Total = 0.60×M + 0.20×S + 0.20×V",
-                "m_denom_limit": "30",
+                "m_denom_limit": "min(30, max(15, |unique_user_motives|))",
                 "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
                 "filter": "بهترین شاخه فقط از بین شاخه‌های با M ≥ 15% انتخاب می‌شود",
                 "features": ["M-Score مستقیم از شاخه", "S و V از شاخه", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy"],
-                "version": "3.1-branch-recommendation"
+                **self._v_method()
             },
             "next_step": "بر اساس این نتایج، شاخه‌ای که بیشترین امتیاز را دارد و همخوانی انگیزه‌ی بالایی دارد، مناسب‌ترین گزینه برای شماست."
         }

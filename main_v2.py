@@ -8,6 +8,7 @@ import hashlib
 import logging
 import os
 import uuid
+import math
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -518,6 +519,16 @@ def _persist_branch_results(session_id: int | None, branches: list[dict]) -> boo
         return False
 
 
+def _rankable_score(score, components):
+    """Never coerce null to zero or persist unavailable results as numeric fits."""
+    return (isinstance(score, (int, float)) and not isinstance(score, bool)
+            and math.isfinite(score)
+            and ("v_score" not in components or
+                 isinstance(components["v_score"], (int, float))
+                 and not isinstance(components["v_score"], bool)
+                 and math.isfinite(components["v_score"])))
+
+
 @app.post("/api/v2/darkhorse/discover")
 async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
     _enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER, "کشف رشته")
@@ -539,6 +550,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
         )
 
         recommendations = []
+        incomplete = list(discovery.get("incomplete_assessments", []))
         for item in discovery.get("discovered_majors", []):
             fit = item.get("individuality_fit", {}) or {}
             rec = {
@@ -553,6 +565,10 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "personalized_description": fit.get("personalized_description", ""),
                 "individuality_fit": fit,
             }
+            if not _rankable_score(rec["fit_score"], rec["raw_components"]):
+                incomplete.append({**item, "status": "incomplete", "score": None,
+                                   "v_result": fit.get("value_assessment", {"score": None, "status": fit.get("status", "incomplete")})})
+                continue
             if fit.get("archetype"):
                 rec["archetype"] = fit["archetype"]
             if fit.get("alternative_paths"):
@@ -571,6 +587,8 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
             "operational_result_persisted": persisted,
             "discovery_result": {
                 "total_matches": len(recommendations),
+                "status": "incomplete" if incomplete else discovery.get("status", "complete"),
+                "incomplete_assessments": incomplete,
                 "high_fit_majors": high,
                 "medium_fit_majors": med,
                 "low_fit_majors": low,
@@ -607,14 +625,21 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
         )
 
         branches = []
+        incomplete = list(result.get("incomplete_assessments", []))
         for branch in result.get("recommended_branches", []):
             branch_item = {
                 "branch_name_fa": branch.get("branch_name_fa") or branch.get("branch_name") or "",
-                "fit_score": branch.get("average_score", 0) or branch.get("fit_score", 0),
+                "fit_score": branch.get("average_score", branch.get("fit_score")),
+                "status": branch.get("status", "complete"),
+                "value_assessment": branch.get("value_assessment"),
                 "count": branch.get("count", 0),
                 "avg_components": branch.get("avg_components", {}),
                 "evidence": branch.get("evidence", {}),
             }
+            if not _rankable_score(branch_item["fit_score"], branch_item["avg_components"]):
+                incomplete.append({**branch, "status": "incomplete", "score": None,
+                                   "v_result": branch.get("value_assessment") or {"score": None, "status": branch.get("status", "incomplete")}})
+                continue
             if branch.get("warning"):
                 branch_item["warning"] = branch["warning"]
             if branch.get("alternative_paths"):
@@ -630,7 +655,9 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             "operational_result_persisted": persisted,
             "branch_discovery_result": {
                 "total_matches": len(branches),
-                "best_branch": result.get("best_branch"),
+                "status": "incomplete" if incomplete else result.get("status", "complete"),
+                "incomplete_assessments": incomplete,
+                "best_branch": result.get("best_branch") if any(b["branch_name_fa"] == result.get("best_branch") for b in branches) else None,
                 "branches": branches,
                 "method": result.get("method", {}),
                 "summary": result.get("summary", {}),
