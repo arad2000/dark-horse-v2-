@@ -227,3 +227,15 @@ node tests/test_v_null_consumer.js
 
 **No-Go برای Merge/استقرار** تا CI کامل Backend و تست‌های V موفق و Go ناظر ثبت شوند.
 Draft بازبینی، مجوز Merge یا redeploy نیست. گزارش CI باید به SHA مشخص متصل شود؛ سبز بودن تست محلی جای CI را نمی‌گیرد.
+
+### اصلاح محدود fixture گیت CI (با مجوز ناظر)
+
+در `test_p0_quota_consumption.py::test_charged_journey_can_reach_discovery_results`
+فقط ورودی discovery به ۱۵ پاسخ معتبر V مجهز شد؛ assertion قبلیِ وجود recommendation
+حفظ و دو assertion وجود V عددی و پوشش ۱۵ پاسخ اضافه شد. هیچ assertion شارژ/اعتبار،
+منطق billing/quota یا کد اجرایی تغییر نکرد. قرارداد بدون V/null همچنان در
+`test_v_consumer_contract.py` و آزمون UI مستقل قفل است.
+با همان موتور و ورودی قدیمی، صفر recommendation و یک incomplete تولید می‌شود؛
+با fixture جدید، یک recommendation با Total=68.7 و V=43.8% تولید می‌شود.
+این اصلاح ورودی smoke است، نه تغییر پروفایل‌های ممیزی؛ جدول ۱۸پروفایلی و تنها یک
+عبور نزولی واجد نمایش بدون تغییر باقی می‌مانند. نتیجهٔ CI باید برای SHA جدید بررسی شود.

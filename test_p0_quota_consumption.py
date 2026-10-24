@@ -108,7 +108,9 @@ class P0QuotaConsumptionTests(unittest.TestCase):
                     "session_id": session_uuid,
                     "micro_motives": [f"MED-{i:03d}" for i in range(1, 8)],
                     "sjt_answers": {"sjt_1": "A"},
-                    "conjoint_choices": {},
+                    # A numeric discovery fit requires available V evidence.
+                    # Missing-V/null behavior is covered by test_v_consumer_contract.
+                    "conjoint_choices": {f"conj_{i}": f"Q{i}A" for i in range(1, 16)},
                 },
             )
             self.assertEqual(result.status_code, 200, result.text)
@@ -119,6 +121,9 @@ class P0QuotaConsumptionTests(unittest.TestCase):
             self.assertIn("recommendations", body["discovery_result"])
             self.assertIsInstance(body["discovery_result"]["recommendations"], list)
             self.assertGreater(len(body["discovery_result"]["recommendations"]), 0)
+            fit = body["discovery_result"]["recommendations"][0]["individuality_fit"]
+            self.assertIsNotNone(fit["raw_components"]["v_score"])
+            self.assertEqual(fit["value_assessment"]["coverage"]["answered"], 15)
 
 
     def test_missing_session_is_provisioned_and_each_journey_charges_once(self):
