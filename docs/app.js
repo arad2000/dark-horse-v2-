@@ -1296,6 +1296,18 @@ function displayResults(data, type) {
     items = [];
   }
 
+  // Unavailable fits stay outside numeric ranking and get an explicit label.
+  const incompleteItems = [...(rawData.incomplete_assessments || [])];
+  items = items.filter(item => {
+    const fit = item.individuality_fit || item;
+    const components = fit.raw_components || item.raw_components || item.avg_components || {};
+    const score = fit.score ?? fit.fit_score ?? item.fit_score ?? item.average_score;
+    const unavailable = !Number.isFinite(score) ||
+      (Object.prototype.hasOwnProperty.call(components, 'v_score') && !Number.isFinite(components.v_score));
+    if (unavailable) incompleteItems.push(item);
+    return !unavailable;
+  });
+
   // ===== ۲. نرمال‌سازی =====
   const normalized = items.map(item => {
     const fit = item.individuality_fit || item;
@@ -1404,7 +1416,19 @@ function displayResults(data, type) {
     }
   }
 
-  if (matched.length === 0) {
+  if (incompleteItems.length) {
+    html += '<section class="dh-incomplete" role="status"><h3>نتایج محاسبه‌ناپذیر — خارج از رتبه‌بندی</h3>';
+    for (const item of incompleteItems) {
+      const fit = item.individuality_fit || item;
+      const assessment = item.v_result || fit.value_assessment || item.value_assessment || fit;
+      const label = assessment.status === 'no_discriminative_evidence'
+        ? 'فاقد شواهد تمایزبخش' : 'اطلاعات ناکافی برای محاسبهٔ امتیاز';
+      const name = item.major_name_fa || item.branch_name_fa || item.branch_name || item.major_id || '';
+      html += `<p>${escapeHtml(String(name))}: ${label}</p>`;
+    }
+    html += '</section>';
+  }
+  if (matched.length === 0 && incompleteItems.length === 0) {
     html += `<p style="color:#f0c040;text-align:center;">با همین خرده‌انگیزه‌ها، هیچ ${isBranch ? 'شاخه‌ای' : 'رشته‌ای'} به آستانهٔ ۳۰٪ نرسیده است.</p>`;
   } else {
     matched.forEach(r => {
