@@ -5,6 +5,8 @@ import json
 import subprocess
 import unittest
 from decimal import Decimal
+from unittest.mock import patch
+import dh013_batch2_166_170 as batch2
 
 from dh013_batch2_166_170 import (BASE, IDS, ROOT, build, gitbytes, global_audit,
                                  load_base, outputs, parse, to_row)
@@ -22,7 +24,7 @@ class Batch2Tests(unittest.TestCase):
         self.assertEqual(sum(m.get('motive_driven') is not False for m in self.catalog),202)
         self.assertEqual(sum(m.get('motive_driven') is False for m in self.catalog),28)
 
-    def test_two_weight_drafts_and_other_228_preserved(self):
+    def test_five_weight_drafts_and_other_225_preserved(self):
         changed=[]
         for old,new in zip(self.original,self.catalog):
             self.assertEqual(old['id'],new['id'])
@@ -30,14 +32,17 @@ class Batch2Tests(unittest.TestCase):
             if old!=new:
                 changed.append(new['id'])
                 self.assertEqual({k for k in old if old[k]!=new[k]}, {'strategy_weights','value_weights'})
-        self.assertEqual(changed,[166,169])
-        self.assertEqual(self.result['scope']['other_major_records_preserved'],228)
+        self.assertEqual(changed,IDS)
+        self.assertEqual(self.result['scope']['other_major_records_preserved'],225)
 
-    def test_batch1_and_three_withheld_profiles_unchanged(self):
-        ids=set(range(161,166))|{167,168,170}
+    def test_batch1_and_166_169_unchanged_since_previous_draft(self):
+        ids=set(range(161,166))
         for old,new in zip(self.original,self.catalog):
             if old['id'] in ids:self.assertEqual(old,new)
         self.assertTrue(self.result['scope']['batch1_preserved'])
+        previous=json.loads(gitbytes(batch2.PREVIOUS_DRAFT,'majors_database_v2.json'))
+        for old,new in zip(previous,self.catalog):
+            if old['id'] in [166,169]:self.assertEqual(old,new)
 
     def test_exact_35_motive_edits_only_descriptions(self):
         old=load_base('docs/data/micro_motives.json');changed=[]
@@ -75,7 +80,7 @@ class Batch2Tests(unittest.TestCase):
                 if e['status']=='EQUAL_NO_EVIDENCE':self.assertEqual(e['witnesses'],[])
 
     def test_insufficient_evidence_does_not_emit_numerical_profile(self):
-        expected={166:6,167:7,168:7,169:6,170:7}
+        expected={166:6,167:5,168:6,169:6,170:6}
         for m in self.result['majors']:
             self.assertEqual(m['equal_s_count'],expected[m['id']])
             if m['equal_s_count']>6:
@@ -87,6 +92,41 @@ class Batch2Tests(unittest.TestCase):
                 self.assertTrue(m['requires_supervisor_equal_approval'])
                 self.assertIn('weight_patch',m)
         self.assertFalse(self.result['merge_authorized'])
+
+    def test_enrichment_is_explicit_and_only_21_cards_changed_since_draft(self):
+        previous=json.loads(gitbytes(batch2.PREVIOUS_DRAFT,'docs/data/micro_motives.json'))
+        delta=[m['code'] for m,o in zip(self.motives,previous) if m!=o]
+        allowed={c for m in self.catalog if m['id'] in [167,168,170] for c in m['micro_motive_codes']}
+        self.assertEqual(set(delta),allowed)
+        for m in self.result['majors']:
+            self.assertEqual(sum(c['enriched_this_revision'] for c in m['motives']),7 if m['id'] in [167,168,170] else 0)
+        self.assertFalse(self.result['empirical_calibration_performed'])
+        self.assertFalse(self.result['book_page_verification_performed'])
+        self.assertIn('not field observations',self.result['enrichment_provenance'])
+        expected={167:'CARPET-004',168:'CRAFT-002',170:'ISLART-005'}
+        for m in self.result['majors']:
+            if m['id'] in expected:
+                e=m['strategy_evidence'][24]
+                self.assertEqual([w['code'] for w in e['witnesses']],[expected[m['id']]])
+
+    def test_more_than_six_equal_still_blocks_a_major(self):
+        replacements={}
+        for mid in [167,168,170]:
+            lines=batch2.S_TEXT[mid].strip().splitlines()
+            lines[24]='.20 .20 .20 .20 .20|-|No comparative witness'
+            if mid==167:lines[9]='.20 .20 .20 .20 .20|-|No framework witness'
+            replacements[mid]='\n'.join(lines)
+        with patch.dict(batch2.S_TEXT,replacements):
+            result,catalog,_=build()
+        self.assertEqual(result['accepted_draft_ids'],[166,169])
+        for m in result['majors']:
+            if m['id'] in replacements:
+                self.assertEqual(m['equal_s_count'],7)
+                self.assertNotIn('weight_patch',m)
+                for e in m['strategy_evidence']+m['value_evidence']:
+                    self.assertIsNone(e['weights'])
+        for m,old in zip(catalog,self.original):
+            if m['id'] in replacements:self.assertEqual(m,old)
 
     def test_normalization_four_decimals_and_residual_largest_raw(self):
         self.assertEqual(to_row([1,1,1,0,0]),[.3334,.3333,.3333,0,0])
@@ -123,15 +163,15 @@ class Batch2Tests(unittest.TestCase):
                 self.assertIn(peer['own_witness']['code'],lookup[major['id']]['micro_motive_codes'])
                 self.assertIn(peer['peer_witness']['code'],lookup[peer['peer_id']]['micro_motive_codes'])
                 self.assertTrue(peer['relationship'])
-                if major['id'] in [167,168,170]:self.assertEqual(peer['profile_basis'],'EXISTING_PROFILE_NOT_REWEIGHTED')
+                self.assertEqual(peer['profile_basis'],'DRAFT')
 
     def test_high_agreement_not_hidden_or_artificially_tuned(self):
         pairs={(p['a'],p['b'],p['agree']) for p in self.result['high_agreement_rereads']}
-        self.assertEqual(pairs,{(164,166,22),(165,169,20)})
+        self.assertEqual(pairs,{(162,167,20),(164,166,22),(165,169,20)})
         for p in self.result['high_agreement_rereads']:
             self.assertEqual(p['decision'],'HOLD_FOR_SUPERVISOR_CONTENT_REVIEW_NO_ARTIFICIAL_DECORRELATION')
             self.assertEqual(len(p['agreements'])+len(p['differences']),25)
-            self.assertEqual(p['agreements_with_any_equal'],6)
+            self.assertEqual(p['agreements_with_any_equal'],5 if {p['a'],p['b']}=={162,167} else 6)
             self.assertEqual(len(p['full_motives_a']),7)
             self.assertEqual(len(p['full_motives_b']),7)
             for d in p['agreements']+p['differences']:
@@ -143,8 +183,8 @@ class Batch2Tests(unittest.TestCase):
             rows=major['weight_patch']['strategy_weights']
             winner=lambda i:rows[i-1].index(max(rows[i-1]))
             self.assertEqual(winner(21),0)
-            self.assertEqual(winner(23),1)
-            self.assertEqual(winner(25),3) # no fabricated rescue/actual human outcome
+            self.assertEqual(winner(23),3 if major['id']==168 else 1) # craft improvement vs diagnostic evidence
+            self.assertEqual(winner(25),0 if major['id']==168 else 3) # only the explicit user-benefit witness gets help
             self.assertNotEqual(winner(9),4)
             self.assertEqual(len(set(rows[13])),1) # no emergency inference
 
