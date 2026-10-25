@@ -2,6 +2,8 @@
 import copy
 import importlib.util
 import itertools
+import json
+import subprocess
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -25,8 +27,8 @@ class Batch5Tests(unittest.TestCase):
         self.assertEqual(len(old),225)
         self.assertEqual(old,[m for m in self.majors if m['id'] not in b.IDS])
 
-    def test_only_two_eligible_sv_changes_all_metadata_unchanged(self):
-        self.assertEqual([a['id'] for a,z in zip(self.old,self.majors) if a!=z],[182,185])
+    def test_only_five_eligible_sv_changes_all_metadata_unchanged(self):
+        self.assertEqual([a['id'] for a,z in zip(self.old,self.majors) if a!=z],[182,183,184,185,186])
         for a,z in zip(self.old,self.majors):
             self.assertLessEqual({k for k in a if a[k]!=z[k]},{'strategy_weights','value_weights'})
 
@@ -81,7 +83,7 @@ class Batch5Tests(unittest.TestCase):
                 if r['status']=='EXPERT_TRANSFER':self.assertTrue(r['full_witnesses'])
 
     def test_equal_counts_and_reasons(self):
-        self.assertEqual([p['equal'] for p in self.packet['proposals']],[6,8,9,6,8])
+        self.assertEqual([p['equal'] for p in self.packet['proposals']],[6,6,6,6,6])
         for p in self.packet['proposals']:
             self.assertEqual(p['write_weights'],p['equal']<=6)
             for r in p['strategies']:
@@ -109,7 +111,7 @@ class Batch5Tests(unittest.TestCase):
         # Mock only S182 and audit in this unit test, never the real runtime/gates.
         rows=b.S[182].strip().splitlines();rows[0]='-|1|شاهد جهت‌دار آزمایشاً حذف شده است.'
         with patch.dict(b.S,{182:'\n'.join(rows)}),patch.object(b,'scan',return_value=[]):
-            packet,majors,_=b.build()
+            packet,majors,_=b.build(validate_frozen=False)
         p=next(p for p in packet['proposals'] if p['id']==182)
         self.assertEqual(p['equal'],7);self.assertFalse(p['write_weights'])
         self.assertEqual(next(m for m in majors if m['id']==182),next(m for m in self.old if m['id']==182))
@@ -138,9 +140,60 @@ class Batch5Tests(unittest.TestCase):
                 self.assertEqual(len(r['sides']),2)
                 self.assertTrue(all(s['reason'] for s in r['sides']))
 
-    def test_withheld_three_full_major_records_preserved(self):
-        old={m['id']:m for m in self.old};new={m['id']:m for m in self.majors}
-        for mid in [183,184,186]:self.assertEqual(old[mid],new[mid])
+    def previous(self,name):
+        return json.loads(subprocess.check_output(['git','show',f'{b.PREVIOUS_DRAFT}:{name}'],cwd=b.ROOT))
+
+    def test_only_three_records_changed_from_previous_draft_and_frozen_two(self):
+        old=self.previous('majors_database_v2.json')
+        self.assertEqual([a['id'] for a,z in zip(old,self.majors) if a!=z],[183,184,186])
+        for a,z in zip(old,self.majors):
+            self.assertLessEqual({k for k in a if a[k]!=z[k]},{'strategy_weights','value_weights'})
+            if a['id'] in [182,185]:self.assertEqual(a,z)
+        previous=self.previous('docs/weight-review/DH013_BATCH5_182_183_184_185_186.json')
+        for a,z in zip(previous['proposals'],self.packet['proposals']):
+            if a['id'] in [182,185]:self.assertEqual(a,z)
+
+    def test_only_21_descriptions_changed_from_previous_draft(self):
+        old=self.previous('micro_motives.json');changes=[]
+        allowed={t['code'] for p in self.packet['proposals'] if p['id'] in [183,184,186] for t in p['texts']}
+        for a,z in zip(old,self.motives):
+            if a!=z:
+                changes.append(a['code']);self.assertEqual({k for k in a if a[k]!=z[k]},{'description_fa'})
+        self.assertEqual(set(changes),allowed);self.assertEqual(len(changes),21)
+        self.assertEqual([d['id'] for d in self.packet['revision_changes']],[183,184,186])
+        for d in self.packet['revision_changes']:
+            self.assertEqual(len(d['texts']),7)
+            for t in d['texts']:
+                self.assertNotEqual(t['previous_draft'],t['current']);self.assertIn('پیشنهاد نویسنده',t['provenance'])
+
+    def test_s09_only_explicit_arduous_continuation_not_beauty(self):
+        ps={p['id']:p for p in self.packet['proposals']}
+        for mid,winning,word in [(183,0,'چند روز'),(184,1,'دشوار و ناموفق')]:
+            row=ps[mid]['strategies'][8]
+            self.assertEqual(row['weights'].index(max(row['weights'])),winning)
+            self.assertTrue(any(word in w['text'] and 'انگیزه ادامه' in w['text'] for w in row['full_witnesses']))
+        self.assertEqual(ps[186]['strategies'][8]['weights'],[.2]*5)
+        self.assertEqual(ps[184]['strategies'][24]['weights'],[.2]*5)
+        row=ps[186]['strategies'][24]
+        self.assertEqual(row['weights'].index(max(row['weights'])),0)
+        self.assertIn('خواندنش راحت‌تر',row['full_witnesses'][0]['text'])
+
+    def test_frozen_177_185_complete_25_question_contrast(self):
+        rows=self.packet['frozen_pair_177_185_all_25']
+        self.assertEqual([r['question'] for r in rows],list(range(1,26)))
+        self.assertEqual([r['question'] for r in rows if not r['same']],[17,21])
+        old={m['id']:m for m in self.old};ps={p['id']:p for p in self.packet['proposals']}
+        for r in rows:
+            self.assertEqual(r['sides'][0]['weights'],old[177]['strategy_weights'][r['question']-1])
+            self.assertEqual(r['sides'][1],{'id':185,**ps[185]['strategies'][r['question']-1]})
+        f=next(f for f in self.packet['high_agreement_rereads'] if f['ids']==[177,185])
+        self.assertEqual(f['agreement'],23);self.assertEqual(f['directional_only_agreement'],17)
+
+    def test_24_agreement_not_hidden_or_artificially_decorrelated(self):
+        f=next(f for f in self.packet['high_agreement_rereads'] if f['ids']==[182,183])
+        self.assertEqual(f['agreement'],24);self.assertEqual(len(f['flat_agreements']),6)
+        p=next(p for p in self.packet['proposals'] if p['id']==183)
+        self.assertEqual(p['strategies'][14]['weights'].count(max(p['strategies'][14]['weights'])),2)
 
     def test_no_inactive_skip_in_selection_interval(self):
         self.assertEqual(self.packet['skipped_inactive_ids'],[])
@@ -149,8 +202,9 @@ class Batch5Tests(unittest.TestCase):
     def test_runtime_vs_hypothetical_not_confused(self):
         real=[f for f in self.packet['runtime_scan'] if set(f['ids'])&set(b.IDS)]
         hypo=[f for f in self.packet['hypothetical_scan'] if set(f['ids'])&set(b.IDS)]
-        self.assertEqual(len(real),7);self.assertEqual(len(hypo),21)
-        self.assertTrue(all(not(set(f['ids'])&{183,184,186}) for f in real))
+        self.assertEqual(len(real),21);self.assertEqual(real,hypo)
+        self.assertEqual(len(self.packet['runtime_scan']),121)
+        self.assertEqual(len(self.packet['previous_runtime_scan']),107)
         self.assertEqual(next(f['agreement'] for f in real if f['ids']==[177,185]),23)
 
     def test_content_peers_predeclared_not_numeric_ranking(self):
