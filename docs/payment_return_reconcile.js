@@ -101,6 +101,7 @@
         return;
       }
       await forwardGatewayCallback(p);
+      // Give the server transaction a moment to finish before reading quota.
       await new Promise(function (resolve) { setTimeout(resolve, 350); });
       var r = await refreshQuota();
       if (r != null) {

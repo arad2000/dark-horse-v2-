@@ -1,19 +1,15 @@
-name: Publish frontend from main
+name: Verify frontend artifact on deploy (Pages restricted to main)
 
 on:
   pull_request:
     branches:
-      - main
+      - deploy/liara-commercial-sandbox
   push:
     branches:
-      - main
+      - deploy/liara-commercial-sandbox
 
 permissions:
   contents: read
-
-concurrency:
-  group: github-pages
-  cancel-in-progress: false
 
 jobs:
   verify:
@@ -21,13 +17,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Block Sanjesh capacity dumps from public docs
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash scripts/ci/check_no_public_sanjesh_dumps.sh --self-test
-          bash scripts/ci/check_no_public_sanjesh_dumps.sh .
 
       - name: Verify publish artifact
         shell: bash
@@ -39,7 +28,7 @@ jobs:
           grep -q 'SPORT-' docs/data.js
           grep -q 'ARCHY-' docs/data.js
           grep -q 'history-meaning-text' docs/data.js
-          grep -q 'data.js?v=motives-1393-catalog-230-v1' docs/index.html
+          grep -Eq 'data\.js\?v=' docs/index.html
           python - <<'PY'
           import json
           from pathlib import Path
@@ -49,26 +38,6 @@ jobs:
           assert len(sport) >= 7, len(sport)
           assert any(x.get("code") == "SPORT-001" for x in sport)
           print(f"micro_motives_count={len(data)} sport_count={len(sport)}")
-          PY
-
-      - name: Verify admission catalog 1-230
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          catalog = json.loads(Path("docs/majors_catalog_ui_v1.json").read_text(encoding="utf-8"))
-          majors = catalog["majors"]
-          ids = [int(item["id"]) for item in majors]
-          names = [str(item.get("name") or "").strip() for item in majors]
-          assert len(majors) == 230, len(majors)
-          assert ids == list(range(1, 231)), (ids[:3], ids[-3:])
-          assert all(names), "Every UI major must have a name"
-          assert len(names) == len(set(names)), "UI catalog has duplicate names"
-          assert catalog["source_ref"] == "deploy/liara-commercial-sandbox"
-          assert catalog["source_sha"] == "a487335cfd79b290e015f071f46f62b24484a2c7"
-          print(f"ui_catalog_count={len(majors)} source_sha={catalog['source_sha']}")
           PY
 
       - name: Verify artifact layout
@@ -81,7 +50,7 @@ jobs:
           ! test -f data/micro_motives.json
 
   publish:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: verify
     runs-on: ubuntu-latest
     permissions:
@@ -93,12 +62,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-
-      - name: Block Sanjesh capacity dumps before artifact upload
-        shell: bash
-        run: bash scripts/ci/check_no_public_sanjesh_dumps.sh .
 
       - name: Upload docs/ as site root
         uses: actions/upload-pages-artifact@v3

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "description": "Manifest for Hybrid reference-data Source of Truth. JSON remains authoritative for scoring/reference content; PostgreSQL staging may materialize a versioned copy.",
+  "source_of_truth": "git-json",
+  "files": [
+    "docs/data/micro_motives.json",
+    "docs/data/questions_v2.json",
+    "docs/data/trait_map_v3.json",
+    "majors_database_v2.json",
+    "school_branches_v2.json",
+    "value_poles_v2.json"
+  ],
+  "staging_sync_policy": "materialize-only",
+  "runtime_cutover": false,
+  "mapping_policy": "preserve-unresolved-references-until-explicit-canonical-mapping-is-approved",
+  "notes": [
+    "BIOTM-001..007 are intentionally preserved in the JSON Source of Truth for now.",
+    "A staging sync must record the exact manifest version/hash before loading reference data into PostgreSQL.",
+    "Changing JSON reference data does not require changing the operational schema; it requires a new manifest version and a new staging verification.",
+    "No scoring/ranking code may read PostgreSQL reference tables while the production cutover gate is OFF."
+  ]
+}

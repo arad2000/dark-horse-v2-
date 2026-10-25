@@ -1,16 +1,14 @@
-/* Profile UX — user profile hierarchy + one admin panel.
- * The legacy support card is preserved as-is; only its channel navigation is repaired.
- * No scoring, quota calculation, or purchase semantics are changed.
+/* Profile UX v1 — DOM-only hierarchy layer.
+ * Deliberately does not alter scoring, quota calculation, consumption, or result data.
  */
 (function (global) {
   'use strict';
 
   var INSTALLED = false;
-  var OBSERVER_INSTALLED = false;
-  var EITAA_URL = 'https://eitaa.com/asbe_siah';
+  var WRAPPED = false;
 
+  function el(id) { return document.getElementById(id); }
   function text(value) { return String(value == null ? '' : value); }
-
   function escapeHtml(value) {
     return text(value)
       .replace(/&/g, '&amp;')
@@ -20,6 +18,16 @@
       .replace(/'/g, '&#39;');
   }
 
+  function debugEnabled() {
+    var env = '';
+    try { env = text(global.APP_ENV || global.__APP_ENV || '').toLowerCase(); } catch (_) {}
+    return global.__DH_DEBUG__ === true || /^(debug|dev|development|test)$/.test(env);
+  }
+
+  function isAdmin(user) {
+    return !!(user && (user.is_admin === true || user.role === 'admin'));
+  }
+
   function authUser() {
     try {
       if (global.DHAuth && typeof global.DHAuth.getUser === 'function') return global.DHAuth.getUser();
@@ -27,66 +35,25 @@
     return null;
   }
 
-  function isAdmin(user) {
-    return !!(user && (user.is_admin === true || user.role === 'admin'));
+  function clearLegacyProfileControls(card) {
+    var home = card.querySelector('#dh-p-home');
+    if (home) home.remove();
+    var exit = card.querySelector('#dh-p-exit');
+    if (exit) exit.remove();
   }
 
-  function removeLocalSubscriptionState() {
-    /* Remove only obsolete LOCAL test entitlement state. Never touch server premium state. */
-    try {
-      var quotaKey = 'dh_local_quota_v1';
-      var rawQuota = localStorage.getItem(quotaKey);
-      if (rawQuota) {
-        var quota = JSON.parse(rawQuota);
-        if (quota && Object.prototype.hasOwnProperty.call(quota, 'premium')) {
-          delete quota.premium;
-          localStorage.setItem(quotaKey, JSON.stringify(quota));
-        }
-      }
-    } catch (_) {}
-
-    try {
-      var userKey = 'dh_local_user_v1';
-      var rawUser = localStorage.getItem(userKey);
-      if (rawUser) {
-        var user = JSON.parse(rawUser);
-        if (user && Object.prototype.hasOwnProperty.call(user, 'is_premium')) {
-          delete user.is_premium;
-          localStorage.setItem(userKey, JSON.stringify(user));
-        }
-      }
-    } catch (_) {}
-  }
-
-  function removeLegacyProfileControls(card) {
-    if (!card) return;
-    ['dh-p-home', 'dh-p-prem', 'dh-p-exit'].forEach(function (id) {
-      var node = card.querySelector('#' + id);
-      if (node) node.remove();
-    });
-  }
-
-  function findLegacySupportCard(card) {
-    if (!card) return null;
-    var children = card.children || [];
-    for (var i = 0; i < children.length; i += 1) {
-      var child = children[i];
-      if (child && child.classList && child.classList.contains('card')) return child;
-    }
-    return null;
-  }
-
-  function findProfileCard(wrap) {
-    if (!wrap) return null;
-    var card = wrap.querySelector('.card');
-    if (!card) return null;
-    return card.querySelector('#dh-p-journey') ? card : null;
+  function stripGuestLegacyProfileControls() {
+    if (authUser()) return;
+    var home = el('dh-p-home');
+    if (home) home.remove();
+    var exit = el('dh-p-exit');
+    if (exit) exit.remove();
   }
 
   function readPhone(card, user) {
-    var phone = user && user.phone ? text(user.phone).trim() : '';
+    var phone = user && user.phone ? text(user.phone) : '';
     if (phone) return phone;
-    var nodes = card ? card.querySelectorAll('p') : [];
+    var nodes = card.querySelectorAll('p');
     for (var i = 0; i < nodes.length; i += 1) {
       var value = text(nodes[i].textContent).trim();
       if (/^09\d{9}$/.test(value)) return value;
@@ -94,240 +61,58 @@
     return '';
   }
 
-  function repairEitaaChannelLink(supportCard) {
-    if (!supportCard) return;
-    var links = supportCard.querySelectorAll('a[href*="eitaa.com"]');
-    for (var i = 0; i < links.length; i += 1) {
-      var link = links[i];
-      if (text(link.textContent).indexOf('عضویت در کانال ایتا') < 0 &&
-          text(link.getAttribute('href')).indexOf('/asbe_siah') < 0) continue;
-      link.setAttribute('href', EITAA_URL);
-      link.setAttribute('target', '_self');
-      link.setAttribute('rel', 'noopener noreferrer');
-      link.onclick = function (event) {
-        try {
-          if (event) event.preventDefault();
-          global.location.assign(EITAA_URL);
-        } catch (_) {
-          try { global.location.href = EITAA_URL; } catch (_) {}
+  function makeBuyButton() {
+    var buy = document.createElement('button');
+    buy.type = 'button';
+    buy.id = 'dh-p-buy';
+    buy.className = 'btn dh-profile-buy';
+    buy.setAttribute('data-testid', 'purchase-pack-3');
+    buy.setAttribute('data-role', 'profile-action');
+    buy.textContent = 'خرید بسته ۳ تست';
+    buy.onclick = function () {
+      try {
+        if (global.DHCommercialUI && typeof global.DHCommercialUI.showPurchase === 'function') {
+          global.DHCommercialUI.showPurchase();
         }
-        return false;
-      };
-      break;
-    }
+      } catch (_) {}
+    };
+    return buy;
+  }
+
+  function makeSupportCard() {
+    var box = document.createElement('section');
+    box.className = 'dh-support-card';
+    box.setAttribute('aria-label', 'پشتیبانی و حریم خصوصی');
+    box.innerHTML =
+      '<div class="dh-support-line">' +
+        '<span class="dh-support-copy">سؤال یا مشکلی داری؟ تیم اسب سیاه در ایتا پاسخ‌گوست.</span>' +
+        '<a class="dh-support-link" href="https://eitaa.com/" target="_blank" rel="noopener noreferrer">پشتیبانی در ایتا</a>' +
+      '</div>' +
+      '<div class="dh-support-foot">' +
+        '<a class="dh-enamad-chip" href="https://enamad.ir/" target="_blank" rel="noopener noreferrer" aria-label="اینماد">اینماد</a>' +
+        '<span class="dh-support-dot">·</span>' +
+        '<a class="dh-privacy-link" href="#dh-privacy-note">حریم خصوصی</a>' +
+      '</div>' +
+      '<div id="dh-privacy-note" class="dh-privacy-note">نام و شماره موبایل برای مدیریت حساب استفاده می‌شود؛ خلاصه نتیجه سفر برای قابلیت‌های حساب نگهداری می‌شود. برای اطلاعات بیشتر یا پرسش درباره حریم خصوصی، از پشتیبانی ایتا استفاده کنید.</div>';
+    return box;
   }
 
   function makeAdminPanel() {
     var panel = document.createElement('section');
-    panel.id = 'dh-admin-panel';
     panel.className = 'dh-admin-panel';
-    panel.setAttribute('aria-label', 'پنل مدیریت');
+    panel.setAttribute('aria-label', 'خلاصه پنل مدیریت');
     panel.innerHTML =
       '<h3 class="dh-admin-title">پنل مدیریت</h3>' +
-      '<div class="dh-admin-users" data-admin-users>' +
-        '<p class="dh-admin-status" data-admin-status>در حال دریافت کاربران…</p>' +
-      '</div>';
+      '<div class="dh-admin-grid">' +
+        '<div class="dh-admin-metric"><div class="n" data-admin-metric="users">—</div><div class="l">کاربران</div></div>' +
+        '<div class="dh-admin-metric"><div class="n" data-admin-metric="feedback">—</div><div class="l">بازخورد</div></div>' +
+        '<div class="dh-admin-metric"><div class="n" data-admin-metric="payments">—</div><div class="l">پرداخت‌ها</div></div>' +
+      '</div>' +
+      '<p class="dh-admin-status" data-admin-status>در حال دریافت آمار…</p>';
     return panel;
   }
 
-  function adminUserId(user) {
-    if (!user) return '';
-    var id = user.user_id || user.id || user.userId || '';
-    return text(id).trim();
-  }
-
-  function setAdminGrantUserId(userId, focus) {
-    var id = text(userId).trim();
-    if (!id) return false;
-
-    /* Keep the latest selection so the grant UI can consume it even if it mounts a moment later. */
-    global.__dhAdminGrantSelectedUserId = id;
-
-    try {
-      var input = document.getElementById('dh-admin-grant-user-id');
-      if (!input) return false;
-      input.value = id;
-      try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
-      try { input.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
-      if (focus !== false) {
-        try {
-          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          input.focus();
-        } catch (_) {}
-      }
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function retryAdminGrantSelection(userId) {
-    if (setAdminGrantUserId(userId, true)) return;
-    var attempts = 0;
-    var timer = setInterval(function () {
-      attempts += 1;
-      if (setAdminGrantUserId(userId, true) || attempts >= 12) {
-        clearInterval(timer);
-      }
-    }, 250);
-  }
-
-  function copyAdminUserId(userId, button) {
-    var id = text(userId).trim();
-    if (!id) return;
-
-    function done() {
-      if (!button) return;
-      var old = button.textContent;
-      button.textContent = 'کپی شد';
-      setTimeout(function () { button.textContent = old || 'کپی'; }, 1200);
-    }
-
-    try {
-      if (global.navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        navigator.clipboard.writeText(id).then(done).catch(function () {
-          fallbackCopy();
-        });
-        return;
-      }
-    } catch (_) {}
-
-    fallbackCopy();
-
-    function fallbackCopy() {
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = id;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        ta.remove();
-        done();
-      } catch (_) {
-        /* Clipboard is a convenience only; the visible ID remains selectable. */
-      }
-    }
-  }
-
-  function renderAdminUsers(panel, users) {
-    var target = panel.querySelector('[data-admin-users]');
-    if (!target) return;
-    target.innerHTML = '';
-
-    if (!Array.isArray(users) || users.length === 0) {
-      var empty = document.createElement('p');
-      empty.className = 'dh-admin-status';
-      empty.textContent = 'کاربری برای نمایش وجود ندارد.';
-      target.appendChild(empty);
-      return;
-    }
-
-    var tableWrap = document.createElement('div');
-    tableWrap.className = 'dh-admin-users-table-wrap';
-    tableWrap.setAttribute('role', 'region');
-    tableWrap.setAttribute('aria-label', 'فهرست کاربران');
-    tableWrap.tabIndex = 0;
-
-    var table = document.createElement('table');
-    table.className = 'dh-admin-users-table';
-    table.dir = 'rtl';
-
-    var thead = document.createElement('thead');
-    var headerRow = document.createElement('tr');
-    ['شناسه', 'نام', 'شماره تماس', 'وضعیت', 'عملیات'].forEach(function (label) {
-      var th = document.createElement('th');
-      th.scope = 'col';
-      th.textContent = label;
-      headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    var tbody = document.createElement('tbody');
-    users.forEach(function (user) {
-      var row = document.createElement('tr');
-      var userId = adminUserId(user);
-
-      var idCell = document.createElement('td');
-      idCell.dir = 'ltr';
-      idCell.style.fontVariantNumeric = 'tabular-nums';
-
-      if (userId) {
-        var idWrap = document.createElement('div');
-        idWrap.style.cssText = 'display:flex;align-items:center;gap:6px;direction:ltr;justify-content:flex-start;';
-
-        var code = document.createElement('code');
-        code.textContent = userId;
-        code.style.cssText = 'user-select:text;font-size:.82rem;color:#e8d79d;';
-
-        var copy = document.createElement('button');
-        copy.type = 'button';
-        copy.textContent = 'کپی';
-        copy.setAttribute('aria-label', 'کپی شناسه ' + userId);
-        copy.style.cssText = 'padding:5px 8px;border-radius:8px;border:1px solid rgba(212,175,55,.28);background:transparent;color:#d9c27d;font:inherit;cursor:pointer;';
-        copy.addEventListener('click', function () { copyAdminUserId(userId, copy); });
-
-        idWrap.appendChild(code);
-        idWrap.appendChild(copy);
-        idCell.appendChild(idWrap);
-      } else {
-        idCell.textContent = '—';
-      }
-      row.appendChild(idCell);
-
-      var name = document.createElement('td');
-      name.textContent = text(user && user.name ? user.name : '—');
-      row.appendChild(name);
-
-      var phone = document.createElement('td');
-      phone.dir = 'ltr';
-      phone.textContent = text(user && user.phone ? user.phone : '—');
-      row.appendChild(phone);
-
-      var status = document.createElement('td');
-      var statusMap = { active: 'فعال', suspended: 'تعلیق‌شده', disabled: 'غیرفعال' };
-      status.textContent = statusMap[user && user.status] || text(user && user.status ? user.status : '—');
-      row.appendChild(status);
-
-      var actions = document.createElement('td');
-      if (userId) {
-        var grant = document.createElement('button');
-        grant.type = 'button';
-        grant.textContent = 'اعطا';
-        grant.setAttribute('aria-label', 'اعطای اعتبار به کاربر ' + userId);
-        grant.style.cssText = 'padding:6px 10px;border-radius:8px;border:1px solid rgba(126,200,163,.35);background:transparent;color:#9fe3a2;font:inherit;font-weight:700;cursor:pointer;';
-        grant.addEventListener('click', function () {
-          retryAdminGrantSelection(userId);
-        });
-        actions.appendChild(grant);
-      } else {
-        actions.textContent = '—';
-      }
-      row.appendChild(actions);
-
-      tbody.appendChild(row);
-    });
-
-    table.appendChild(tbody);
-    tableWrap.appendChild(table);
-    target.appendChild(tableWrap);
-
-    var meta = document.createElement('p');
-    meta.className = 'dh-admin-status';
-    meta.textContent = users.length + ' کاربر اخیر';
-    target.appendChild(meta);
-
-    /* A prior row selection is preserved across async admin-feedback mount/re-render. */
-    if (global.__dhAdminGrantSelectedUserId) {
-      retryAdminGrantSelection(global.__dhAdminGrantSelectedUserId);
-    }
-  }
-
-  async function loadAdminUsers(panel) {
+  async function loadAdminStats(panel) {
     var status = panel.querySelector('[data-admin-status]');
     try {
       var session = global.DHAuth && typeof global.DHAuth.getSession === 'function'
@@ -335,25 +120,46 @@
         : null;
       var token = session && session.token ? String(session.token) : '';
       if (!token) throw new Error('auth');
-
       var base = text(global.API_BASE || 'https://api.asbe-siah.ir').replace(/\/$/, '');
-      var response = await fetch(base + '/api/v1/admin/users?limit=100', {
+      var response = await fetch(base + '/api/v1/admin/dashboard', {
         headers: { Authorization: 'Bearer ' + token }
       });
       var data = null;
       try { data = await response.json(); } catch (_) {}
       if (!response.ok) throw new Error('status');
 
-      renderAdminUsers(panel, data);
-      if (status) status.remove();
+      var users = panel.querySelector('[data-admin-metric="users"]');
+      var feedback = panel.querySelector('[data-admin-metric="feedback"]');
+      var payments = panel.querySelector('[data-admin-metric="payments"]');
+      if (users) users.textContent = text(data && data.users_total != null ? data.users_total : '—');
+      if (feedback) feedback.textContent = text(data && data.feedback_total != null ? data.feedback_total : '—');
+      if (payments) payments.textContent = text(data && data.payments_total != null ? data.payments_total : '—');
+      if (status) status.textContent = 'آمار سرور';
     } catch (_) {
-      if (status) status.textContent = 'فهرست کاربران موقتاً در دسترس نیست.';
+      if (status) status.textContent = 'آمار موقتاً در دسترس نیست.';
     }
   }
 
-  function reflowProfile(wrap, card) {
+  function scrollProfileToTop() {
+    try {
+      var scroller = document.scrollingElement || document.documentElement;
+      if (typeof global.shellScrollTop !== 'number') global.shellScrollTop = Number(scroller.scrollTop || 0);
+      requestAnimationFrame(function () {
+        scroller.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+      });
+    } catch (_) {}
+  }
+
+  function reflowProfile() {
+    var root = el('app');
     var user = authUser();
-    if (!user || !wrap || !card || wrap.querySelector('.dh-profile-v2')) return;
+    if (!root || !user) return;
+
+    var wrap = root.querySelector('.dh-home-wrap');
+    var card = wrap && wrap.querySelector('.card');
+    if (!wrap || !card || wrap.querySelector('.dh-profile-v2')) return;
 
     var avatar = card.querySelector('.dh-profile-avatar');
     var name = card.querySelector('.dh-prof-display-name');
@@ -362,13 +168,12 @@
     var last = card.querySelector('.dh-last-card');
     var journey = card.querySelector('#dh-p-journey');
     var share = card.querySelector('#dh-p-share');
-    var buy = card.querySelector('#dh-p-buy');
+    var legacyPrem = card.querySelector('#dh-p-prem');
     var logout = card.querySelector('#dh-p-out');
-    var support = findLegacySupportCard(card);
 
-    if (!avatar || !name || !stats || !journey || !buy || !logout) return;
+    if (!avatar || !name || !stats || !journey || !logout) return;
 
-    removeLegacyProfileControls(card);
+    clearLegacyProfileControls(card);
 
     var phone = readPhone(card, user);
     var hasResult = !!(last && !last.classList.contains('dh-last-empty'));
@@ -403,114 +208,89 @@
     var actions = document.createElement('section');
     actions.className = 'dh-profile-actions';
     actions.setAttribute('aria-label', 'اقدامات پروفایل');
+    journey.setAttribute('data-role', 'profile-action');
     journey.classList.add('dh-profile-journey');
     actions.appendChild(journey);
 
-    buy.classList.remove('btn-primary');
-    buy.classList.add('dh-profile-buy');
-    actions.appendChild(buy);
+    actions.appendChild(makeBuyButton());
 
     if (hasResult && share) {
       share.classList.remove('btn-primary');
       share.classList.add('dh-profile-share');
+      share.setAttribute('data-role', 'profile-action');
       actions.appendChild(share);
     } else if (share) {
       share.remove();
     }
 
+    var debugBox = null;
+    if (debugEnabled() && legacyPrem) {
+      debugBox = document.createElement('div');
+      debugBox.className = 'dh-profile-debug';
+      legacyPrem.textContent = 'اشتراک محلی آفلاین (تست)';
+      legacyPrem.removeAttribute('data-testid');
+      debugBox.appendChild(legacyPrem);
+    } else if (legacyPrem) {
+      legacyPrem.remove();
+    }
+
+    var support = makeSupportCard();
+
     var account = document.createElement('section');
     account.className = 'dh-profile-account';
     account.appendChild(logout);
 
-    var admin = isAdmin(user) ? makeAdminPanel() : null;
+    var admin = null;
+    if (isAdmin(user)) admin = makeAdminPanel();
 
     wrap.innerHTML = '';
     shell.appendChild(head);
     shell.appendChild(statsBox);
     if (lastBox) shell.appendChild(lastBox);
     shell.appendChild(actions);
+    if (debugBox) shell.appendChild(debugBox);
+    shell.appendChild(support);
     shell.appendChild(account);
-    if (support) {
-      shell.appendChild(support);
-      repairEitaaChannelLink(support);
-    }
     if (admin) shell.appendChild(admin);
     wrap.appendChild(shell);
 
-    if (admin) loadAdminUsers(admin);
-  }
-
-  function ensureAdminPanel() {
-    var user = authUser();
-    var app = document.getElementById('app');
-    var wrap = app && app.querySelector('.dh-home-wrap');
-    if (!wrap) return;
-
-    var profile = wrap.querySelector('.dh-profile-v2');
-    if (!profile) {
-      var card = findProfileCard(wrap);
-      if (card && user) {
-        try { reflowProfile(wrap, card); } catch (_) {}
-        profile = wrap.querySelector('.dh-profile-v2');
-      }
-    }
-
-    var existing = document.getElementById('dh-admin-panel');
-    if (!user || !isAdmin(user) || !profile) {
-      if (existing) existing.remove();
-      return;
-    }
-
-    if (existing && existing.parentNode === profile) return;
-    if (existing) existing.remove();
-
-    var panel = makeAdminPanel();
-    profile.appendChild(panel);
-    loadAdminUsers(panel);
-  }
-
-  function cleanupLegacyControlsEverywhere() {
-    removeLocalSubscriptionState();
-    var app = document.getElementById('app');
-    if (!app) return;
-    var home = app.querySelector('#dh-p-home');
-    if (home && !findProfileCard(app.querySelector('.dh-home-wrap'))) home.remove();
-    var prem = app.querySelector('#dh-p-prem');
-    if (prem) prem.remove();
-    var exit = app.querySelector('#dh-p-exit');
-    if (exit) exit.remove();
+    scrollProfileToTop();
+    if (admin) loadAdminStats(admin);
   }
 
   function install() {
     if (INSTALLED) return;
     INSTALLED = true;
     if (!global.DHShell || typeof global.DHShell.renderProfile !== 'function') return;
+    if (WRAPPED) return;
 
     var original = global.DHShell.renderProfile;
     global.DHShell.renderProfile = function () {
       var result = original.apply(this, arguments);
-      try { ensureAdminPanel(); } catch (_) {}
+      try {
+        if (authUser()) reflowProfile();
+        else stripGuestLegacyProfileControls();
+      } catch (_) {}
       return result;
     };
+    WRAPPED = true;
   }
 
   function boot() {
-    cleanupLegacyControlsEverywhere();
     install();
-    if (OBSERVER_INSTALLED || !document.body || typeof MutationObserver === 'undefined') return;
-    OBSERVER_INSTALLED = true;
+    if (global.__dhProfileUxObserverInstalled || !document.body || typeof MutationObserver === 'undefined') return;
+    global.__dhProfileUxObserverInstalled = true;
     var observer = new MutationObserver(function () {
-      try {
-        cleanupLegacyControlsEverywhere();
-        ensureAdminPanel();
-      } catch (_) {}
+      if (global.DHShell && typeof global.DHShell.renderProfile === 'function') install();
+      if (authUser()) {
+        try { reflowProfile(); } catch (_) {}
+      } else {
+        stripGuestLegacyProfileControls();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })(window);

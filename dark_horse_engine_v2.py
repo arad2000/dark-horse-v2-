@@ -2,7 +2,7 @@
 Dark Horse Engine — نسخه نهایی (D_last_final.py)
 - انتخاب رشته دانشگاهی: Total = 0.55×M + 0.30×V + 0.15×S
 - هدایت تحصیلی پایه نهم: Total = 0.60×M + 0.20×S + 0.20×V
-- M-Score شاخه‌ها با مخرج ۳۰ محاسبه می‌شود
+- M-Score شاخه‌ها با مخرج min(30, max(15, |U|)) محاسبه می‌شود
 - ✅ فقط از فیلدهای archetype و fulfillment_source دیتابیس استفاده می‌کند
 - ✅ هیچ تولید داخلی برای کهن‌الگو و منبع رضایت وجود ندارد
 """
@@ -11,7 +11,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
-from math import sqrt
+from math import sqrt, isfinite
 
 logger = logging.getLogger("darkhorse_engine_final")
 
@@ -30,8 +30,8 @@ class DarkHorseEngineV2:
         self.trait_map: Dict[str, Dict[int, List[str]]] = {}
         self.value_poles: Dict[str, str] = {}
         self.school_branches: Dict[str, Dict] = {}
-        self._alt_paths_cache: Dict[str, List[Dict]] = {}
-        self._branch_alt_paths_cache: Dict[str, List[Dict]] = {}
+        self._alt_paths_cache: Dict[str, list] = {}
+        self._branch_alt_paths_cache: Dict[str, list] = {}
         self._load_data(motives_path, majors_path, trait_map_path, value_poles_path, school_branches_path)
         self._validate_schema_consistency()
         self._precompute_alternative_paths()
@@ -95,7 +95,7 @@ class DarkHorseEngineV2:
         """
         اعتبارسنجی هم‌ترازی موقعیتی بین strategy_weights (majors_database) و trait_map_v3.
         این دو فایل با فرض ترتیب یکسان S01..S25 به‌هم متصل می‌شوند، بدون شناسهٔ صریح مشترک.
-        هرگونه ناهماهنگی اینجا لاگ می‌شود تا به‌جای خطای خاموش در runtime، در بارگذاری دیده شود.
+        رشته‌های با motive_driven=False صراحتاً ظرفیت‌محورند و وارد امتیازدهی فردیت نمی‌شوند.
         """
         expected_keys = {f"S{i:02d}" for i in range(1, 26)}
         trait_keys = set(self.trait_map.keys())
@@ -108,23 +108,25 @@ class DarkHorseEngineV2:
             )
 
         bad_rows = 0
-        no_prestige = 0
+        stub_count = 0
         for major_id, major_data in self.majors_db.items():
+            if major_data.get("motive_driven") is False:
+                stub_count += 1
+                continue
             sw = major_data.get("strategy_weights", [])
             if len(sw) != 25:
                 bad_rows += 1
                 logger.warning(
-                    f"⚠️ رشته/شاخه '{major_data.get('name', major_id)}' به‌جای ۲۵ سطر strategy_weights، "
+                    f"⚠️ رشته/شاخه فعال '{major_data.get('name', major_id)}' به‌جای ۲۵ سطر strategy_weights، "
                     f"{len(sw)} سطر دارد — احتمال جابه‌جایی نگاشت با trait_map."
                 )
-            if "prestige_level" not in major_data:
-                no_prestige += 1
 
-        if no_prestige and no_prestige == len(self.majors_db):
-            logger.warning(
-                f"⚠️ هیچ‌کدام از {len(self.majors_db)} رشته فیلد 'prestige_level' ندارند؛ "
-                f"market_demand_level برای همه None خواهد بود."
-            )
+        active_count = len(self.majors_db) - stub_count
+        logger.info(
+            "✅ اعتبارسنجی کاتالوگ رشته‌ها: %s رشته فعال فردیت‌محور، %s رشته صرفاً ظرفیت‌محور (motive_driven=False).",
+            active_count,
+            stub_count,
+        )
 
     def _get_branch_denom_limit(self, branch_name: str) -> Optional[int]:
         if branch_name in self.school_branches:
@@ -166,8 +168,17 @@ class DarkHorseEngineV2:
 
         return min(1.0, score), matched_details
 
+    def _active_branch_code_set(self, raw_codes: List[str]) -> set:
+        codes = {str(c).strip().lower() for c in (raw_codes or []) if c and str(c).strip()}
+        if self.motives_map:
+            catalog = {str(k).strip().lower() for k in self.motives_map.keys()}
+            filtered = codes & catalog
+            if filtered:
+                return filtered
+        return codes
+
     # ──────────────────────────────────────────────────────────────
-    # محاسبه M-Score برای شاخه‌ها (مخرج ۳۰)
+    # محاسبه M-Score برای شاخه‌ها (نرمال‌شده بر اساس بودجه جرقه‌های کاربر - گزینه ۲-الف)
     # ──────────────────────────────────────────────────────────────
     def _compute_branch_m_score(self, user_motives: List[str], branch_data: Dict) -> Tuple[float, List[Dict]]:
         if not user_motives:
@@ -178,14 +189,14 @@ class DarkHorseEngineV2:
             return 0.0, []
 
         user_set = {str(m).strip().lower() for m in user_motives if m and str(m).strip()}
-        branch_set = {str(c).strip().lower() for c in raw_codes if c and str(c).strip()}
+        branch_set = self._active_branch_code_set(raw_codes)
         matched = user_set & branch_set
 
         if not matched:
             return 0.0, []
 
         denom_limit = branch_data.get("m_score_denom_limit", 30)
-        denom = min(len(branch_set), denom_limit)
+        denom = min(float(denom_limit), max(15.0, float(len(user_set))))
         score = len(matched) / denom
 
         matched_details = []
@@ -203,8 +214,11 @@ class DarkHorseEngineV2:
             return 0.0, []
 
         total_score = 0.0
-        valid = 0
         highlights = []
+
+        # Keep the denominator fixed to the full S-question protocol.
+        # Unanswered/invalid items contribute zero instead of shrinking the denominator.
+        question_count = len(strategy_weights)
 
         for i, row in enumerate(strategy_weights):
             if i >= len(strategy_answers):
@@ -218,7 +232,6 @@ class DarkHorseEngineV2:
             normalized = chosen_w / max_w if max_w > 0 else 0.0
 
             total_score += normalized
-            valid += 1
 
             if normalized >= 0.7:
                 q_num = i + 1
@@ -230,30 +243,89 @@ class DarkHorseEngineV2:
                 else:
                     highlights.append(f"گزینه {idx+1} با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
 
-        final_score = (total_score / valid) if valid > 0 else 0.0
+        final_score = (total_score / question_count) if question_count > 0 else 0.0
         return final_score, highlights
 
-    # ── V-Score ──
-    def _compute_v_score(self, value_choices: List[str], value_weights: Dict[str, float]) -> Tuple[float, List[str]]:
-        if not value_choices or not value_weights:
-            return 0.0, []
+    # V range normalization: aggregate evidence, never average pair ratios.
+    V_EPSILON = 0.02
 
-        total = 0.0
-        valid = 0
+    @staticmethod
+    def _valid_value_code(value):
+        if not isinstance(value, str):
+            return None
+        code = value.strip().upper()
+        return code if code in {f"Q{i}{side}" for i in range(1, 16) for side in "AB"} else None
+
+    @classmethod
+    def _pairwise_value_score(cls, choice, value_weights):
+        code = cls._valid_value_code(choice)
+        if not code:
+            return 0.0, 0.0
+        try:
+            a, b = (float(value_weights[code[:-1] + side]) for side in "AB")
+        except (KeyError, TypeError, ValueError):
+            return 0.0, 0.0
+        if not all(isfinite(x) and 0 <= x <= 1 for x in (a, b)):
+            return 0.0, 0.0
+        span = round(abs(a - b), 12)
+        chosen = a if code[-1] == "A" else b
+        if span < cls.V_EPSILON:
+            return 0.0, chosen
+        return (chosen - min(a, b)) / span, chosen
+
+    def _compute_v_result(self, value_choices, value_weights):
+        # Repeated identical answers count once; conflicting answers invalidate
+        # the question rather than making the result depend on input order.
+        answers = {}
+        for value in value_choices or []:
+            code = self._valid_value_code(value)
+            if code:
+                answers.setdefault(code[:-1], set()).add(code)
+        answered = sum(len(codes) == 1 for codes in answers.values())
+        numerator = denominator = 0.0
+        informative = 0
         highlights = []
-
-        for v in value_choices:
-            if not v or not v.strip():
+        for base, codes in answers.items():
+            if len(codes) != 1:
                 continue
-            weight = value_weights.get(v.strip(), 0.0)
-            total += weight
-            valid += 1
-            if weight > 0.7:
-                pole = self.value_poles.get(v.strip(), v)
+            code = next(iter(codes))
+            try:
+                a, b = (float(value_weights[base + side]) for side in "AB")
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not all(isfinite(x) and 0 <= x <= 1 for x in (a, b)):
+                continue
+            span = round(abs(a - b), 12)
+            if span < self.V_EPSILON:
+                continue
+            chosen = a if code[-1] == "A" else b
+            numerator += chosen - min(a, b)
+            denominator += span
+            informative += 1
+            if chosen > min(a, b):
+                pole = self.value_poles.get(code, code)
                 highlights.append(f"ارزش «{pole}»: هم‌راستایی قوی")
+        score = min(1.0, max(0.0, numerator / denominator)) if denominator else None
+        return {
+            "score": score,
+            "status": ("complete" if answered == 15 else "partial") if score is not None
+                      else ("no_discriminative_evidence" if answered else "incomplete"),
+            "coverage": {"answered": answered, "total": 15,
+                         "discriminative_answered": informative},
+            "highlights": highlights,
+        }
 
-        score = min(1.0, total / valid) if valid > 0 else 0.0
-        return score, highlights
+    def _compute_v_score(self, value_choices, value_weights):
+        result = self._compute_v_result(value_choices, value_weights)
+        return result["score"], result["highlights"]
+
+    @classmethod
+    def _v_method(cls):
+        return {"version": "3.1-v-range-norm",
+                "v_formula": "sum(w_chosen-min(wA,wB))/sum(max(wA,wB)-min(wA,wB)); answered pairs only; range < 0.02 excluded; zero denominator => null",
+                "v_epsilon": cls.V_EPSILON,
+                "v_previous_formula": "mean(w_chosen/max(wA,wB)) at deploy 45e61bc5ed0f83a69ec36aff9de7a24a1ce45b90",
+                "score_label": "امتیاز هم‌خوانی مدل"}
 
     # ──────────────────────────────────────────────────────────────
     # ابزارهای فاصله برای مسیرهای جایگزین
@@ -299,9 +371,9 @@ class DarkHorseEngineV2:
         )
         return total_dist, v_dist, s_dist
 
-    # ── مسیرهای جایگزین: محاسبهٔ یک‌باره در startup و cache ──
+    # ── مسیرهای جایگزین برای رشته‌های دانشگاهی ──
     def _precompute_alternative_paths(self) -> None:
-        """Precompute alternative paths once so request-time scoring stays bounded."""
+        """Phase 1: precompute alternative paths once at startup (safe if fails)."""
         try:
             for major_id in list(self.majors_db.keys()):
                 self._alt_paths_cache[major_id] = self._compute_alternative_paths(major_id, top_n=3)
@@ -314,21 +386,26 @@ class DarkHorseEngineV2:
                 len(self._alt_paths_cache),
                 len(self._branch_alt_paths_cache),
             )
-        except Exception as exc:
-            logger.error("Alternative paths precompute failed: %s", exc)
+        except Exception as e:
+            logger.error("Alternative paths precompute failed: %s", e)
             self._alt_paths_cache = {}
             self._branch_alt_paths_cache = {}
 
-    # ── مسیرهای جایگزین برای رشته‌های دانشگاهی ──
-    def _find_alternative_paths(self, major_id: str, top_n: int = 3) -> List[Dict]:
+    def _find_alternative_paths(self, major_id: str, top_n: int = 3):
         cached = self._alt_paths_cache.get(major_id)
         if cached is not None:
             return list(cached)[:top_n]
         return self._compute_alternative_paths(major_id, top_n=top_n)
 
+    def _find_branch_alternative_paths(self, branch_name: str, top_n: int = 3):
+        cached = self._branch_alt_paths_cache.get(branch_name)
+        if cached is not None:
+            return list(cached)[:top_n]
+        return self._compute_branch_alternative_paths(branch_name, top_n=top_n)
+
     def _compute_alternative_paths(self, major_id: str, top_n: int = 3) -> List[Dict]:
         target = self.majors_db.get(major_id)
-        if not target:
+        if not target or target.get("motive_driven") is False:
             return []
 
         target_vw = target.get("value_weights", {})
@@ -338,7 +415,7 @@ class DarkHorseEngineV2:
 
         distances = []
         for other_id, other_data in self.majors_db.items():
-            if other_id == major_id:
+            if other_id == major_id or other_data.get("motive_driven") is False:
                 continue
 
             other_vw = other_data.get("value_weights", {})
@@ -367,12 +444,6 @@ class DarkHorseEngineV2:
         return distances[:top_n]
 
     # ── مسیرهای جایگزین برای شاخه‌های دبیرستانی ──
-    def _find_branch_alternative_paths(self, branch_name: str, top_n: int = 3) -> List[Dict]:
-        cached = self._branch_alt_paths_cache.get(branch_name)
-        if cached is not None:
-            return list(cached)[:top_n]
-        return self._compute_branch_alternative_paths(branch_name, top_n=top_n)
-
     def _compute_branch_alternative_paths(self, branch_name: str, top_n: int = 3) -> List[Dict]:
         if branch_name not in self.school_branches:
             return []
@@ -411,24 +482,44 @@ class DarkHorseEngineV2:
         distances.sort(key=lambda x: x["distance"])
         return distances[:top_n]
 
-    # ── استخراج ویژگی‌های ناهمسو ──
-    def _extract_s_misaligned_traits(self, strategy_answers, strategy_weights):
-        traits = []
-        for i, row in enumerate(strategy_weights):
+    # ── پروفایل میانگین‌نرمال صفات راهبردی (تضمین عدم تناقض بین غالب و ناهمسو) ──
+    def _compute_trait_alignment_profile(
+        self, strategy_answers: List[int], strategy_weights: List[List[float]]
+    ) -> Dict[str, float]:
+        trait_scores: Dict[str, List[float]] = {}
+        for i, row in enumerate(strategy_weights or []):
             if i >= len(strategy_answers):
                 continue
             idx = strategy_answers[i]
             if idx < 0 or idx >= len(row):
                 continue
-            if row[idx] < 0.3:
-                q_num = i + 1
-                question_key = f"S{str(q_num).zfill(2)}"
-                trait_list = self.trait_map.get(question_key, {}).get(idx, [])
-                if trait_list:
-                    traits.extend(trait_list)
-                else:
-                    traits.append(f"گزینه {idx+1}")
-        return list(dict.fromkeys(traits))[:3]
+            max_w = max(row) if row else 1.0
+            chosen_w = row[idx]
+            normalized = (chosen_w / max_w) if max_w > 0 else 0.0
+            q_num = i + 1
+            question_key = f"S{str(q_num).zfill(2)}"
+            trait_list = self.trait_map.get(question_key, {}).get(idx, [])
+            if trait_list:
+                for t in trait_list:
+                    trait_scores.setdefault(t, []).append(normalized)
+            else:
+                trait_scores.setdefault(f"گزینه {idx+1}", []).append(normalized)
+        return {
+            trait: (sum(vals) / len(vals))
+            for trait, vals in trait_scores.items()
+            if vals
+        }
+
+    # ── استخراج ویژگی‌های ناهمسو ──
+    def _extract_s_misaligned_traits(self, strategy_answers, strategy_weights):
+        profile = self._compute_trait_alignment_profile(strategy_answers, strategy_weights)
+        misaligned = [
+            (trait, mean_score)
+            for trait, mean_score in profile.items()
+            if mean_score < 0.40
+        ]
+        misaligned.sort(key=lambda x: x[1])
+        return [trait for trait, _ in misaligned[:3]]
 
     def _extract_v_misaligned_poles(self, value_choices, value_weights):
         poles = []
@@ -450,6 +541,7 @@ class DarkHorseEngineV2:
     def _generate_scenario_description(self, major_name, m_evidence, m_score, s_score, v_score,
                                        strategy_answers, strategy_weights, value_choices, value_weights):
         m_aligned = m_score >= 0.5
+        m_partial = 0.15 <= m_score < 0.5
         s_aligned = s_score >= 0.5
         v_aligned = v_score >= 0.5
         desc = f"📌 {major_name}: "
@@ -464,14 +556,19 @@ class DarkHorseEngineV2:
             elif not v_aligned:
                 desc += "خرده‌انگیزه‌های شما با این رشته همسو هستند، اما ارزش‌های بنیادین شما با این رشته همخوانی کمتری دارد. این ممکن است به مرور باعث کاهش انگیزه شود. با دقت انتخاب کنید."
         elif not m_aligned and (s_aligned or v_aligned):
+            spark_clause = (
+                "اگرچه همپوشانی خرده‌انگیزه‌های شما با این رشته نسبی است"
+                if m_partial
+                else "اگرچه خرده‌انگیزه‌های شما همخوانی مستقیمی با این رشته ندارد"
+            )
             if s_aligned and v_aligned:
-                desc += "اگرچه خرده‌انگیزه‌های شما همخوانی مستقیمی با این رشته ندارد، اما راهبردهای شخصی و ارزش‌های بنیادین شما با روحیهٔ این حرفه هماهنگی خوبی نشان می‌دهد. این رشته می‌تواند یک گزینهٔ آلترناتیو غیرمنتظره اما بالقوه موفق برای شما باشد."
+                desc += f"{spark_clause}، اما راهبردهای شخصی و ارزش‌های بنیادین شما با روحیهٔ این حرفه هماهنگی خوبی نشان می‌دهد. این رشته می‌تواند یک گزینهٔ آلترناتیو غیرمنتظره اما بالقوه موفق برای شما باشد."
             elif s_aligned:
-                desc += "خرده‌انگیزه‌های شما با این رشته همسو نیستند، اما راهبردهای شخصی شما همخوانی خوبی با این حرفه دارد. اگر به این مسیر علاقه دارید، می‌توانید آن را به‌عنوان یک انتخاب نامتعارف در نظر بگیرید."
+                desc += f"{spark_clause}، اما راهبردهای شخصی شما همخوانی خوبی با این حرفه دارد. اگر به این مسیر علاقه دارید، می‌توانید آن را به‌عنوان یک انتخاب نامتعارف در نظر بگیرید."
             elif v_aligned:
-                desc += "خرده‌انگیزه‌های شما با این رشته همسو نیستند، اما ارزش‌های بنیادین شما همخوانی خوبی با این حرفه دارد. این رشته می‌تواند از منظر معنا و رضایت درونی برایتان جذاب باشد، هرچند جرقه‌های روزمرهٔ آن را کمتر دوست داشته باشید."
+                desc += f"{spark_clause}، اما ارزش‌های بنیادین شما همخوانی خوبی با این حرفه دارد. این رشته می‌تواند از منظر معنا و رضایت درونی برایتان جذاب باشد، هرچند تنها بخشی از جرقه‌های روزمرهٔ آن را انتخاب کرده‌اید."
         else:
-            desc += "هیچ‌کدام از سه لایهٔ فردیت شما — خرده‌انگیزه‌ها، راهبردهای شخصی و ارزش‌های بنیادین — با این رشته هم‌ترازی بالایی ندارند. بنابراین این مسیر پرریسک‌تر است و گزینهٔ اصلی شما نیست؛ بهتر است ابتدا گزینه‌هایی را بررسی کنید که دست‌کم در یک لایه با فردیت شما هم‌ترازی دارند."
+            desc += "همپوشانی هر سه لایهٔ فردیت شما — خرده‌انگیزه‌ها، راهبردهای شخصی و ارزش‌های بنیادین — با این رشته زیر آستانهٔ قوت است؛ بهتر است ابتدا گزینه‌هایی را بررسی کنید که هم‌ترازی قوی‌تری با فردیت شما دارند."
 
         if not s_aligned:
             mis_traits = self._extract_s_misaligned_traits(strategy_answers, strategy_weights)
@@ -494,27 +591,14 @@ class DarkHorseEngineV2:
     # ── استخراج ویژگی‌ها و ارزش‌های غالب (برای archetype_info) ──
     def _extract_dominant_traits(self, strategy_answers: List[int], strategy_weights: List[List[float]],
                                   threshold: float = 0.7, top_n: int = 2) -> List[str]:
-        # به‌جای برگرداندن هر صفتی که از آستانه رد شود (که تا ۸ مورد می‌شد و شلوغ بود)،
-        # صفات را بر اساس قدرت واقعی (normalized) رتبه‌بندی می‌کنیم و فقط قوی‌ترین‌ها را نگه می‌داریم.
-        trait_strength: Dict[str, float] = {}
-        for i, row in enumerate(strategy_weights):
-            if i >= len(strategy_answers):
-                continue
-            idx = strategy_answers[i]
-            if idx < 0 or idx >= len(row):
-                continue
-            max_w = max(row) if row else 1.0
-            chosen_w = row[idx]
-            normalized = chosen_w / max_w if max_w > 0 else 0.0
-            if normalized >= threshold:
-                q_num = i + 1
-                question_key = f"S{str(q_num).zfill(2)}"
-                traits = self.trait_map.get(question_key, {}).get(idx, [])
-                for t in traits:
-                    trait_strength[t] = max(trait_strength.get(t, 0.0), normalized)
-
-        ranked = sorted(trait_strength.items(), key=lambda x: -x[1])
-        return [t for t, _ in ranked[:top_n]]
+        profile = self._compute_trait_alignment_profile(strategy_answers, strategy_weights)
+        dominant = [
+            (trait, mean_score)
+            for trait, mean_score in profile.items()
+            if mean_score >= threshold
+        ]
+        dominant.sort(key=lambda x: -x[1])
+        return [t for t, _ in dominant[:top_n]]
 
     def _extract_dominant_values(self, value_choices: List[str], value_weights: Dict[str, float],
                                   threshold: float = 0.7, top_n: int = 2) -> List[str]:
@@ -522,10 +606,11 @@ class DarkHorseEngineV2:
         for v in value_choices:
             if not v or not v.strip():
                 continue
-            weight = value_weights.get(v.strip(), 0.0)
-            if weight > threshold:
-                pole = self.value_poles.get(v.strip(), v)
-                value_strength[pole] = max(value_strength.get(pole, 0.0), weight)
+            code = v.strip().upper()
+            normalized, raw_weight = self._pairwise_value_score(code, value_weights)
+            if raw_weight > threshold or (normalized >= 0.85 and raw_weight >= 0.55):
+                pole = self.value_poles.get(code, v.strip())
+                value_strength[pole] = max(value_strength.get(pole, 0.0), normalized)
 
         ranked = sorted(value_strength.items(), key=lambda x: -x[1])
         return [v for v, _ in ranked[:top_n]]
@@ -556,14 +641,20 @@ class DarkHorseEngineV2:
         for i in range(1, 16):
             key = f"conj_{i}"
             val = (conjoint_choices or {}).get(key, "").strip().upper()
-            if val and val.startswith('Q'):
+            if val in (f'Q{i}A', f'Q{i}B'):
                 value_choices.append(val)
             else:
                 value_choices.append("")
 
         discovered = []
+        incomplete = []
         for major_id, major_data in self.majors_db.items():
             try:
+                # ایمنی داده: رشته‌هایی که هنوز motive واقعی و وزن‌دهی معتبر ندارند
+                # نباید وارد discovery فردی شوند، حتی اگر کد P2-* آن‌ها دستی به ورودی تزریق شود.
+                if major_data.get("motive_driven") is False:
+                    continue
+
                 m_score, m_ev = self._compute_m_score(user_motives or [], major_data)
                 # فیلتر سخت خرده‌انگیزه: بدون همپوشانی واقعی جرقه، رشته نباید فقط با S/V بیاید.
                 # (حذف قبلی این شرط باعث ظاهر شدن رشته‌ها تا ~۳۰–۴۵٪ فقط از روی راهبرد/ارزش شد.)
@@ -571,7 +662,12 @@ class DarkHorseEngineV2:
                     continue
 
                 s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
-                v_score, v_high = self._compute_v_score(value_choices, major_data.get("value_weights", {}))
+                v_result = self._compute_v_result(value_choices, major_data.get("value_weights", {}))
+                v_score, v_high = v_result["score"], v_result["highlights"]
+                if v_score is None or not any(0 <= a <= 4 for a in strategy_answers) or not major_data.get("strategy_weights"):
+                    incomplete.append({"major_id": major_id, "score": None, "status": "incomplete",
+                                       "v_result": v_result})
+                    continue
 
                 total = (0.55 * m_score) + (0.30 * v_score) + (0.15 * s_score)
                 final_score = round(total * 100, 1)
@@ -623,6 +719,8 @@ class DarkHorseEngineV2:
                     "realm_fa": major_data.get("group", ""),
                     "individuality_fit": {
                         "score": final_score,
+                        "status": v_result["status"],
+                        "value_assessment": v_result,
                         "level": self._get_fit_level(final_score),
                         # توجه: فیلد prestige_level در majors_database_v2.json فعلاً وجود ندارد.
                         # قبلاً اینجا مقدار ثابت ۲ برای همهٔ ۱۶۰ رشته برمی‌گشت (داده جعلی).
@@ -649,10 +747,17 @@ class DarkHorseEngineV2:
         med = sum(1 for m in discovered if 60 <= m["individuality_fit"]["score"] < 80)
         low = sum(1 for m in discovered if m["individuality_fit"]["score"] < 60)
 
+        active_majors_count = sum(
+            1 for m in self.majors_db.values() if m.get("motive_driven") is not False
+        )
+
         return {
             "discovered_majors": discovered,
+            "incomplete_assessments": incomplete,
+            "status": "incomplete" if incomplete else "complete",
             "summary": {
                 "total_majors_analyzed": len(self.majors_db),
+                "active_majors_analyzed": active_majors_count,
                 "total_matches": len(discovered),
                 "high_compatibility": high,
                 "medium_compatibility": med,
@@ -664,7 +769,7 @@ class DarkHorseEngineV2:
                 "s_score_formula": "S = (1/25) * Σ(chosen_w / max_w)",
                 "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
                 "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15% (سخت)",
-                "version": "3.1-alternative-paths",
+                **self._v_method(),
                 "trait_map_version": "v3 (چند ویژگی در هر گزینه)",
                 "features": ["کهن‌الگو و منبع رضایت از دیتابیس", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy", "سناریوهای ۸ گانه"]
             },
@@ -674,7 +779,7 @@ class DarkHorseEngineV2:
     # ──────────────────────────────────────────────────────────────
     #  متد ۲: هدایت تحصیلی پایه نهم (توصیه شاخه)
     #  فرمول: Total = 0.60×M + 0.20×S + 0.20×V
-    #  M-Score با مخرج ۳۰ محاسبه می‌شود
+    #  M-Score denominator = min(30, max(15, |U|))
     # ──────────────────────────────────────────────────────────────
     def recommend_school_branch(self, user_motives, sjt_answers, conjoint_choices) -> Dict:
         strategy_answers = []
@@ -687,21 +792,29 @@ class DarkHorseEngineV2:
         for i in range(1, 16):
             key = f"conj_{i}"
             val = (conjoint_choices or {}).get(key, "").strip().upper()
-            if val and val.startswith('Q'):
+            if val in (f'Q{i}A', f'Q{i}B'):
                 value_choices.append(val)
             else:
                 value_choices.append("")
 
         branch_scores = []
+        incomplete = []
 
         for branch_name, branch_data in self.school_branches.items():
             m_score, m_ev = self._compute_branch_m_score(user_motives, branch_data)
             s_score, s_high = self._compute_s_score(strategy_answers, branch_data.get("strategy_weights", []))
-            v_score, v_high = self._compute_v_score(value_choices, branch_data.get("value_weights", {}))
+            v_result = self._compute_v_result(value_choices, branch_data.get("value_weights", {}))
+            v_score, v_high = v_result["score"], v_result["highlights"]
+            if v_score is None or not any(0 <= a <= 4 for a in strategy_answers) or not branch_data.get("strategy_weights"):
+                incomplete.append({"branch_name": branch_name, "score": None, "status": "incomplete",
+                                   "v_result": v_result})
+                continue
             total = (0.60 * m_score) + (0.20 * v_score) + (0.20 * s_score)
 
             branch_info = {
                 "branch_name": branch_name,
+                "status": v_result["status"],
+                "value_assessment": v_result,
                 "average_score": round(total * 100, 1),
                 "count": len(branch_data.get("micro_motive_codes", [])),
                 "max_score": round(total * 100, 1),
@@ -737,19 +850,21 @@ class DarkHorseEngineV2:
 
         return {
             "recommended_branches": branch_scores,
+            "incomplete_assessments": incomplete,
+            "status": "incomplete" if incomplete else "complete",
             "best_branch": best_branch,
             "summary": {
                 "total_majors_analyzed": len(self.majors_db),
-                "branches_analyzed": len(branch_scores)
+                "branches_analyzed": len(self.school_branches)
             },
             "method": {
                 "principle": "هدایت تحصیلی — توصیه شاخه دبیرستانی",
                 "scoring": "Total = 0.60×M + 0.20×S + 0.20×V",
-                "m_denom_limit": "30",
+                "m_denom_limit": "min(30, max(15, |unique_user_motives|))",
                 "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
                 "filter": "بهترین شاخه فقط از بین شاخه‌های با M ≥ 15% انتخاب می‌شود",
                 "features": ["M-Score مستقیم از شاخه", "S و V از شاخه", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy"],
-                "version": "3.1-branch-recommendation"
+                **self._v_method()
             },
             "next_step": "بر اساس این نتایج، شاخه‌ای که بیشترین امتیاز را دارد و همخوانی انگیزه‌ی بالایی دارد، مناسب‌ترین گزینه برای شماست."
         }

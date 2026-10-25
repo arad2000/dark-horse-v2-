@@ -1,0 +1,870 @@
+"""Deterministic JSON -> PostgreSQL seed utility for Dark Horse V2 Hybrid.
+
+Safety contract:
+- Reference JSON files remain the source of truth.
+- The command only writes when --confirm-staging is supplied.
+- It never enables production PostgreSQL runtime use.
+- It preserves natural keys and many-to-many mappings from the JSON sources.
+- Alembic owns schema lifecycle; this script does not create/drop schema.
+- BIOTM-* motive references are intentionally deferred; non-BIOTM unresolved
+  references remain hard failures.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+from pathlib import Path
+from typing import Any
+
+import billing_models  # noqa: F401  # register User/auth tables on shared Base metadata
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from database import engine
+from models import (
+    Major,
+    MicroMotive,
+    SchoolBranch,
+    TraitOption,
+    ValuePole,
+    branch_micro_motives,
+    major_micro_motives,
+)
+
+ROOT = Path(__file__).resolve().parent
+DEFERRED_MOTIVE_PREFIXES = ("BIOTM-",)
+PHASE2_WAVE1_IDS = frozenset(range(161, 177))
+WAVE_A_IDS = frozenset(range(177, 190))
+F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
+F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
+F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
+WAVE_A_DEFERRED_IDS = WAVE_A_IDS - F1_OWNER_APPROVED_STAGING_IDS - F1B_OWNER_APPROVED_STAGING_IDS
+F1_ART_WEIGHTS_VERSION = "hybrid_swRESHARP_art_lang_v1|art_value_v1|swFIX72_v2"
+F1_DEFERRED_STUB_FIELDS = {
+    "handcrafted": False,
+    "motive_driven": False,
+    "weights_version": "deferred_catalog_only_v1",
+    "micro_motive_codes": [],
+    "strategy_weights": [],
+    "value_weights": {},
+    "archetype": "deferred_catalog_only",
+    "fulfillment_source": "این مدخل فعلاً فقط برای کاتالوگ و تطبیق ظرفیت سنجش است؛ داده‌های فردیت و وزن‌های امتیازدهی تدوین و اعتبارسنجی نشده‌اند.",
+}
+WAVE_B_DEFERRED_IDS = frozenset(range(190, 195))
+F2_CANDIDATE_STAGING_IDS = frozenset({199, 201, 202, 203, 204})
+F3_CANDIDATE_STAGING_IDS = frozenset({205, 209, 210, 211, 212, 213, 214})
+F2_WEIGHTS_VERSION = "dh013_f2_review_v1"
+F3_WEIGHTS_VERSION = "dh013_f3_review_v1"
+F4_CANDIDATE_STAGING_IDS = frozenset({208, 219, 220})
+F4_WEIGHTS_VERSION = "dh013_f4_review_v2"
+WAVE_C_DEFERRED_IDS = frozenset({195, 196, 197, 198, 200})
+WAVE_D_DEFERRED_IDS = frozenset({206, 207, 215})
+WAVE_E_DEFERRED_IDS = frozenset(range(216, 231)) - frozenset({219, 220})
+MAJOR_1_194_CATALOG_FINGERPRINT = "5189181b82aab0e6"
+MAJOR_1_204_CATALOG_FINGERPRINT = "749c599468ce116b"
+MAJOR_1_215_CATALOG_FINGERPRINT = "4a75d6d48c2b07ce"
+LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT = "15ce7c0ad63de857"
+LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "e0e81b6b783c1007"
+
+
+def load_json(path: Path) -> Any:
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def collection_records(payload: Any, candidates: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Read list-shaped reference collections."""
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if isinstance(payload, dict):
+        for key in candidates:
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [x for x in value if isinstance(x, dict)]
+    raise ValueError(f"Unsupported JSON collection shape; expected one of {candidates}")
+
+
+def parse_value_poles(payload: Any) -> list[dict[str, Any]]:
+    """Normalize canonical Q1A..Q15B dict into DB rows."""
+    if not isinstance(payload, dict):
+        raise ValueError("value_poles_v2.json must be an object")
+    result: list[dict[str, Any]] = []
+    for raw_code, description in payload.items():
+        code = str(raw_code).strip().upper()
+        if not code.startswith("Q") or len(code) < 3 or code[-1] not in {"A", "B"}:
+            raise ValueError(f"Invalid value pole code: {raw_code}")
+        try:
+            question_num = int(code[1:-1])
+        except ValueError as exc:
+            raise ValueError(f"Invalid value pole question number: {raw_code}") from exc
+        result.append({
+            "pole_code": code,
+            "question_num": question_num,
+            "option_letter": code[-1],
+            "description_fa": str(description),
+        })
+    return result
+
+
+def parse_trait_options(payload: Any) -> list[dict[str, Any]]:
+    """Normalize canonical trait_map_v3 S01..S25 object into option rows."""
+    if not isinstance(payload, dict):
+        raise ValueError("trait_map_v3.json must be an object keyed by S01..S25")
+
+    expected_questions = [f"S{i:02d}" for i in range(1, 26)]
+    actual_questions = sorted(str(k) for k in payload.keys())
+    if actual_questions != expected_questions:
+        raise ValueError(
+            f"Strategy question IDs mismatch: expected S01..S25, got {actual_questions}"
+        )
+
+    result: list[dict[str, Any]] = []
+    for qcode in expected_questions:
+        row = payload[qcode]
+        if not isinstance(row, dict):
+            raise ValueError(f"{qcode} must map to an object of option_index -> trait list")
+        option_keys = sorted(row.keys(), key=lambda x: int(str(x)) if str(x).isdigit() else 999)
+        if [str(x) for x in option_keys] != ["0", "1", "2", "3", "4"]:
+            raise ValueError(f"{qcode} must contain exactly options 0..4")
+        for raw_index in option_keys:
+            idx = int(raw_index)
+            traits = row[raw_index]
+            if not isinstance(traits, list) or not all(isinstance(t, str) and t.strip() for t in traits):
+                raise ValueError(f"{qcode}[{idx}] must be a non-empty list of trait strings")
+            result.append({
+                "question_code": qcode,
+                "option_index": idx,
+                "traits": traits,
+            })
+    return result
+
+
+def legacy_major_name_weight_fingerprint(major_records: list[dict[str, Any]]) -> str:
+    payload = "\n".join(
+        f"{int(item['id'])}|{item['name']}|{item['weights_version']}"
+        for item in sorted(
+            (item for item in major_records if 1 <= int(item.get("id")) <= 160),
+            key=lambda item: int(item["id"]),
+        )
+    )
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in payload:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+
+def _canonical_weight_value(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return f"#{int(float(value) * 1_000_000 + 0.5)}"
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(value, list):
+        return "[" + ",".join(_canonical_weight_value(item) for item in value) + "]"
+    if isinstance(value, dict):
+        return "{" + ",".join(
+            f"{json.dumps(str(key), ensure_ascii=False)}:{_canonical_weight_value(value[key])}"
+            for key in sorted(value)
+        ) + "}"
+    return str(value)
+
+
+def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) -> str:
+    rows = []
+    for item in sorted(
+        (item for item in major_records if 1 <= int(item.get("id")) <= 160),
+        key=lambda item: int(item["id"]),
+    ):
+        rows.append(
+            "|".join(
+                [
+                    str(int(item["id"])),
+                    str(item["name"]),
+                    str(item["weights_version"]),
+                    _canonical_weight_value(
+                        item.get("strategy_weights") or item.get("strategy_profile") or {}
+                    ),
+                    _canonical_weight_value(item.get("value_weights") or {}),
+                ]
+            )
+        )
+    payload = "\n".join(rows)
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in payload:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+def f1_staging_aware_baseline_text(major_json_text: str) -> str:
+    """Normalize only explicitly approved staged rows before historical catalog fingerprints."""
+    records = json.loads(major_json_text)
+    for item in records:
+        try:
+            major_id = int(item.get("id") or item.get("major_id"))
+        except (TypeError, ValueError):
+            continue
+        if major_id in (F1_OWNER_APPROVED_STAGING_IDS | F1B_OWNER_APPROVED_STAGING_IDS | F2_CANDIDATE_STAGING_IDS | F3_CANDIDATE_STAGING_IDS | F4_CANDIDATE_STAGING_IDS):
+            for key, value in F1_DEFERRED_STUB_FIELDS.items():
+                item[key] = json.loads(json.dumps(value, ensure_ascii=False))
+    return json.dumps(records, ensure_ascii=False, indent=2) + "\n"
+
+
+def major_catalog_fingerprint(major_json_text: str) -> str:
+    """Fingerprint the exact pre-Wave-C majors JSON, byte-for-character as decoded text."""
+    marker = '\n  {\n    "id": 195,'
+    prefix, found, _ = major_json_text.partition(marker)
+    if not found:
+        raise ValueError("Wave C baseline marker for major 195 is missing")
+    prefix = prefix.rstrip()
+    if not prefix.endswith(","):
+        raise ValueError("Wave C baseline catalog prefix is malformed")
+    baseline_text = prefix[:-1] + "\n]\n"
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in baseline_text:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+def major_catalog_1_204_fingerprint(major_json_text: str) -> str:
+    """Fingerprint the exact pre-Wave-D catalog, including all 1..204 fields and weights."""
+    marker = '\n  {\n    "id": 205,'
+    prefix, found, _ = major_json_text.partition(marker)
+    if not found:
+        raise ValueError("Wave D baseline marker for major 205 is missing")
+    prefix = prefix.rstrip()
+    if not prefix.endswith(","):
+        raise ValueError("Wave D baseline catalog prefix is malformed")
+    baseline_text = prefix[:-1] + "\n]\n"
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in baseline_text:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+
+def major_catalog_1_215_fingerprint(major_json_text: str) -> str:
+    """Fingerprint the exact pre-Wave-E catalog, including all 1..215 fields and weights."""
+    marker = '\n  {\n    "id": 216,'
+    prefix, found, _ = major_json_text.partition(marker)
+    if not found:
+        raise ValueError("Wave E baseline marker for major 216 is missing")
+    prefix = prefix.rstrip()
+    if not prefix.endswith(","):
+        raise ValueError("Wave E baseline catalog prefix is malformed")
+    baseline_text = prefix[:-1] + "\n]\n"
+    value = 0xCBF29CE484222325
+    prime = 0x100000001B3
+    mask = 0xFFFFFFFFFFFFFFFF
+    for char in baseline_text:
+        value ^= ord(char)
+        value = (value * prime) & mask
+    return f"{value:016x}"
+
+
+def require_no_duplicate(values: list[str], label: str) -> None:
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for value in values:
+        if value in seen and value not in duplicates:
+            duplicates.append(value)
+        seen.add(value)
+    if duplicates:
+        raise ValueError(f"Duplicate {label}: {duplicates}")
+
+
+def validate_motive_references(
+    major_records: list[dict[str, Any]],
+    branch_records: list[dict[str, Any]],
+    known_codes: set[str],
+) -> tuple[int, int, list[str]]:
+    """Fail closed on unknown refs, except intentionally deferred BIOTM-* refs."""
+    major_refs = 0
+    branch_refs = 0
+    missing: list[str] = []
+    deferred: list[str] = []
+
+    for item in major_records:
+        for raw_code in item.get("micro_motive_codes") or []:
+            major_refs += 1
+            code = str(raw_code).strip()
+            if code not in known_codes:
+                finding = f"major:{item.get('id') or item.get('major_id')}:{code}"
+                try:
+                    major_id = int(item.get("id") or item.get("major_id"))
+                except (TypeError, ValueError):
+                    major_id = None
+                if code.startswith(DEFERRED_MOTIVE_PREFIXES) or (
+                    major_id in PHASE2_WAVE1_IDS
+                    and code.startswith(f"P2-{major_id}-")
+                ):
+                    deferred.append(finding)
+                else:
+                    missing.append(finding)
+
+    for item in branch_records:
+        for raw_code in item.get("micro_motive_codes") or []:
+            branch_refs += 1
+            code = str(raw_code).strip()
+            if code not in known_codes:
+                finding = f"branch:{item.get('id') or item.get('branch_id') or item.get('name')}:{code}"
+                if code.startswith(DEFERRED_MOTIVE_PREFIXES):
+                    deferred.append(finding)
+                else:
+                    missing.append(finding)
+
+    if missing:
+        preview = ", ".join(missing[:20])
+        suffix = " ..." if len(missing) > 20 else ""
+        raise ValueError(f"Unresolved micro-motive references ({len(missing)}): {preview}{suffix}")
+    return major_refs, branch_refs, deferred
+
+
+def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
+    motives_path = base / "docs/data/micro_motives.json"
+    majors_path = base / "majors_database_v2.json"
+    branches_path = base / "school_branches_v2.json"
+    values_path = base / "value_poles_v2.json"
+    trait_path = base / "docs/data/trait_map_v3.json"
+    source_paths = (motives_path, majors_path, branches_path, values_path, trait_path)
+
+    for path in source_paths:
+        if not path.exists():
+            raise FileNotFoundError(path)
+
+    motive_records = collection_records(load_json(motives_path), ("micro_motives", "motives", "data"))
+    major_records = collection_records(load_json(majors_path), ("majors", "data"))
+    branch_records = collection_records(load_json(branches_path), ("school_branches", "branches", "data"))
+    value_records = parse_value_poles(load_json(values_path))
+    trait_records = parse_trait_options(load_json(trait_path))
+
+    motive_codes = [str(item.get("code") or "").strip() for item in motive_records]
+    require_no_duplicate(motive_codes, "micro-motive codes")
+    known_codes = set(motive_codes)
+    major_refs, branch_refs, deferred_refs = validate_motive_references(
+        major_records, branch_records, known_codes
+    )
+
+    major_ids = [
+        int(item.get("id") if item.get("id") is not None else item.get("major_id"))
+        for item in major_records
+        if item.get("id") is not None or item.get("major_id") is not None
+    ]
+    if sorted(major_ids) != list(range(1, 231)):
+        raise ValueError("Major IDs are not exactly 1..230")
+    major_names = [
+        str(item.get("name") or "").strip()
+        for item in major_records
+    ]
+    require_no_duplicate(major_names, "major names")
+    major_json_text = majors_path.read_text(encoding="utf-8")
+    fingerprint_source_text = f1_staging_aware_baseline_text(major_json_text)
+    if major_catalog_fingerprint(fingerprint_source_text) != MAJOR_1_194_CATALOG_FINGERPRINT:
+        raise ValueError("Wave C baseline 1..194 changed outside the explicit F1 activation fields")
+    if major_catalog_1_204_fingerprint(fingerprint_source_text) != MAJOR_1_204_CATALOG_FINGERPRINT:
+        raise ValueError("Wave D baseline 1..204 changed outside the explicit F1 activation fields")
+    if major_catalog_1_215_fingerprint(fingerprint_source_text) != MAJOR_1_215_CATALOG_FINGERPRINT:
+        raise ValueError("Wave E baseline 1..215 changed outside the explicit F1 activation fields")
+
+    wave_a_records = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_A_IDS
+    ]
+    if len(wave_a_records) != len(WAVE_A_IDS):
+        raise ValueError("Wave A must contain exactly 13 rows (177..189), including six approved F1 rows")
+    wave_a_deferred = [
+        item for item in wave_a_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_A_DEFERRED_IDS
+    ]
+    if len(wave_a_deferred) != len(WAVE_A_DEFERRED_IDS):
+        raise ValueError("Wave A deferred-row count mismatch")
+    for item in wave_a_deferred:
+        if (
+            item.get("motive_driven") is not False
+            or item.get("handcrafted") is not False
+            or item.get("micro_motive_codes") not in (None, [])
+            or item.get("strategy_weights") not in (None, [])
+            or item.get("value_weights") not in (None, {})
+            or item.get("weights_version") != "deferred_catalog_only_v1"
+        ):
+            raise ValueError(
+                f"Wave A major {item.get('id')} must remain a deferred catalog-only stub"
+            )
+    f1_active = [
+        item for item in wave_a_records
+        if int(item.get("id") or item.get("major_id") or 0) in F1_OWNER_APPROVED_STAGING_IDS
+    ]
+    if len(f1_active) != len(F1_OWNER_APPROVED_STAGING_IDS):
+        raise ValueError("F1 must contain exactly the six owner-approved staged rows")
+    expected_value_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f1_active:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F1_ART_WEIGHTS_VERSION
+            or len(item.get("micro_motive_codes") or []) != 7
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_value_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F1 staged activation contract failed for major {major_id}")
+    f1b_active = [
+        item for item in wave_a_records
+        if int(item.get("id") or item.get("major_id") or 0) in F1B_OWNER_APPROVED_STAGING_IDS
+    ]
+    if len(f1b_active) != len(F1B_OWNER_APPROVED_STAGING_IDS):
+        raise ValueError("F1b must contain exactly five candidate rows (177, 178, 180, 181, 182)")
+    expected_f1b_codes = {
+        177: [f"DIRECT-{i:03d}" for i in range(1, 8)],
+        178: [f"DIRECT-{i:03d}" for i in range(8, 15)],
+        180: [f"MUSIC-{i:03d}" for i in range(1, 8)],
+        181: [f"MUSIC-{i:03d}" for i in range(8, 15)],
+        182: [f"MUSIC-{i:03d}" for i in range(15, 22)],
+    }
+    expected_f1b_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f1b_active:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F1B_WEIGHTS_VERSION
+            or item.get("micro_motive_codes") != expected_f1b_codes[major_id]
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_f1b_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F1b candidate staging contract failed for major {major_id}")
+
+    wave_b_records = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_B_DEFERRED_IDS
+    ]
+    if len(wave_b_records) != len(WAVE_B_DEFERRED_IDS):
+        raise ValueError("Wave B must contain exactly 5 catalog-only rows (190..194)")
+    for item in wave_b_records:
+        if (
+            item.get("motive_driven") is not False
+            or item.get("micro_motive_codes") not in (None, [])
+            or item.get("strategy_weights") not in (None, [])
+            or item.get("value_weights") not in (None, {})
+            or item.get("weights_version") != "deferred_catalog_only_v1"
+        ):
+            raise ValueError(
+                f"Wave B major {item.get('id')} must remain a deferred catalog-only stub"
+            )
+    wave_c_records = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_C_DEFERRED_IDS
+    ]
+    if len(wave_c_records) != len(WAVE_C_DEFERRED_IDS):
+        raise ValueError("Wave C non-F2 rows must contain exactly five catalog-only rows (195-198, 200)")
+    for item in wave_c_records:
+        if (
+            item.get("motive_driven") is not False
+            or item.get("micro_motive_codes") not in (None, [])
+            or item.get("strategy_weights") not in (None, [])
+            or item.get("value_weights") not in (None, {})
+            or item.get("weights_version") != "deferred_catalog_only_v1"
+        ):
+            raise ValueError(f"Wave C major {item.get('id')} must remain a deferred catalog-only stub")
+
+    f2_candidates = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in F2_CANDIDATE_STAGING_IDS
+    ]
+    if len(f2_candidates) != len(F2_CANDIDATE_STAGING_IDS):
+        raise ValueError("F2 must contain exactly five candidate rows (199, 201, 202, 203, 204)")
+    expected_f2_codes = {
+        199: [f"AVIA-{i:03d}" for i in range(1, 8)],
+        201: [f"PILOT-{i:03d}" for i in range(1, 8)],
+        202: [f"UAV-{i:03d}" for i in range(1, 8)],
+        203: [f"PILOT-{i:03d}" for i in range(8, 15)],
+        204: [f"MRO-{i:03d}" for i in range(1, 8)],
+    }
+    expected_f2_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f2_candidates:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F2_WEIGHTS_VERSION
+            or item.get("micro_motive_codes") != expected_f2_codes[major_id]
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_f2_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F2 owner-approved activation contract failed for major {major_id}")
+
+    f3_candidates = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in F3_CANDIDATE_STAGING_IDS
+    ]
+    if len(f3_candidates) != len(F3_CANDIDATE_STAGING_IDS):
+        raise ValueError("F3 must contain exactly seven owner-approved active language/literature rows (205, 209..214)")
+    expected_f3_codes = {
+        205: [f"RUS-{i:03d}" for i in range(1, 8)],
+        209: [f"DEU-{i:03d}" for i in range(1, 8)],
+        210: [f"SPA-{i:03d}" for i in range(1, 8)],
+        211: [f"TURK-{i:03d}" for i in range(1, 8)],
+        212: [f"ITAL-{i:03d}" for i in range(1, 8)],
+        213: [f"JPN-{i:03d}" for i in range(1, 8)],
+        214: [f"KURD-{i:03d}" for i in range(1, 8)],
+    }
+    expected_f3_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f3_candidates:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F3_WEIGHTS_VERSION
+            or item.get("micro_motive_codes") != expected_f3_codes[major_id]
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_f3_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F3 active contract failed for major {major_id}")
+
+    f4_candidates = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in F4_CANDIDATE_STAGING_IDS
+    ]
+    if len(f4_candidates) != len(F4_CANDIDATE_STAGING_IDS):
+        raise ValueError("F4 must contain exactly three active rows (208, 219, 220)")
+    expected_f4_codes = {
+        208: [f"COURT-{i:03d}" for i in range(1, 8)],
+        219: [f"LAND-{i:03d}" for i in range(1, 8)],
+        220: [f"AGMECH-{i:03d}" for i in range(1, 8)],
+    }
+    expected_f4_poles = {f"Q{q}{side}" for q in range(1, 16) for side in ("A", "B")}
+    for item in f4_candidates:
+        major_id = int(item.get("id") or item.get("major_id"))
+        strategy = item.get("strategy_weights")
+        values = item.get("value_weights")
+        if (
+            item.get("motive_driven") is not True
+            or item.get("handcrafted") is not True
+            or item.get("weights_version") != F4_WEIGHTS_VERSION
+            or item.get("micro_motive_codes") != expected_f4_codes[major_id]
+            or not isinstance(strategy, list)
+            or len(strategy) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy)
+            or any(
+                any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in row)
+                or abs(sum(row) - 1.0) > 0.002
+                for row in strategy
+            )
+            or not isinstance(values, dict)
+            or set(values) != expected_f4_poles
+            or any(not isinstance(weight, (int, float)) or not math.isfinite(weight) or not 0 <= weight <= 1 for weight in values.values())
+            or not item.get("archetype")
+            or item.get("archetype") == "deferred_catalog_only"
+            or not item.get("fulfillment_source")
+            or item.get("fulfillment_source") == F1_DEFERRED_STUB_FIELDS["fulfillment_source"]
+        ):
+            raise ValueError(f"F4 active contract failed for major {major_id}")
+
+    wave_d_records = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_D_DEFERRED_IDS
+    ]
+    if len(wave_d_records) != len(WAVE_D_DEFERRED_IDS):
+        raise ValueError("Wave D non-F3 rows must contain exactly three catalog-only rows (206, 207, 215)")
+    for item in wave_d_records:
+        if (
+            item.get("motive_driven") is not False
+            or item.get("handcrafted") is not False
+            or item.get("micro_motive_codes") not in (None, [])
+            or item.get("strategy_weights") not in (None, [])
+            or item.get("value_weights") not in (None, {})
+            or item.get("weights_version") != "deferred_catalog_only_v1"
+        ):
+            raise ValueError(
+                f"Wave D non-F3 major {item.get('id')} must remain a deferred catalog-only stub"
+            )
+    wave_e_records = [
+        item for item in major_records
+        if int(item.get("id") or item.get("major_id") or 0) in WAVE_E_DEFERRED_IDS
+    ]
+    if len(wave_e_records) != len(WAVE_E_DEFERRED_IDS):
+        raise ValueError("Wave E must contain exactly 13 catalog-only rows (216..230 except active 219/220)")
+    for item in wave_e_records:
+        if (
+            item.get("motive_driven") is not False
+            or item.get("handcrafted") is not False
+            or item.get("micro_motive_codes") not in (None, [])
+            or item.get("strategy_weights") not in (None, [])
+            or item.get("value_weights") not in (None, {})
+            or item.get("weights_version") != "deferred_catalog_only_v1"
+        ):
+            raise ValueError(
+                f"Wave E major {item.get('id')} must remain a deferred catalog-only stub"
+            )
+    legacy_major_records = [item for item in major_records if 1 <= int(item.get("id")) <= 160]
+    if len(legacy_major_records) != 160:
+        raise ValueError("Legacy major set must contain exactly 160 rows")
+    if legacy_major_name_weight_fingerprint(major_records) != LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT:
+        raise ValueError("Legacy 1..160 name/weights_version fingerprint changed")
+    if legacy_major_full_weight_fingerprint(major_records) != LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT:
+        raise ValueError("Legacy 1..160 strategy/value/name/weights fingerprint changed")
+
+    value_codes = [item["pole_code"] for item in value_records]
+    require_no_duplicate(value_codes, "value pole codes")
+    trait_keys = [(item["question_code"], item["option_index"]) for item in trait_records]
+    if len(trait_keys) != len(set(trait_keys)):
+        raise ValueError("Duplicate trait option keys")
+
+    motive_by_code: dict[str, MicroMotive] = {}
+    for item in motive_records:
+        code = str(item["code"]).strip()
+        row = db.scalar(select(MicroMotive).where(MicroMotive.code == code))
+        if row is None:
+            row = MicroMotive(code=code, description_fa=str(item.get("description_fa") or item.get("text") or ""))
+            db.add(row)
+        row.description_fa = str(item.get("description_fa") or item.get("text") or row.description_fa)
+        row.category = item.get("category")
+        row.intensity_level = item.get("intensity_level")
+        motive_by_code[code] = row
+
+    db.flush()
+
+    for item in value_records:
+        code = item["pole_code"]
+        row = db.scalar(select(ValuePole).where(ValuePole.pole_code == code))
+        if row is None:
+            row = ValuePole(
+                pole_code=code,
+                question_num=int(item["question_num"]),
+                option_letter=item["option_letter"],
+                description_fa=item["description_fa"],
+            )
+            db.add(row)
+        else:
+            row.question_num = int(item["question_num"])
+            row.option_letter = item["option_letter"]
+            row.description_fa = item["description_fa"]
+
+    for item in trait_records:
+        qcode = item["question_code"]
+        idx = int(item["option_index"])
+        row = db.scalar(
+            select(TraitOption).where(
+                TraitOption.question_code == qcode,
+                TraitOption.option_index == idx,
+            )
+        )
+        if row is None:
+            row = TraitOption(question_code=qcode, option_index=idx, traits=item["traits"])
+            db.add(row)
+        else:
+            row.traits = item["traits"]
+
+    db.flush()
+
+    major_by_id: dict[int, Major] = {}
+    for item in major_records:
+        mid = int(item.get("id") if item.get("id") is not None else item.get("major_id"))
+        name = str(item.get("name") or item.get("major_name_fa") or item.get("major_name") or "").strip()
+        if not name:
+            raise ValueError(f"Major {mid} has no name")
+        row = db.get(Major, mid)
+        if row is None:
+            row = Major(
+                id=mid,
+                name=name,
+                group=item.get("group") or item.get("realm_fa") or "",
+                strategy_weights=item.get("strategy_weights") or item.get("strategy_profile") or {},
+                value_weights=item.get("value_weights") or {},
+            )
+            db.add(row)
+        row.name = name
+        row.group = item.get("group") or item.get("realm_fa") or row.group
+        row.cluster = item.get("cluster")
+        row.subgroup = item.get("subgroup")
+        row.exam_group = item.get("exam_group")
+        row.high_school_branch = item.get("high_school_branch")
+        row.strategy_weights = item.get("strategy_weights") or item.get("strategy_profile") or row.strategy_weights
+        row.value_weights = item.get("value_weights") or row.value_weights
+        row.archetype = item.get("archetype")
+        row.fulfillment_source = item.get("fulfillment_source")
+        row.prestige_level = item.get("prestige_level")
+        row.handcrafted = item.get("handcrafted", row.handcrafted)
+        row.motive_driven = item.get("motive_driven", row.motive_driven)
+        row.weights_version = item.get("weights_version")
+        major_by_id[mid] = row
+
+    branch_by_name: dict[str, SchoolBranch] = {}
+    for item in branch_records:
+        name = str(item.get("name") or item.get("branch_name") or "").strip()
+        if not name:
+            raise ValueError("School branch has no name")
+        row = db.scalar(select(SchoolBranch).where(SchoolBranch.name == name))
+        if row is None:
+            row = SchoolBranch(
+                name=name,
+                group=item.get("group") or "",
+                strategy_weights=item.get("strategy_weights") or {},
+                value_weights=item.get("value_weights") or {},
+            )
+            db.add(row)
+        row.group = item.get("group") or row.group
+        row.m_score_denom_limit = item.get("m_score_denom_limit", row.m_score_denom_limit)
+        row.strategy_weights = item.get("strategy_weights") or row.strategy_weights
+        row.value_weights = item.get("value_weights") or row.value_weights
+        row.weights_version = item.get("weights_version")
+        row.source_majors_count = item.get("source_majors_count")
+        branch_by_name[name] = row
+
+    db.flush()
+
+    # Rebuild only valid reference associations. Deferred BIOTM-* mappings and
+    # explicit Phase 2 capacity-stub P2-* references remain absent from PostgreSQL
+    # until their dedicated scientific-profile phases.
+    db.execute(major_micro_motives.delete())
+    db.execute(branch_micro_motives.delete())
+    db.flush()
+
+    major_links = 0
+    for item in major_records:
+        mid = int(item.get("id") if item.get("id") is not None else item.get("major_id"))
+        major = major_by_id[mid]
+        for raw_code in item.get("micro_motive_codes") or []:
+            code = str(raw_code).strip()
+            motive = motive_by_code.get(code)
+            if motive is None:
+                continue
+            major.micro_motives.append(motive)
+            major_links += 1
+
+    branch_links = 0
+    for item in branch_records:
+        name = str(item.get("name") or item.get("branch_name") or "").strip()
+        branch = branch_by_name[name]
+        for raw_code in item.get("micro_motive_codes") or []:
+            code = str(raw_code).strip()
+            motive = motive_by_code.get(code)
+            if motive is None:
+                continue
+            branch.micro_motives.append(motive)
+            branch_links += 1
+
+    db.commit()
+
+    return {
+        "status": "PASS",
+        "runtime_cutover": "OFF",
+        "deferred": {
+            "motive_references": deferred_refs,
+            "count": len(deferred_refs),
+            "prefixes": list(DEFERRED_MOTIVE_PREFIXES),
+        },
+        "counts": {
+            "micro_motives": len(motive_records),
+            "value_poles": len(value_records),
+            "trait_options": len(trait_records),
+            "majors": len(major_records),
+            "school_branches": len(branch_records),
+            "major_micro_motive_references": major_refs,
+            "branch_micro_motive_references": branch_refs,
+            "major_micro_motive_links": major_links,
+            "branch_micro_motive_links": branch_links,
+        },
+        "source_sha256": {
+            str(path.relative_to(base)): sha256_file(path) for path in source_paths
+        },
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Seed Dark Horse reference data into staging PostgreSQL")
+    parser.add_argument("--confirm-staging", action="store_true")
+    args = parser.parse_args()
+    if not args.confirm_staging:
+        raise SystemExit("Refusing to seed without --confirm-staging")
+    if engine is None:
+        raise SystemExit("DATABASE_URL is not configured")
+
+    try:
+        with Session(engine) as db:
+            report = seed_reference_data(db, ROOT)
+    except Exception:
+        raise
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

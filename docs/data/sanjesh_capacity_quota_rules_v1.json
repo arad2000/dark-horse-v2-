@@ -1,0 +1,84 @@
+{
+  "source": "دفترچه پذیرش صرفاً بر اساس سوابق تحصیلی سراسری ۱۴۰۴ — صفحات ۶ تا ۱۲ و جداول رشته‌محل",
+  "version": "1.0",
+  "capacity_in_booklet": {
+    "present": true,
+    "grain": "per sanjesh_code (کد رشته محل)",
+    "typical_fields": [
+      "کد رشته محل",
+      "عنوان رشته",
+      "دوره",
+      "ظرفیت",
+      "جنس پذیرش",
+      "توضیحات",
+      "دانشگاه/مرکز"
+    ]
+  },
+  "program2s_gap": {
+    "has_capacity_field": false,
+    "has_sanjesh_code": false,
+    "grain": "aggregated PROG_id (e.g. پیام‌نور تهران = 110 majors, not per-center codes)",
+    "implication": "بدون استخراج جداول PDF و نگاشت کد↔PROG نمی‌توان ظرفیت را روی program2s فعلی 1:1 گذاشت"
+  },
+  "isargaran": {
+    "percent_25": 0.25,
+    "percent_5": 0.05,
+    "notes": [
+      "از ظرفیت کل هر کد رشته‌محل ابتدا ۲۵٪ و ۵٪ ایثارگران کسر می‌شود",
+      "خالی‌مانده ۲۵٪ → ابتدا به ۵٪؛ سپس آزاد بر اساس نمره",
+      "خالی‌مانده ۵٪ → آزاد"
+    ]
+  },
+  "after_isargaran_split": {
+    "bomi_ostani_nahiyei_ghotbi": {
+      "free_share_approx": 0.2,
+      "remainder": "نسبت سهمیه‌های مناطق ۱/۲/۳ و خانواده شهدا در بوم مربوطه (نیازمند آمار شرکت‌کنندگان — در MVP فقط سهم آزاد ۲۰٪ قابل محاسبه قطعی است)"
+    },
+    "keshvari": {
+      "remainder": "نسبت شرکت‌کنندگان سهمیه‌های مناطق در کل گروه آزمایشی (نیازمند آمار ملی — در MVP فقط پس از کسر ایثارگران قابل نمایش است)"
+    },
+    "daily_high_demand": {
+      "majors_math": [
+        "مهندسی برق",
+        "مهندسی مکانیک",
+        "مهندسی کامپیوتر",
+        "مهندسی عمران",
+        "مهندسی معماری",
+        "مهندسی صنایع"
+      ],
+      "majors_humanities": [
+        "حقوق",
+        "روان شناسی",
+        "روانشناسی",
+        "حسابداری"
+      ],
+      "free_share_after_isargaran": 0.4,
+      "applies_to_course": [
+        "roozaneh",
+        "savabegh_dolati"
+      ]
+    }
+  },
+  "period_bomi_defaults": {
+    "nobat_dovom": "ostani",
+    "payam_noor": "nahiyei",
+    "nonprofit": "nahiyei",
+    "pardis": "keshvari",
+    "virtual": "keshvari"
+  },
+  "mvp_computable_without_national_stats": {
+    "from_capacity_total_C": {
+      "seats_isargaran_25": "floor(C * 0.25)",
+      "seats_isargaran_5": "floor(C * 0.05)",
+      "remainder_R": "C - seats_25 - seats_5",
+      "seats_free_if_bomi": "floor(R * 0.20)  # or 0.40 if high-demand daily",
+      "seats_bomi_pool": "R - seats_free",
+      "region_split_inside_bomi_pool": "NOT computable without applicant counts — expose as note"
+    }
+  },
+  "engine_policy": {
+    "if_no_capacity": "do not invent; omit seat breakdown; keep existing filters",
+    "if_capacity_present": "attach capacity_total + computed shares + notes for non-computable parts",
+    "azad": "state booklet tables are not full Azad catalog; keep azad note; do not force state quota formula on azad without Azad source"
+  }
+}

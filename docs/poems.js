@@ -1,12 +1,15 @@
 /**
- * سخن بزرگان — ابیات کلاسیک و معاصر فارسی (مالکیت عمومی)
- * نسخهٔ تعاملی: فیلتر موضوعی زنده + ذخیرهٔ بیت محبوب + کپی ۱ کلیک + ورق زدن نرم
+ * سخن بزرگان — ابیات کلاسیک فارسی (مالکیت عمومی)
+ * نمایش زنده: هر روز ۱–۲ بیت + ورق زدن
+ * هدف: انگیزه، تأمل، یادگیری — نه حفظ اجباری
  */
 (function () {
-  'use strict';
-
   function $(id) { return document.getElementById(id); }
 
+  /**
+   * مجموعهٔ گزیده — ابیات کوتاه و مفهوم‌محور
+   * منبع: سنت شعر کلاسیک فارسی (نسخه‌های رایج چاپی/عمومی)
+   */
   var VERSES = [
     /* مولوی */
     { poet: 'مولوی', tag: 'خودشناسی', lines: ['ای برادر تو همان اندیشه‌ای', 'مابقی خود استخوان و ریشه‌ای'] },
@@ -78,7 +81,7 @@
     { poet: 'پروین اعتصامی', tag: 'زن و همت', lines: ['به کهین پایه قناعت مکن ای همت مرد', 'که بلند است مکان تو در این قصر کبود'] },
     { poet: 'پروین اعتصامی', tag: 'عمل', lines: ['گهر بی‌هنر زار و خوار است و سست', 'به فرهنگ باشد نگین در درست'] },
 
-    /* اقبال لاهوری */
+    /* اقبال لاهوری (فارسی‌سرا) */
     { poet: 'اقبال لاهوری', tag: 'خویشتن', lines: ['خودی را در جهان خوار دیدن خطاست', 'که خود را بلند آفریدن سزاست'] },
     { poet: 'اقبال لاهوری', tag: 'حرکت', lines: ['نشین دمی که این عالم گذر است', 'ولی در خود سفر کن کز خودی برتر است'] },
     { poet: 'اقبال لاهوری', tag: 'جستجو', lines: ['ستارهٔ صبحم و از شب نمی‌ترسم', 'که نور من از آفتاب دیگری است'] },
@@ -115,7 +118,7 @@
     /* فروغی بسطامی */
     { poet: 'فروغی بسطامی', tag: 'عشق دانایی', lines: ['کمال سر محبت ببین نه نقص گناه', 'که کوی عشق مظفر به هر که ره باشد'] },
 
-    /* معاصر کوتاه */
+    /* معاصر کوتاه — عمومی و رایج در کتاب‌های درسی */
     { poet: 'سهراب سپهری', tag: 'نگاه تازه', lines: ['چشم‌ها را باید شست', 'جور دیگر باید دید'] },
     { poet: 'سهراب سپهری', tag: 'زندگی', lines: ['زندگی رسم غربت نیست', 'زندگی باغبانی است در خاطره‌ها'] },
     { poet: 'اخوان ثالث', tag: 'پایداری', lines: ['زمستان است', 'سلامت را نمی‌خواهند پاسخ گفت'] },
@@ -125,6 +128,30 @@
 
     /* پندهای کوتاه حکمی */
     { poet: 'سعدی', tag: 'رفاقت راه', lines: ['دشمن دانا که غم جان بود', 'بهتر از آن دوست که نادان بود'] },
+    { poet: 'سعدی', tag: 'کار', lines: ['برو کار می‌کن مگو چیست کار', 'که سرمایهٔ جاودانی است کار'] },
+    { poet: 'فردوسی', tag: 'نام نیک', lines: ['که گفتت که با دانش و رای و دین', 'کنی دشمن خویش را همنشین'] },
+    { poet: 'مولوی', tag: 'همت', lines: ['همت عالی نه از آن مردان بود', 'همت عالی ز مردان جان بود'] },
+    { poet: 'حافظ', tag: 'رهایی', lines: ['مباش در پی آزار و هر چه خواهی کن', 'که در شریعت ما غیر از این گناهی نیست'] },
+    { poet: 'خیام', tag: 'دریاب اکنون', lines: ['برخیز و مخور غم جهان گذران', 'بنشین و دمی به شادمانی گذران'] },
+    { poet: 'پروین اعتصامی', tag: 'اراده', lines: ['از محال‌اندیشی اندیشه کن', 'وز ممکن‌ها راهی برگزین'] },
+    { poet: 'ناصر خسرو', tag: 'سخن سنجیده', lines: ['سخن را نگاه دار چون گنج را', 'که بازش نیابی به صد رنج را'] },
+    { poet: 'عطار', tag: 'گام اول', lines: ['در ره طالب اگر صادق شوی', 'هر نفس با حق موافق شوی'] },
+    { poet: 'نظامی', tag: 'هنر آموز', lines: ['هنر آموز که بر کس ننال', 'که هنر یار تو باشد به همال'] },
+    { poet: 'سنایی', tag: 'نیت علم', lines: ['علم برای کمال جان خوان', 'نه برای زر و جاه و نان'] },
+    { poet: 'مولوی', tag: 'درون‌جویی', lines: ['بیرون مرو از خانه که در خانه ببینی', 'آن یار که بیرون ز در و بام ندیدی'] },
+    { poet: 'حافظ', tag: 'قناعت همت', lines: ['گنج زر گر نبود کنج قناعت باقی است', 'آن که آن داد به شاهان به گدایان این داد'] },
+    { poet: 'سعدی', tag: 'یادگیری پیوسته', lines: ['به پایان رسد هر چه آغاز شد', 'به جز دانش آن را که آواز شد'] },
+    { poet: 'فردوسی', tag: 'پند پدر', lines: ['چو بر دانش خویش پای آوری', 'ز دشمن نترسی و بیمی بری'] },
+    { poet: 'اقبال لاهوری', tag: 'بیدار باش', lines: ['چون چراغ لاله سوزم در خیابان شما', 'ای جوانان عجم جان من و جان شما'] },
+    { poet: 'سهراب سپهری', tag: 'آغاز', lines: ['کار ما نیست شناسایی راز گل سرخ', 'کار ما شاید این است که در افسون گل سرخ شناور باشیم'] },
+    { poet: 'پروین اعتصامی', tag: 'کوشش دختر و پسر', lines: ['سعی کن تا شوی تو گنج هنر', 'که هنر بهتر از دو گیتی زر'] },
+    { poet: 'مولوی', tag: 'تغییر', lines: ['دیروز که می‌گذشت تدبیر نبود', 'امروز که می‌رسد تقصیر مکن'] },
+    { poet: 'خیام', tag: 'کوتاهی عمر', lines: ['ای آمده از نیستی و رفته به نیست', 'هستیت چه سود چون که خواهی شد نیست'] },
+    { poet: 'حافظ', tag: 'خویش باش', lines: ['در این زمانه رفیقی که خالی از خلل است', 'صراحی می ناب و سفینهٔ غزل است'] },
+    { poet: 'سعدی', tag: 'مهربانی', lines: ['به شیرین زبانی و لطف و خوشی', 'توانی که پیلی به مویی کشی'] },
+    { poet: 'فردوسی', tag: 'پایداری', lines: ['اگر بار خار است خود کِشته‌ای', 'اگر پرنیان است خود رشته‌ای'] },
+    { poet: 'عطار', tag: 'صداقت طلب', lines: ['در طلب گر صادق آیی ای پسر', 'هر نفس با تو بگوید راهبر'] },
+    { poet: 'نظامی', tag: 'نظم کار', lines: ['کار بی‌نظم پریشان است و سست', 'نظم گر باشد گهر گردد درست'] },
     { poet: 'پروین اعتصامی', tag: 'امید', lines: ['شمع امید را مفشان از کف', 'که شب تیره می‌شود روشن'] },
     { poet: 'مولوی', tag: 'هم‌سفری', lines: ['هم‌صحبت نیک از کیمیا بهتر بود', 'هم‌صحبت بد از بلا بدتر بود'] },
     { poet: 'سعدی', tag: 'آغاز یادگیری', lines: ['استاد قدیم به از رفیق جدید', 'علم ازل به از مال ابد'] },
@@ -142,23 +169,6 @@
     { poet: 'پروین اعتصامی', tag: 'ساختن فردا', lines: ['تو برای خود مبال ای ناتوان', 'سعی کن تا شوی از خویشتن'] },
     { poet: 'فردوسی', tag: 'راستی پیشه', lines: ['که با راستی باشی و با خرد', 'از این هر دو پیوسته باشی به خود'] }
   ];
-
-  var THEMES = [
-    { id: 'all', label: 'همه مضامین', match: null },
-    { id: 'self', label: 'خودشناسی و خویشتن', match: ['خودشناسی', 'خویشتن', 'درون', 'خویش', 'ساختن خود', 'انتخاب', 'معنا', 'نگاه تازه'] },
-    { id: 'effort', label: 'تلاش و همت', match: ['تلاش', 'کوشش', 'صبر', 'عمل', 'کار', 'پایداری', 'ساختن فردا', 'زن و همت'] },
-    { id: 'wisdom', label: 'دانایی و خرد', match: ['یادگیری', 'خرد', 'دانایی', 'دانش', 'آگاهی', 'اندیشه', 'پرسش', 'عشق به دانستن'] },
-    { id: 'hope', label: 'راه و امید', match: ['راه', 'حرکت', 'امید', 'نگاه بلند', 'طلب', 'جستجو', 'رشد'] }
-  ];
-
-  var currentTheme = 'all';
-
-  function loadSaved() {
-    try { return JSON.parse(localStorage.getItem('dh_saved_verses_v1') || '[]'); } catch (e) { return []; }
-  }
-  function saveSaved(arr) {
-    try { localStorage.setItem('dh_saved_verses_v1', JSON.stringify(arr)); } catch (e) {}
-  }
 
   function dayIndex() {
     var d = new Date();
@@ -181,38 +191,18 @@
     try { localStorage.setItem('dh_poem_cursor_v1', JSON.stringify(c)); } catch (e) {}
   }
 
-  function filteredList() {
-    if (currentTheme === 'all') return VERSES;
-    var themeObj = null;
-    for (var i = 0; i < THEMES.length; i++) {
-      if (THEMES[i].id === currentTheme) { themeObj = THEMES[i]; break; }
-    }
-    if (!themeObj || !themeObj.match) return VERSES;
-    var out = VERSES.filter(function (v) { return themeObj.match.indexOf(v.tag) >= 0; });
-    return out.length ? out : VERSES;
-  }
-
   function pickPair() {
-    var list = filteredList();
     var c = loadCursor();
-    var i = ((c.day + c.offset) % list.length + list.length) % list.length;
-    var a = list[i];
-    var b = list[(i + 1) % list.length];
-    return { a: a, b: b, index: i, total: list.length };
+    var i = (c.day + c.offset) % VERSES.length;
+    var a = VERSES[i];
+    var b = VERSES[(i + 1) % VERSES.length];
+    return { a: a, b: b, index: i, total: VERSES.length };
   }
 
-  function cardHTML(v, label, slotIdx) {
-    var key = v.poet + ':' + v.lines[0];
-    var liked = loadSaved().indexOf(key) >= 0;
+  function cardHTML(v, label) {
     return (
       '<article class="dh-poem-card">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
-          (label ? '<span class="dh-poem-label" style="margin-bottom:0;">' + label + '</span>' : '<span></span>') +
-          '<div style="display:flex;gap:6px;align-items:center;">' +
-            '<button type="button" class="dh-quote-share-btn" data-copy-slot="' + slotIdx + '">کپی بیت ✨</button>' +
-            '<button type="button" class="dh-quote-share-btn' + (liked ? ' is-saved' : '') + '" data-save-key="' + key.replace(/"/g, '&quot;') + '">' + (liked ? '♥ ذخیره‌شده' : '♡ پسندیدم') + '</button>' +
-          '</div>' +
-        '</div>' +
+        (label ? '<span class="dh-poem-label">' + label + '</span>' : '') +
         '<p class="dh-poem-line">' + v.lines[0] + '</p>' +
         (v.lines[1] ? '<p class="dh-poem-line">' + v.lines[1] + '</p>' : '') +
         '<div class="dh-poem-meta">' +
@@ -229,31 +219,22 @@
     window.__dhInJourney = false;
     var p = pickPair();
 
-    var filterHtml = THEMES.map(function (t) {
-      return '<button type="button" class="dh-mod-chip' + (t.id === currentTheme ? ' is-active' : '') + '" data-poem-theme="' + t.id + '">' +
-        t.label +
-      '</button>';
-    }).join('');
-
     root.innerHTML =
-      '<div class="dh-home-wrap dh-poems-wrap dh-view-enter">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">' +
-          '<button type="button" class="dh-back-link" id="dh-po-back">← بازگشت به صفحه اول</button>' +
-          '<span class="dh-story-count">' + (p.index + 1) + ' از ' + p.total + '</span>' +
-        '</div>' +
+      '<div class="dh-home-wrap dh-poems-wrap">' +
+        '<button type="button" class="dh-back-link" id="dh-po-back">← بازگشت به خانه</button>' +
         '<div class="dh-poem-live-top">' +
           '<span class="dh-story-pill">سخن بزرگان</span>' +
-          '<span style="font-size:.78rem;color:#c8c1b2;">برای درنگ، معنا و خودشناسی</span>' +
+          '<span class="dh-story-count">' + (p.index + 1) + ' / ' + p.total + '</span>' +
         '</div>' +
-        '<div class="dh-mod-strip" id="dh-poem-themes" aria-label="فیلتر مضامین شعر">' + filterHtml + '</div>' +
-        cardHTML(p.a, 'بیت برگزیده', 0) +
-        (p.total > 1 ? cardHTML(p.b, 'بیت همراه', 1) : '') +
+        '<p class="dh-spark-desc">هر روز دو بیت از گنجینهٔ شعر فارسی — برای فکر کردن، نه حفظ اجباری.</p>' +
+        cardHTML(p.a, 'بیت امروز') +
+        cardHTML(p.b, 'بیت همراه') +
         '<div class="dh-story-actions" style="margin-top:12px;">' +
-          '<button type="button" class="btn btn-primary" id="dh-po-next" style="flex:1;">دو بیت بعدی ›</button>' +
+          '<button type="button" class="btn btn-primary" id="dh-po-next" style="flex:1;">بیت بعدی</button>' +
           '<button type="button" class="btn" id="dh-po-go" style="flex:1;">شروع سفر</button>' +
         '</div>' +
         '<p class="dh-story-foot">گزیده از شعر کلاسیک و معاصر فارسی (میراث عمومی). برای خواندن بیشتر به دیوان‌ها رجوع کنید.</p>' +
-        '<button type="button" class="btn" id="dh-po-home" style="width:100%;margin-top:10px;">صفحه اول</button>' +
+        '<button class="btn" id="dh-po-home" style="width:100%;margin-top:10px;">خانه</button>' +
       '</div>';
 
     $('dh-po-back').onclick = function () {
@@ -263,72 +244,15 @@
       if (window.DHShell && DHShell.renderHome) DHShell.renderHome();
     };
     $('dh-po-go').onclick = function () {
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
-        window.DHCommercialUI.startServerAuthorizedJourney();
-      } else if (window.DHShell && DHShell.startJourney) {
-        DHShell.startJourney();
-      }
+      if (window.DHShell && DHShell.startJourney) DHShell.startJourney();
     };
     $('dh-po-next').onclick = function () {
-      if (typeof window.dhHaptic === 'function') window.dhHaptic('light');
       var cur = loadCursor();
       cur.offset = (cur.offset + 2) % VERSES.length;
       saveCursor(cur);
       renderPoems();
     };
-
-    var themesEl = $('dh-poem-themes');
-    if (themesEl) {
-      themesEl.onclick = function (ev) {
-        var btn = ev.target && ev.target.closest ? ev.target.closest('[data-poem-theme]') : null;
-        if (!btn) return;
-        if (typeof window.dhHaptic === 'function') window.dhHaptic('light');
-        currentTheme = btn.getAttribute('data-poem-theme') || 'all';
-        var cur = loadCursor();
-        cur.offset = 0;
-        saveCursor(cur);
-        renderPoems();
-      };
-    }
-
-    root.onclick = function (ev) {
-      var copyBtn = ev.target && ev.target.closest ? ev.target.closest('[data-copy-slot]') : null;
-      if (copyBtn) {
-        if (typeof window.dhHaptic === 'function') window.dhHaptic('light');
-        var v = copyBtn.getAttribute('data-copy-slot') === '1' ? p.b : p.a;
-        var text = v.lines.join('\n') + '\n— ' + v.poet + ' · اسب سیاه\nhttps://asbe-siah.ir/';
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(function () {
-            if (typeof window.dhToast === 'function') window.dhToast('بیت با نام شاعر کپی شد ✨');
-          }).catch(function () {});
-        }
-        return;
-      }
-      var saveBtn = ev.target && ev.target.closest ? ev.target.closest('[data-save-key]') : null;
-      if (saveBtn) {
-        if (typeof window.dhHaptic === 'function') window.dhHaptic('success');
-        var k = saveBtn.getAttribute('data-save-key');
-        var saved = loadSaved();
-        var pos = saved.indexOf(k);
-        if (pos >= 0) saved.splice(pos, 1);
-        else saved.push(k);
-        saveSaved(saved);
-        renderPoems();
-      }
-    };
   }
 
-  window.DHPoems = {
-    open: function (opts) {
-      if (!opts || !opts.fromPopState) {
-        if (typeof window.dhPushSubView === 'function') window.dhPushSubView('poems');
-      }
-      renderPoems();
-    },
-    peek: function () {
-      var v = VERSES[dayIndex() % VERSES.length];
-      return { poet: v.poet, tag: v.tag, line: v.lines[0], count: VERSES.length };
-    },
-    count: VERSES.length
-  };
+  window.DHPoems = { open: renderPoems, count: VERSES.length };
 })();
