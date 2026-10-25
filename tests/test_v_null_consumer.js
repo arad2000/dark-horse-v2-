@@ -25,6 +25,9 @@ for (const payload of [
     avg_components: {m_score: 80, v_score: null}, status: 'no_discriminative_evidence'}]},
 ]) {
   sandbox.displayResults(payload, 'majors');
+  assert.match(app.innerHTML, /dh-model-limitations/);
+  assert.match(app.innerHTML, /اعتبارسنجی تجربی آن هنوز احراز نشده/);
+  assert.match(app.innerHTML, /درصد استعداد یا احتمال موفقیت و قبولی نیست/);
   assert.match(app.innerHTML, /فاقد شواهد تمایزبخش/);
   assert.doesNotMatch(app.innerHTML, /NaN|null%|width:null|85%/);
   assert.doesNotMatch(app.innerHTML, /به آستانهٔ ۳۰٪ نرسیده/);
@@ -39,4 +42,6 @@ sandbox.displayResults({branch_discovery_result: {branches: [], incomplete_asses
   {score: null, v_result: {score: null, status: 'incomplete'}}]}}, 'branches');
 assert.match(app.innerHTML, /اطلاعات ناکافی برای محاسبهٔ امتیاز/);
 assert.doesNotMatch(app.innerHTML, /فاقد شواهد تمایزبخش|NaN|null%|width:null/);
+assert.match(app.innerHTML, /dh-model-limitations/);
+assert.doesNotMatch(source, /هرچه بیشتر بزنی، دقیق‌تر کشف می‌شوی|خودِ واقعی‌ات را دقیق‌تر کشف می‌کنی/);
 console.log('V null consumer: PASS (real displayResults, DOM sink stub; no browser layout test)');

@@ -515,7 +515,7 @@ function renderGuide() {
           <strong style="color:#f0c040;">۱) خرده‌انگیزه‌ها — پایهٔ اصلی</strong><br>
           وارد «شهر رؤیاها» می‌شوی: چند حوزه و داخل هر کدام، فعالیت‌های ملموس.
           از میان <strong>بیش از ۱۱۰۰ خرده‌انگیزه</strong>، آن‌هایی را که واقعاً به تو انرژی می‌دهند ❤️ بزن.
-          پیشنهاد: حدود <strong>۲۰ تا ۸۰</strong> مورد را انتخاب کن تا تصویر دقیق‌تری از خودت ساخته شود.
+          پیشنهاد: حدود <strong>۲۰ تا ۸۰</strong> مورد را با توجه به تجربه و علاقه‌ات انتخاب کن؛ تعداد بیشتر به‌تنهایی تضمین دقت نیست.
         </p>
 
         <p style="color:#b0a080;line-height:2.2;">
@@ -750,7 +750,7 @@ function renderIntroSwipe() {
     <h2>🔥 به عمیق‌ترین لایه وجودت رسیدی!</h2>
     <div class="card">
       <p style="color:#b0a080;line-height:2.2;">بر اساس تمام انتخاب‌هایی که تا اینجا کردی — از قلمروها و زیرقلمروها تا مسیرهای باریک — حالا درست در همان جایی ایستاده‌ای که <strong>ناخودآگاه و خودآگاهت</strong> به هم گره خورده‌اند.</p>
-      <p style="color:#d4af37;">در این مرحله، فعالیت‌های جزئی‌ای را می‌بینی. آن‌هایی که <strong>واقعاً</strong> به تو انرژی می‌دهند، ❤️ بزن. هرچه دقیق‌تر انتخاب کنی، خودِ واقعی‌ات شفاف‌تر کشف خواهد شد.</p>
+      <p style="color:#d4af37;">در این مرحله، فعالیت‌های جزئی‌ای را می‌بینی. آن‌هایی که <strong>واقعاً</strong> به تو انرژی می‌دهند، ❤️ بزن. این انتخاب‌ها نقطهٔ شروع گفت‌وگو دربارهٔ علایق تو هستند، نه تشخیص قطعی شخصیت.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="loadSwipeCards()">🚀 شروع جرقه‌های انرژی</button>
       <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">⬅️ بازگشت</button>
     </div>`;
@@ -866,7 +866,7 @@ function renderSwipe() {
       return;
     }
     app.innerHTML = progressHTML('swipe') + `<h2>🔥 جرقه‌های انرژی</h2>` + sparkChipHTML() + `<div style="color:#f0c040;margin:12px 0;"></div>
-      <div class="card"><p style="color:#b0a080;">🌟 شما به حداقل جرقه‌ها رسیدید! اما هرچه جرقه‌های بیشتری بزنی، خودِ واقعی‌ات را دقیق‌تر کشف می‌کنی.</p>
+      <div class="card"><p style="color:#b0a080;">🌟 شما به حداقل جرقه‌ها رسیدید! فقط مواردی را انتخاب کن که واقعاً دوست داری؛ پسندهای بیشتر به‌تنهایی نشانهٔ دقت بیشتر نیست.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:15px;" onclick="finishSwipe()">🚀 ورود به لایهٔ دوم</button>
       <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 جرقه‌های بیشتر</button></div>`;
     return;
@@ -906,7 +906,7 @@ function updateSwipeChrome() {
   const need = document.getElementById('dh-spark-need');
   if (need) {
     if (n >= 20) {
-      need.innerHTML = `<p style="color:#b0a080;">🌟 حداقل جرقه‌ها را داری! اما هرچه بیشتر بزنی، دقیق‌تر کشف می‌شوی.</p>
+      need.innerHTML = `<p style="color:#b0a080;">🌟 حداقل جرقه‌ها را داری! تعداد بیشتر به‌تنهایی تضمین دقت پیشنهادها نیست.</p>
         <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="finishSwipe()">🚀 ورود به لایهٔ دوم</button>
         <button class="btn" style="width:100%;margin-top:8px;" onclick="goBack()">🔙 جرقه‌های بیشتر (تا ${80 - n} جرقهٔ دیگر)</button>`;
     } else {
@@ -1377,6 +1377,7 @@ function displayResults(data, type) {
   let html = progressHTML('results') + `
     <h2 style="text-align:center;color:#f0c040;font-size:1.6rem;margin-bottom:6px;">${isBranch ? 'نتیجه هدایت تحصیلی' : 'نتیجه انتخاب رشته'}</h2>
     <p class="dh-stage-hint">این‌ها برچسب رتبه نیستند؛ نقشه‌ای از چیزهایی‌اند که به تو انرژی می‌دهند</p>
+    <p class="dh-model-limitations" role="note">این خروجی پیشنهاد اکتشافی بر پایهٔ پاسخ‌های تو و وزن‌های کارشناسی مدل است؛ اعتبارسنجی تجربی آن هنوز احراز نشده است. امتیاز هم‌خوانی، درصد استعداد یا احتمال موفقیت و قبولی نیست و جای مشورت تخصصی را نمی‌گیرد.</p>
     <div class="dh-share-box">✦ ${state.likedCodes.length} جرقه از خودت ثبت شد<br>این پایان انتخاب نیست؛ شروع مکالمه با خودت است.</div>
     ${strategyStyle || valueStyle ? `
     <div style="background:linear-gradient(135deg,#1a1a2e,#2a1a3e);border:1px solid #d4af37;border-radius:12px;padding:18px;margin:15px 0;text-align:right;font-size:0.9rem;">

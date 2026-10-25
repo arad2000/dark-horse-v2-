@@ -18,6 +18,7 @@ from sqlalchemy import inspect, select, text
 from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, resolve_session
+from login_rate_limit import enforce_login_rate_limit
 from admission_chance_api import attach_router as attach_admission_chance_router
 from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
@@ -215,8 +216,9 @@ def verify_register(req: VerifyRegistrationRequest, db: Session = Depends(get_db
 
 
 @router.post("/auth/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)) -> dict[str, object]:
     assert_production_billing_configuration()
+    enforce_login_rate_limit(request, req.phone)
     try:
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
     except ValueError as exc:

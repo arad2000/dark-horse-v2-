@@ -18,6 +18,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Parse frontend JavaScript and verify local script assets
+        run: |
+          node scripts/ci/check_frontend_javascript.js --self-test
+          node tests/test_v_null_consumer.js
+
       - name: Verify publish artifact
         shell: bash
         run: |
