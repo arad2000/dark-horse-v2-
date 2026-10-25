@@ -32,7 +32,10 @@ class AdmissionChanceRequest(BaseModel):
         default=None,
         description="مسیر پذیرش: exam=با آزمون، record=صرفاً سوابق تحصیلی.",
     )
-    major_ids: list[int] = Field(default_factory=list)
+    major_ids: list[int] = Field(
+        default_factory=list,
+        description="برای exam+capacity می‌تواند خالی باشد تا همه رشته‌های گروه بر اساس استان و دوره برگردند؛ سایر مسیرها به رشته نیاز دارند.",
+    )
 
     # Exam path
     rank_in_quota: int | None = Field(
@@ -68,7 +71,7 @@ class AdmissionChanceRequest(BaseModel):
     )
     source: Literal["program", "capacity"] = Field(
         default="program",
-        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه گروه انتخاب‌شده ۱۴۰۴ متصل است.",
+        description="در مسیر record: program=مسیر program2s موجود، capacity=منبع مستقیم ظرفیت سنجش. در مسیر exam نیز capacity به دفترچه گروه انتخاب‌شده متصل است.",
     )
     group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = Field(
         default="riazi",
@@ -188,11 +191,29 @@ def _resolve_record_request(request: AdmissionChanceRequest) -> dict[str, Any]:
 router = APIRouter()
 
 
+RANK_COMPARISON_NEAR_RATIO = 0.10
+
+
+def _rank_comparison(rank_in_quota: int, cutoff: int | float | None) -> tuple[str, str]:
+    """Classify a rank against an existing cutoff; never estimate probability."""
+    if cutoff is None or cutoff <= 0:
+        return "unknown", "دادهٔ آخرین رتبه در دسترس نیست"
+
+    rank = float(rank_in_quota)
+    reference = float(cutoff)
+    relative_distance = abs(rank - reference) / reference
+    if relative_distance <= RANK_COMPARISON_NEAR_RATIO:
+        return "near", "نزدیک به مرز قبولی تاریخی"
+    if rank < reference:
+        return "above", "بالاتر از محدودهٔ قبولی تاریخی"
+    return "below", "پایین‌تر از محدودهٔ قبولی تاریخی"
+
+
 @router.post("/admission/chance")
 def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
     try:
         path = _resolve_legacy_path(request)
-        if not request.major_ids:
+        if not request.major_ids and not (path == "exam" and request.source == "capacity"):
             raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
 
         if path == "exam":
@@ -216,13 +237,13 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     group=request.group,
                 )
                 notes = [
-                    "منبع مستقیم ظرفیت دفترچه گروه انتخاب‌شده ۱۴۰۴ است؛ خروجی احتمال قبولی نیست.",
+                    "منبع مستقیم ظرفیت دفترچه گروه انتخاب‌شده است؛ خروجی احتمال قبولی نیست.",
                     "rank_in_quota در این مسیر فقط اطلاعاتی است و هیچ cutoff رتبه‌ای اعمال نمی‌شود.",
                     "region_zone و special_quota روی capacity کل فیلتر نمی‌شوند؛ در این موج فقط یادداشت/اطلاعات قراردادی هستند.",
                 ]
                 if not items:
                     notes.append(
-                        "برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت با آزمون یافت نشد."
+                        "برای ترکیب گروه آزمایشی/استان/دوره انتخاب‌شده ردیف ظرفیت با آزمون یافت نشد."
                     )
                 return {
                     "admission_path": "exam",
@@ -246,6 +267,37 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
 
         if path == "exam":
             exam = _resolve_exam_request(request)
+            programs = load_programs()
+            available_program_major_ids = {
+                str(program.get("major_id"))
+                for program in programs
+                if program.get("major_id") is not None
+            }
+            missing_program2s_major_ids = [
+                int(major_id)
+                for major_id in request.major_ids
+                if str(major_id) not in available_program_major_ids
+            ]
+            if missing_program2s_major_ids and len(missing_program2s_major_ids) == len(request.major_ids):
+                notes = [
+                    "برای این رشته در دادهٔ مقایسه رتبه برنامه‌ای ثبت نشده. ظرفیت را از منبع «ظرفیت دفترچه» ببینید."
+                ]
+                return {
+                    "admission_path": "exam",
+                    "source": "program",
+                    "items": [],
+                    "count": 0,
+                    "empty_reason": "no_program2s_data",
+                    "context": {
+                        "rank_in_quota": exam["rank_in_quota"],
+                        "region_zone": exam["region_zone"],
+                        "special_quota": exam["special_quota"],
+                        "province": exam["province"],
+                        "missing_program2s_major_ids": missing_program2s_major_ids,
+                    },
+                    "notes": notes,
+                    "disclaimer": "این مقایسه صرفاً نمایشی و بر پایه آخرین cutoff تاریخی موجود در داده برنامه است؛ هیچ احتمال عددی محاسبه نمی‌شود و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                }
             items = build_exam_results(
                 major_ids=request.major_ids,
                 rank_in_quota=exam["rank_in_quota"],
@@ -256,11 +308,84 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 gpa_written=exam["gpa_written"],
                 national_rank=exam["national_rank"],
                 course_types=request.course_types,
-                programs=load_programs(),
+                programs=programs,
                 limit=request.limit,
             )
+            if request.source == "program":
+                programs_by_id = {
+                    str(program.get("program_id")): program
+                    for program in programs
+                    if program.get("program_id") is not None
+                }
+                comparison_items = []
+                for item in items:
+                    program = programs_by_id.get(str(item.get("program_id")), {})
+                    historical = program.get("cutoffs_historical")
+                    dimension = item.get("cutoff_dimension")
+                    requested_dimension = dimension
+                    if exam["special_quota"] != "none":
+                        requested_dimension = QUOTA_DIMENSIONS.get(exam["special_quota"])
+                    reference = None
+                    if isinstance(historical, dict) and requested_dimension:
+                        candidates = []
+                        for year, values in historical.items():
+                            if not isinstance(values, dict):
+                                continue
+                            cutoff = values.get(requested_dimension)
+                            if isinstance(cutoff, (int, float)) and not isinstance(cutoff, bool):
+                                try:
+                                    year_num = int(str(year).strip())
+                                except (TypeError, ValueError):
+                                    continue
+                                candidates.append((year_num, cutoff))
+                        if candidates:
+                            year_num, cutoff = max(candidates, key=lambda pair: pair[0])
+                            reference = {
+                                "value": cutoff,
+                                "year": year_num,
+                                "dimension": requested_dimension,
+                                "source": "program2s historical cutoff data",
+                            }
+
+                    status, status_label = _rank_comparison(
+                        exam["rank_in_quota"],
+                        reference["value"] if reference else None,
+                    )
+                    enriched = dict(item)
+                    program_details = programs_by_id.get(str(item.get("program_id")), {})
+                    admission_info = program_details.get("admission_info") or {}
+                    university = program_details.get("university") or {}
+                    # Add explicit display metadata only; historical cutoff selection stays unchanged.
+                    enriched["course_type"] = admission_info.get("course_type") or item.get("course_type")
+                    enriched["bomi_type"] = admission_info.get("bomi_type") or None
+                    enriched["campus"] = (
+                        program_details.get("campus")
+                        or admission_info.get("campus")
+                        or university.get("campus")
+                        or None
+                    )
+                    enriched["university_province"] = university.get("province") or None
+                    enriched["status"] = status
+                    enriched["status_label"] = status_label
+                    enriched["cutoff_reference"] = reference
+                    enriched["cutoff_used"] = reference["value"] if reference else None
+                    enriched["cutoff_year"] = reference["year"] if reference else None
+                    enriched["cutoff_source"] = reference["source"] if reference else None
+                    enriched["cutoff_dimension"] = requested_dimension or dimension
+                    enriched["label"] = status_label
+                    if exam["special_quota"] != "none" and reference is None:
+                        notes = [
+                            note for note in (enriched.get("notes") or [])
+                            if "fallback مستند" not in str(note)
+                        ]
+                        notes.append("برای این سهمیه دادهٔ آخرین رتبه در دسترس نیست")
+                        enriched["notes"] = notes
+                        enriched["note"] = " | ".join(notes)
+                    comparison_items.append(enriched)
+                items = comparison_items
             return {
                 "admission_path": "exam",
+                "source": "program",
                 "items": items,
                 "count": len(items),
                 "context": {
@@ -269,7 +394,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                     "special_quota": exam["special_quota"],
                     "province": exam["province"],
                 },
-                "disclaimer": "نتایج تخمینی و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
+                "disclaimer": "این مقایسه صرفاً نمایشی و بر پایه آخرین cutoff تاریخی موجود در داده برنامه است؛ هیچ احتمال عددی محاسبه نمی‌شود و جایگزین دفترچه و اعلام رسمی سنجش نیست.",
             }
 
         if path == "record":
@@ -288,16 +413,28 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                 special = _normalize_text(request.special_quota or "none")
                 if special not in {"none", "isargaran_25", "isargaran_5", "shahid"}:
                     raise AdmissionInputError("special_quota نامعتبر است.")
+                record_capacity_group = (
+                    request.target_field_group
+                    if request.target_field_group in {"riazi", "tajrobi", "ensani", "honar", "zaban"}
+                    else request.group
+                    if request.group in {"riazi", "tajrobi", "ensani", "honar", "zaban"}
+                    else "riazi"
+                )
                 items = build_record_capacity_results(
                     major_ids=request.major_ids,
                     province=province,
                     periods=request.periods,
                     special_quota=special,
+                    group=record_capacity_group,
                     limit=request.limit,
                 )
                 notes: list[str] = []
                 if not items:
                     notes.append("برای ترکیب رشته/استان/دوره انتخاب‌شده ردیف ظرفیت منطبق در منبع سنجش یافت نشد.")
+                notes.insert(
+                    0,
+                    f"منبع ظرفیت سوابق: اولویت با JSON گروهی ۱۴۰۵ برای گروه {record_capacity_group} است؛ در صورت کمبود، sanjesh_record_capacity_full.json به‌عنوان fallback استفاده می‌شود.",
+                )
                 return {
                     "admission_path": "record",
                     "source": "capacity",
@@ -309,6 +446,7 @@ def admission_chance(request: AdmissionChanceRequest) -> dict[str, Any]:
                         "province": province,
                         "periods": request.periods,
                         "special_quota": special,
+                        "group": record_capacity_group,
                     },
                     "notes": notes,
                     "disclaimer": "ظرفیت‌ها مستقیم از داده دفترچه سنجش خوانده می‌شوند؛ این خروجی احتمال قبولی نیست و جایگزین دفترچه و اعلام رسمی سنجش نیست.",

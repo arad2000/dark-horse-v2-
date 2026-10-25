@@ -47,7 +47,7 @@
 
   function markAuthenticated() {
     justAuthenticated = true;
-    // Preserve a Journey click that initiated login; Profile-only login remains non-explicit.
+    explicitJourneyRequested = false;
     if (flagTimer) clearTimeout(flagTimer);
     flagTimer = setTimeout(function () {
       justAuthenticated = false;
@@ -104,7 +104,7 @@
   function installJourneyClickGuard() {
     document.addEventListener('click', function (event) {
       try {
-        var btn = event.target && event.target.closest && event.target.closest('#dh-start-journey,#dh-continue-journey,#dh-p-journey,#dh-startup-start');
+        var btn = event.target && event.target.closest && event.target.closest('#dh-start-journey,#dh-continue-journey,#dh-p-journey');
         if (btn) {
           explicitJourneyRequested = true;
           justAuthenticated = false;

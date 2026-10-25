@@ -1,4 +1,4 @@
-"""Direct read-only selector for 1404 exam-capacity rows.
+"""Direct read-only selector for group-specific exam-capacity rows.
 
 This module is isolated from the existing exam cutoff/ranking path.
 It reads only the owner-provided group-specific Sanjesh extraction and never
@@ -20,17 +20,63 @@ from admission_sanjesh_engine import (
 
 ROOT = Path(__file__).resolve().parent
 CAPACITY_PATHS = {
-    "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1404_programs.json",
-    "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1404_programs.json",
-    "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1404_programs.json",
-    "honar": ROOT / "docs" / "data" / "sanjesh_honar_1404_programs.json",
-    "zaban": ROOT / "docs" / "data" / "sanjesh_zaban_1404_programs.json",
+    "riazi": ROOT / "docs" / "data" / "sanjesh_riazi_1405_programs.json",
+    "tajrobi": ROOT / "docs" / "data" / "sanjesh_tajrobi_1405_programs.json",
+    "ensani": ROOT / "docs" / "data" / "sanjesh_ensani_1405_programs.json",
+    "honar": ROOT / "docs" / "data" / "sanjesh_honar_1405_programs.json",
+    "zaban": ROOT / "docs" / "data" / "sanjesh_zaban_1405_programs.json",
 }
 
 GROUP_MAJOR_ALIASES = {
-    # The booklet names below are alternate normalized labels for the same
-    # owner-defined major_id. Keep aliases major_id-scoped to avoid false
-    # positives such as "پزشکی" matching "مهندسی پزشکی".
+    # Booklet labels are explicit aliases for one catalog major_id only.
+    # Matching remains normalized full equality; no generic substring match.
+    # Do not add an alias when the catalog contains a distinct/conflicting id.
+    "riazi": {
+        40: {
+            "مهندسی پزشکی",
+        },
+        53: {
+            "مهندسی صنایع و سیستم‌ها",
+            "مهندسي صنايع و سيستمها",
+        },
+        62: {
+            "مهندسی و علم مواد",
+            "مهندسي و علم مواد",
+        },
+        44: {
+            "مهندسی رایانه (نرم‌افزار)",
+            "مهندسی رایانه (نرم افزار)",
+            "مهندسي رايانه (نرم‌افزار)",
+            "مهندسي رايانه (نرم افزار)",
+        },
+        195: {
+            # Exact spelling variants documented in the 1405 math booklet.
+            # The source OCR joins حرفه‌ای as حرفهاي; normalization handles yeh/kaf.
+            "مهندسي حرفهاي کامپيوتر",
+            "مهندسی حرفهای کامپیوتر",
+            "مهندسی حرفه ای کامپیوتر",
+            "مهندسي حرفه اي کامپيوتر",
+        },
+        69: {
+            "علوم و مهندسی باغبانی",
+            "علوم و مهندسی باغباني",
+            "علوم و مهندسي باغبانی",
+            "علوم و مهندسي باغباني",
+        },
+        71: {
+            "علوم و مهندسی شیلات",
+            "علوم و مهندسی شيلات",
+            "علوم و مهندسي شیلات",
+            "علوم و مهندسي شيلات",
+            "علوم و مهندسي شيالت",
+            "شیلات",
+            "شيلات",
+            "شيالت",
+        },
+        82: {
+            "آمار",
+        },
+    },
     "tajrobi": {
         1: {
             "دکتری عمومی پزشکی",
@@ -45,27 +91,148 @@ GROUP_MAJOR_ALIASES = {
             "دکتری عمومی داروسازی",
             "داروسازی عمومی",
         },
+        4: {
+            "دکتری عمومی دامپزشکی",
+            "دکتری عمومی دامپزشكي",
+            "دكتري عمومي دامپزشکی",
+            "دكتري عمومي دامپزشكي",
+            "دکتری حرفه‌ای دامپزشکی",
+            "دکتری حرفه ای دامپزشکی",
+        },
         5: {
             "کارشناسی پرستاری",
         },
         6: {
             "کارشناسی مامایی",
         },
+        7: {
+            "فوریت‌های پزشکی پیش‌بیمارستانی",
+        },
+        8: {
+            "تکنولوژی اتاق عمل",
+        },
+        17: {
+            "تکنولوژی پرتوشناسی",
+            "تکنولوژي پرتوشناسي",
+        },
+        18: {
+            "تکنولوژی پرتودرمانی",
+            "تکنولوژي پرتودرماني",
+        },
+        22: {
+            "مهندسی بهداشت حرفه‌ای و ایمنی کار",
+        },
+        25: {
+            "فناوری اطلاعات سلامت",
+            "فناوري اطالعات سالمت",
+        },
+        95: {
+            "زمین‌شناسی",
+        },
+        169: {
+            "زيستفناوري",
+        },
     },
     "ensani": {
         101: {
             "کارشناسی حقوق",
         },
+        104: {
+            "فقه و مبانی حقوق اسلامی",
+            "فقه و مبانی حقوق اسلامي",
+            "فقه و مباني حقوق اسلامی",
+            "فقه و مباني حقوق اسلامي",
+            "فقه و مباني حقوق اسالمي",
+        },
+        # Madhhab labels are scoped to 105; never attach them to law major 101.
+        105: {
+            "فقه و حقوق امامی",
+            "فقه و حقوق امامي",
+            "فقه و حقوق حنفی",
+            "فقه و حقوق حنفي",
+            "فقه و حقوق اسلامي",
+        },
         106: {
             "کارشناسی روانشناسی",
         },
+        107: {
+            "مشاوره",
+        },
         120: {
             "کارشناسی حسابداری",
+        },
+        133: {
+            "فلسفه و کلام اسلامی",
+        },
+        166: {
+            "باستانشناسي",
         },
     },
     "honar": {
         140: {
             "گرافيک",
+            "گرافیک",
+        },
+        166: {
+            "باستانشناسي",
+        },
+        177: {
+            "کارگرداني",
+            "کارگردانی",
+        },
+        178: {
+            "کارگرداني تلويزيون",
+            "کارگردانی تلویزیون",
+        },
+        179: {
+            "تلويزيون و هنرهاي ديجيتال",
+            "تلویزیون و هنرهای دیجیتال",
+        },
+        180: {
+            "نوازندگي موسيقي ايراني",
+            "نوازندگی موسیقی ایرانی",
+        },
+        181: {
+            "نوازندگي موسيقي جهاني",
+            "نوازندگی موسیقی جهانی",
+        },
+        182: {
+            "آهنگسازي",
+            "آهنگسازی",
+        },
+        183: {
+            "طراحي پارچه",
+            "طراحی پارچه",
+        },
+        184: {
+            "طراحي و چاپ پارچه",
+            "طراحی و چاپ پارچه",
+        },
+        170: {
+            "هنر اسلامی",
+            "هنر اسلامي",
+            "هنر اسالمي",
+        },
+        185: {
+            "نمايش عروسکي",
+            "نمایش عروسکی",
+        },
+        186: {
+            "کتابآرايي",
+            "کتاب‌آرایی",
+            "کتاب آرایی",
+        },
+        187: {
+            "طراحي و ساخت طال و جواهر",
+            "طراحی و ساخت طلا و جواهر",
+            "طراحی و ساخت طال و جواهر",
+        },
+        188: {
+            "هنرهاي صناعي",
+            "هنرهای صناعی",
+        },
+        189: {
+            "چاپ",
         },
     },
 }
@@ -91,9 +258,9 @@ def _extract_rows(payload: Any, source_name: str) -> list[dict[str, Any]]:
     return [row for row in rows if isinstance(row, dict)]
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=8)
 def load_exam_capacity_rows(group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = "riazi") -> tuple[dict[str, Any], ...]:
-    """Load one group-specific 1404 extraction read-only."""
+    """Load one group-specific extraction read-only."""
     try:
         path = CAPACITY_PATHS[str(group)]
     except KeyError as exc:
@@ -136,13 +303,12 @@ def build_exam_capacity_results(
     limit: int = 100,
     group: Literal["riazi", "tajrobi", "ensani", "honar", "zaban"] = "riazi",
 ) -> list[dict[str, Any]]:
-    """Select exact exam-capacity rows by major, province, and period.
+    """Select group-specific exam-capacity rows, optionally filtered by major.
 
-    Unknown/blank province rows are never fabricated into a requested province.
+    An empty major_ids list means all majors in the selected group. Province and
+    period remain exact filters; unknown/blank province rows are never inferred.
     include_unknown only permits an explicitly requested نامشخص period.
     """
-    if not major_ids:
-        raise AdmissionInputError("major_ids حداقل یک رشته را شامل شود.")
     if not periods:
         raise AdmissionInputError(
             "برای مسیر exam با source=capacity انتخاب period اجباری است."
@@ -154,7 +320,7 @@ def build_exam_capacity_results(
             "استان نامعتبر است؛ یکی از ۳۱ استان استاندارد را انتخاب کنید."
         )
 
-    major_names = _resolved_major_names(major_ids, group)
+    major_names = _resolved_major_names(major_ids, group) if major_ids else set()
     requested_periods: list[str] = []
     for raw in periods:
         value = str(raw or "").strip()
@@ -169,7 +335,7 @@ def build_exam_capacity_results(
             continue
 
         major_name = str(row.get("major_name") or "").strip()
-        if _normalize_text(major_name) not in major_names:
+        if major_names and _normalize_text(major_name) not in major_names:
             continue
 
         raw_province = str(row.get("province") or "").strip()

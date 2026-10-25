@@ -10,10 +10,10 @@ from contextlib import contextmanager
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
 
 from admin_api import admin_grant_credits, admin_revoke_entitlement, dashboard_summary
 from auth_service import resolve_session
+from billing_models import User
 from database import SessionLocal
 
 app = FastAPI(title="Dark Horse Admin API (staged)", version="0.1")
@@ -30,7 +30,7 @@ def db_session():
         db.close()
 
 
-def current_admin(authorization: str | None = Header(default=None)):
+def current_admin(authorization: str | None = Header(default=None)) -> int:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="authentication required")
     token = authorization[7:].strip()
@@ -41,7 +41,7 @@ def current_admin(authorization: str | None = Header(default=None)):
             user = resolve_session(db, token)
             if user.role not in {"admin", "support"}:
                 raise HTTPException(status_code=403, detail="admin access required")
-            return user.id
+            return int(user.id)
     except HTTPException:
         raise
     except ValueError as exc:
@@ -62,7 +62,7 @@ class RevokeRequest(BaseModel):
 @app.get("/api/v1/admin/dashboard")
 def get_dashboard(admin_user_id: int = Depends(current_admin)):
     with db_session() as db:
-        actor = db.get(__import__("billing_models").User, admin_user_id)
+        actor = db.get(User, admin_user_id)
         try:
             return dashboard_summary(db, actor)
         except PermissionError as exc:
@@ -72,7 +72,7 @@ def get_dashboard(admin_user_id: int = Depends(current_admin)):
 @app.post("/api/v1/admin/credits/grant")
 def grant(req: GrantRequest, admin_user_id: int = Depends(current_admin)):
     with db_session() as db:
-        actor = db.get(__import__("billing_models").User, admin_user_id)
+        actor = db.get(User, admin_user_id)
         try:
             result = admin_grant_credits(
                 db,
@@ -94,7 +94,7 @@ def grant(req: GrantRequest, admin_user_id: int = Depends(current_admin)):
 @app.post("/api/v1/admin/entitlements/revoke")
 def revoke(req: RevokeRequest, admin_user_id: int = Depends(current_admin)):
     with db_session() as db:
-        actor = db.get(__import__("billing_models").User, admin_user_id)
+        actor = db.get(User, admin_user_id)
         try:
             result = admin_revoke_entitlement(
                 db,

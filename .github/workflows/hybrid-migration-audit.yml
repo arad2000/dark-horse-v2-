@@ -1,0 +1,193 @@
+name: Hybrid Migration Audit
+
+# Frontend auth/purchase recheck is intentionally part of the existing full audit.
+# No production cutover is enabled by this workflow.
+
+on:
+  push:
+    branches:
+      - feature/postgresql-hybrid
+      - feature/commercial-api-wiring
+      - deploy/liara-commercial-sandbox
+      - hardening/cors-production
+      - hardening/ai-counsel-rate-limit
+      - hardening/production-billing-guard
+      - ux/gen-z-layer
+      - ux/gen-z-results
+      - fix/sandbox-billing-admin-ui
+      - hardening/evaluator-closeout
+      - release/auth-free-launch
+  pull_request:
+    branches:
+      - main
+      - feature/postgresql-hybrid
+      - deploy/liara-commercial-sandbox
+
+jobs:
+  postgres-staging-audit:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: dark_horse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dark_horse_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dark_horse_test
+      POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+      DARK_HORSE_SHADOW_PERSISTENCE: "false"
+      BILLING_PROVIDER: mock
+      OTP_PROVIDER: mock
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout branch HEAD for validation
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Verify canonical reference data matches main
+        run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main
+
+      - name: Compile Python sources
+        run: python -m compileall -q .
+
+      - name: Verify startup engine contract
+        run: python -m unittest -v test_startup_engine_contract.py
+
+      - name: Verify evaluator closeout safety contracts
+        run: python -m unittest -v test_evaluator_closeout_contract.py
+
+      - name: Verify production free-only launch contract
+        run: python -m unittest -v test_production_free_only_launch.py
+
+      - name: Verify canonical frontend auth/purchase contract
+        run: python -m unittest -v test_frontend_auth_purchase_contract.py
+
+      - name: Verify alternative-path cache equivalence
+        run: python -m unittest -v test_alternative_cache_equivalence.py
+
+      - name: Verify commercial UI contract
+        run: python -m unittest -v test_commercial_ui_contract.py
+
+      - name: Verify Gen-Z visual layer contract
+        run: python -m unittest -v test_genz_visual_layer.py
+
+      - name: Verify Gen-Z results layer contract
+        run: python -m unittest -v test_genz_results_layer.py
+
+      - name: Verify sandbox billing and admin UI contract
+        run: python -m unittest -v test_sandbox_billing_admin_ui.py
+
+      - name: Verify PostgreSQL connectivity
+        run: python -c "from database import healthcheck; assert healthcheck() is True"
+
+      - name: Apply Alembic schema
+        run: alembic upgrade head
+
+      - name: Run static schema verification
+        run: python scripts/verify_hybrid_schema.py
+
+      - name: Run authentication service tests
+        run: python -m unittest -v test_auth_service.py
+
+      - name: Run phone verification service tests
+        run: python -m unittest -v test_phone_verification_service.py
+
+      - name: Run password reset HTTP E2E tests
+        run: python -m unittest -v test_password_reset_e2e.py
+
+      - name: Run password reset service tests
+        run: python -m unittest -v test_password_reset_service.py
+
+      - name: Run password reset contract tests
+        run: python -m unittest -v test_password_reset_contract.py
+
+      - name: Run commercial API contract tests
+        run: python -m unittest -v test_commercial_api.py
+
+      - name: Run hybrid result-flow integration tests
+        run: python -m unittest -v test_hybrid_result_flow.py
+
+      - name: Run commercial billing PostgreSQL E2E tests
+        run: python -m unittest -v test_commercial_billing_e2e.py
+
+      - name: Run billing model integrity tests
+        run: python -m unittest -v test_billing_models.py
+
+      - name: Run credit billing service tests
+        run: python -m unittest -v test_billing_credits.py
+
+      - name: Run billing API tests
+        run: python -m unittest -v test_billing_api.py
+
+      - name: Run payment provider contract tests
+        run: python -m unittest -v test_payment_providers.py
+
+      - name: Run admin service tests
+        run: python -m unittest -v test_admin_service.py
+
+      - name: Run admin API tests
+        run: python -m unittest -v test_admin_api.py
+
+      - name: Run admin HTTP auth tests
+        run: python -m unittest -v test_admin_http_api.py
+
+      - name: Run operational contract tests
+        run: python -m unittest -v test_operational_contract.py
+
+      - name: Run operational persistence tests
+        run: python -m unittest -v test_operational_store.py
+
+      - name: Run API persistence adapter tests
+        run: python -m unittest -v test_api_persistence_adapter.py
+
+      - name: Run shadow persistence safety tests
+        run: python -m unittest -v test_shadow_persistence.py
+
+      - name: Run API shadow end-to-end tests
+        run: python -m unittest -v test_api_shadow_e2e.py
+
+      - name: Run API shadow bridge contract tests
+        run: python -m unittest -v test_api_shadow_bridge.py
+
+      - name: Run main API contract tests
+        run: python -m unittest -v test_main_api_contract.py
+
+      - name: Run AI counsel rate-limit tests
+        run: python -m unittest -v test_ai_rate_limit.py
+
+      - name: Run production billing configuration guard tests
+        run: python -m unittest -v test_production_billing_guard.py
+
+      - name: Run strict offline reference contract audit
+        run: python reference_contract_audit.py
+
+      - name: Seed reference data into staging DB
+        run: python seed_reference_data.py --confirm-staging
+
+      - name: Verify staged reference data
+        run: python -c "import billing_models; import runpy; runpy.run_path('verify_hybrid_staging.py', run_name='__main__')" --confirm-staging
+
+      - name: Run controlled JSON vs PostgreSQL dual-run
+        run: python dual_run_audit.py --confirm-staging
+
+      - name: Verify runtime cutover remains OFF
+        run: python hybrid_gate_test.py
