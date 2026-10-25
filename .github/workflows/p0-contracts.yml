@@ -1,0 +1,49 @@
+name: P0 Contract Regression
+
+on:
+  push:
+    branches:
+      - "p0/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  p0-contracts:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "P0.4 S-score denominator"
+            source_ref: deploy/liara-commercial-sandbox
+            test_file: test_p0_s_score.py
+          - label: "P0.2 motive-code contracts"
+            source_ref: deploy/liara-commercial-sandbox
+            test_file: test_p0_data_contract.py
+          - label: "P0.1 result catalog flow"
+            source_ref: deploy/liara-commercial-sandbox
+            test_file: test_p0_result_catalog.py
+          - label: "P0.3 authenticated quota and endpoint guardrails"
+            source_ref: deploy/liara-commercial-sandbox
+            test_file: test_p0_api_guardrails.py
+
+    steps:
+      - name: Checkout reviewed P0 subwave
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.source_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project runtime dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Run focused P0 contract tests
+        run: python -m unittest -v ${{ matrix.test_file }}

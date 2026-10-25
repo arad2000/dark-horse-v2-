@@ -35,43 +35,31 @@
     var s = document.createElement('style');
     s.id = 'dh-spark-lab-css';
     s.textContent = [
-      '#dh-spark-lab{position:fixed;inset:0;z-index:9999;background:rgba(12,14,20,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow:auto;padding:16px 14px 28px;font-family:Vazirmatn,sans-serif;color:#f5efe2;direction:rtl}',
-      '#dh-spark-lab .lab-wrap{max-width:440px;margin:0 auto}',
+      '#dh-spark-lab{position:fixed;inset:0;z-index:9999;background:rgba(6,6,10,.94);backdrop-filter:blur(8px);overflow:auto;padding:16px 14px 28px;font-family:Vazirmatn,sans-serif;color:#e8e2d6;direction:rtl}',
+      '#dh-spark-lab .lab-wrap{max-width:420px;margin:0 auto}',
       '#dh-spark-lab .lab-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}',
-      '#dh-spark-lab .lab-title{font-size:1.08rem;font-weight:800;color:#f5efe2}',
-      '#dh-spark-lab .lab-close{min-height:38px;background:#171a25;border:1px solid rgba(255,255,255,.14);color:#c8c3b7;border-radius:999px;padding:6px 15px;font-family:inherit;cursor:pointer}',
-      '#dh-spark-lab .lab-note{font-size:.85rem;line-height:1.78;color:#b8b3a6;margin:0 0 14px;text-align:center}',
-      '#dh-spark-lab .lab-timer{text-align:center;font-size:1.55rem;font-weight:800;color:#f0c040;margin:8px 0 14px;letter-spacing:.03em}',
+      '#dh-spark-lab .lab-title{font-size:1.1rem;font-weight:800;color:#f0c040}',
+      '#dh-spark-lab .lab-close{background:none;border:1px solid rgba(255,255,255,.15);color:#b0a890;border-radius:999px;padding:6px 14px;font-family:inherit;cursor:pointer}',
+      '#dh-spark-lab .lab-note{font-size:.85rem;line-height:1.7;color:#9a9285;margin:0 0 14px;text-align:center}',
+      '#dh-spark-lab .lab-timer{text-align:center;font-size:1.6rem;font-weight:800;color:#f0c040;margin:8px 0 14px;letter-spacing:.04em}',
       '#dh-spark-lab .lab-timer.warn{color:#ff8a6a}',
-      '#dh-spark-lab .lab-card{background:#171a25;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:22px 18px;min-height:148px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.3)}',
-      '#dh-spark-lab .lab-card p{margin:0;color:#f5efe2;font-size:1.02rem;line-height:1.9;text-align:center}',
-      '#dh-spark-lab .lab-meta{text-align:center;font-size:.77rem;color:#9d988c;margin-top:12px}',
+      '#dh-spark-lab .lab-card{background:linear-gradient(160deg,#16131c,#0c0b12);border:1px solid rgba(240,192,64,.28);border-radius:18px;padding:22px 18px;min-height:140px;margin-bottom:14px}',
+      '#dh-spark-lab .lab-card p{margin:0;font-size:1.05rem;line-height:1.9;text-align:center}',
+      '#dh-spark-lab .lab-meta{text-align:center;font-size:.75rem;color:#6a6558;margin-top:12px}',
       '#dh-spark-lab .lab-actions{display:flex;gap:10px}',
-      '#dh-spark-lab .lab-actions button{flex:1;min-height:48px;padding:12px;border-radius:14px;font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer;border:none}',
-      '#dh-spark-lab .btn-like{background:linear-gradient(135deg,#d4af37,#f0c040);color:#15130b}',
-      '#dh-spark-lab .btn-skip{background:#1e2230;color:#c8c3b7;border:1px solid rgba(255,255,255,.12)!important}',
-      '#dh-spark-lab .lab-progress{height:5px;background:#232736;border-radius:99px;margin-bottom:12px;overflow:hidden}',
-      '#dh-spark-lab .lab-progress i{display:block;height:100%;background:linear-gradient(90deg,#d4af37,#f0c040);width:0%;transition:width .25s}',
-      '#dh-spark-lab .lab-result{background:#151824;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:15px;margin:10px 0;text-align:right}',
-      '#dh-spark-lab .lab-result h3{margin:0 0 8px;color:#f5d472;font-size:.98rem}',
-      '#dh-spark-lab .lab-result ul{margin:0;padding-right:18px;color:#d6d1c4;line-height:1.85;font-size:.88rem}',
-      '#dh-spark-lab .lab-empty{text-align:center;color:#b8b3a6;line-height:1.8;padding:20px}',
-      '#dh-spark-lab .lab-cta{display:block;width:100%;min-height:48px;margin-top:12px;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#d4af37,#f0c040);color:#15130b;font-family:inherit;font-weight:700;font-size:.95rem;cursor:pointer}',
-      '#dh-spark-lab .lab-ghost{display:block;width:100%;min-height:46px;margin-top:8px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#171a25;color:#c8c3b7;font-family:inherit;cursor:pointer}'
+      '#dh-spark-lab .lab-actions button{flex:1;padding:12px;border-radius:999px;font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer;border:none}',
+      '#dh-spark-lab .btn-like{background:linear-gradient(90deg,#c9a227,#f0c040);color:#111}',
+      '#dh-spark-lab .btn-skip{background:rgba(255,255,255,.06);color:#c8c0b0;border:1px solid rgba(255,255,255,.1)!important}',
+      '#dh-spark-lab .lab-progress{height:4px;background:rgba(255,255,255,.08);border-radius:99px;margin-bottom:12px;overflow:hidden}',
+      '#dh-spark-lab .lab-progress i{display:block;height:100%;background:#f0c040;width:0%;transition:width .25s}',
+      '#dh-spark-lab .lab-result{background:#121018;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin:10px 0;text-align:right}',
+      '#dh-spark-lab .lab-result h3{margin:0 0 8px;color:#f0c040;font-size:1rem}',
+      '#dh-spark-lab .lab-result ul{margin:0;padding-right:18px;color:#c8c0b0;line-height:1.8;font-size:.9rem}',
+      '#dh-spark-lab .lab-empty{text-align:center;color:#9a9285;line-height:1.8;padding:20px}',
+      '#dh-spark-lab .lab-cta{display:block;width:100%;margin-top:12px;padding:12px;border-radius:999px;border:none;background:linear-gradient(90deg,#c9a227,#f0c040);color:#111;font-family:inherit;font-weight:700;font-size:.95rem;cursor:pointer}',
+      '#dh-spark-lab .lab-ghost{display:block;width:100%;margin-top:8px;padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#b0a890;font-family:inherit;cursor:pointer}'
     ].join('');
     document.head.appendChild(s);
-  }
-
-  /** فیلتر صریح خرده‌انگیزه‌های متعلق به مسیرهای فعال و motive_driven (بدون تغییر وزن موتور) */
-  function filterMotiveDrivenSparks(all, pathIndex) {
-    var list = Array.isArray(all) ? all : [];
-    var idx = pathIndex || buildPathIndex();
-    var hasRoutes = idx && Object.keys(idx).length > 0;
-    return list.filter(function (item) {
-      if (!item || !item.code || !item.description_fa) return false;
-      if (!hasRoutes) return true;
-      return resolveCode(item.code, idx).length > 0;
-    });
   }
 
   function fetchMotives() {
@@ -79,14 +67,14 @@
     return fetch('data/micro_motives.json')
       .then(function (r) { return r.json(); })
       .then(function (arr) {
-        motivesCache = filterMotiveDrivenSparks(Array.isArray(arr) ? arr : []);
+        motivesCache = Array.isArray(arr) ? arr : [];
         return motivesCache;
       })
       .catch(function () {
         // fallback مسیرهای رایج
         return fetch('./data/micro_motives.json').then(function (r) { return r.json(); })
           .then(function (arr) {
-            motivesCache = filterMotiveDrivenSparks(Array.isArray(arr) ? arr : []);
+            motivesCache = Array.isArray(arr) ? arr : [];
             return motivesCache;
           });
       });
@@ -128,12 +116,12 @@
           if (!index[pref]) index[pref] = [];
           index[pref].push({
             pathId: p.id,
-            pathName: p.name || p.motto || p.id,
+            pathName: p.name,
             pathIcon: p.icon || '',
             subId: subId,
-            subName: (meta.sub && (meta.sub.name || meta.sub.motto)) || subId,
+            subName: (meta.sub && meta.sub.name) || subId,
             realmId: meta.realmId || '',
-            realmName: (realm && (realm.name || realm.motto)) || '',
+            realmName: (realm && realm.name) || '',
             realmIcon: (realm && realm.icon) || ''
           });
         });
@@ -256,7 +244,7 @@
         agg.realms.forEach(function (r) {
           var m = r.meta || {};
           html += '<li>' + (m.realmIcon || '') + ' ' + escapeHtml(m.realmName || r.id) +
-            ' <span style="color:#9d988c">(' + r.count + ' جرقه)</span></li>';
+            ' <span style="color:#6a6558">(' + r.count + ' جرقه)</span></li>';
         });
         html += '</ul></div>';
       }
@@ -265,7 +253,7 @@
         agg.subs.forEach(function (r) {
           var m = r.meta || {};
           html += '<li>' + escapeHtml(m.subName || r.id) +
-            ' <span style="color:#9d988c">(' + r.count + ')</span></li>';
+            ' <span style="color:#6a6558">(' + r.count + ')</span></li>';
         });
         html += '</ul></div>';
       }
@@ -274,29 +262,20 @@
         agg.paths.forEach(function (r) {
           var m = r.meta || {};
           html += '<li>' + (m.pathIcon || '') + ' <strong>' + escapeHtml(m.pathName || r.id) + '</strong>' +
-            ' <span style="color:#9d988c">— ' + escapeHtml(m.realmName || '') + '</span></li>';
+            ' <span style="color:#6a6558">— از محله ' + escapeHtml(m.realmName || '') + '</span></li>';
         });
         html += '</ul></div>';
       }
       html += '<p class="lab-note">اگر این جرقه‌ها را دوست داشتی، در سفر اکتشافی از همان محله‌ها و مسیرهای باریک وارد شو.</p>';
     }
 
-    html += '<button type="button" class="lab-cta" id="dh-lab-start-journey">🧭 ورود به سفر اکتشافی کامل ›</button>';
-    html += '<button type="button" class="lab-ghost" id="dh-lab-again">یک دور دیگر جرقه‌یابی ↻</button>';
-    html += '<button type="button" class="lab-ghost" id="dh-lab-done">بازگشت به صفحه اول</button>';
+    html += '<button type="button" class="lab-cta" id="dh-lab-again">یک دقیقهٔ دیگر</button>';
+    html += '<button type="button" class="lab-ghost" id="dh-lab-done">بازگشت</button>';
     html += '</div>';
 
     overlay.innerHTML = html;
     $('dh-lab-x').onclick = closeLab;
     $('dh-lab-done').onclick = closeLab;
-    $('dh-lab-start-journey').onclick = function () {
-      closeLab();
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
-        window.DHCommercialUI.startServerAuthorizedJourney();
-      } else if (window.DHShell && typeof window.DHShell.startJourney === 'function') {
-        window.DHShell.startJourney();
-      }
-    };
     $('dh-lab-again').onclick = function () { startSession(); };
 
     // نشان ساده
@@ -379,14 +358,12 @@
 
         $('dh-lab-x').onclick = closeLab;
         $('dh-lab-like').onclick = function () {
-          if (typeof window.dhHaptic === 'function') window.dhHaptic('success');
           state.liked.push(card.code);
           state.likedItems.push(card);
           state.index++;
           paint();
         };
         $('dh-lab-skip').onclick = function () {
-          if (typeof window.dhHaptic === 'function') window.dhHaptic('light');
           state.index++;
           paint();
         };
@@ -414,20 +391,7 @@
   }
 
   window.DHSparkGame = {
-    open: function (opts) {
-      if (!opts || !opts.fromPopState) {
-        if (typeof window.dhPushSubView === 'function') window.dhPushSubView('spark');
-      }
-      startSession();
-    },
-    peek: function () {
-      var saved = loadLab();
-      var cnt = (saved && Array.isArray(saved.likedCodes)) ? saved.likedCodes.length : 0;
-      return { likedCount: cnt, played: Boolean(saved && saved.lastAt) };
-    },
-    close: closeLab,
-    filterMotiveDrivenSparks: filterMotiveDrivenSparks,
-    buildPathIndex: buildPathIndex,
-    isOpen: function () { return Boolean(overlay && overlay.parentNode); }
+    open: function () { startSession(); },
+    close: closeLab
   };
 })();
