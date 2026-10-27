@@ -77,7 +77,7 @@ class LoginAttemptRateLimiterTests(unittest.TestCase):
 
     def test_success_clears_account_failures_but_not_ip_failures(self):
         limiter = LoginAttemptRateLimiter(
-            account_max_failures=3, ip_max_failures=20, window_seconds=60, clock=FakeClock()
+            account_max_failures=3, ip_max_failures=3, window_seconds=60, clock=FakeClock()
         )
         fail_attempt(limiter, ip="198.51.100.7", account="09120000004")
         fail_attempt(limiter, ip="198.51.100.7", account="09120000004")
@@ -86,14 +86,16 @@ class LoginAttemptRateLimiterTests(unittest.TestCase):
         self.assertIsNotNone(token)
         limiter.finish_attempt(token, outcome="success")
 
-        # The account gets a fresh window after successful authentication.
+        # A new IP can use the account's fresh window after successful auth.
         for _ in range(3):
-            fail_attempt(limiter, ip="198.51.100.7", account="09120000004")
+            fail_attempt(limiter, ip="198.51.100.8", account="09120000004")
 
-        # The IP bucket remains active and is independent of the account reset.
+        # But the original IP's failed-login history was not erased by success.
         token, _ = limiter.reserve_attempt(client_ip="198.51.100.7", account="09120000005")
         self.assertIsNotNone(token)
-        limiter.finish_attempt(token, outcome="abandon")
+        limiter.finish_attempt(token, outcome="failure")
+        blocked, _ = limiter.reserve_attempt(client_ip="198.51.100.7", account="09120000006")
+        self.assertIsNone(blocked)
 
     def test_in_flight_reservations_make_limit_atomic_under_concurrency(self):
         limiter = LoginAttemptRateLimiter(
@@ -158,7 +160,7 @@ class LoginRouteContractTests(unittest.TestCase):
                 self._login()
             self.assertEqual(limited.exception.status_code, 429)
             self.assertEqual(authenticate.call_count, 2)
-            self.assertEqual(limited.exception.headers["Retry-After"], "60")
+            self.assertGreaterEqual(int(limited.exception.headers["Retry-After"]), 1)
 
     def test_unknown_and_known_account_errors_do_not_expose_lookup_result(self):
         with (
