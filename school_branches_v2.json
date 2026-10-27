@@ -369,13 +369,6 @@
       "VIRO-005",
       "VIRO-006",
       "VIRO-007",
-      "BIOTM-001",
-      "BIOTM-002",
-      "BIOTM-003",
-      "BIOTM-004",
-      "BIOTM-005",
-      "BIOTM-006",
-      "BIOTM-007",
       "BIOTECH-001",
       "BIOTECH-002",
       "BIOTECH-003",
@@ -608,7 +601,7 @@
       "Q15B": 0.7972
     },
     "weights_version": "v3_FINAL_aligned",
-    "source_majors_count": 54
+    "source_majors_count": 56
   },
   {
     "id": "branch-2",
@@ -1240,7 +1233,7 @@
       "Q15B": 0.7443
     },
     "weights_version": "v3_FINAL_aligned",
-    "source_majors_count": 62
+    "source_majors_count": 61
   },
   {
     "id": "branch-3",
@@ -2273,6 +2266,6 @@
       "Q15B": 0.7083
     },
     "weights_version": "v3_FINAL_aligned",
-    "source_majors_count": 27
+    "source_majors_count": 26
   }
 ]
