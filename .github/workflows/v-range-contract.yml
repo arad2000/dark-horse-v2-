@@ -5,6 +5,7 @@ on:
       - dark_horse_engine_v2.py
       - test_v_range_norm.py
       - test_v_consumer_contract.py
+      - test_reference_fail_closed_startup.py
       - main_v2.py
       - docs/app.js
       - tests/test_v_null_consumer.js
@@ -27,7 +28,7 @@ jobs:
         with:
           node-version: '20'
       - run: node tests/test_v_null_consumer.js
-      - run: python -m unittest test_v_range_norm test_engine_psychometrics test_p0_s_score test_v_consumer_contract test_main_api_contract -q
+      - run: python -m unittest test_v_range_norm test_engine_psychometrics test_p0_s_score test_v_consumer_contract test_main_api_contract test_reference_fail_closed_startup -q
       - run: python scripts/audit_v_range_norm.py > v-range-report.json
       - uses: actions/upload-artifact@v4
         with:
