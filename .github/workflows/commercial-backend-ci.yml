@@ -62,6 +62,9 @@ jobs:
       - name: Run request body limit contracts
         run: python -m unittest -v test_request_body_limit_middleware.py
 
+      - name: Login rate-limit contracts
+        run: python -m unittest -v test_auth_login_rate_limit.py
+
       - name: Apply Alembic schema
         run: alembic upgrade head
 
