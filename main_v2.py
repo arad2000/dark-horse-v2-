@@ -252,6 +252,10 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("❌ Operational DB init failed: %s", e, exc_info=True)
 
+    # Keep runtime state fail-closed across startup attempts. Do not yield the
+    # ASGI lifespan until all mandatory reference data and the engine are ready.
+    app.state.engine = None
+    app.state.branch_engine = None
     try:
         engine = DarkHorseEngineV2(
             motives_path="docs/data/micro_motives.json",
@@ -260,13 +264,19 @@ async def lifespan(app: FastAPI):
             value_poles_path="value_poles_v2.json",
             school_branches_path="school_branches_v2.json"
         )
-        app.state.engine = engine
-        app.state.branch_engine = engine
-        logger.info("✅ DarkHorseEngineV2 آماده است (shared engine for majors + branches).")
-    except Exception as e:
-        logger.error(f"❌ DarkHorseEngineV2 init failed: {e}")
+    except Exception as exc:
         app.state.engine = None
         app.state.branch_engine = None
+        logger.exception(
+            "❌ Required scoring references or DarkHorseEngineV2 initialization failed; startup aborted."
+        )
+        raise RuntimeError(
+            "Required scoring references or DarkHorseEngineV2 initialization failed; refusing startup."
+        ) from exc
+
+    app.state.engine = engine
+    app.state.branch_engine = engine
+    logger.info("✅ DarkHorseEngineV2 آماده است (shared engine for majors + branches).")
 
     yield
     logger.info("🛑 Shutting down V2.0 ...")

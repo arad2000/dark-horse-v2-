@@ -37,59 +37,129 @@ class DarkHorseEngineV2:
         self._precompute_alternative_paths()
 
     def _load_data(self, motives_path, majors_path, trait_map_path, value_poles_path, school_branches_path):
-        try:
-            self.motives_map = self._load_json(motives_path, key_field="code", value_field="description_fa")
-            logger.info(f"✅ {len(self.motives_map)} میکروموتیو بارگذاری شد.")
-        except Exception as e:
-            logger.error(f"خطا در بارگذاری میکروموتیوها: {e}")
-            self.motives_map = {}
+        # Reference maps are mandatory for scoring. Fail construction instead of
+        # logging an error and allowing an empty/partial engine to serve requests.
+        self.motives_map = self._load_json(
+            motives_path, key_field="code", value_field="description_fa"
+        )
+        logger.info("✅ %s میکروموتیو بارگذاری شد.", len(self.motives_map))
 
-        try:
-            self.majors_db = self._load_json(majors_path, key_field="id")
-            logger.info(f"✅ {len(self.majors_db)} رشته/شاخه بارگذاری شد.")
-        except Exception as e:
-            logger.error(f"خطا در بارگذاری رشته‌ها/شاخه‌ها: {e}")
-            self.majors_db = {}
+        self.majors_db = self._load_json(majors_path, key_field="id")
+        active_majors = [
+            major for major in self.majors_db.values()
+            if major.get("motive_driven") is True
+        ]
+        if not active_majors:
+            raise ValueError("Required majors reference contains no motive_driven=true majors.")
+        logger.info("✅ %s رشته/شاخه بارگذاری شد.", len(self.majors_db))
 
-        try:
-            with open(trait_map_path, "r", encoding="utf-8") as f:
-                raw = json.load(f)
-                self.trait_map = {
-                    q_key: {int(k): v for k, v in options.items()}
-                    for q_key, options in raw.items()
-                }
-            logger.info(f"✅ trait_map_v3 برای {len(self.trait_map)} سوال بارگذاری شد.")
-        except Exception as e:
-            logger.error(f"خطا در بارگذاری trait_map_v3: {e}")
-            self.trait_map = {}
+        expected_trait_keys = {f"S{i:02d}" for i in range(1, 26)}
+        with open(trait_map_path, "r", encoding="utf-8") as fh:
+            raw_trait_map = json.load(fh)
+        if not isinstance(raw_trait_map, dict) or set(raw_trait_map) != expected_trait_keys:
+            raise ValueError(
+                "Required trait_map_v3 reference must contain exactly S01..S25."
+            )
 
-        try:
-            with open(value_poles_path, "r", encoding="utf-8") as f:
-                self.value_poles = json.load(f)
-            logger.info(f"✅ value_poles با {len(self.value_poles)} قطب بارگذاری شد.")
-        except Exception as e:
-            logger.error(f"خطا در بارگذاری value_poles: {e}")
-            self.value_poles = {}
+        self.trait_map = {}
+        for question_key, raw_options in raw_trait_map.items():
+            if not isinstance(raw_options, dict):
+                raise ValueError(f"Invalid trait_map_v3 options for {question_key}.")
+            options = {}
+            for raw_index, traits in raw_options.items():
+                try:
+                    option_index = int(raw_index)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(
+                        f"Invalid option index {raw_index!r} in trait_map_v3[{question_key}]."
+                    ) from exc
+                if option_index in options:
+                    raise ValueError(
+                        f"Duplicate option index {option_index} in trait_map_v3[{question_key}]."
+                    )
+                if (
+                    not isinstance(traits, list)
+                    or not traits
+                    or any(not isinstance(trait, str) or not trait.strip() for trait in traits)
+                ):
+                    raise ValueError(
+                        f"Invalid trait list in trait_map_v3[{question_key}][{option_index}]."
+                    )
+                options[option_index] = traits
+            if set(options) != set(range(5)):
+                raise ValueError(
+                    f"Required trait_map_v3[{question_key}] must contain options 0..4."
+                )
+            self.trait_map[question_key] = options
+        logger.info("✅ trait_map_v3 برای %s سوال بارگذاری شد.", len(self.trait_map))
 
-        try:
-            branches = self._load_json(school_branches_path)
-            self.school_branches = {b.get("name"): b for b in branches}
-            logger.info(f"✅ شاخه‌های دبیرستانی بارگذاری شد ({len(self.school_branches)} شاخه).")
-        except Exception as e:
-            logger.error(f"خطا در بارگذاری شاخه‌ها: {e}")
-            self.school_branches = {}
+        expected_value_keys = {
+            f"Q{i}{side}" for i in range(1, 16) for side in ("A", "B")
+        }
+        with open(value_poles_path, "r", encoding="utf-8") as fh:
+            value_poles = json.load(fh)
+        if (
+            not isinstance(value_poles, dict)
+            or set(value_poles) != expected_value_keys
+            or any(not isinstance(value, str) or not value.strip() for value in value_poles.values())
+        ):
+            raise ValueError(
+                "Required value_poles_v2 reference must contain all 30 non-empty Q1A..Q15B labels."
+            )
+        self.value_poles = value_poles
+        logger.info("✅ value_poles با %s قطب بارگذاری شد.", len(self.value_poles))
+
+        branches = self._load_json(school_branches_path)
+        branch_names = [
+            branch.get("name") for branch in branches
+        ]
+        if any(not isinstance(name, str) or not name.strip() for name in branch_names):
+            raise ValueError("Required school_branches_v2 reference contains a branch without a name.")
+        if len(branch_names) != len(set(branch_names)):
+            raise ValueError("Required school_branches_v2 reference contains duplicate branch names.")
+        self.school_branches = {branch["name"]: branch for branch in branches}
+        logger.info("✅ شاخه‌های دبیرستانی بارگذاری شد (%s شاخه).", len(self.school_branches))
 
     def _load_json(self, path: str, key_field: Optional[str] = None,
                    value_field: Optional[str] = None) -> Dict:
-        if not Path(path).exists():
-            raise FileNotFoundError(f"فایل {path} یافت نشد.")
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if key_field and isinstance(data, list):
-            if value_field:
-                return {item[key_field]: item.get(value_field, "") for item in data if key_field in item}
-            return {item[key_field]: item for item in data if key_field in item}
-        return data
+        reference_path = Path(path)
+        if not reference_path.is_file():
+            raise FileNotFoundError(f"Required reference file not found: {reference_path}")
+        with reference_path.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+
+        if not isinstance(data, list) or not data:
+            raise ValueError(f"Required reference {reference_path} must be a non-empty JSON array.")
+        if any(not isinstance(item, dict) for item in data):
+            raise ValueError(f"Required reference {reference_path} contains a non-object row.")
+
+        if key_field is None:
+            return data
+
+        loaded = {}
+        for index, item in enumerate(data):
+            if key_field not in item or item[key_field] is None or item[key_field] == "":
+                raise ValueError(
+                    f"Required reference {reference_path} row {index} is missing {key_field!r}."
+                )
+            key = item[key_field]
+            if key in loaded:
+                raise ValueError(
+                    f"Required reference {reference_path} contains duplicate {key_field}={key!r}."
+                )
+            if value_field is not None:
+                value = item.get(value_field)
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError(
+                        f"Required reference {reference_path} row {index} has no valid {value_field!r}."
+                    )
+                loaded[key] = value
+            else:
+                loaded[key] = item
+
+        if not loaded:
+            raise ValueError(f"Required reference {reference_path} produced an empty map.")
+        return loaded
 
     def _validate_schema_consistency(self) -> None:
         """
