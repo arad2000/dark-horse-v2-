@@ -1,0 +1,75 @@
+name: Candidate reference validation contract audit
+
+on:
+  push:
+    branches:
+      - audit/contract-validation-20261027
+
+permissions:
+  contents: read
+
+jobs:
+  validate-candidate-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout deploy data candidate
+        uses: actions/checkout@v4
+      - name: Checkout candidate validator scripts from PR 308
+        uses: actions/checkout@v4
+        with:
+          ref: e0f8e3efacb438017e2b41cb6480510e3e15928d
+          path: candidate-tools
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Stage exact deploy candidate JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "AUDIT_WORKFLOW_COMMIT=$(git rev-parse HEAD)"
+          echo "DATA_CANDIDATE_PARENT_SHA=$(git rev-parse HEAD^)"
+          echo "DATA_FILE_BLOBS:"
+          for f in majors_database_v2.json school_branches_v2.json micro_motives.json value_poles_v2.json docs/data/questions_v2.json docs/trait_map_v3.json; do
+            git rev-parse "HEAD^:$f"
+          done
+          mkdir -p "$RUNNER_TEMP/reference-json"
+          cp majors_database_v2.json "$RUNNER_TEMP/reference-json/"
+          cp school_branches_v2.json "$RUNNER_TEMP/reference-json/"
+          cp micro_motives.json "$RUNNER_TEMP/reference-json/"
+          cp value_poles_v2.json "$RUNNER_TEMP/reference-json/"
+          cp docs/data/questions_v2.json "$RUNNER_TEMP/reference-json/questions_v2.json"
+          cp docs/trait_map_v3.json "$RUNNER_TEMP/reference-json/trait_map_v3.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          folder=Path(os.environ["RUNNER_TEMP"])/"reference-json"
+          majors=json.loads((folder/"majors_database_v2.json").read_text(encoding="utf-8"))
+          branches=json.loads((folder/"school_branches_v2.json").read_text(encoding="utf-8"))
+          active=[m for m in majors if m.get("motive_driven") is True]
+          inactive_unweighted=[
+              m for m in majors
+              if m.get("motive_driven") is not True
+              and (
+                  not isinstance(m.get("strategy_weights"), list)
+                  or len(m.get("strategy_weights")) != 25
+                  or not isinstance(m.get("value_weights"), dict)
+                  or len(m.get("value_weights")) != 30
+              )
+          ]
+          print(f"MAJORS_TOTAL={len(majors)}")
+          print(f"ACTIVE_MOTIVE_DRIVEN={len(active)}")
+          print(f"CATALOG_ONLY_UNWEIGHTED={len(inactive_unweighted)}")
+          for b in branches:
+              count=sum(m.get("high_school_branch")==b.get("name") for m in active)
+              print(f"ACTIVE_BRANCH_COUNT {b.get('name')}={count}; source_majors_count={b.get('source_majors_count')}")
+          PY
+      - name: Run validate_integrity on candidate data
+        shell: bash
+        run: |
+          python3 candidate-tools/validate_integrity.py "$RUNNER_TEMP/reference-json"
+      - name: Run global_separation diagnostic on candidate data
+        if: always()
+        shell: bash
+        run: |
+          python3 candidate-tools/global_separation_test.py "$RUNNER_TEMP/reference-json/majors_database_v2.json"
