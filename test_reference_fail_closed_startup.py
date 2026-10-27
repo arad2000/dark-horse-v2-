@@ -82,6 +82,27 @@ class RuntimeFailClosedStartupTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(main_v2.app.state.engine)
         self.assertIsNone(main_v2.app.state.branch_engine)
 
+    async def test_corrupt_reference_aborts_lifespan_before_yield(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            broken_path = Path(tmp) / "micro_motives_broken.json"
+            broken_path.write_text('{"broken": ', encoding="utf-8")
+            paths = {key: str(path) for key, path in REFERENCE_PATHS.items()}
+            paths["motives_path"] = str(broken_path)
+
+            def build_engine_with_corrupt_reference(**_kwargs):
+                return DarkHorseEngineV2(**paths)
+
+            with patch(
+                "main_v2.DarkHorseEngineV2",
+                side_effect=build_engine_with_corrupt_reference,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "refusing startup"):
+                    async with main_v2.lifespan(main_v2.app):
+                        self.fail("lifespan must not yield with a corrupt required reference")
+
+        self.assertIsNone(main_v2.app.state.engine)
+        self.assertIsNone(main_v2.app.state.branch_engine)
+
     async def test_healthy_engine_allows_lifespan_to_yield_ready(self):
         paths = {key: str(path) for key, path in REFERENCE_PATHS.items()}
 
