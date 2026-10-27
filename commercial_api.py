@@ -18,6 +18,7 @@ from sqlalchemy import inspect, select, text
 from sqlalchemy.orm import Session
 
 from auth_service import authenticate_user, resolve_session
+from auth_login_rate_limit import AUTH_LOGIN_RATE_LIMITER, LOGIN_RATE_LIMITED_DETAIL
 from admission_chance_api import attach_router as attach_admission_chance_router
 from billing_api import create_payment_request, handle_payment_callback
 from billing_credit_service import consume_one_test, ensure_free_entitlement, is_billing_free_mode
@@ -215,13 +216,34 @@ def verify_register(req: VerifyRegistrationRequest, db: Session = Depends(get_db
 
 
 @router.post("/auth/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)) -> dict[str, object]:
+def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)) -> dict[str, object]:
     assert_production_billing_configuration()
+    client_ip = request.client.host if request.client else "unknown"
+    reservation, retry_after = AUTH_LOGIN_RATE_LIMITER.reserve_attempt(
+        client_ip=client_ip,
+        account=req.phone,
+    )
+    if reservation is None:
+        raise HTTPException(
+            status_code=429,
+            detail=LOGIN_RATE_LIMITED_DETAIL,
+            headers={"Retry-After": str(retry_after)},
+        )
+
     try:
         user, token = authenticate_user(db, phone=req.phone, password=req.password)
     except ValueError as exc:
+        AUTH_LOGIN_RATE_LIMITER.finish_attempt(reservation, outcome="failure")
         db.rollback()
         raise HTTPException(status_code=401, detail="invalid credentials") from exc
+    except Exception:
+        # Backend/database errors are not bad-password attempts, but must not
+        # leave a reservation stuck and reduce capacity for legitimate users.
+        AUTH_LOGIN_RATE_LIMITER.finish_attempt(reservation, outcome="abandon")
+        db.rollback()
+        raise
+    else:
+        AUTH_LOGIN_RATE_LIMITER.finish_attempt(reservation, outcome="success")
 
     try:
         ensure_free_entitlement(db, user.id)
