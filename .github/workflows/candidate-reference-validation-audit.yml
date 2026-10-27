@@ -1,4 +1,4 @@
-name: Candidate reference validation contract audit
+name: Final deploy HEAD reference validation
 
 on:
   push:
@@ -9,43 +9,47 @@ permissions:
   contents: read
 
 jobs:
-  validate-candidate-data:
+  validate-final-deploy-head:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout deploy data candidate
+      - name: Checkout audit workflow branch
         uses: actions/checkout@v4
-      - name: Checkout candidate validator scripts from PR 308
+      - name: Checkout merged validator scripts from main
         uses: actions/checkout@v4
         with:
-          ref: e0f8e3efacb438017e2b41cb6480510e3e15928d
-          path: candidate-tools
+          ref: fbdee3e01e95a37468de680eeded63f13cad9c8b
+          path: merged-tools
+      - name: Checkout exact final deploy HEAD
+        uses: actions/checkout@v4
+        with:
+          ref: 8c87cb5d879e166a6052ea90a8d63b22d2118aa3
+          path: deploy-snapshot
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Stage exact deploy candidate JSON
+      - name: Stage reference JSON from exact deploy HEAD
         shell: bash
         run: |
           set -euo pipefail
-          echo "AUDIT_WORKFLOW_COMMIT=$(git rev-parse HEAD)"
-          echo "DATA_CANDIDATE_BASE_SHA=4e5c20b04fd106388d23b03ba2be8537eabe0a56"
-          echo "DATA_FILE_BLOBS:"
+          echo "TOOLS_MAIN_MERGE_SHA=fbdee3e01e95a37468de680eeded63f13cad9c8b"
+          echo "DEPLOY_HEAD_SHA=$(git -C deploy-snapshot rev-parse HEAD)"
+          echo "DEPLOY_DATA_BLOBS:"
           for f in majors_database_v2.json school_branches_v2.json micro_motives.json value_poles_v2.json docs/data/questions_v2.json docs/trait_map_v3.json; do
-            git rev-parse "HEAD:$f"
+            git -C deploy-snapshot rev-parse "HEAD:$f"
           done
           mkdir -p "$RUNNER_TEMP/reference-json"
-          cp majors_database_v2.json "$RUNNER_TEMP/reference-json/"
-          cp school_branches_v2.json "$RUNNER_TEMP/reference-json/"
-          cp micro_motives.json "$RUNNER_TEMP/reference-json/"
-          cp value_poles_v2.json "$RUNNER_TEMP/reference-json/"
-          cp docs/data/questions_v2.json "$RUNNER_TEMP/reference-json/questions_v2.json"
-          cp docs/trait_map_v3.json "$RUNNER_TEMP/reference-json/trait_map_v3.json"
+          cp deploy-snapshot/majors_database_v2.json "$RUNNER_TEMP/reference-json/"
+          cp deploy-snapshot/school_branches_v2.json "$RUNNER_TEMP/reference-json/"
+          cp deploy-snapshot/micro_motives.json "$RUNNER_TEMP/reference-json/"
+          cp deploy-snapshot/value_poles_v2.json "$RUNNER_TEMP/reference-json/"
+          cp deploy-snapshot/docs/data/questions_v2.json "$RUNNER_TEMP/reference-json/questions_v2.json"
+          cp deploy-snapshot/docs/trait_map_v3.json "$RUNNER_TEMP/reference-json/trait_map_v3.json"
           python3 - <<'PY'
           import json, os
           from pathlib import Path
           folder=Path(os.environ["RUNNER_TEMP"])/"reference-json"
           majors=json.loads((folder/"majors_database_v2.json").read_text(encoding="utf-8"))
-          branches=json.loads((folder/"school_branches_v2.json").read_text(encoding="utf-8"))
           active=[m for m in majors if m.get("motive_driven") is True]
           expected={"Q"+str(i)+x for i in range(1,16) for x in ("A","B")}
           inactive_unweighted=[
@@ -61,16 +65,17 @@ jobs:
           print(f"MAJORS_TOTAL={len(majors)}")
           print(f"ACTIVE_MOTIVE_DRIVEN={len(active)}")
           print(f"CATALOG_ONLY_UNWEIGHTED={len(inactive_unweighted)}")
+          branches=json.loads((folder/"school_branches_v2.json").read_text(encoding="utf-8"))
           for b in branches:
               count=sum(m.get("high_school_branch")==b.get("name") for m in active)
               print(f"ACTIVE_BRANCH_COUNT {b.get('name')}={count}; source_majors_count={b.get('source_majors_count')}")
           PY
-      - name: Run validate_integrity on candidate data
+      - name: Run validate_integrity on final deploy HEAD
         shell: bash
         run: |
-          python3 candidate-tools/validate_integrity.py "$RUNNER_TEMP/reference-json"
-      - name: Run global_separation diagnostic on candidate data
+          python3 merged-tools/validate_integrity.py "$RUNNER_TEMP/reference-json"
+      - name: Run global_separation on final deploy HEAD
         if: always()
         shell: bash
         run: |
-          python3 candidate-tools/global_separation_test.py "$RUNNER_TEMP/reference-json/majors_database_v2.json"
+          python3 merged-tools/global_separation_test.py "$RUNNER_TEMP/reference-json/majors_database_v2.json"
