@@ -28,7 +28,7 @@ jobs:
           cp micro_motives.json "$RUNNER_TEMP/reference-json/"
           cp value_poles_v2.json "$RUNNER_TEMP/reference-json/"
           cp docs/data/questions_v2.json "$RUNNER_TEMP/reference-json/questions_v2.json"
-          cp trait_map_v3.json "$RUNNER_TEMP/reference-json/"
+          cp docs/trait_map_v3.json "$RUNNER_TEMP/reference-json/trait_map_v3.json"
           echo "AUDIT_CHECKOUT_SHA=$(git rev-parse HEAD)"
           echo "DATA_FILE_SHA256:"
           sha256sum "$RUNNER_TEMP/reference-json/"*.json
@@ -41,11 +41,28 @@ jobs:
               obj=json.loads((p/name).read_text(encoding='utf-8'))
               print(f"{name}: {len(obj) if hasattr(obj, '__len__') else 'n/a'}")
           PY
-      - name: Run mandatory validate_integrity
-        id: integrity
+      - name: Preflight empty or malformed strategy profiles
+        if: always()
         shell: bash
         run: |
-          set -o pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path(__import__('os').environ['RUNNER_TEMP'])/'reference-json'/'majors_database_v2.json'
+          if not p.exists():
+              print("MAJORS_JSON_NOT_STAGED")
+              raise SystemExit(0)
+          data=json.loads(p.read_text(encoding='utf-8'))
+          empty=[(m.get('id'),m.get('name'),len(m.get('strategy_weights') or [])) for m in data if not m.get('strategy_weights')]
+          print(f"EMPTY_OR_MISSING_STRATEGY_WEIGHTS={len(empty)}")
+          for mid,name,n in empty[:100]:
+              print(f"  id={mid!r} name={name!r} rows={n}")
+          PY
+      - name: Run mandatory validate_integrity
+        id: integrity
+        if: always()
+        shell: bash
+        run: |
           python3 validate_integrity.py "$RUNNER_TEMP/reference-json"
       - name: Run global_separation diagnostic
         if: always()
