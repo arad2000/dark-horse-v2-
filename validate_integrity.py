@@ -92,19 +92,18 @@ def check_value_weights(entries, label, errors, name_key="name"):
         print(f"{OK} {label}: همهٔ مقادیر value_weights در بازهٔ [0,1] هستند")
 
 
-def check_micro_motive_refs(majors, motive_codes, errors):
+def check_micro_motive_refs(entries, motive_codes, errors, label):
     broken = []
-    for m in majors:
-        for code in m.get("micro_motive_codes", []):
+    for entry in entries:
+        for code in entry.get("micro_motive_codes", []):
             if code not in motive_codes:
-                broken.append((m.get("name", m.get("id", "؟")), code))
+                broken.append((entry.get("name", entry.get("id", "؟")), code))
     if broken:
         for name, code in broken[:20]:
-            errors.append(f"{FAIL} majors_database: «{name}» کد میکرو-موتیو نامعتبر دارد: {code}")
-        print(f"{FAIL} majors_database: {len(broken)} ارجاع شکسته به micro_motives.json")
+            errors.append(f"{FAIL} {label}: «{name}» کد میکرو-موتیو نامعتبر دارد: {code}")
+        print(f"{FAIL} {label}: {len(broken)} ارجاع شکسته به micro_motives.json")
     else:
-        print(f"{OK} majors_database: همهٔ micro_motive_codes در micro_motives.json موجودند (صفر رفرنس شکسته)")
-
+        print(f"{OK} {label}: همهٔ micro_motive_codes در micro_motives.json موجودند (صفر رفرنس شکسته)")
 
 def check_value_poles_coverage(entries, value_pole_keys, label, errors):
     all_covered = True
@@ -118,14 +117,30 @@ def check_value_poles_coverage(entries, value_pole_keys, label, errors):
         print(f"{OK} {label}: همهٔ کلیدهای value_weights در value_poles.json پوشش دارند")
 
 
+def is_complete_strategy_profile(entry):
+    sw = entry.get("strategy_weights")
+    return (
+        isinstance(sw, list)
+        and len(sw) == 25
+        and all(
+            isinstance(row, list)
+            and len(row) == 5
+            and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in row)
+            for row in sw
+        )
+    )
+
+
 def check_signature_collisions(majors, errors):
     from collections import defaultdict
+
+    eligible = [m for m in majors if is_complete_strategy_profile(m)]
 
     def sig(m):
         return tuple(row.index(max(row)) for row in m["strategy_weights"])
 
     groups = defaultdict(list)
-    for m in majors:
+    for m in eligible:
         groups[sig(m)].append(m.get("name", m.get("id", "؟")))
     repeated = {s: names for s, names in groups.items() if len(names) > 1}
     total_dupes = sum(len(v) for v in repeated.values())
@@ -134,19 +149,41 @@ def check_signature_collisions(majors, errors):
             errors.append(f"{FAIL} signature کاملاً یکسان بین: {names}")
         print(f"{FAIL} majors_database: {total_dupes} رشته درگیر signature کاملاً یکسان هستند")
     else:
-        print(f"{OK} majors_database: صفر رشته با signature کاملاً یکسان (از {len(majors)} رشته)")
+        print(f"{OK} majors_database: صفر رشته با signature کاملاً یکسان (از {len(eligible)} رشتهٔ فعالِ دارای پروفایل)")
 
+def check_school_branches_coverage(branches, active_majors, errors):
+    from collections import Counter
 
-def check_school_branches_coverage(branches, majors, errors):
-    total_src = sum(b.get("source_majors_count", 0) for b in branches)
-    total_majors = len(majors)
-    if total_src != total_majors:
-        errors.append(
-            f"{FAIL} school_branches: مجموع source_majors_count ({total_src}) با تعداد کل رشته‌ها ({total_majors}) برابر نیست"
-        )
+    branch_names = {b.get("name") for b in branches}
+    active_counts = Counter(m.get("high_school_branch") for m in active_majors)
+    unassigned = [
+        m for m in active_majors
+        if m.get("high_school_branch") not in branch_names
+    ]
+    if unassigned:
+        for m in unassigned[:20]:
+            errors.append(
+                f"{FAIL} active major «{m.get('name', m.get('id', '؟'))}» high_school_branch نامعتبر/خالی دارد: {m.get('high_school_branch')!r}"
+            )
+        print(f"{FAIL} school_branches: {len(unassigned)} رشتهٔ فعال به شاخهٔ معتبر تخصیص ندارند")
     else:
-        print(f"{OK} school_branches: مجموع source_majors_count ({total_src}) == تعداد کل رشته‌ها ({total_majors})")
+        print(f"{OK} school_branches: همهٔ {len(active_majors)} رشتهٔ فعال high_school_branch معتبر دارند")
 
+    count_mismatches = []
+    for branch in branches:
+        name = branch.get("name")
+        expected = active_counts.get(name, 0)
+        actual = branch.get("source_majors_count")
+        if actual != expected:
+            count_mismatches.append((name, actual, expected))
+            errors.append(
+                f"{FAIL} school_branches: «{name}» source_majors_count={actual} است؛ count(high_school_branch) روی فعال‌ها={expected}"
+            )
+    if count_mismatches:
+        print(f"{FAIL} school_branches: {len(count_mismatches)} source_majors_count با شمارش رشته‌های فعال هم‌خوان نیست")
+    else:
+        total = sum(active_counts.get(b.get("name"), 0) for b in branches)
+        print(f"{OK} school_branches: source_majors_count هر شاخه با count(high_school_branch) روی رشته‌های فعال تطبیق دارد (جمع={total})")
 
 def check_questions(questions_data, errors):
     strat_qs = questions_data.get("layers", {}).get("strategies", {}).get("questions", [])
@@ -207,18 +244,43 @@ def main():
     questions, err_q = load(folder, "questions_v2.json")
     trait_map, err_tm = load(folder, "trait_map_v3.json")
 
+    active_majors = [m for m in majors if m.get("motive_driven") is True]
+    expected_value_keys = {f"Q{i}{l}" for i in range(1, 16) for l in ("A", "B")}
+
+    def has_complete_profile(entry):
+        sw = entry.get("strategy_weights")
+        vw = entry.get("value_weights")
+        return (
+            is_complete_strategy_profile(entry)
+            and isinstance(vw, dict)
+            and len(vw) == 30
+            and set(vw.keys()) == expected_value_keys
+        )
+
+    catalog_only_unweighted = [
+        m for m in majors
+        if m.get("motive_driven") is not True and not has_complete_profile(m)
+    ]
+
+    print("\n=== validation scope ===")
+    print(f"{OK} motive_driven=true: {len(active_majors)} active majors are subject to S/V, signature, and active-major reference checks")
+    print(f"{OK} catalog-only/unweighted: {len(catalog_only_unweighted)} inactive rows are reported, not failed for missing profiles")
+    for entry in catalog_only_unweighted:
+        print(f"  catalog-only/unweighted id={entry.get('id', '؟')} name={entry.get('name', '؟')}")
+
     motive_codes = set()
     vp_keys = set()
 
-    print("\n=== majors_database_v2.json ===")
-    check_strategy_weights(majors, "majors_database", errors)
-    check_value_weights(majors, "majors_database", errors)
-    check_signature_collisions(majors, errors)
+    print("\n=== majors_database_v2.json (active only) ===")
+    check_strategy_weights(active_majors, "active majors", errors)
+    check_value_weights(active_majors, "active majors", errors)
+    check_signature_collisions(active_majors, errors)
 
     if micro_motives is not None:
         motive_codes = {d["code"] for d in micro_motives}
-        check_micro_motive_refs(majors, motive_codes, errors)
+        check_micro_motive_refs(active_majors, motive_codes, errors, "active majors")
     else:
+        errors.append(err_mm)
         print(err_mm)
 
     if value_poles is not None:
@@ -226,32 +288,36 @@ def main():
             vp_keys = set(value_poles.keys())
         else:
             vp_keys = {d.get("key") for d in value_poles if isinstance(d, dict)}
-        check_value_poles_coverage(majors, vp_keys, "majors_database", errors)
+        check_value_poles_coverage(active_majors, vp_keys, "active majors", errors)
     else:
+        errors.append(err_vp)
         print(err_vp)
 
     if school_branches is not None:
-        print("\n=== school_branches_v2.json ===")
+        print("\n=== school_branches_v2.json (all four active branches) ===")
         check_strategy_weights(school_branches, "school_branches", errors)
         check_value_weights(school_branches, "school_branches", errors)
         if micro_motives is not None:
-            check_micro_motive_refs(school_branches, motive_codes, errors)
+            check_micro_motive_refs(school_branches, motive_codes, errors, "school_branches")
         if value_poles is not None:
             check_value_poles_coverage(school_branches, vp_keys, "school_branches", errors)
-        check_school_branches_coverage(school_branches, majors, errors)
+        check_school_branches_coverage(school_branches, active_majors, errors)
     else:
+        errors.append(err_sb)
         print(err_sb)
 
     if questions is not None:
         print("\n=== questions_v2.json ===")
         check_questions(questions, errors)
     else:
+        errors.append(err_q)
         print(err_q)
 
     if trait_map is not None:
         print("\n=== trait_map_v3.json ===")
         check_trait_map(trait_map, errors)
     else:
+        errors.append(err_tm)
         print(err_tm)
 
     print("\n" + "=" * 50)
@@ -263,7 +329,6 @@ def main():
     else:
         print(f"{OK} همهٔ تست‌ها موفق بودند.")
         sys.exit(0)
-
 
 if __name__ == "__main__":
     main()
