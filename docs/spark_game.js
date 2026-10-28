@@ -1,7 +1,7 @@
 /**
- * آزمایشگاه جرقه — نمونه تصادفی از خرده‌انگیزه‌های واقعی دیتابیس
+ * آزمایشگاه جرقه — نمونهٔ تصادفی خرده‌انگیزه‌ها از فایل‌های استاتیک همین سایت
  * روی امتیاز و likedCodes سفر اصلی اثر ندارد.
- * API: window.DHSparkGame.open()
+ * ورودی UI: window.DHSparkGame.open()؛ مستقل از session، سهمیه و پرداخت سفر.
  */
 (function () {
   'use strict';
@@ -76,20 +76,25 @@
 
   function fetchMotives() {
     if (motivesCache) return Promise.resolve(motivesCache);
-    return fetch('data/micro_motives.json')
-      .then(function (r) { return r.json(); })
-      .then(function (arr) {
-        motivesCache = filterMotiveDrivenSparks(Array.isArray(arr) ? arr : []);
-        return motivesCache;
+    // Same-origin Pages asset only: no credentials, redirects or API fallback.
+    return fetch('data/micro_motives.json', {
+      mode: 'same-origin', credentials: 'omit', redirect: 'error'
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('Static spark data unavailable');
+        return r.json();
       })
-      .catch(function () {
-        // fallback مسیرهای رایج
-        return fetch('./data/micro_motives.json').then(function (r) { return r.json(); })
-          .then(function (arr) {
-            motivesCache = filterMotiveDrivenSparks(Array.isArray(arr) ? arr : []);
-            return motivesCache;
-          });
+      .then(function (arr) {
+        if (!Array.isArray(arr)) throw new Error('Invalid static spark data');
+        motivesCache = filterMotiveDrivenSparks(arr);
+        return motivesCache;
       });
+  }
+
+  function realmTitle(realmId) {
+    // Shared, static journey UI titles; never expose internal IDs as a fallback.
+    var themes = window.DH_WORLD_THEMES || {};
+    return (themes[realmId] && themes[realmId].title) || 'محلهٔ مرتبط';
   }
 
   /** پیشوند کد: MED-001 → MED- */
@@ -133,7 +138,7 @@
             subId: subId,
             subName: (meta.sub && (meta.sub.name || meta.sub.motto)) || subId,
             realmId: meta.realmId || '',
-            realmName: (realm && (realm.name || realm.motto)) || '',
+            realmName: realmTitle(meta.realmId),
             realmIcon: (realm && realm.icon) || ''
           });
         });
@@ -233,7 +238,7 @@
     return {
       paths: top(pathScore, pathMeta, 5),
       subs: top(subScore, subMeta, 3),
-      realms: top(realmScore, realmMeta, 3)
+      realms: top(realmScore, realmMeta, Object.keys(realmScore).length)
     };
   }
 
@@ -243,7 +248,7 @@
     var html = '<div class="lab-wrap">';
     html += '<div class="lab-top"><div class="lab-title">✦ نتیجهٔ یهویی</div>';
     html += '<button type="button" class="lab-close" id="dh-lab-x">بستن</button></div>';
-    html += '<p class="lab-note">این آزمایش روی امتیاز سفر اصلی اثر ندارد. فقط برای کشف است.</p>';
+    html += '<p class="lab-note">یهویی رایگان است؛ این ارتباط‌ها از نقشهٔ استاتیک شهرند، نه امتیاز یا تحلیل سروری.</p>';
 
     if (!state.liked.length) {
       html += '<div class="lab-empty">در این دقیقه هیچ جرقه‌ای انتخاب نشد.<br>می‌توانی دوباره امتحان کنی.</div>';
@@ -255,16 +260,16 @@
       html += '</ul></div>';
 
       if (agg.realms.length) {
-        html += '<div class="lab-result"><h3>محله‌های نزدیک</h3><ul>';
+        html += '<div class="lab-result"><h3>محله‌های مرتبط با جرقه‌های انتخابی</h3><ul>';
         agg.realms.forEach(function (r) {
           var m = r.meta || {};
-          html += '<li>' + (m.realmIcon || '') + ' ' + escapeHtml(m.realmName || r.id) +
+          html += '<li>' + (m.realmIcon || '') + ' ' + escapeHtml(m.realmName || realmTitle(r.id)) +
             ' <span style="color:#9d988c">(' + r.count + ' جرقه)</span></li>';
         });
         html += '</ul></div>';
       }
       if (agg.subs.length) {
-        html += '<div class="lab-result"><h3>گذرهای نزدیک</h3><ul>';
+        html += '<div class="lab-result"><h3>گذرهای مرتبط</h3><ul>';
         agg.subs.forEach(function (r) {
           var m = r.meta || {};
           html += '<li>' + escapeHtml(m.subName || r.id) +
@@ -273,7 +278,7 @@
         html += '</ul></div>';
       }
       if (agg.paths.length) {
-        html += '<div class="lab-result"><h3>مسیرهای باریک پیشنهادی برای سفر واقعی</h3><ul>';
+        html += '<div class="lab-result"><h3>مسیرهای مرتبط در نقشهٔ شهر</h3><ul>';
         agg.paths.forEach(function (r) {
           var m = r.meta || {};
           html += '<li>' + (m.pathIcon || '') + ' <strong>' + escapeHtml(m.pathName || r.id) + '</strong>' +
@@ -284,7 +289,6 @@
       html += '<p class="lab-note">اگر این جرقه‌ها را دوست داشتی، در سفر اکتشافی از همان محله‌ها و مسیرهای باریک وارد شو.</p>';
     }
 
-    html += '<button type="button" class="lab-cta" id="dh-lab-start-journey">🧭 ورود به سفر اکتشافی کامل ›</button>';
     html += '<button type="button" class="lab-ghost" id="dh-lab-again">یک دور دیگر جرقه‌یابی ↻</button>';
     html += '<button type="button" class="lab-ghost" id="dh-lab-done">بازگشت به صفحه اول</button>';
     html += '</div>';
@@ -292,14 +296,6 @@
     overlay.innerHTML = html;
     $('dh-lab-x').onclick = closeLab;
     $('dh-lab-done').onclick = closeLab;
-    $('dh-lab-start-journey').onclick = function () {
-      closeLab();
-      if (window.DHCommercialUI && typeof window.DHCommercialUI.startServerAuthorizedJourney === 'function') {
-        window.DHCommercialUI.startServerAuthorizedJourney();
-      } else if (window.DHShell && typeof window.DHShell.startJourney === 'function') {
-        window.DHShell.startJourney();
-      }
-    };
     $('dh-lab-again').onclick = function () { startSession(); };
 
     // نشان ساده
@@ -332,7 +328,7 @@
       overlay.id = 'dh-spark-lab';
       document.body.appendChild(overlay);
     }
-    overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">در حال آماده‌سازی جرقه‌ها از دیتابیس…</p></div>';
+    overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">در حال بارگذاری جرقه‌ها از فایل‌های سایت…</p></div>';
 
     var sessionOverlay = overlay;
     fetchMotives().then(function (all) {

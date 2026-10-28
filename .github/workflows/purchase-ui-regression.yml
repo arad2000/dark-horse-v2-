@@ -45,6 +45,7 @@ jobs:
       - name: Run Yehooyi bottom navigation and home regressions
         run: |
           node tests/test_yehooyi_navigation.js
+          node tests/test_yehooyi_static.js
           node tests/test_genz_native_home_v2.js
       - name: Run P0 server-authoritative quota gate E2E regression
         run: node tests/test_p0_server_authoritative_quota_gate.js
