@@ -66,11 +66,9 @@
   function filterMotiveDrivenSparks(all, pathIndex) {
     var list = Array.isArray(all) ? all : [];
     var idx = pathIndex || buildPathIndex();
-    var hasRoutes = idx && Object.keys(idx).length > 0;
     return list.filter(function (item) {
       if (!item || !item.code || !item.description_fa) return false;
-      if (!hasRoutes) return true;
-      return resolveCode(item.code, idx).length > 0;
+      return completeHits(item.code, idx).length > 0;
     });
   }
 
@@ -168,6 +166,13 @@
     return hits;
   }
 
+  function completeHits(code, index) {
+    return resolveCode(code, index).filter(function (hit) {
+      return Boolean(realmTitle(hit.realmId) &&
+        String(hit.subName || '').trim() && String(hit.pathName || '').trim());
+    });
+  }
+
   /** ۵–۶ نمونه متنوع از پیشوندهای مختلف */
   function sampleDiverse(all, n) {
     if (!all || !all.length) return [];
@@ -228,7 +233,7 @@
     var realmMeta = {};
     likedCodes.forEach(function (code) {
       var seenPaths = {}, seenSubs = {}, seenRealms = {};
-      resolveCode(code, index).forEach(function (h) {
+      completeHits(code, index).forEach(function (h) {
         // Count distinct selected sparks per node, not duplicate route links.
         if (!seenPaths[h.pathId]) pathScore[h.pathId] = (pathScore[h.pathId] || 0) + 1;
         if (!seenSubs[h.subId]) subScore[h.subId] = (subScore[h.subId] || 0) + 1;
@@ -258,21 +263,25 @@
 
   function renderResult(state) {
     var index = buildPathIndex();
-    var agg = aggregateHits(state.liked, index);
+    // Revalidate before rendering as well: incomplete chains never reach results.
+    var selectedItems = state.likedItems.filter(function (item) {
+      return completeHits(item.code, index).length > 0;
+    });
+    var selectedCodes = selectedItems.map(function (item) { return item.code; });
+    var agg = aggregateHits(selectedCodes, index);
     var html = '<div class="lab-wrap">';
     html += '<div class="lab-top"><div class="lab-title">✦ نتیجهٔ یهویی</div>';
     html += '<button type="button" class="lab-close" id="dh-lab-x">بستن</button></div>';
     html += '<p class="lab-note">یهویی رایگان است؛ این ارتباط‌ها از نقشهٔ استاتیک شهرند، نه امتیاز یا تحلیل سروری.</p>';
 
-    if (!state.liked.length) {
+    if (!selectedCodes.length) {
       html += '<div class="lab-empty">در این دقیقه هیچ جرقه‌ای انتخاب نشد.<br>می‌توانی دوباره امتحان کنی.</div>';
     } else {
-      html += '<div class="lab-result"><h3>جرقه‌هایی که انتخاب کردی (' + state.liked.length + ')</h3><ul>';
-      state.likedItems.forEach(function (m) {
+      html += '<div class="lab-result"><h3>جرقه‌هایی که انتخاب کردی (' + selectedCodes.length + ')</h3><ul>';
+      selectedItems.forEach(function (m) {
         html += '<li>' + escapeHtml(m.description_fa || 'جرقهٔ انتخابی');
-        var hits = resolveCode(m.code, index);
+        var hits = completeHits(m.code, index);
         var seen = {};
-        var complete = false;
         html += '<ul>';
         hits.forEach(function (hit) {
           var label = [realmTitle(hit.realmId), hit.subName, hit.pathName];
@@ -280,11 +289,9 @@
           var key = [hit.realmId, hit.subId, hit.pathId].join('|');
           if (seen[key]) return;
           seen[key] = true;
-          complete = true;
           html += '<li>' + escapeHtml(label[0]) + ' · گذر: ' + escapeHtml(label[1]) +
             ' · مسیر باریک: ' + escapeHtml(label[2]) + '</li>';
         });
-        if (!complete) html += '<li>در نقشهٔ استاتیک محله/مسیر ثبت نشده</li>';
         html += '</ul></li>';
       });
       html += '</ul></div>';
@@ -330,14 +337,14 @@
 
     // نشان ساده
     var badges = loadBadges();
-    if (state.liked.length > 0 && badges.indexOf('lab_first') < 0) {
+    if (selectedCodes.length > 0 && badges.indexOf('lab_first') < 0) {
       badges.push('lab_first');
       saveBadges(badges);
     }
 
     saveLab({
       lastAt: Date.now(),
-      likedCodes: state.liked,
+      likedCodes: selectedCodes,
       paths: agg.paths.map(function (p) { return p.id; })
     });
   }
@@ -363,6 +370,7 @@
     var sessionOverlay = overlay;
     fetchMotives().then(function (all) {
       if (overlay !== sessionOverlay) return;
+      all = filterMotiveDrivenSparks(all);
       if (!all.length) {
         overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">بارگذاری خرده‌انگیزه‌ها ممکن نشد.</p>' +
           '<button type="button" class="lab-ghost" id="dh-lab-x">بستن</button></div>';
