@@ -64,7 +64,7 @@ function makeServiceWorker() {
       assert.ok(pendingResolve, 'expected pending network request');
       const resolve = pendingResolve; pendingResolve = null; resolve(response(body));
     },
-    async cached(url) { return (await caches.open('darkhorse-v78')).match({ url }); },
+    async cached(url) { return (await caches.open('darkhorse-v79')).match({ url }); },
     async triggerLifecycle(name) {
       const waiters = [];
       listeners[name]({ waitUntil(value) { waiters.push(Promise.resolve(value)); } });
@@ -101,7 +101,7 @@ async function testStartupMarkup() {
   assert.match(indexSource, /app\.js\?v=72/);
   assert.match(indexSource, /shell\.js\?v=91/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
-  assert.match(indexSource, /pwa-boot\.js\?v=72/);
+  assert.match(indexSource, /pwa-boot\.js\?v=79/);
   assert.match(indexSource, /shell\.css\?v=70&ux=phase4-live-v2(&r=\d+)?" media="print"/);
   assert.match(indexSource, /journey_experience\.css\?v=2" media="print"/);
   assert.match(indexSource, /journey_experience\.js\?v=2">/);
@@ -218,7 +218,7 @@ async function testPwaRegistrationAndSingleReload() {
   windowListeners.load();
   await Promise.resolve();
   await Promise.resolve();
-  assert.deepStrictEqual(registered, ['./sw.js?v=78']);
+  assert.deepStrictEqual(registered, ['./sw.js?v=79']);
   swListeners.controllerchange();
   swListeners.controllerchange();
   assert.strictEqual(reloads, 1, 'controller changes must not cause repeated reloads');
@@ -267,8 +267,20 @@ async function testColdWarmOfflineOnline() {
   assert.ok(sw.fetchCalls.some(call => call.url === jsonUrl && call.options.cache === 'no-store'),
     'JSON must keep cache:no-store');
   await Promise.all(json.waiters);
+  // A stale HTML document may request the old query string: fresh script wins.
+  const sparkUrl = 'https://asbe-siah.ir/spark_game.js?v=yehooyi-static-v2';
+  await (await sw.caches.open('darkhorse-v79')).put({url: sparkUrl}, response('old-lab'));
+  sw.setOnline('new-exact-lab');
+  const freshLab = await sw.dispatch(sparkUrl);
+  assert.strictEqual((await freshLab.responsePromise).body, 'new-exact-lab');
+  assert.ok(sw.fetchCalls.some(c => c.url === sparkUrl && c.options.cache === 'no-store'));
+  assert.strictEqual((await sw.cached(sparkUrl)).body, 'new-exact-lab');
+  sw.setOffline();
+  const cachedLab = await sw.dispatch(sparkUrl);
+  assert.strictEqual((await cachedLab.responsePromise).body, 'new-exact-lab');
+  sw.setOnline('network-restored');
   // Non-destructive SW upgrade contract: install MUST NOT wipe existing caches, and activate
-  // must carry forward unchanged cached assets from darkhorse-v77 into darkhorse-v78.
+  // must carry forward unchanged cached assets from darkhorse-v77 into darkhorse-v79.
   const oldCache = await sw.caches.open('darkhorse-v77');
   const heavyAssetUrl = 'https://asbe-siah.ir/data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=grade9-v1';
   await oldCache.put({ url: heavyAssetUrl }, response('/* cached-data-js */'));
@@ -277,7 +289,7 @@ async function testColdWarmOfflineOnline() {
     'SW install MUST NOT wipe user cache during version upgrade');
   await sw.triggerLifecycle('activate');
   assert.strictEqual((await sw.cached(heavyAssetUrl)).body, '/* cached-data-js */',
-    'SW activate must carry cached static assets forward into darkhorse-v78 without cold re-download');
+    'SW activate must carry cached static assets forward into darkhorse-v79 without cold re-download');
   console.log('non-destructive SW cache migration: PASS');
   console.log('cold/warm open, offline/online recovery, JSON no-store: PASS');
 }

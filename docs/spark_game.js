@@ -66,11 +66,9 @@
   function filterMotiveDrivenSparks(all, pathIndex) {
     var list = Array.isArray(all) ? all : [];
     var idx = pathIndex || buildPathIndex();
-    var hasRoutes = idx && Object.keys(idx).length > 0;
     return list.filter(function (item) {
       if (!item || !item.code || !item.description_fa) return false;
-      if (!hasRoutes) return true;
-      return resolveCode(item.code, idx).length > 0;
+      return completeHits(item.code, idx).length > 0;
     });
   }
 
@@ -91,10 +89,19 @@
       });
   }
 
+  // Locked UI labels: independent of app.js, API and journey initialization.
+  var REALM_TITLES = {
+    healer: 'درمان و زندگی', builder: 'ساختن و مهندسی', explorer: 'کشف و دانش',
+    thinker: 'اندیشه و جامعه', artist: 'خلق و هنر', speaker: 'واژه و فرهنگ'
+  };
+
   function realmTitle(realmId) {
-    // Shared, static journey UI titles; never expose internal IDs as a fallback.
-    var themes = window.DH_WORLD_THEMES || {};
-    return (themes[realmId] && themes[realmId].title) || 'محلهٔ مرتبط';
+    return Object.prototype.hasOwnProperty.call(REALM_TITLES, realmId)
+      ? 'محلهٔ ' + REALM_TITLES[realmId] : '';
+  }
+
+  function displayTitle(item) {
+    return (item && (String(item.name || '').trim() || String(item.motto || '').trim())) || '';
   }
 
   /** پیشوند کد: MED-001 → MED- */
@@ -133,10 +140,10 @@
           if (!index[pref]) index[pref] = [];
           index[pref].push({
             pathId: p.id,
-            pathName: p.name || p.motto || p.id,
+            pathName: displayTitle(p),
             pathIcon: p.icon || '',
             subId: subId,
-            subName: (meta.sub && (meta.sub.name || meta.sub.motto)) || subId,
+            subName: displayTitle(meta.sub),
             realmId: meta.realmId || '',
             realmName: realmTitle(meta.realmId),
             realmIcon: (realm && realm.icon) || ''
@@ -157,6 +164,13 @@
       });
     }
     return hits;
+  }
+
+  function completeHits(code, index) {
+    return resolveCode(code, index).filter(function (hit) {
+      return Boolean(realmTitle(hit.realmId) &&
+        String(hit.subName || '').trim() && String(hit.pathName || '').trim());
+    });
   }
 
   /** ۵–۶ نمونه متنوع از پیشوندهای مختلف */
@@ -218,10 +232,15 @@
     var subMeta = {};
     var realmMeta = {};
     likedCodes.forEach(function (code) {
-      resolveCode(code, index).forEach(function (h) {
-        pathScore[h.pathId] = (pathScore[h.pathId] || 0) + 1;
-        subScore[h.subId] = (subScore[h.subId] || 0) + 1;
-        realmScore[h.realmId] = (realmScore[h.realmId] || 0) + 1;
+      var seenPaths = {}, seenSubs = {}, seenRealms = {};
+      completeHits(code, index).forEach(function (h) {
+        // Count distinct selected sparks per node, not duplicate route links.
+        if (!seenPaths[h.pathId]) pathScore[h.pathId] = (pathScore[h.pathId] || 0) + 1;
+        if (!seenSubs[h.subId]) subScore[h.subId] = (subScore[h.subId] || 0) + 1;
+        if (!seenRealms[h.realmId] && realmTitle(h.realmId)) {
+          realmScore[h.realmId] = (realmScore[h.realmId] || 0) + 1;
+        }
+        seenPaths[h.pathId] = seenSubs[h.subId] = seenRealms[h.realmId] = true;
         pathMeta[h.pathId] = h;
         subMeta[h.subId] = h;
         realmMeta[h.realmId] = h;
@@ -236,31 +255,49 @@
         });
     }
     return {
-      paths: top(pathScore, pathMeta, 5),
-      subs: top(subScore, subMeta, 3),
+      paths: top(pathScore, pathMeta, Object.keys(pathScore).length),
+      subs: top(subScore, subMeta, Object.keys(subScore).length),
       realms: top(realmScore, realmMeta, Object.keys(realmScore).length)
     };
   }
 
   function renderResult(state) {
     var index = buildPathIndex();
-    var agg = aggregateHits(state.liked, index);
+    // Revalidate before rendering as well: incomplete chains never reach results.
+    var selectedItems = state.likedItems.filter(function (item) {
+      return completeHits(item.code, index).length > 0;
+    });
+    var selectedCodes = selectedItems.map(function (item) { return item.code; });
+    var agg = aggregateHits(selectedCodes, index);
     var html = '<div class="lab-wrap">';
     html += '<div class="lab-top"><div class="lab-title">✦ نتیجهٔ یهویی</div>';
     html += '<button type="button" class="lab-close" id="dh-lab-x">بستن</button></div>';
     html += '<p class="lab-note">یهویی رایگان است؛ این ارتباط‌ها از نقشهٔ استاتیک شهرند، نه امتیاز یا تحلیل سروری.</p>';
 
-    if (!state.liked.length) {
+    if (!selectedCodes.length) {
       html += '<div class="lab-empty">در این دقیقه هیچ جرقه‌ای انتخاب نشد.<br>می‌توانی دوباره امتحان کنی.</div>';
     } else {
-      html += '<div class="lab-result"><h3>جرقه‌هایی که انتخاب کردی (' + state.liked.length + ')</h3><ul>';
-      state.likedItems.forEach(function (m) {
-        html += '<li>' + escapeHtml(m.description_fa || m.code) + '</li>';
+      html += '<div class="lab-result"><h3>جرقه‌هایی که انتخاب کردی (' + selectedCodes.length + ')</h3><ul>';
+      selectedItems.forEach(function (m) {
+        html += '<li>' + escapeHtml(m.description_fa || 'جرقهٔ انتخابی');
+        var hits = completeHits(m.code, index);
+        var seen = {};
+        html += '<ul>';
+        hits.forEach(function (hit) {
+          var label = [realmTitle(hit.realmId), hit.subName, hit.pathName];
+          if (!label.every(Boolean)) return;
+          var key = [hit.realmId, hit.subId, hit.pathId].join('|');
+          if (seen[key]) return;
+          seen[key] = true;
+          html += '<li>' + escapeHtml(label[0]) + ' · گذر: ' + escapeHtml(label[1]) +
+            ' · مسیر باریک: ' + escapeHtml(label[2]) + '</li>';
+        });
+        html += '</ul></li>';
       });
       html += '</ul></div>';
 
       if (agg.realms.length) {
-        html += '<div class="lab-result"><h3>محله‌های مرتبط با جرقه‌های انتخابی</h3><ul>';
+        html += '<div class="lab-result"><h3>محله‌ها</h3><ul>';
         agg.realms.forEach(function (r) {
           var m = r.meta || {};
           html += '<li>' + (m.realmIcon || '') + ' ' + escapeHtml(m.realmName || realmTitle(r.id)) +
@@ -269,19 +306,19 @@
         html += '</ul></div>';
       }
       if (agg.subs.length) {
-        html += '<div class="lab-result"><h3>گذرهای مرتبط</h3><ul>';
+        html += '<div class="lab-result"><h3>گذرها</h3><ul>';
         agg.subs.forEach(function (r) {
           var m = r.meta || {};
-          html += '<li>' + escapeHtml(m.subName || r.id) +
+          html += '<li>' + escapeHtml(m.subName || 'عنوان گذر در نقشهٔ استاتیک ثبت نشده') +
             ' <span style="color:#9d988c">(' + r.count + ')</span></li>';
         });
         html += '</ul></div>';
       }
       if (agg.paths.length) {
-        html += '<div class="lab-result"><h3>مسیرهای مرتبط در نقشهٔ شهر</h3><ul>';
+        html += '<div class="lab-result"><h3>مسیرهای باریک</h3><ul>';
         agg.paths.forEach(function (r) {
           var m = r.meta || {};
-          html += '<li>' + (m.pathIcon || '') + ' <strong>' + escapeHtml(m.pathName || r.id) + '</strong>' +
+          html += '<li>' + (m.pathIcon || '') + ' <strong>' + escapeHtml(m.pathName || 'عنوان مسیر باریک در نقشهٔ استاتیک ثبت نشده') + '</strong>' +
             ' <span style="color:#9d988c">— ' + escapeHtml(m.realmName || '') + '</span></li>';
         });
         html += '</ul></div>';
@@ -300,14 +337,14 @@
 
     // نشان ساده
     var badges = loadBadges();
-    if (state.liked.length > 0 && badges.indexOf('lab_first') < 0) {
+    if (selectedCodes.length > 0 && badges.indexOf('lab_first') < 0) {
       badges.push('lab_first');
       saveBadges(badges);
     }
 
     saveLab({
       lastAt: Date.now(),
-      likedCodes: state.liked,
+      likedCodes: selectedCodes,
       paths: agg.paths.map(function (p) { return p.id; })
     });
   }
@@ -333,6 +370,7 @@
     var sessionOverlay = overlay;
     fetchMotives().then(function (all) {
       if (overlay !== sessionOverlay) return;
+      all = filterMotiveDrivenSparks(all);
       if (!all.length) {
         overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">بارگذاری خرده‌انگیزه‌ها ممکن نشد.</p>' +
           '<button type="button" class="lab-ghost" id="dh-lab-x">بستن</button></div>';

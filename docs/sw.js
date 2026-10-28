@@ -1,8 +1,8 @@
-/* Dark Horse SW v73 — instant cached HTML shell + non-destructive cache migration.
+/* Dark Horse SW v79 — instant cached HTML shell + non-destructive cache migration.
  * Preserves previously cached static assets across SW upgrades instead of wiping
  * the user's cache on every version bump.
  */
-const CACHE = 'darkhorse-v78';
+const CACHE = 'darkhorse-v79';
 
 self.addEventListener('install', function () {
   self.skipWaiting();
@@ -47,6 +47,20 @@ self.addEventListener('fetch', function (e) {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.indexOf('/api/') !== -1) {
     e.respondWith(fetch(req));
+    return;
+  }
+
+  // Yehooyi must refresh even when cached HTML still references an old ?v= URL.
+  // Only this script changes strategy; other journey assets keep their policy.
+  if (/\/spark_game\.js$/i.test(url.pathname)) {
+    e.respondWith(
+      fetch(req, { cache: 'no-store', credentials: 'omit', redirect: 'error' }).then(function (res) {
+        if (!res || res.status !== 200 || res.type !== 'basic') return res;
+        return caches.open(CACHE).then(function (c) {
+          return c.put(req, res.clone()).catch(function () {});
+        }).then(function () { return res; });
+      }).catch(function () { return caches.match(req); })
+    );
     return;
   }
 
