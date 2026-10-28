@@ -272,27 +272,13 @@
     var html = '<div class="lab-wrap">';
     html += '<div class="lab-top"><div class="lab-title">✦ نتیجهٔ یهویی</div>';
     html += '<button type="button" class="lab-close" id="dh-lab-x">بستن</button></div>';
-    html += '<p class="lab-note">یهویی رایگان است؛ این ارتباط‌ها از نقشهٔ استاتیک شهرند، نه امتیاز یا تحلیل سروری.</p>';
 
     if (!selectedCodes.length) {
       html += '<div class="lab-empty">در این دقیقه هیچ جرقه‌ای انتخاب نشد.<br>می‌توانی دوباره امتحان کنی.</div>';
     } else {
       html += '<div class="lab-result"><h3>جرقه‌هایی که انتخاب کردی (' + selectedCodes.length + ')</h3><ul>';
       selectedItems.forEach(function (m) {
-        html += '<li>' + escapeHtml(m.description_fa || 'جرقهٔ انتخابی');
-        var hits = completeHits(m.code, index);
-        var seen = {};
-        html += '<ul>';
-        hits.forEach(function (hit) {
-          var label = [realmTitle(hit.realmId), hit.subName, hit.pathName];
-          if (!label.every(Boolean)) return;
-          var key = [hit.realmId, hit.subId, hit.pathId].join('|');
-          if (seen[key]) return;
-          seen[key] = true;
-          html += '<li>' + escapeHtml(label[0]) + ' · گذر: ' + escapeHtml(label[1]) +
-            ' · مسیر باریک: ' + escapeHtml(label[2]) + '</li>';
-        });
-        html += '</ul></li>';
+        html += '<li>' + escapeHtml(m.description_fa || 'جرقهٔ انتخابی') + '</li>';
       });
       html += '</ul></div>';
 

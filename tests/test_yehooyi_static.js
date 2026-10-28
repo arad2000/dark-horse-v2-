@@ -111,7 +111,15 @@ async function run() {
       assert.ok(!result.includes(hit.pathId) && !result.includes(hit.subId), 'No internal route IDs');
     }
   }
-  assert.match(result, /نه امتیاز یا تحلیل سروری/);
+  assert.ok(!/یهویی رایگان است|نقشهٔ استاتیک شهرند|نه امتیاز یا تحلیل سروری/.test(result));
+  const selectedList = result.match(/<h3>جرقه‌هایی که انتخاب کردی \(6\)<\/h3><ul>([\s\S]*?)<\/ul>/);
+  assert.ok(selectedList, 'Selected sparks section must exist');
+  assert.ok(!/<ul>|گذر:|مسیر باریک:|محلهٔ/.test(selectedList[1]), 'No nested route metadata under liked items');
+  const escape = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const likedTexts = [...selectedList[1].matchAll(/<li>([\s\S]*?)<\/li>/g)].map(m => m[1]);
+  assert.deepEqual(likedTexts.sort(), x.ctx.fixture.map(m => escape(m.description_fa)).sort(),
+    'Liked list contains only the exact escaped spark texts');
   assert.ok(!result.includes('dh-lab-start-journey'), 'No paid-journey CTA inside free results');
   assert.equal(x.requests.length, 1);
   for (const [key, value] of x.originalStorage) assert.equal(x.storage.get(key), value);
