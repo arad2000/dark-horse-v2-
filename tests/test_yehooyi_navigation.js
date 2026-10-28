@@ -85,7 +85,7 @@ async function run() {
   assert.deepEqual(active(), ['journey']);
   assert.equal(ctx.DHSparkGame.isOpen(), false);
   // Pending response after close must not write into a removed overlay.
-  pending.shift()({ json: () => Promise.resolve([]) });
+  pending.shift()({ ok: true, json: () => Promise.resolve([]) });
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(ctx.DHSparkGame.isOpen(), false);
   ctx.setActiveTab('profile');
@@ -108,7 +108,7 @@ async function run() {
   assert.match(spark, /padding:16px 14px calc\(100px \+ env\(safe-area-inset-bottom, 0px\)\)/);
   const index = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
   assert.match(index, /shell\.js\?v=91&/);
-  assert.match(index, /spark_game\.js\?v=yehooyi-nav-v1&/);
+  assert.match(index, /spark_game\.js\?v=yehooyi-static-v2&/);
   console.log('Yehooyi navigation: PASS (4 tabs, direct entry, repeat tap, return tab, late response, home/profile/journey, cache-bust)');
 }
 run().catch(err => { console.error(err); process.exitCode = 1; });
