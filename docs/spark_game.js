@@ -35,7 +35,7 @@
     var s = document.createElement('style');
     s.id = 'dh-spark-lab-css';
     s.textContent = [
-      '#dh-spark-lab{position:fixed;inset:0;z-index:9999;background:rgba(12,14,20,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow:auto;padding:16px 14px 28px;font-family:Vazirmatn,sans-serif;color:#f5efe2;direction:rtl}',
+      '#dh-spark-lab{position:fixed;inset:0;z-index:9999;background:rgba(12,14,20,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow:auto;padding:16px 14px calc(100px + env(safe-area-inset-bottom, 0px));font-family:Vazirmatn,sans-serif;color:#f5efe2;direction:rtl}',
       '#dh-spark-lab .lab-wrap{max-width:440px;margin:0 auto}',
       '#dh-spark-lab .lab-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}',
       '#dh-spark-lab .lab-title{font-size:1.08rem;font-weight:800;color:#f5efe2}',
@@ -200,6 +200,9 @@
     stopTimer();
     if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
     overlay = null;
+    if (window.DHShell && typeof window.DHShell.restoreSparkTab === 'function') {
+      window.DHShell.restoreSparkTab();
+    }
   }
 
   function aggregateHits(likedCodes, index) {
@@ -238,7 +241,7 @@
     var index = buildPathIndex();
     var agg = aggregateHits(state.liked, index);
     var html = '<div class="lab-wrap">';
-    html += '<div class="lab-top"><div class="lab-title">✦ نتیجه آزمایشگاه جرقه</div>';
+    html += '<div class="lab-top"><div class="lab-title">✦ نتیجهٔ یهویی</div>';
     html += '<button type="button" class="lab-close" id="dh-lab-x">بستن</button></div>';
     html += '<p class="lab-note">این آزمایش روی امتیاز سفر اصلی اثر ندارد. فقط برای کشف است.</p>';
 
@@ -331,7 +334,9 @@
     }
     overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">در حال آماده‌سازی جرقه‌ها از دیتابیس…</p></div>';
 
+    var sessionOverlay = overlay;
     fetchMotives().then(function (all) {
+      if (overlay !== sessionOverlay) return;
       if (!all.length) {
         overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">بارگذاری خرده‌انگیزه‌ها ممکن نشد.</p>' +
           '<button type="button" class="lab-ghost" id="dh-lab-x">بستن</button></div>';
@@ -358,9 +363,9 @@
         var pct = Math.round((state.index / state.deck.length) * 100);
         var warn = state.left <= 10 ? ' warn' : '';
         overlay.innerHTML =
-          '<div class="lab-wrap">' +
+          '<div class="lab-wrap"><p class="lab-note">اتفاقی ببین؛ خودت بگو چی بهت می‌چسبه.</p>' +
             '<div class="lab-top">' +
-              '<div class="lab-title">⚡ آزمایشگاه جرقه</div>' +
+              '<div class="lab-title">✦ یهویی</div>' +
               '<button type="button" class="lab-close" id="dh-lab-x">بستن</button>' +
             '</div>' +
             '<p class="lab-note">از بیش از هزار خرده‌انگیزه، چند مورد تصادفی — ' +
@@ -406,6 +411,7 @@
         }
       }, 1000);
     }).catch(function () {
+      if (overlay !== sessionOverlay) return;
       overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">خطا در بارگذاری.</p>' +
         '<button type="button" class="lab-ghost" id="dh-lab-x">بستن</button></div>';
       var x = $('dh-lab-x');
@@ -415,10 +421,14 @@
 
   window.DHSparkGame = {
     open: function (opts) {
+      if (overlay && overlay.parentNode) return;
       if (!opts || !opts.fromPopState) {
         if (typeof window.dhPushSubView === 'function') window.dhPushSubView('spark');
       }
       startSession();
+      if (window.DHShell && typeof window.DHShell.setActiveTab === 'function') {
+        window.DHShell.setActiveTab('spark');
+      }
     },
     peek: function () {
       var saved = loadLab();

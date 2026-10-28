@@ -107,6 +107,7 @@
     var html =
       '<button type="button" data-tab="home" aria-label="خانه"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg></span><span class="lbl">خانه</span></button>' +
       '<button type="button" data-tab="journey" aria-label="سفر"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="lbl">سفر</span></button>' +
+      '<button type="button" data-tab="spark" aria-label="یهویی"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/></svg></span><span class="lbl">یهویی</span></button>' +
       '<button type="button" data-tab="profile" aria-label="پروفایل"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span><span class="lbl">پروفایل</span></button>';
     if (!nav) {
       nav = document.createElement('nav');
@@ -118,12 +119,24 @@
       });
       document.body.appendChild(nav);
     }
+    nav.setAttribute('dir', 'rtl');
     nav.innerHTML = html;
   }
 
+  var activeTab = 'home';
+  var sparkReturnTab = 'home';
+
+  function restoreSparkTab() {
+    if (activeTab === 'spark') setActiveTab(sparkReturnTab);
+  }
+
   function setActiveTab(tab) {
+    if (tab === 'spark' && activeTab !== 'spark') sparkReturnTab = activeTab;
+    activeTab = tab;
     document.querySelectorAll('#dh-tabbar button').forEach(function (b) {
-      b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+      var selected = b.getAttribute('data-tab') === tab;
+      b.classList.toggle('active', selected);
+      b.setAttribute('aria-current', selected ? 'page' : 'false');
     });
   }
 
@@ -719,7 +732,7 @@
           '<button type="button" class="dh-mk2-row dh-mk2-row-hot" id="dh-open-spark">' +
             feat('spark-feature.jpg') +
             '<div class="dh-mk2-row-t">' +
-              '<strong>جرقه‌یاب <span class="dh-bento-pill">' + sparkBadgeText + '</span></strong>' +
+              '<strong>یهویی <span class="dh-bento-pill">' + sparkBadgeText + '</span></strong>' +
               '<span>آزمایشگاه زندهٔ کشف خرده‌انگیزه‌هایی که واقعاً به جانت انرژی می‌دهند</span>' +
             '</div>' +
             '<span class="dh-mk2-chev"><img src="' + base + 'ico-chevron.svg" alt="" width="18" height="18" decoding="async"></span></button>' +
@@ -855,7 +868,7 @@
       dhHaptic('light');
       try { shellScrollTop(); } catch (eS) {}
       if (window.DHSparkGame && DHSparkGame.open) DHSparkGame.open();
-      else dhToast('در حال آماده‌سازی جرقه‌یاب… یک لحظه دیگر امتحان کن.');
+      else dhToast('در حال آماده‌سازی یهویی… یک لحظه دیگر امتحان کن.');
       try { setTimeout(shellScrollTop, 50); setTimeout(shellScrollTop, 200); } catch (eS2) {}
     });
     on('dh-open-stories', function () {
@@ -1427,6 +1440,15 @@
     try { if (tab !== 'home') stopFardiyatTicker(); } catch (e) {}
     try { shellScrollTop(); } catch (eS) {}
 
+    if (tab !== 'spark' && window.DHSparkGame &&
+        typeof DHSparkGame.isOpen === 'function' && DHSparkGame.isOpen()) {
+      DHSparkGame.close();
+    }
+    if (tab === 'spark') {
+      if (window.DHSparkGame && typeof DHSparkGame.open === 'function') DHSparkGame.open();
+      else dhToast('در حال آماده‌سازی یهویی… یک لحظه دیگر امتحان کن.');
+      return;
+    }
     if (tab === 'home') {
       try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}
       window.__dhInJourney = false;
@@ -1535,7 +1557,8 @@
     renderProfile: renderProfile,
     startJourney: startJourneyFromShell,
     openSanjesh: openSanjeshFromShell,
-    setActiveTab: setActiveTab
+    setActiveTab: setActiveTab,
+    restoreSparkTab: restoreSparkTab
   };
 
   if (document.readyState === 'loading') {
