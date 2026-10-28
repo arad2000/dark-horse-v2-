@@ -108,7 +108,7 @@ async function run() {
   assert.match(spark, /padding:16px 14px calc\(100px \+ env\(safe-area-inset-bottom, 0px\)\)/);
   const index = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
   assert.match(index, /shell\.js\?v=91&/);
-  assert.match(index, /spark_game\.js\?v=yehooyi-static-v2&/);
+  assert.match(index, /spark_game\.js\?v=yehooyi-exact-v3&/);
   console.log('Yehooyi navigation: PASS (4 tabs, direct entry, repeat tap, return tab, late response, home/profile/journey, cache-bust)');
 }
 run().catch(err => { console.error(err); process.exitCode = 1; });
