@@ -254,11 +254,11 @@
 
       ctx.fillStyle = '#f0c040';
       ctx.font = '800 38px Vazirmatn, Tahoma, sans-serif';
-      ctx.fillText('✦ اسب سیاه · فرضیه‌های کاوش من', 944, 245);
+      ctx.fillText('✦ اسب سیاه · نقشهٔ فردیت من', 944, 245);
 
       ctx.fillStyle = '#b8b2a4';
       ctx.font = '600 30px Vazirmatn, Tahoma, sans-serif';
-      ctx.fillText('یک گزینه برای بررسی فعالیت‌ها، راهبردها و ارزش‌ها:', 944, 380);
+      ctx.fillText('پیشنهاد هم‌راستا با انگیزه، سبک فکر و ارزش‌های درونی:', 944, 380);
 
       ctx.fillStyle = '#fff8eb';
       ctx.font = '900 68px Vazirmatn, Tahoma, sans-serif';
@@ -297,9 +297,7 @@
       });
 
       ctx.fillStyle = '#9e988a';
-      ctx.font = '800 26px Vazirmatn, Tahoma, sans-serif';
-      ctx.fillText('نقطهٔ آغاز بررسی؛ نه حکم قطعی یا پیش‌بینی رضایت و موفقیت.', 944, 1590);
-      ctx.fillText('درصد همخوانی، احتمال قبولی یا خوشبختی نیست.', 944, 1640);
+      ctx.font = '600 28px Vazirmatn, Tahoma, sans-serif';
       ctx.fillText('asbe-siah.ir · انتخاب مسیر بر اساس فردیت، نه کلیشه', 944, 1710);
 
       var blob = await new Promise(function (resolve) {
@@ -311,7 +309,7 @@
         var file = new File([blob], 'darkhorse-identity.png', { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: 'فرضیه‌های کاوش من در اسب سیاه',
+            title: 'نقشهٔ فردیت من در اسب سیاه',
             text: window.__dhShareText || '',
             files: [file]
           });

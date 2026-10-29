@@ -104,7 +104,7 @@ async function testStartupMarkup() {
   assert.match(indexSource, /pwa-boot\.js\?v=79/);
   assert.match(indexSource, /shell\.css\?v=70&ux=phase4-live-v2(&r=\d+)?" media="print"/);
   assert.match(indexSource, /journey_experience\.css\?v=2" media="print"/);
-  assert.match(indexSource, /journey_experience\.js\?v=2&result-copy=phase0-v1">/);
+  assert.match(indexSource, /journey_experience\.js\?v=2">/);
   assert.match(indexSource, /fonts\/Vazirmatn-Variable\.woff2/);
   assert.doesNotMatch(indexSource, /cdn\.jsdelivr\.net/);
   assert.doesNotMatch(indexSource, /home_update_banner_1405/);
