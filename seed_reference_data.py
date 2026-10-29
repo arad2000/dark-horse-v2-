@@ -70,9 +70,27 @@ LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT = "15ce7c0ad63de857"
 LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT = "e0e81b6b783c1007"
 
 
+def _reject_non_finite_json_constant(token: str) -> Any:
+    """Reject non-standard JSON constants such as NaN and Infinity at every depth."""
+    raise ValueError(f"Non-finite JSON constant {token!r} is not allowed")
+
+
+def _parse_finite_json_float(token: str) -> float:
+    """Reject valid-looking JSON exponents that overflow Python's finite float range."""
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError(f"JSON number {token!r} overflows the finite numeric range")
+    return value
+
+
 def load_json(path: Path) -> Any:
+    """Load strict JSON and reject all non-finite numeric values, including nested metadata."""
     with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        return json.load(
+            f,
+            parse_constant=_reject_non_finite_json_constant,
+            parse_float=_parse_finite_json_float,
+        )
 
 
 def sha256_file(path: Path) -> str:
