@@ -218,7 +218,7 @@ assert.match(
 );
 assert.match(
   indexSource,
-  /src="app\.js\?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2(&r=\d+)?"/,
+  /src="app\.js\?v=72&poles-fix=1&quota-fix=4&copy=grade9-v1&genz=phase2-v1&ux=phase4-live-v2(&r=\d+)?&result-copy=phase0-v1"/,
   'docs/index.html must cache-bust app.js for visual & navigation UX polish'
 );
 assert.match(shellCssSource, /#app \.option\.dh-route-card \.dh-route-motto[\s\S]*?font-size:\s*1\.05rem/, 'Route motto must use teen-readable 1.05rem typography');

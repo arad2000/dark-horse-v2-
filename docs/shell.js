@@ -1090,7 +1090,7 @@
     if (!last || !last.tops || !last.tops.length) {
       return 'دارم با «اسب سیاه» مسیر تحصیلی‌ام را بر اساس جرقه‌های خودم کشف می‌کنم — نه فقط رتبه.\n#اسب‌سیاه #شهررؤیاها';
     }
-    var kind = last.kind === 'branches' ? 'شاخه‌های نزدیک' : 'رشته‌های نزدیک';
+    var kind = last.kind === 'branches' ? 'فرضیه‌های بررسی شاخه‌ها' : 'فرضیه‌های بررسی رشته‌ها';
     var lines = last.tops.slice(0, 3).map(function (t, i) {
       var sc = t.score;
       if (typeof sc === 'number' && sc <= 1) sc = Math.round(sc * 1000) / 10;
@@ -1100,7 +1100,8 @@
     var who = userName ? (userName + ' · ') : '';
     return who + 'از سفر اکتشافی «اسب سیاه» برگشتم.\n' +
       kind + ' من:\n' + lines + '\n\n' +
-      'مسیر را با جرقه‌های خودم دیدم، نه فقط با رتبه.\n' +
+      'این فهرست نقطهٔ آغاز بررسی است، نه حکم قطعی و نه پیش‌بینی رضایت یا موفقیت.\n' +
+      'درصد همخوانی، احتمال قبولی یا خوشبختی نیست.\n' +
       'https://asbe-siah.ir/\n' +
       '#اسب‌سیاه #هدایت_تحصیلی #شهررؤیاها';
   }
@@ -1316,7 +1317,8 @@
       }).join('');
       lastHtml =
         '<div class="dh-last-card">' +
-          '<div class="dh-last-title">آخرین کشف تو</div>' +
+          '<div class="dh-last-title">آخرین فرضیه‌ها برای بررسی</div>' +
+          '<p style="font-weight:700;line-height:1.9;">این فهرست نقطهٔ آغاز بررسی است، نه حکم قطعی و نه پیش‌بینی رضایت یا موفقیت. درصد همخوانی، احتمال قبولی یا خوشبختی نیست.</p>' +
           '<div class="dh-last-meta">' + escape(kindLabel) + (when ? ' · ' + escape(when) : '') +
             (last.sparks ? ' · ' + last.sparks + ' جرقه' : '') + '</div>' +
           rows +

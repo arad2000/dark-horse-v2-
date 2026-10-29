@@ -3346,23 +3346,27 @@ function displayResults(data, type) {
   let html = progressHTML('results') + `
     <div class="dh-stage-head">
       <h2 class="dh-stage-title">${isBranch ? 'نتیجه هدایت تحصیلی' : 'نتیجه انتخاب رشته'}</h2>
-      <p class="dh-stage-hint">این گزارش بر پایهٔ رتبه نیست؛ نقشه‌ای زنده از فعالیت‌ها، راهبردها و ارزش‌هایی است که به تو انرژی می‌دهند.</p>
+      <p class="dh-stage-hint">این گزارش چند فرضیه برای بررسی فعالیت‌ها، راهبردها و ارزش‌ها پیش روی تو می‌گذارد؛ نه تعیین مقصد نهایی.</p>
     </div>
+    <aside class="dh-result-hypothesis-note" role="note" aria-label="معنای نتیجه و درصد همخوانی" style="text-align:right;border:1px solid #f0c040;border-radius:14px;padding:14px;margin:12px 0;color:#f5efe2;line-height:1.9;">
+      <strong style="display:block;">این فهرست نقطهٔ آغاز بررسی است، نه حکم قطعی و نه پیش‌بینی رضایت یا موفقیت.</strong>
+      <strong style="display:block;">درصد همخوانی، احتمال قبولی یا خوشبختی نیست.</strong>
+    </aside>
     <div class="dh-story-id-card" style="--dh-id-a:${sA};--dh-id-b:${sB}">
       <div class="dh-story-id-top">
-        <span class="dh-story-id-brand">✦ کارت هویت فردیت · اسب سیاه</span>
+        <span class="dh-story-id-brand">✦ کارت فرضیه‌های کاوش · اسب سیاه</span>
         <span style="font-size:.76rem;color:#d6d1c4;font-weight:700;">${dhFaNum(state.likedCodes.length)} جرقه</span>
       </div>
-      ${topHeroMatch ? `<div class="dh-story-id-match">هم‌سوترين مسیر با تو: ${escapeHtml(topHeroMatch.name)} (${dhFaNum(Math.round(topHeroMatch.fit_score || 0))}٪)</div>` : `<div class="dh-story-id-match">نقشهٔ انرژی درونی تو</div>`}
+      ${topHeroMatch ? `<div class="dh-story-id-match">گزینهٔ نخست برای بررسی: ${escapeHtml(topHeroMatch.name)} (${dhFaNum(Math.round(topHeroMatch.fit_score || 0))}٪)</div>` : `<div class="dh-story-id-match">نقشهٔ انرژی درونی تو</div>`}
       <div class="dh-story-id-pills">
         ${worldMix.slice(0, 3).map(m => `<span class="dh-story-id-pill" style="border-color:${m.theme.border};color:${m.theme.color};">${escapeHtml(m.theme.title)} · ${dhFaNum(m.pct)}٪</span>`).join('')}
         ${strategyStyle ? `<span class="dh-story-id-pill">سبک فکری: ${escapeHtml(strategyStyle.style)}</span>` : ''}
       </div>
       ${valueStyle ? `<p style="margin:0 0 12px 0;color:#dcd6c8;font-size:.82rem;line-height:1.8;"><strong style="color:#f5d472;">قطب‌های ارزشی کلیدی:</strong> ${escapeHtml(valueStyle.summary)}</p>` : ''}
-      <button type="button" class="dh-story-share-btn" onclick="if(window.dhShareIdentityStoryCard){window.dhShareIdentityStoryCard()}else if(window.dhCopyShare){window.dhCopyShare()}">دانلود یا اشتراک کارت استوری فردیت من</button>
+      <button type="button" class="dh-story-share-btn" onclick="if(window.dhShareIdentityStoryCard){window.dhShareIdentityStoryCard()}else if(window.dhCopyShare){window.dhCopyShare()}">دانلود یا اشتراک کارت فرضیه‌های من</button>
     </div>
 
-    <p style="text-align:center;color:#b8b2a4;font-size:.9rem;margin:12px 0;">بر اساس <strong style="color:#f0c040;">${dhFaNum(state.likedCodes.length)}</strong> خرده‌انگیزه، <strong style="color:#f5efe2;">${dhFaNum(matched.length)}</strong> ${isBranch ? 'شاخه' : 'رشته'} با فردیت تو هم‌راستا هستند:</p>
+    <p style="text-align:center;color:#b8b2a4;font-size:.9rem;margin:12px 0;">بر اساس <strong style="color:#f0c040;">${dhFaNum(state.likedCodes.length)}</strong> خرده‌انگیزه، <strong style="color:#f5efe2;">${dhFaNum(matched.length)}</strong> ${isBranch ? 'شاخه' : 'رشته'} برای بررسی پیشنهاد شده‌اند؛ ${matched.length > 1 ? 'چند محیط و فعالیت برای آزمودن بعدی' : (matched.length === 1 ? 'این پیشنهاد، فرضیه‌ای برای آزمودن است' : 'در این مرحله گزینه‌ای برای آزمودن نداریم')}:</p>
   `;
 
   if (isBranch) {
@@ -3384,7 +3388,7 @@ function displayResults(data, type) {
     if (bestName) {
       html += `
         <div class="dh-result-hero">
-          <p style="color:#f0c040;font-size:1.3rem;font-weight:800;margin-bottom:6px;">بیشترین همخوانی: <span style="color:#f5efe2;font-size:1.45rem;">${escapeHtml(bestName)}</span></p>
+          <p style="color:#f0c040;font-size:1.3rem;font-weight:800;margin-bottom:6px;">گزینهٔ نخست برای بررسی: <span style="color:#f5efe2;font-size:1.45rem;">${escapeHtml(bestName)}</span></p>
           <p style="color:#b8b2a4;font-size:0.88rem;margin:0;">امتیاز همخوانی ${bestScore != null ? dhFaNum(bestScore) + '٪ · ' : ''}نقطهٔ آغاز بررسی آگاهانه است، نه حکم قطعی.</p>
         </div>`;
     }
@@ -3466,14 +3470,14 @@ function displayResults(data, type) {
 
           ${!isBranch && r.archetype ? `
             <div style="background:#131621;border:1px solid rgba(240,192,64,.28);border-radius:12px;padding:13px;margin:12px 0;text-align:right;">
-              <div style="font-size:0.8rem;color:#f0c040;font-weight:700;margin-bottom:4px;">کهن‌الگوی شناختی</div>
+              <div style="font-size:0.8rem;color:#f0c040;font-weight:700;margin-bottom:4px;">فرضیهٔ شناختی برای بررسی</div>
               <div style="font-size:1.08rem;font-weight:800;color:#f5efe2;margin-bottom:4px;">${escapeHtml(r.archetype.archetype || '')}</div>
               ${r.archetype.identity_sentence ? `<div style="font-size:0.86rem;color:#d6d1c4;line-height:1.8;">${escapeHtml(r.archetype.identity_sentence)}</div>` : ''}
             </div>` : ''}
 
           ${!isBranch && r.fulfillment_source ? `
             <div style="background:#131621;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;margin:10px 0;">
-              <div style="color:#f0c040;font-weight:700;font-size:0.82rem;margin-bottom:4px;">منبع رضایت عمیق</div>
+              <div style="color:#f0c040;font-weight:700;font-size:0.82rem;margin-bottom:4px;">تجربهٔ رضایت‌بخش برای بررسی</div>
               <div style="color:#d6d1c4;font-size:0.88rem;line-height:1.85;">${escapeHtml(r.fulfillment_source)}</div>
             </div>` : ''}
 

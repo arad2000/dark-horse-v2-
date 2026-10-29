@@ -353,6 +353,55 @@ async function run() {
   assert.ok(getEl('app').innerHTML.includes('dh-result-card'), 'Result items must have .dh-result-card');
   assert.ok(getEl('app').innerHTML.includes('dh-story-id-card'), 'Results must render Shareable Gen-Z Story Identity Card');
 
+  // Phase zero item 1: copy only; both result kinds and empty states retain the note.
+  const meaning = 'این فهرست نقطهٔ آغاز بررسی است، نه حکم قطعی و نه پیش‌بینی رضایت یا موفقیت.';
+  const percentMeaning = 'درصد همخوانی، احتمال قبولی یا خوشبختی نیست.';
+  const row = (name, score) => ({ name, fit_score: score, raw_components: { m_score: 80, s_score: 50, v_score: 60 } });
+  for (const kind of ['majors', 'branches']) {
+    for (const count of [0, 1, 2]) {
+      const rows = [row('گزینه آزمایشی دوم', 70), row('گزینه آزمایشی اول', 88)].slice(0, count);
+      const payload = kind === 'majors' ? { discovered_majors: rows } : { recommended_branches: rows };
+      const original = JSON.stringify(payload);
+      sandbox.displayResults(payload, kind);
+      const markup = getEl('app').innerHTML;
+      const note = markup.match(/<aside class="dh-result-hypothesis-note"[\s\S]*?<\/aside>/);
+      assert.ok(note, `${kind}/${count}: permanent meaning block`);
+      assert.ok(note[0].includes('<strong style="display:block;">' + meaning + '</strong>'));
+      assert.ok(note[0].includes('<strong style="display:block;">' + percentMeaning + '</strong>'));
+      assert.ok(markup.indexOf(note[0]) < markup.indexOf('class="dh-story-id-card"'), 'Meaning must precede the top match/score');
+      assert.ok(!/هم‌سوترين مسیر با تو|رشتهٔ تو این است|برای تو ساخته شده/.test(markup));
+      if (count > 1) assert.ok(markup.includes('چند محیط و فعالیت برای آزمودن بعدی'));
+      if (count) assert.ok(markup.includes('گزینهٔ نخست برای بررسی:'));
+      assert.equal(JSON.stringify(payload), original, 'Copy must not mutate API score data');
+    }
+  }
+  const shellCopySource = fs.readFileSync(path.join(root, 'docs/shell.js'), 'utf8');
+  const shareSource = shellCopySource.match(/  function buildShareText\([^]*?\n  }/)[0];
+  const shareText = vm.runInNewContext('(' + shareSource + ')')({ kind: 'majors', tops: [{ name: 'گزینه آزمایشی', score: 88 }] });
+  assert.ok(shareText.includes(meaning) && shareText.includes(percentMeaning), 'Shared text keeps the result limitations');
+  const drawn = [];
+  const createElement = sandbox.document.createElement;
+  sandbox.document.createElement = function (tag) {
+    if (tag !== 'canvas') return createElement.call(this, tag);
+    return { getContext() { return {
+      createLinearGradient() { return { addColorStop() {} }; },
+      createRadialGradient() { return { addColorStop() {} }; },
+      fillRect() {}, strokeRect() {}, measureText(text) { return { width: text.length * 15 }; },
+      fillText(text) { drawn.push(text); }
+    }; }, toBlob(resolve) { resolve(null); }, toDataURL() { return 'data:image/png;base64,'; } };
+  };
+  await sandbox.dhShareIdentityStoryCard();
+  sandbox.document.createElement = createElement;
+  assert.ok(drawn.some(text => text.includes('نه حکم قطعی یا پیش‌بینی رضایت و موفقیت')),
+    'Exported story image must include the hypothesis limitation');
+  assert.ok(drawn.includes(percentMeaning), 'Exported image must explain the percentage');
+  const indexCopy = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
+  for (const asset of ['app', 'shell', 'journey_experience']) {
+    assert.match(indexCopy, new RegExp('src="' + asset + '\\.js\\?[^" ]*&result-copy=phase0-v1"'));
+  }
+  // Restore the real fixture before the existing Home/resume regression.
+  sandbox.displayResults(sandbox.state.majorsResult, 'majors');
+
   sandbox.dhGoHomeKeepPlace();
   assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
     'Home must omit active-page banner even after viewing Results');
