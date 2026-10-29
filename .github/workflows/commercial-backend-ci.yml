@@ -84,6 +84,9 @@ jobs:
       - name: Finite scoring reference startup contracts
         run: python -m unittest -v test_reference_finite_startup.py
 
+      - name: Strict seed JSON parsing contracts
+        run: python -m unittest -v test_seed_reference_json.py
+
       - name: Reference-data integrity
         run: python test_reference_data_integrity.py
 
