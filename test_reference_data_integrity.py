@@ -233,49 +233,25 @@ def _catalog_fingerprint(major_json_text, marker_id=195):
         value = (value * prime) & mask
     return f"{value:016x}"
 
-def _assert_historical_catalog_fingerprint(label: str, actual: str, expected: str) -> None:
-    """Keep baseline guards fail-closed and make drift actionable in CI logs."""
-    if actual != expected:
-        raise AssertionError(
-            f"{label} historical catalog fingerprint mismatch: "
-            f"expected={expected}, actual={actual}. "
-            "This is a real catalog-drift gate, not a value to refresh mechanically. "
-            "Do not change the expected fingerprint only to make CI green; "
-            "identify the changed fields and obtain the required domain approval first."
-        )
-
-
 def test_wave_c_preserves_entire_existing_catalog_1_to_194():
     majors = load_json("majors_database_v2.json")
     assert len([item for item in majors if 1 <= int(item["id"]) <= 194]) == 194
     catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
-    _assert_historical_catalog_fingerprint(
-        "Wave C (IDs 1..194)",
-        _catalog_fingerprint(catalog_text),
-        BASELINE_MAJOR_1_194_FINGERPRINT,
-    )
+    assert _catalog_fingerprint(catalog_text) == BASELINE_MAJOR_1_194_FINGERPRINT
 
 
 def test_wave_d_preserves_entire_existing_catalog_1_to_204():
     majors = load_json("majors_database_v2.json")
     assert len([item for item in majors if 1 <= int(item["id"]) <= 204]) == 204
     catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
-    _assert_historical_catalog_fingerprint(
-        "Wave D (IDs 1..204)",
-        _catalog_fingerprint(catalog_text, marker_id=205),
-        BASELINE_MAJOR_1_204_FINGERPRINT,
-    )
+    assert _catalog_fingerprint(catalog_text, marker_id=205) == BASELINE_MAJOR_1_204_FINGERPRINT
 
 
 def test_wave_e_preserves_entire_existing_catalog_1_to_215():
     majors = load_json("majors_database_v2.json")
     assert len([item for item in majors if 1 <= int(item["id"]) <= 215]) == 215
     catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
-    _assert_historical_catalog_fingerprint(
-        "Wave E (IDs 1..215)",
-        _catalog_fingerprint(catalog_text, marker_id=216),
-        BASELINE_MAJOR_1_215_FINGERPRINT,
-    )
+    assert _catalog_fingerprint(catalog_text, marker_id=216) == BASELINE_MAJOR_1_215_FINGERPRINT
 
 
 def test_wave_e_deferred_catalog_contract():
