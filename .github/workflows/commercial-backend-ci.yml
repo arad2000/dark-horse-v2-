@@ -103,3 +103,77 @@ jobs:
 
       - name: API security contract
         run: node tests/test_security_contracts.js
+
+  # Independent diagnostic lane: run regressions that are otherwise skipped when
+  # the reference-integrity gate fails. The original backend job stays required
+  # and red on any gate failure; this job only improves fault isolation.
+  downstream-contracts:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: darkhorse_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d darkhorse_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/darkhorse_ci
+      APP_ENV: staging
+      POSTGRES_RUNTIME_CUTOVER_APPROVED: "false"
+      DARK_HORSE_SHADOW_PERSISTENCE: "false"
+      BILLING_PROVIDER: mock
+      OTP_PROVIDER: mock
+      ALLOW_RUNTIME_SCHEMA_BOOTSTRAP: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime and test dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt pytest
+
+      - name: Compile Python sources
+        run: python -m compileall -q .
+
+      - name: Apply isolated PostgreSQL schema
+        run: alembic upgrade head
+
+      - name: Save-result API contract
+        run: python -m pytest -q test_save_result_contract.py
+
+      - name: Record capacity direct tests
+        run: python -m pytest -q test_admission_capacity_record.py
+
+      - name: API smoke contracts
+        run: >-
+          python -m pytest -q
+          test_main_api_contract.py
+          test_commercial_api.py
+          test_admission_chance_api.py
+          test_billing_api.py
+          test_billing_credits.py
+          test_billing_models.py
+          test_p0_quota_consumption.py
+          test_password_reset_contract.py
+
+      - name: Setup Node.js for API security contract
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: API security contract
+        run: node tests/test_security_contracts.js
