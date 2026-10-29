@@ -280,6 +280,18 @@ def major_catalog_1_215_fingerprint(major_json_text: str) -> str:
     return f"{value:016x}"
 
 
+def require_historical_catalog_fingerprint(label: str, actual: str, expected: str) -> None:
+    """Keep historical seed guards blocking while exposing useful CI diagnostics."""
+    if actual != expected:
+        raise ValueError(
+            f"{label} historical catalog fingerprint mismatch: "
+            f"expected={expected}, actual={actual}. "
+            "This is a real catalog-drift gate, not a value to refresh mechanically. "
+            "Do not change the expected fingerprint only to make CI green; "
+            "identify changed fields and obtain required domain approval first."
+        )
+
+
 def require_no_duplicate(values: list[str], label: str) -> None:
     seen: set[str] = set()
     duplicates: list[str] = []
@@ -377,12 +389,21 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     require_no_duplicate(major_names, "major names")
     major_json_text = majors_path.read_text(encoding="utf-8")
     fingerprint_source_text = f1_staging_aware_baseline_text(major_json_text)
-    if major_catalog_fingerprint(fingerprint_source_text) != MAJOR_1_194_CATALOG_FINGERPRINT:
-        raise ValueError("Wave C baseline 1..194 changed outside the explicit F1 activation fields")
-    if major_catalog_1_204_fingerprint(fingerprint_source_text) != MAJOR_1_204_CATALOG_FINGERPRINT:
-        raise ValueError("Wave D baseline 1..204 changed outside the explicit F1 activation fields")
-    if major_catalog_1_215_fingerprint(fingerprint_source_text) != MAJOR_1_215_CATALOG_FINGERPRINT:
-        raise ValueError("Wave E baseline 1..215 changed outside the explicit F1 activation fields")
+    require_historical_catalog_fingerprint(
+        "Wave C baseline (IDs 1..194)",
+        major_catalog_fingerprint(fingerprint_source_text),
+        MAJOR_1_194_CATALOG_FINGERPRINT,
+    )
+    require_historical_catalog_fingerprint(
+        "Wave D baseline (IDs 1..204)",
+        major_catalog_1_204_fingerprint(fingerprint_source_text),
+        MAJOR_1_204_CATALOG_FINGERPRINT,
+    )
+    require_historical_catalog_fingerprint(
+        "Wave E baseline (IDs 1..215)",
+        major_catalog_1_215_fingerprint(fingerprint_source_text),
+        MAJOR_1_215_CATALOG_FINGERPRINT,
+    )
 
     wave_a_records = [
         item for item in major_records
