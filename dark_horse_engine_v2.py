@@ -125,8 +125,22 @@ class DarkHorseEngineV2:
         reference_path = Path(path)
         if not reference_path.is_file():
             raise FileNotFoundError(f"Required reference file not found: {reference_path}")
+
+        def reject_non_finite(raw):
+            raise ValueError(f"Required reference {reference_path} contains non-finite number {raw}.")
+
+        def parse_finite_float(raw):
+            value = float(raw)
+            if not isfinite(value):
+                reject_non_finite(raw)
+            return value
+
         with reference_path.open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
+            # The default decoder accepts NaN/Infinity, even in unused metadata.
+            # Check exponent overflow too (e.g. 1e999), not only JSON constants.
+            data = json.load(
+                fh, parse_constant=reject_non_finite, parse_float=parse_finite_float
+            )
 
         if not isinstance(data, list) or not data:
             raise ValueError(f"Required reference {reference_path} must be a non-empty JSON array.")
@@ -177,18 +191,46 @@ class DarkHorseEngineV2:
                 f"موارد گم‌شده: {sorted(missing) or '—'} | موارد اضافه: {sorted(extra) or '—'}"
             )
 
-        bad_rows = 0
+        def finite_number(value):
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                return False
+            try:
+                return isfinite(value)
+            except OverflowError:
+                return False
+
+        expected_value_keys = {
+            f"Q{i}{side}" for i in range(1, 16) for side in ("A", "B")
+        }
         stub_count = 0
         for major_id, major_data in self.majors_db.items():
-            if major_data.get("motive_driven") is False:
+            if major_data.get("motive_driven") is not True:
                 stub_count += 1
                 continue
-            sw = major_data.get("strategy_weights", [])
-            if len(sw) != 25:
-                bad_rows += 1
-                logger.warning(
-                    f"⚠️ رشته/شاخه فعال '{major_data.get('name', major_id)}' به‌جای ۲۵ سطر strategy_weights، "
-                    f"{len(sw)} سطر دارد — احتمال جابه‌جایی نگاشت با trait_map."
+            sw = major_data.get("strategy_weights")
+            if (
+                not isinstance(sw, list)
+                or len(sw) != 25
+                or any(
+                    not isinstance(row, list)
+                    or len(row) != 5
+                    or any(not finite_number(value) or not 0 <= value <= 1 for value in row)
+                    for row in sw
+                )
+            ):
+                raise ValueError(
+                    f"Active major {major_id!r}: strategy_weights must be exactly "
+                    "25x5 finite numbers in [0,1]."
+                )
+            vw = major_data.get("value_weights")
+            if (
+                not isinstance(vw, dict)
+                or set(vw) != expected_value_keys
+                or any(not finite_number(value) for value in vw.values())
+            ):
+                raise ValueError(
+                    f"Active major {major_id!r}: value_weights must contain exactly "
+                    "30 finite numeric poles Q1A..Q15B."
                 )
 
         active_count = len(self.majors_db) - stub_count
