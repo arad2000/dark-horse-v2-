@@ -3390,6 +3390,17 @@ function displayResults(data, type) {
     }
   }
 
+  // Static next step for the first displayed result; no new analysis/API request.
+  if (matched.length > 0) {
+    html += `
+      <section class="card dh-surface-card dh-next-small-step" aria-label="قدم بعدی (آزمایش کوچک)" style="text-align:right;padding:16px;margin:16px 0;line-height:1.9;">
+        <h3 style="color:#f5d472;font-size:1.05rem;margin:0 0 8px;">قدم بعدی (آزمایش کوچک)</h3>
+        <p style="margin:0 0 8px;color:#f5efe2;">برای بررسی «${escapeHtml(matched[0].name)}»، می‌توانی یک گفتگوی حدود ۲۰ دقیقه‌ای با کسی که در این فضا کار یا درس می‌خواند داشته باشی؛ از او دربارهٔ یک روز واقعی و فعالیت‌های روزمره‌اش بپرس.</p>
+        <p style="margin:0 0 8px;color:#d6d1c4;">بعد از گفتگو از خودت بپرس: کدام جرقه‌ای که در سفر انتخاب کردی آنجا زنده شد؟</p>
+        <p style="margin:0;color:#b8b2a4;font-size:.86rem;">این یک آزمایش کوچک برای بررسی پیشنهاد است، نه تکلیف و نه تضمین موفقیت.</p>
+      </section>`;
+  }
+
   if (matched.length === 0) {
     html += `<div class="card dh-surface-card" style="text-align:center;"><p style="color:#d6d1c4;margin:0;">با خرده‌انگیزه‌های انتخاب‌شده، هیچ ${isBranch ? 'شاخه‌ای' : 'رشته‌ای'} به آستانهٔ ۳۰٪ نرسیده است.</p></div>`;
   } else {

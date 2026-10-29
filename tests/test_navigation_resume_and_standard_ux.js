@@ -353,6 +353,37 @@ async function run() {
   assert.ok(getEl('app').innerHTML.includes('dh-result-card'), 'Result items must have .dh-result-card');
   assert.ok(getEl('app').innerHTML.includes('dh-story-id-card'), 'Results must render Shareable Gen-Z Story Identity Card');
 
+  // Phase zero item 3 only: a static, optional real-world step for rank one.
+  for (const kind of ['majors', 'branches']) {
+    for (const count of [0, 1, 2]) {
+      const rows = [
+        { name: 'گزینه دوم', fit_score: 70, raw_components: { m_score: 80 } },
+        { name: 'گزینه اول <نمونه>', fit_score: 88, raw_components: { m_score: 80 } }
+      ].slice(0, count);
+      const payload = kind === 'majors' ? { discovered_majors: rows } : { recommended_branches: rows };
+      const before = JSON.stringify(payload);
+      sandbox.displayResults(payload, kind);
+      const markup = getEl('app').innerHTML;
+      const cards = markup.match(/<section class="card dh-surface-card dh-next-small-step"[^]*?<\/section>/g) || [];
+      assert.equal(cards.length, count ? 1 : 0, 'Only rank one gets a step; empty results get none');
+      assert.equal(JSON.stringify(payload), before, 'No changes to result scores or API data');
+      if (count) {
+        const name = count === 1 ? 'گزینه دوم' : 'گزینه اول &lt;نمونه&gt;';
+        assert.ok(cards[0].includes(name), 'Use the escaped name of the top sorted result');
+        assert.ok(cards[0].includes('۲۰ دقیقه‌ای') && cards[0].includes('فعالیت‌های روزمره'));
+        assert.ok(cards[0].includes('نه تکلیف و نه تضمین موفقیت'));
+        assert.ok(!/onclick=|fetch|خرید|اعتبار|رشتهٔ تو این است/.test(cards[0]));
+        assert.ok(markup.indexOf(cards[0]) < markup.indexOf('data-dh-result-item="1"'), 'Step precedes crowded result actions');
+        assert.ok(markup.includes('توضیح مشاوره‌ای این') && markup.includes('بررسی مسیرهای جایگزین این'));
+        assert.ok(markup.includes(count === 1 ? '۷۰٪ همخوانی' : '۸۸٪ همخوانی'), 'Scores remain unchanged');
+      }
+      assert.ok(!markup.includes('dh-result-hypothesis-note'), 'Item 1 is not part of this PR');
+    }
+  }
+  const indexCopy = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
+  assert.ok(indexCopy.includes('&next-step=phase0-item3-v1'));
+  sandbox.displayResults(sandbox.state.majorsResult, 'majors');
+
   sandbox.dhGoHomeKeepPlace();
   assert.ok(!getEl('app').innerHTML.includes('dh-active-place-banner'),
     'Home must omit active-page banner even after viewing Results');
