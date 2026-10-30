@@ -166,6 +166,18 @@ PR #321 در وضعیت فعلی مبنای اجرای این قرارداد ن�
 5. پس از تکمیل اسناد و مجوز فنی، پیاده‌سازی gateها در PRهای مستقل و اتمیک.
 6. هر تغییر داده، وزن یا baseline فقط با evidence، validatorهای همان snapshot، تأیید مستقل و دستور/مجوز مستقل انجام شود.
 
+## 11. اسناد اجراییِ وابسته به این رجیستری
+
+این اسناد در PRهای جداگانه روی همان snapshot پایه تهیه شده‌اند و تا تأیید/ادغام مستقل، منابع در حال بازبینی هستند:
+
+| PR | سند | نقش | وضعیت |
+|---|---|---|---|
+| [#326](https://github.com/arad2000/dark-horse-v2-/pull/326) | `docs/weight-review/SYSTEM_ALIGNMENT_WAVE0_AUDIT.md` | ممیزی تقدم اسناد، شکاف‌های fingerprint و ثبت تصمیم‌های ناظر | Draft |
+| [#328](https://github.com/arad2000/dark-horse-v2-/pull/328) | `docs/governance/REFERENCE_FIELD_CONSUMER_MAP.md` | نقشهٔ فیلد ← consumer/call-site ← domain و تمایز مصرف runtime از persistence/provenance | Draft |
+| [#329](https://github.com/arad2000/dark-horse-v2-/pull/329) | `docs/governance/FOUR_DOMAIN_VALIDATION_CONTRACT.md` | قرارداد status مستقل و mutation/negative tests برای چهار دامنه | Draft |
+
+**قاعدهٔ هم‌مرج:** این PRها عمداً مستقل هستند. رجیستری #327 بدون ادغام نقشهٔ #328 و قرارداد #329 می‌تواند به‌عنوان مرجعیت اسناد نگهداری شود، اما فعال‌سازی گیت اجرایی چهار دامنه تا تثبیت field map و قرارداد تست مجاز نیست. هیچ PR را فقط به‌دلیل وابستگی موضوعی به‌صورت خودکار merge یا از Draft خارج نکنید.
+
 ## 11. خط قرمزهای این رجیستری
 
 - هیچ JSON، وزن S/V، فرمول Total، engine، workflow، fingerprint expected، env، DB، تنظیم Liara، پرداخت، Hybrid یا cutover با این سند تغییر نمی‌کند.
