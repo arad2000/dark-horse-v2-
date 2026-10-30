@@ -24,6 +24,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import engine
+from reference_fingerprints import (
+    EXPECTED_MEMBERSHIP_FINGERPRINTS,
+    EXPECTED_SCIENTIFIC_FINGERPRINTS,
+    membership_fingerprint,
+    scientific_fingerprint,
+)
 from models import (
     Major,
     MicroMotive,
@@ -374,6 +380,7 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     branches_path = base / "school_branches_v2.json"
     values_path = base / "value_poles_v2.json"
     trait_path = base / "docs/data/trait_map_v3.json"
+    questions_path = base / "docs/data/questions_v2.json"
     source_paths = (motives_path, majors_path, branches_path, values_path, trait_path)
 
     for path in source_paths:
@@ -405,23 +412,74 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
         for item in major_records
     ]
     require_no_duplicate(major_names, "major names")
+    # Questions define the meaning/order of positional strategy answers, so they
+    # are included in the scientific projection even though the seed does not
+    # create a database table for them. Keep the #320 strict JSON loader.
+    if not questions_path.exists():
+        raise FileNotFoundError(questions_path)
+    questions_payload = load_json(questions_path)
+
+    scientific_actuals = {
+        end: scientific_fingerprint(
+            major_records, branch_records, motive_records, questions_payload,
+            max_major_id=end,
+        )
+        for end in EXPECTED_SCIENTIFIC_FINGERPRINTS
+    }
+    membership_actuals = {
+        end: membership_fingerprint(
+            major_records, branch_records, max_major_id=end,
+        )
+        for end in EXPECTED_MEMBERSHIP_FINGERPRINTS
+    }
+    scientific_mismatches = {
+        end: {"expected": EXPECTED_SCIENTIFIC_FINGERPRINTS[end], "actual": actual}
+        for end, actual in scientific_actuals.items()
+        if actual != EXPECTED_SCIENTIFIC_FINGERPRINTS[end]
+    }
+    membership_mismatches = {
+        end: {"expected": EXPECTED_MEMBERSHIP_FINGERPRINTS[end], "actual": actual}
+        for end, actual in membership_actuals.items()
+        if actual != EXPECTED_MEMBERSHIP_FINGERPRINTS[end]
+    }
+    if scientific_mismatches:
+        raise ValueError(
+            "Scientific reference fingerprint mismatch before seed; "
+            f"scientific={scientific_mismatches}; membership={membership_mismatches}"
+        )
+    if membership_mismatches:
+        raise ValueError(
+            "Membership reference fingerprint mismatch before seed; "
+            f"membership={membership_mismatches}; scientific={scientific_actuals}"
+        )
+
+    # Reproduce the retired mixed fingerprints for the seed report only. This
+    # diagnostic intentionally mirrors the historical normalizer; it is not a
+    # pass/fail gate and never feeds either new projection.
     major_json_text = majors_path.read_text(encoding="utf-8")
-    fingerprint_source_text = f1_staging_aware_baseline_text(major_json_text)
-    require_historical_catalog_fingerprint(
-        "Wave C baseline (IDs 1..194)",
-        major_catalog_fingerprint(fingerprint_source_text),
-        MAJOR_1_194_CATALOG_FINGERPRINT,
-    )
-    require_historical_catalog_fingerprint(
-        "Wave D baseline (IDs 1..204)",
-        major_catalog_1_204_fingerprint(fingerprint_source_text),
-        MAJOR_1_204_CATALOG_FINGERPRINT,
-    )
-    require_historical_catalog_fingerprint(
-        "Wave E baseline (IDs 1..215)",
-        major_catalog_1_215_fingerprint(fingerprint_source_text),
-        MAJOR_1_215_CATALOG_FINGERPRINT,
-    )
+    legacy_source_text = f1_staging_aware_baseline_text(major_json_text)
+    legacy_fingerprints = {
+        "mixed_1_194": {
+            "expected": MAJOR_1_194_CATALOG_FINGERPRINT,
+            "actual": major_catalog_fingerprint(legacy_source_text),
+        },
+        "mixed_1_204": {
+            "expected": MAJOR_1_204_CATALOG_FINGERPRINT,
+            "actual": major_catalog_1_204_fingerprint(legacy_source_text),
+        },
+        "mixed_1_215": {
+            "expected": MAJOR_1_215_CATALOG_FINGERPRINT,
+            "actual": major_catalog_1_215_fingerprint(legacy_source_text),
+        },
+        "legacy_major_name_weight": {
+            "expected": LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT,
+            "actual": legacy_major_name_weight_fingerprint(major_records),
+        },
+        "legacy_major_full_weight": {
+            "expected": LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT,
+            "actual": legacy_major_full_weight_fingerprint(major_records),
+        },
+    }
 
     wave_a_records = [
         item for item in major_records
@@ -716,10 +774,9 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
     legacy_major_records = [item for item in major_records if 1 <= int(item.get("id")) <= 160]
     if len(legacy_major_records) != 160:
         raise ValueError("Legacy major set must contain exactly 160 rows")
-    if legacy_major_name_weight_fingerprint(major_records) != LEGACY_MAJOR_NAME_WEIGHT_FINGERPRINT:
-        raise ValueError("Legacy 1..160 name/weights_version fingerprint changed")
-    if legacy_major_full_weight_fingerprint(major_records) != LEGACY_MAJOR_FULL_WEIGHT_FINGERPRINT:
-        raise ValueError("Legacy 1..160 strategy/value/name/weights fingerprint changed")
+    # Name is membership/catalog; weights_version and scoring weights are
+    # scientific. Their old combined fingerprints remain diagnostics above,
+    # while the independent projections are the active guards.
 
     value_codes = [item["pole_code"] for item in value_records]
     require_no_duplicate(value_codes, "value pole codes")
@@ -883,8 +940,14 @@ def seed_reference_data(db: Session, base: Path) -> dict[str, Any]:
             "branch_micro_motive_links": branch_links,
         },
         "source_sha256": {
-            str(path.relative_to(base)): sha256_file(path) for path in source_paths
+            str(path.relative_to(base)): sha256_file(path)
+            for path in (*source_paths, questions_path)
         },
+        "fingerprints": {
+            "scientific": {str(end): value for end, value in scientific_actuals.items()},
+            "membership": {str(end): value for end, value in membership_actuals.items()},
+        },
+        "legacy_fingerprint_audit": legacy_fingerprints,
     }
 
 
