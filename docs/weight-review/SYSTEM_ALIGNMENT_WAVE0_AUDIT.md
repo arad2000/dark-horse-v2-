@@ -289,9 +289,9 @@ PR [#305](https://github.com/arad2000/dark-horse-v2-/pull/305) فایل `school_
 | GOV-01 | تصویب DH-013 کلان به‌عنوان مرجع حاکم | DH-013 نسخهٔ 13.0 در main (commit a3631ac41a50abc71d682edf780b5dd420807de8) مرجع بالادستی اصول، مراحل و دروازه‌های علمی باشد؛ مکمل تخصصی وزن‌دهی و استاندارد نگارش فقط در دامنهٔ خود زیرمجموعهٔ آن باشند. DH-013 به‌صورت خودکار از main به deploy کپی نمی‌شود؛ نسخهٔ مصوب و اتصال رجیستری باید در PR مستنداتی جداگانه تثبیت شود. | پیشنهاد؛ نیازمند تأیید صریح ناظر |
 | GOV-02 | قاعدهٔ confidence کمتر از 0.7 | طبق تصریح ناظر: میانگین وزنی همسایه‌ها در confidence کمتر از 0.7 **مکمل و تعدیل‌کننده** است؛ شواهد همان رشته مبنای اصلی می‌ماند و صرف پایین‌بودن confidence، freeze خودکار ایجاد نمی‌کند. همسایه‌ها و اثرشان باید ثبت شوند. فرمول/ضریب عددی ترکیب هنوز در DH-013 تعریف نشده و پیش از اتوماسیون باید نسخه‌دار و بازتولیدپذیر شود. | **تأیید صریح ناظر در گفتگو؛ فرمول عددی هنوز باز** |
 | GOV-03 | تصویب استاندارد نگارش #285 | دامنهٔ #285 مناسبِ استاندارد محتوایی مکمل است: جملهٔ میکرو و واقع‌نما، حوزهٔ روشن در خود جمله، یک هستهٔ انگیزشی، تمایز با نزدیک‌ترین متن‌ها، عدم کلیشه‌سازی و دو بازبین مستقل. متن فعلی Draft است و review ثبت‌شده ندارد؛ تا تکمیل دو بازبینی و تثبیت نسخه، نباید آن را gate مصوب CI یا مجوز وزن‌دهی تلقی کرد. | پذیرش مشروط پیشنهاد می‌شود؛ تصویب نهایی منوط به دو review مستقل |
-| GOV-04 | تفکیک مالکیت main/deploy و scientific/membership | اصل تفکیک داده‌های مشترک از داده‌های runtime-owned و fingerprint علمی از membership پذیرفتنی است. در deploy فعلی، reference_fingerprints.py بالفعل هر دو projection علمی و membership را دارد و تست‌های مستقل/Mutation نیز موجودند؛ این قابلیت را نباید به #321 نسبت داد. #321 فقط guard برابری سه فایل shared و parse سخت‌گیرانهٔ فایل‌های runtime-owned را اضافه می‌کند. اما فهرست آن، مسیر ریشهٔ micro_motives.json را که موتور به‌طور پیش‌فرض می‌خواند پوشش نمی‌دهد؛ باید هر دو مسیر پوشش داده یا هم‌ارزی آن‌ها assert شود. #321 همچنین workflow مربوط به Hybrid Migration Audit را تغییر می‌دهد و base آن قدیمی است؛ بنابراین #321 به شکل فعلی آمادهٔ Merge نیست. | اصل معماری پیشنهاد می‌شود؛ #321 به همین شکل رد/متوقف تا اصلاح و بازبینی روی base تازه |
+| GOV-04 | تفکیک مالکیت main/deploy و scientific/membership | اصل تفکیک ورودی‌های shared از runtime-owned و fingerprint علمی از membership پذیرفتنی است، اما «وجود دو تابع hash» به‌تنهایی قرارداد کامل نیست. در deploy فعلی، `reference_fingerprints.py` هر دو projection را دارد؛ #321 فقط shared-byte guard و strict-JSON/existence برای runtime-ownedها اضافه می‌کند و خودش fingerprint اجرا نمی‌کند. `micro_motives.json` ریشه که موتور به‌طور پیش‌فرض مصرف می‌کند در فهرست #321 نیست؛ باید root و `docs/data/micro_motives.json` پوشش داده یا هم‌ارزی آن‌ها در همان commit assert شود. #321 workflow Hybrid Migration Audit را هم تغییر می‌دهد و base آن قدیمی است؛ #321 به شکل فعلی آمادهٔ Merge نیست. expectedهای فعلی نیز rangeهای 194/204/215 و `FINGERPRINT_BASE_COMMIT=02f40f...` دارند، درحالی‌که snapshot پایهٔ این ممیزی `a743ab8...` است؛ refresh هیچ baseline بدون forensic و مجوز مجاز نیست. | تفکیک معماری تأیید کارشناسی می‌شود؛ قرارداد فیلدها و baselineها هنوز نیازمند ممیزی و تصمیم مستقل؛ #321 به همین شکل متوقف تا بازطراحی اتمیک روی base تازه |
 | GOV-05 | سیاست blocking بودن membership fingerprint | هر membership mismatch، حتی اگر scientific fingerprint بدون تغییر و PASS باشد، باید در CI یک FAIL مستقل و مسدودکننده ایجاد کند؛ PASS علمی، FAIL عضویت را جبران نکند و PASS عضویت نیز تغییر علمی را نپوشاند. تنها استثنا، تغییر عضویت دارای Decision Record نسخه‌دار، شناسه‌ها و مقدار قبل/بعد، منبع و توجیه آموزشی/داده‌ای، اثر مصرف‌کنندگان، شواهد بازبینی، و تأیید صریح ناظر است؛ مجازشدن استثنا باید در PR جداگانه و با baseline کنترل‌شده انجام شود. تست‌های mutation باید ثابت کنند تغییر صرفاً membership گیت عضویت را می‌شکند و تغییر صرفاً علمی گیت علمی را. | **تأیید صریح ناظر در گفتگو؛ اجرای فنی هنوز انجام نشده** |
-| GOV-06 | محدودهٔ presentation/content fingerprint | پیشنهاد می‌شود لایهٔ محتوایی/نمایشی از دو fingerprint علمی و membership جدا باشد؛ اما «presentation» نباید سطل عمومی برای حذف تغییرات مهم باشد. متن خرده‌انگیزه‌ها (description_fa) باید جداگانه به‌عنوان محتوای evidence نسخه‌دار و قابل ردیابی باشد؛ نام/توضیح/برچسب‌های خروجی و فیلدهای UI نیز فقط پس از نقشه‌برداری مصرف‌کننده‌ها طبقه‌بندی شوند. فیلدهای مبهم مانند group/cluster/subgroup تا اثبات مصرف واقعی نباید خودکار در membership یا presentation قرار گیرند. | پیشنهاد؛ نیازمند field mapping و تأیید صریح ناظر |
+| GOV-06 | fingerprint محتوای شواهد و محتوای تفسیری/نمایشی | یک fingerprint سومِ یکپارچه کافی نیست مگر projection آن زیرلایه‌های مستقل داشته باشد. پیشنهاد چهار دامنهٔ قابل گزارش: (الف) scientific/scoring؛ (ب) membership/guidance؛ (ج) evidence-content برای متن کامل `micro_motives.description_fa` با کلید کد و نسخه؛ (د) interpretation/presentation برای متن سؤال‌ها/گزینه‌های ارزشی، برچسب‌های `value_poles`، نگاشت/توضیحات `trait_map` و فیلدهای نمایشی major مثل `name/archetype/fulfillment_source/prestige_level` پس از اثبات call-site. متن خرده‌انگیزه شاهد مبنای علمی وزن است، پس تغییر آن—even با وزن ثابت—باید بازبینی علمی و ثبت provenance را فعال کند؛ ولی نباید وانمود شود خودِ عدد وزن عوض شده است. داده‌های shared فعلی علاوه بر هر fingerprint، قرارداد تطبیق byte با مصرف‌کننده‌های main را حفظ می‌کنند. | پیشنهاد دقیق؛ نیازمند تأیید ناظر و field mapping کامل پیش از پیاده‌سازی |
 | GOV-07 | جایگاه اسکریپت‌های اعتبارسنجی در حاکمیت | طبق تصریح ناظر، رجیستری validatorها باید بخشی از حاکمیت اسناد و داده باشد. نسخه/commit، ورودی و SHA داده، دامنه، exit semantics، محدودیت‌ها و مدرک اجرای هر ابزار باید ثبت شود. validate_integrity.py گیت ساختاری/ارجاعی مسدودکننده است، مشروط به رفع مشکل NaN در ماتریس S؛ global_separation_test.py گزارش تشخیصی است و Pearson thresholds آن به‌تنهایی gate رد نیست. | **تأیید صریح ناظر در گفتگو؛ پیاده‌سازی/انتقال ابزارها نیازمند مجوز جداگانه** |
 
 #### جمع‌بندی شواهد برای GOV-01 و GOV-03 تا GOV-06
@@ -303,6 +303,39 @@ PR [#305](https://github.com/arad2000/dark-horse-v2-/pull/305) فایل `school_
 - **GOV-06:** #322 جدول سه، موارد مبهم group/cluster/subgroup، name/archetype/fulfillment_source/prestige_level، متن micro_motives.description_fa، واژگان value_poles و trait_map را به‌درستی جدا از projection علمی/عضویتِ فعلی مسئله‌گذاری می‌کند. اما هنوز مصرف‌کننده و owner تک‌تک فیلدها کامل تعیین نشده است؛ بنابراین ساخت fingerprint سوم قبل از field mapping می‌تواند هم پوشش ناقص بدهد و هم metadata را اشتباه طبقه‌بندی کند. پیشنهاد: اول field map و owner، بعد projection مستقل content/presentation و mutation tests.
 
 **وضعیت بازبینی PRها در زمان این ثبت:** #285، #321 و #322 هر سه Draft و بدون review ثبت‌شده‌اند؛ #321 و #322 نیز base قدیمی دارند. این وضعیت دلیل کافی برای توقف Merge آن‌ها به همین شکل است، نه دلیل حذف یا بی‌اعتبارکردن محتوای پیشنهادی‌شان.
+
+### ۱۲.۷. ممیزی دقیق projectionهای fingerprint موجود و شکاف محتوایی
+
+این بخش از روی فایل اجرایی `reference_fingerprints.py` و تست mutation روی deploy، نه از روی نام‌گذاری PRها، استخراج شده است. وضعیت همین snapshot:
+
+| projection موجود | فیلدهایی که واقعاً در projection فعلی وارد می‌شوند | آنچه از آن نتیجه نمی‌شود |
+|---|---|---|
+| `build_scoring_projection` — رشته‌ها | `id`، `motive_driven`، `weights_version`، `micro_motive_codes`، `strategy_weights`، `value_weights` | متن `name`، `archetype`، `fulfillment_source`، `prestige_level`، `handcrafted` و شواهد/امضاهای داوری در این projection نیستند. |
+| `build_scoring_projection` — شاخه‌ها | `id`، `name`، `micro_motive_codes`، `m_score_denom_limit`، `strategy_weights`، `value_weights`، `weights_version` | فیلد `group` و سایر metadataهای دسته‌بندی در این projection نیستند. |
+| `build_scoring_projection` — خرده‌انگیزه | مجموعهٔ مرتب کدها از `micro_motives[].code` | `description_fa`، category و intensity وارد hash علمی فعلی نمی‌شوند؛ بنابراین تغییر متن شاهد با وزن ثابت، از این fingerprint آشکار نمی‌شود. |
+| `build_scoring_projection` — سؤال‌ها | فقط `layers.strategies.questions` شامل id/number/question و index/text گزینه‌ها | 15 سؤال ارزشی و گزینه‌هایشان در این projection نیستند. |
+| `build_membership_projection` | major: `id/name/high_school_branch/group/cluster/subgroup/exam_group`؛ branch: `id/name/group` | این projection در حال حاضر به‌تنهایی اثبات نمی‌کند همهٔ این فیلدها در تمام مصرف‌کننده‌های آموزشی/UX به‌درستی طبقه‌بندی شده‌اند؛ field mapping همچنان لازم است. |
+
+**دامنهٔ قرارداد و تست‌های فعلی:**
+- `scientific_fingerprint` و `membership_fingerprint` در module فعلی مستقل‌اند و از canonicalization نوع‌آگاه و رد non-finite استفاده می‌کنند.
+- baselineهای موجود برای انتهای بازه‌های 194، 204 و 215 تعریف شده‌اند؛ تمام 230 رکورد در یک expected واحد پوشش داده نشده‌اند. ثابت `FINGERPRINT_BASE_COMMIT` هنوز `02f40f16e044219141a1d354d9d1aa30df416d87` است، درحالی‌که مبنای snapshot جاری این گزارش `a743ab8ddd335c49e579299f062778bd4f8e6e85` است. این اختلاف باید با forensic توضیح داده شود، نه با تولید expected تازه یا تغییر baseline برای سبزکردن CI.
+- تست mutation موجود، تغییر صرف `high_school_branch`، وزن فعال، `group/cluster/subgroup`، `weights_version` و رد non-finite را بررسی می‌کند. این تست‌ها ارزشمندند ولی پوشش کامل همهٔ فیلدهای membership، تغییر متن `description_fa`، تغییر value question/pole و هر call-site نمایشی را اثبات نمی‌کنند.
+- `test_reference_membership_fingerprint.py` baseline عضویت را روی همان سه انتهای بازه کنترل می‌کند؛ اما هنوز policy و exception workflow مربوط به GOV-05 در PR اجرایی مستقل پیاده‌سازی نشده است.
+
+**معماری پیشنهادی پس از تصویب GOV-06:**
+
+| دامنه | ورودی‌های کاندیدا | اثر سیاستی تغییر |
+|---|---|---|
+| A. Scientific/scoring | وزن‌های S/V رشته و شاخه، active eligibility، کدهای مؤثر M، m-score denominator، mappingهای سؤال/گزینه‌ای که معنای امتیاز را تعیین می‌کنند | تغییر باید scientific gate را تغییر دهد و همراه evidence/وزن/نسخه بازبینی شود. |
+| B. Membership/guidance | رابطهٔ شناسهٔ رشته به شاخه، exam_group و فقط فیلدهایی که call-site واقعی نقش هدایت/عضویت آن‌ها را تأیید می‌کند | مطابق GOV-05 mismatch به‌صورت مستقل blocking است؛ استثنا فقط با Decision Record نسخه‌دار و تأیید ناظر. |
+| C. Evidence-content | `micro_motives[].code → description_fa` و provenance/نسخه/تصویب متن | تغییر متن باید content/evidence gate را fail کند و بازبینی متن و وزن‌های متکی به آن را مطالبه کند؛ به‌تنهایی معادل تغییر عدد وزن نیست. |
+| D. Interpretation/presentation | value prompts/options/poles، trait labels/mapping، major display text و branch display labels؛ پس از تأیید call-site و مالکیت | تغییر باید گزارش جداگانه و بازبینی معنایی/UI متناسب داشته باشد؛ از پوشاندن تغییر علمی یا membership ممنوع است. |
+
+این چهار دامنه الزاماً به چهار الگوریتم hash جدا در نسخهٔ اول نیاز ندارند؛ می‌توانند یک registry با چهار projection/version مستقل و status مستقل باشند. مهم آن است که FAIL هر دامنه با PASS دامنهٔ دیگر پنهان نشود و یک تغییر فیلد، خروجی قابل‌فهم و قابل‌ممیزی داشته باشد.
+
+**دروازهٔ پیش از پیاده‌سازی:** ابتدا جدول field → consumer/call-site → owner → domain → mutation test برای تمام مسیرهای واقعی تکمیل شود؛ سپس برای هر projection تست تغییر تک‌فیلدی و عدم‌تغییر سه دامنهٔ دیگر نوشته شود. تا آن زمان هیچ fingerprint سوم/چهارم، expected تازه یا گیت CI فعال نشود.
+
+---
 
 ### ۱۲.۶. رجیستری و قرارداد حاکمیتی اسکریپت‌های اعتبارسنجی
 
@@ -322,10 +355,10 @@ PR [#305](https://github.com/arad2000/dark-horse-v2-/pull/305) فایل `school_
 
 ## ۱۳. مسیر اجرایی پیشنهادی پس از تصمیم حاکمیتی
 
-1. اخذ تصمیم صریح ناظر دربارهٔ GOV-01 و GOV-03 و GOV-04 و GOV-06؛ GOV-02، GOV-05 و GOV-07 طبق تصریح‌های ثبت‌شدهٔ ناظر تأیید شده‌اند، اما فرمول عددی 0.7، تثبیت field mapping و انتقال ایمن سیاست‌ها به گیت‌های اجرایی مراحل جداگانه‌اند.
+1. اخذ تصمیم صریح ناظر دربارهٔ GOV-01، GOV-03 و معماری چهار projection در GOV-06؛ GOV-02 و GOV-05 و اصل GOV-07 صریحاً از سوی ناظر تأیید شده‌اند. GOV-04 از نظر تفکیک علمی/عضویت تأیید کارشناسی دارد، ولی field mapping و baselineها باز هستند.
 2. ثبت و سپس عملیاتی‌کردن قاعدهٔ confidence کمتر از 0.7 به‌صورت مکمل‌سازی با میانگین وزنی همسایه‌ها؛ شواهد همان رشته مرجع اصلی بماند، سهم همسایه‌ها ردیابی شود و تا تصویب فرمول عددی نسخه‌دار، ضریب دلخواه ساخته نشود. صرف confidence زیر 0.7 موجب freeze خودکار نیست.
 3. تعیین تکلیف #285 با بازبینان واقعی؛ تا آن موقع متن‌های پیشنهادی، به‌صورت تأییدنشده باقی بمانند.
-4. بازطراحی #321 به‌صورت PR اتمیک روی base جاری؛ پوشش هم‌زمان root/docs/data micro_motives، شفاف‌کردن رابطهٔ guard با fingerprintهای موجود، و پرهیز از تغییر workflow Hybrid تا مجوز جداگانه. #322 باید پس از تصمیم GOV-05/06 و تکمیل field mapping به‌روزرسانی شود.
+4. پس از تصمیم GOV-01/03/06، یک PR مستنداتی برای تثبیت نسخه/تقدم DH-013 و استاندارد نگارش تهیه شود؛ #285 تنها پس از دو review واقعی تعیین تکلیف گردد. سپس field map و mutation contract برای چهار projection تکمیل شود. #321 روی base تازه و با scope تفکیک‌شده بازطراحی شود؛ هیچ تغییر workflow Hybrid یا baseline fingerprint تا مجوز جداگانه انجام نشود. #322 فقط پس از تعیین تکلیف field mapping به‌روزرسانی شود.
 5. پس از بسته‌شدن این موارد، شروع داوری scientific داده‌ها با #325 و evidence دقیق؛ هیچ تغییر JSON تا PR مستقل و مجوز صریح انجام نشود.
 
 این مسیر ادامهٔ فاز حاکمیت است و به‌معنای آغاز تغییرات CI یا انتشار runtime نیست.
