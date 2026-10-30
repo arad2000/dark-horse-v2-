@@ -8,7 +8,10 @@ import json
 import math
 from pathlib import Path
 
-from reference_fingerprints import scientific_fingerprint
+from reference_fingerprints import (
+    EXPECTED_SCIENTIFIC_FINGERPRINTS,
+    scientific_fingerprint,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -45,11 +48,6 @@ BASELINE_MAJOR_1_194_FINGERPRINT = "5189181b82aab0e6"
 BASELINE_MAJOR_1_204_FINGERPRINT = "749c599468ce116b"
 BASELINE_MAJOR_1_215_FINGERPRINT = "4a75d6d48c2b07ce"
 
-EXPECTED_SCIENTIFIC_FINGERPRINTS = {
-    194: "a8107f53800f66c005244503df50d43df57c06ebf2e8625674f03f958a53e9d1",
-    204: "0e1075f6d53f6939e0e543232a1f696b5a9ab4c127c7487490461361a33a449c",
-    215: "136a465802694ddc11a1d14b5a612fdfe9df1ae3f5c4a97bec23b281980ff0cf",
-}
 F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
 F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
 F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
