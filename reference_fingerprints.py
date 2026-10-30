@@ -22,6 +22,20 @@ STAGING_CANDIDATE_IDS = frozenset({
 })
 DEFERRED_STAGING_VERSION = "deferred_catalog_only_v1"
 
+# HEAD-specific expected values for deploy/liara-commercial-sandbox at this base.
+# They are versioned by the projection schema above and updated only with evidence.
+FINGERPRINT_BASE_COMMIT = "02f40f16e044219141a1d354d9d1aa30df416d87"
+EXPECTED_SCIENTIFIC_FINGERPRINTS = {
+    194: "a8107f53800f66c005244503df50d43df57c06ebf2e8625674f03f958a53e9d1",
+    204: "0e1075f6d53f6939e0e543232a1f696b5a9ab4c127c7487490461361a33a449c",
+    215: "136a465802694ddc11a1d14b5a612fdfe9df1ae3f5c4a97bec23b281980ff0cf",
+}
+EXPECTED_MEMBERSHIP_FINGERPRINTS = {
+    194: "1b1be8f6e40bf498512827346593b7010cc04feea5357c470579a03a6f77d4e9",
+    204: "cf9e0adcfb72b2b65ad60eadef633db50b88b07228ea1824d3b8ccd1bc1d0c49",
+    215: "26457ea856fa9b975dd0cc23fd2cd690104257ff68a5566571a7772986e7af7c",
+}
+
 
 def _assert_finite_tree(value: Any, path: str = "$") -> None:
     """Reject NaN, infinities and parsed exponent overflow before projection."""
