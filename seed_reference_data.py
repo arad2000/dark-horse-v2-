@@ -235,7 +235,7 @@ def legacy_major_full_weight_fingerprint(major_records: list[dict[str, Any]]) ->
     return f"{value:016x}"
 
 def f1_staging_aware_baseline_text(major_json_text: str) -> str:
-    """Normalize only explicitly approved staged rows before historical catalog fingerprints."""
+    """Reproduce the retired legacy normalizer for forensic mixed-hash reporting only.\n\n    The active scientific fingerprint uses reference_fingerprints._is_explicit_inactive_staging\n    and never normalizes an active weighted row. Do not use this helper as a gate.\n    """
     records = json.loads(major_json_text)
     for item in records:
         try:
