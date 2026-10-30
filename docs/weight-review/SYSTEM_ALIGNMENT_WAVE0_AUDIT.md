@@ -379,6 +379,22 @@ PR [#305](https://github.com/arad2000/dark-horse-v2-/pull/305) فایل `school_
 
 ---
 
+## ۱۲.۹. بستهٔ کاری مستنداتی حاصل از تصمیم ناظر
+
+بر اساس تصمیم صریح ناظر برای تثبیت تقدم اسناد، field mapping، چهار دامنه و قرارداد validator، سه PR مستنداتی مستقل ایجاد شدند. هر سه روی base واحد `a743ab8ddd335c49e579299f062778bd4f8e6e85` قرار دارند:
+
+| PR | سند | خروجی | وضعیت |
+|---|---|---|---|
+| [#327](https://github.com/arad2000/dark-horse-v2-/pull/327) | `docs/governance/DOCUMENT_AUTHORITY_REGISTRY.md` | رجیستری canonical hierarchy، تصمیم‌ها و validatorها | Draft؛ یک فایل |
+| [#328](https://github.com/arad2000/dark-horse-v2-/pull/328) | `docs/governance/REFERENCE_FIELD_CONSUMER_MAP.md` | field-to-consumer map با تفکیک runtime، persistence، parity و provenance | Draft؛ یک فایل |
+| [#329](https://github.com/arad2000/dark-horse-v2-/pull/329) | `docs/governance/FOUR_DOMAIN_VALIDATION_CONTRACT.md` | status مستقل، mutation tests، exception flow و محدودیت validatorها | Draft؛ یک فایل |
+
+**نتیجهٔ code scan:** علاوه بر engine و UI، `ai_counsel_service.py` داده‌های `archetype/fulfillment_source` را در narrative مشاوره مصرف می‌کند؛ `operational_store.py` این خروجی‌ها را ذخیره می‌کند؛ `dual_run_audit.py` داده‌های ORM را برای parity/materialization بازسازی می‌کند. این مصرف‌های downstream به‌صورت خودکار scoring-consumer تلقی نشده‌اند. `high_school_branch` فعلاً در seed/model/fingerprint/parity احراز شده و consumer مستقیم runtime آن هنوز OPEN است؛ سیاست blocking GOV-05 بدون تغییر برقرار می‌ماند.
+
+**CI هر سه PR:** گیت قدیمی Hybrid Migration Audit روی همان سه فایل runtime-owned که با main byte-identical نیستند FAIL می‌شود؛ این failure از base موجود است و نه مجوز sync علمی با main است و نه دلیل تغییر expected. CIهای دیگر در #327 و #328 موفق گزارش شده‌اند؛ #329 در زمان این ثبت نتیجهٔ اجرای جدید باید از workflow جاری خوانده شود. هیچ rerun دستی انجام نشده است.
+
+---
+
 ## ۱۳. مسیر اجرایی پیشنهادی پس از تصمیم حاکمیتی
 
 1. ساخت رجیستری canonical hierarchy روی deploy به‌صورت PR مستنداتی مستقل؛ معماری GOV-01، GOV-03، GOV-04 و GOV-06 طبق تأیید ناظر پذیرفته شده، اما متن نهایی #285 منوط به دو review واقعی و field mapping منوط به ممیزی call-site است.
