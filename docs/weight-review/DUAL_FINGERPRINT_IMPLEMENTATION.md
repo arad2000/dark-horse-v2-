@@ -80,8 +80,8 @@ expected ترکیبیِ قدیمیِ ردیف‌های ۱–۱۹۴ برابر `5
 ## ۵) دامنهٔ تغییر و وضعیت Merge
 
 - گیت قدیمیِ ترکیبی فقط به‌عنوان گزارش forensic نگه داشته شده است؛ دیگر معیار pass/fail نیست، چون دو لایهٔ متفاوت و وزن‌های مرحله‌ای فعال را در یک hash مخلوط می‌کرد. expectedهای قدیمی دست‌نخورده و در گزارش باقی‌اند.
-- گیت scientific و membership با expectedهای جدا و مبتنی بر HEAD جایگزین شده‌اند؛ هر دو مستقل و fail-closed هستند.
-- loader/seed و تست‌های سخت‌گیرانهٔ #320 تغییر نکرده‌اند.
+- گیت scientific و membership با expectedهای جدا و مبتنی بر HEAD جایگزین شده‌اند؛ هر دو مستقل و fail-closed هستند. `seed_reference_data.py` نیز پیش از هر دسترسی نوشتنی به DB همین دو projection را جداگانه کنترل می‌کند؛ شکست scientific و membership پیام خطای مستقل دارند.
+- loader strict و تست‌های #320 برای NaN/Infinity و exponent overflow تغییر نکرده‌اند. نرمال‌ساز legacy در seed فقط برای بازتولید hash ترکیبی قبلی در گزارش audit باقی است و هیچ‌یک از دو گیت فعال از آن استفاده نمی‌کند.
 - `majors_database_v2.json`، `school_branches_v2.json`، `micro_motives.json`، `questions_v2.json`، وزن‌ها، engine، Hybrid، cutover، env لیارا، UI و درگاه تغییر نکرده‌اند.
 - هیچ فایل اجرایی به #321 یا #322 اضافه نشده و هیچ‌کدام Merge نشده‌اند.
 - **Merge = خیر؛ پیاده‌سازی فقط برای بازبینی در Draft PR است.**
