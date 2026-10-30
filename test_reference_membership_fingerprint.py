@@ -5,16 +5,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from reference_fingerprints import membership_fingerprint
+from reference_fingerprints import (
+    EXPECTED_MEMBERSHIP_FINGERPRINTS,
+    membership_fingerprint,
+)
 
 ROOT = Path(__file__).resolve().parent
-# Expected digests are recorded from deploy HEAD 02f40f16e044219141a1d354d9d1aa30df416d87.
-# They are intentionally separate from the legacy mixed fingerprint constants.
-EXPECTED_MEMBERSHIP_FINGERPRINTS = {
-    194: "1b1be8f6e40bf498512827346593b7010cc04feea5357c470579a03a6f77d4e9",
-    204: "cf9e0adcfb72b2b65ad60eadef633db50b88b07228ea1824d3b8ccd1bc1d0c49",
-    215: "26457ea856fa9b975dd0cc23fd2cd690104257ff68a5566571a7772986e7af7c",
-}
+# Expected digests are centralized with the projection schema in reference_fingerprints.py.
 
 
 def load(name: str):
