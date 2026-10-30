@@ -10,7 +10,7 @@ import hashlib
 import json
 import math
 import struct
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 STAGING_CANDIDATE_IDS = frozenset({
