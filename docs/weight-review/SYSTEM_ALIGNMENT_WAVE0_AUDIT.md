@@ -381,17 +381,18 @@ PR [#305](https://github.com/arad2000/dark-horse-v2-/pull/305) فایل `school_
 
 ## ۱۲.۹. بستهٔ کاری مستنداتی حاصل از تصمیم ناظر
 
-بر اساس تصمیم صریح ناظر برای تثبیت تقدم اسناد، field mapping، چهار دامنه و قرارداد validator، سه PR مستنداتی مستقل ایجاد شدند. هر سه روی base واحد `a743ab8ddd335c49e579299f062778bd4f8e6e85` قرار دارند:
+بر اساس تصمیم صریح ناظر برای تثبیت تقدم اسناد، field mapping، چهار دامنه و قرارداد validator، چهار PR مستنداتی مستقل به‌علاوهٔ این گزارش ایجاد شدند. همه روی base واحد `a743ab8ddd335c49e579299f062778bd4f8e6e85` قرار دارند:
 
 | PR | سند | خروجی | وضعیت |
 |---|---|---|---|
 | [#327](https://github.com/arad2000/dark-horse-v2-/pull/327) | `docs/governance/DOCUMENT_AUTHORITY_REGISTRY.md` | رجیستری canonical hierarchy، تصمیم‌ها و validatorها | Draft؛ یک فایل |
 | [#328](https://github.com/arad2000/dark-horse-v2-/pull/328) | `docs/governance/REFERENCE_FIELD_CONSUMER_MAP.md` | field-to-consumer map با تفکیک runtime، persistence، parity و provenance | Draft؛ یک فایل |
 | [#329](https://github.com/arad2000/dark-horse-v2-/pull/329) | `docs/governance/FOUR_DOMAIN_VALIDATION_CONTRACT.md` | status مستقل، mutation tests، exception flow و محدودیت validatorها | Draft؛ یک فایل |
+| [#330](https://github.com/arad2000/dark-horse-v2-/pull/330) | `docs/weight-review/DUAL_FINGERPRINT_PHASE0.md` | بازنویسی Phase 0 روی snapshot جاری و هم‌ترازی با چهار دامنه و تصمیم blocking membership | Draft؛ یک فایل؛ نسخهٔ تازهٔ #322 قدیمی |
 
 **نتیجهٔ code scan:** علاوه بر engine و UI، `ai_counsel_service.py` داده‌های `archetype/fulfillment_source` را در narrative مشاوره مصرف می‌کند؛ `operational_store.py` این خروجی‌ها را ذخیره می‌کند؛ `dual_run_audit.py` داده‌های ORM را برای parity/materialization بازسازی می‌کند. این مصرف‌های downstream به‌صورت خودکار scoring-consumer تلقی نشده‌اند. `high_school_branch` فعلاً در seed/model/fingerprint/parity احراز شده و consumer مستقیم runtime آن هنوز OPEN است؛ سیاست blocking GOV-05 بدون تغییر برقرار می‌ماند.
 
-**CI هر سه PR:** گیت قدیمی Hybrid Migration Audit روی همان سه فایل runtime-owned که با main byte-identical نیستند FAIL می‌شود؛ این failure از base موجود است و نه مجوز sync علمی با main است و نه دلیل تغییر expected. CIهای دیگر در #327 و #328 موفق گزارش شده‌اند؛ #329 در زمان این ثبت نتیجهٔ اجرای جدید باید از workflow جاری خوانده شود. هیچ rerun دستی انجام نشده است.
+**CI PRهای مستنداتی:** در #327 و #328 workflowهای اصلی از جمله Commercial Backend CI، Password Reset Audit، Quota Regression، Frontend Artifact و Evaluator Rehearsal موفق بوده‌اند؛ Hybrid Migration Audit به‌علت byte mismatch قدیمی runtime-ownedها با main FAIL شده است. برای headهای جدید #328/#329/#330 وضعیت هر اجرا باید از commit جاری خوانده شود؛ هیچ rerun دستی انجام نشده است.
 
 ---
 
