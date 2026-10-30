@@ -138,6 +138,14 @@ C-FAIL به‌تنهایی ادعا نمی‌کند مقدار عددی S/V تغ
 | تغییر branch.name با lookup مبتنی بر name | تا stable-id migration، D تنها اثر نیست؛ قرارداد lookup/membership نیز باید FAIL شود. |
 | تغییر متن strategy/value question | D تغییر کند؛ اگر semantic mapping index/code تغییر کند، A نیز باید تغییر کند. |
 
+### 6.3 مصرف downstream و فیلدهای provenance
+
+- `archetype`، `dominant_values`، `dominant_traits` و `fulfillment_source` علاوه بر UI در `ai_counsel_service.py::_arch_bits` برای تولید narrative مشاوره مصرف می‌شوند و در `operational_store.py` در snapshot نتیجه ذخیره می‌شوند. این موارد در D هستند؛ ذخیره‌شدن/مصرف مشاوره، آن‌ها را به score input تبدیل نمی‌کند.
+- `dual_run_audit.py` فیلدهای ORM را برای بازسازی موتور از PostgreSQL materialize می‌کند؛ این مسیر parity/migration comparison است و به‌تنهایی consumer الگوریتمی همهٔ فیلدهای materialized نیست.
+- `handcrafted` وضعیت provenance/ساخت دستی است که در seed validation و staging parity کنترل می‌شود؛ تا وقتی call-site scoring ثابت نشده، وارد A نمی‌شود.
+- `source_majors_count` در seed/ORM و dual-run materialization حضور دارد، اما در فرمول یا مسیر recommendation engine مصرف مستقیم آن احراز نشده است. نقش فعلی، metadata شمارش/سازگاری شاخه است؛ دامنهٔ نهایی آن در B فقط بعد از تعیین دقیق مبنای شمارش تثبیت می‌شود.
+- `high_school_branch` در مدل و seed ذخیره و در membership projection ثبت شده است، اما consumer مستقیم آن در call-siteهای runtime بررسی‌شده هنوز احراز نشده. سیاست GOV-05 همچنان تغییرش را blocking می‌داند؛ عدم قطعیت دربارهٔ consumer نباید به PASS یا حذف گیت منجر شود.
+
 ## 7. محدودیت validatorهای شناخته‌شده
 
 نسخه‌های مرجع #307 در main:
