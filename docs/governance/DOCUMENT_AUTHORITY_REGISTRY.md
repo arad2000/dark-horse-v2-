@@ -175,8 +175,9 @@ PR #321 در وضعیت فعلی مبنای اجرای این قرارداد ن�
 | [#326](https://github.com/arad2000/dark-horse-v2-/pull/326) | `docs/weight-review/SYSTEM_ALIGNMENT_WAVE0_AUDIT.md` | ممیزی تقدم اسناد، شکاف‌های fingerprint و ثبت تصمیم‌های ناظر | Draft |
 | [#328](https://github.com/arad2000/dark-horse-v2-/pull/328) | `docs/governance/REFERENCE_FIELD_CONSUMER_MAP.md` | نقشهٔ فیلد ← consumer/call-site ← domain و تمایز مصرف runtime از persistence/provenance | Draft |
 | [#329](https://github.com/arad2000/dark-horse-v2-/pull/329) | `docs/governance/FOUR_DOMAIN_VALIDATION_CONTRACT.md` | قرارداد status مستقل و mutation/negative tests برای چهار دامنه | Draft |
+| [#330](https://github.com/arad2000/dark-horse-v2-/pull/330) | `docs/weight-review/DUAL_FINGERPRINT_PHASE0.md` | بازنویسی Phase 0 دو fingerprint روی snapshot جاری و تبدیل طراحی به چهار دامنهٔ A/B/C/D | Draft؛ نسخهٔ تازهٔ #322 قدیمی |
 
-**قاعدهٔ هم‌مرج:** این PRها عمداً مستقل هستند. رجیستری #327 بدون ادغام نقشهٔ #328 و قرارداد #329 می‌تواند به‌عنوان مرجعیت اسناد نگهداری شود، اما فعال‌سازی گیت اجرایی چهار دامنه تا تثبیت field map و قرارداد تست مجاز نیست. هیچ PR را فقط به‌دلیل وابستگی موضوعی به‌صورت خودکار merge یا از Draft خارج نکنید.
+**قاعدهٔ هم‌مرج:** این PRها عمداً مستقل هستند. #330 نسخهٔ تازهٔ مستند Phase 0 در base جاری است؛ #322 همچنان Draft قدیمی با base `02f40f...` است و تا تصمیم صریح ناظر نباید Merge شود. رجیستری #327 بدون ادغام نقشهٔ #328 و قرارداد #329 می‌تواند به‌عنوان مرجعیت اسناد نگهداری شود، اما فعال‌سازی گیت اجرایی چهار دامنه تا تثبیت field map و قرارداد تست مجاز نیست. هیچ PR را فقط به‌دلیل وابستگی موضوعی به‌صورت خودکار merge یا از Draft خارج نکنید.
 
 ## 11. خط قرمزهای این رجیستری
 
