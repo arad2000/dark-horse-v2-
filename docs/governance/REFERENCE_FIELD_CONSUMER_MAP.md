@@ -56,7 +56,7 @@
 | `cluster` و `subgroup` | از JSON به مدل `Major` ذخیره می‌شوند (seed lines 855–860؛ models lines 97–100). مصرف مستقیم در فایل‌های موتور/سنجش/فرانت‌اندِ اسکن‌شده پیدا نشد. | طبقه‌بندی/گروه‌بندی محتمل؛ اثر دقیق بر UX یا مسیر پذیرش هنوز ثابت نشده است. | نامزد B یا D؛ فعلاً طبقه‌بندی قطعی ممنوع | در membership projection فعلی هست؛ تا تکمیل scan مصرف‌کننده، دامنهٔ آن تأیید نهایی نیست. |
 | `archetype` و `fulfillment_source` | موتور آن‌ها را به نتیجه منتقل می‌کند (engine lines 812–850) و UI آن‌ها را نمایش می‌دهد (app.js lines 1314–1328, 1515–1531). | محتوای هویتی/تفسیری نتیجه را تغییر می‌دهد، نه فرمول عددی Total در call-site مشاهده‌شده. | D — Interpretation/presentation | در scientific و membership projection فعلی نیستند. |
 | `prestige_level` | به `market_demand_level` در پاسخ نتیجه نگاشت می‌شود (engine lines 837–841). همان کد تصریح می‌کند این فیلد در snapshot دیتابیس فعلی وجود ندارد و مقدار null برمی‌گردد. | در صورت افزودن، اطلاعات نمایشی/تقاضای بازار را تغییر می‌دهد؛ score نیست. | D — Interpretation/presentation | در fingerprintهای فعلی دیده نمی‌شود؛ فعلاً در JSON حاضر نیست. |
-| `handcrafted` | در seed validation برای برخی staging waveها کنترل می‌شود (seed lines 503–542 و موج‌های بعدی)؛ مصرف عددی در engine مشاهده نشد. | provenance/وضعیت ساخت داده را نشان می‌دهد. | metadata شواهد/پرووننس؛ تا تصمیم مستقل در چهار projection امتیازی/عضویت فرض نشود. | در دو projection فعلی نیست؛ باید در provenance/change record پوشش داشته باشد. |
+| `handcrafted` | در seed validation برای waveهای مشخص کنترل می‌شود (seed lines 503–542, 565–582, 639–738)؛ در `verify_hybrid_staging.py` هم در parity JSON↔DB مقایسه می‌شود (lines 115–146). مصرف عددی در engine مشاهده نشد. | provenance/وضعیت دستی‌سازی و کنترل ورود wave؛ نه مؤلفهٔ Total. | metadata/provenance؛ تا consumer اجرایی دیگری اثبات نشده وارد A/B/D نشود. | در scoring و membership projection فعلی نیست؛ باید در change/evidence record پوشش داشته باشد. |
 
 ### 3.2 شاخه‌ها — `school_branches_v2.json`
 
@@ -67,7 +67,7 @@
 | `m_score_denom_limit` | مخرج M شاخه در `_compute_branch_m_score` (engine lines 294–306) | مقدار M شاخه را تغییر می‌دهد. | A — Scientific/scoring | در scientific projection هست. |
 | `strategy_weights` و `value_weights` | مستقیم در `recommend_school_branch` برای S/V شاخه و در alternative path distance (engine lines 900–935, 560–590) | score شاخه و فاصلهٔ مسیر جایگزین را تغییر می‌دهد. | A — Scientific/scoring | در scientific projection هست. |
 | `group` | در engine call-site مستقیمی مشاهده نشد؛ در مدل `SchoolBranch` ذخیره است (models lines 117–132). | احتمالاً metadata/طبقه‌بندی نمایشی؛ اثر مصرف‌کننده هنوز ثابت نشده. | D یا B پس از scan تکمیلی؛ فعلاً OPEN | در membership projection فعلی هست. |
-| `source_majors_count` | در مدل ذخیره است (models lines 117–128) و در integrity contracts شمارش عضویت با رشته‌های فعال کنترل می‌شود؛ مصرف آن در فرمول engine مشاهده نشد. | کنترل سازگاری/پرووننس تعداد رشته‌های منتسب به شاخه است. | B — membership integrity metadata | در membership projection فعلی وارد نشده؛ باید با contract شمارش و mutation test پوشش داده شود. |
+| `source_majors_count` | از JSON در seed به `SchoolBranch.source_majors_count` منتقل می‌شود (seed lines 880–889؛ models lines 117–128) و در `dual_run_audit.py` برای materialize کردن snapshot DB بازخوانی می‌شود (lines 70–82). مصرف مستقیم در موتور توصیهٔ شاخه یا فرمول امتیاز احراز نشد. | شمارنده/منشأ تعداد رشته‌های مبنای شاخه و parity داده؛ نه مؤلفهٔ M/S/V. | B — integrity/provenance metadata؛ فقط پس از تعریف دقیق اینکه شمارش از چه مجموعه/وضعیتی مشتق می‌شود. | در membership projection فعلی وارد نشده؛ باید mutation test شمارش و قرارداد مشتق‌سازی داشته باشد. |
 | `weights_version` | در مدل ذخیره و در scientific projection وارد می‌شود؛ مصرف عددی مستقیم در engine مشاهده نشد. | نسخهٔ ماتریس شاخه برای provenance است. | metadata نسخهٔ پروفایل متصل به A | در scientific projection فعلی هست. |
 
 ### 3.3 خرده‌انگیزه — `micro_motives.json`
@@ -77,6 +77,21 @@
 | `code` | کلید `motives_map` در engine (engine lines 40–46)؛ تطبیق کدهای رشته و شاخه در M (lines 245–322)؛ کنترل ref در `reference_contract_audit.py` و `test_p0_data_contract.py` | تغییر کد می‌تواند referenceهای رشته/شاخه و M را بشکند. | A — Scientific/scoring و referential integrity | مجموعهٔ کدها در scientific projection هست. |
 | `description_fa` | engine مقدار متن را برای matched evidence می‌سازد (engine lines 265–274)؛ UI آن را در swipe card نمایش می‌دهد (app.js lines 342–346, 884–895)؛ مدل MicroMotive آن را ذخیره می‌کند (models lines 44–55, seed lines 796–800). | متن شاهد/محتوای علمیِ پشت وزن را عوض می‌کند و همان متن در تجربهٔ کاربر نیز دیده می‌شود؛ تغییر با وزن ثابت هم باید بازبینی متن و وزن‌های وابسته را فعال کند. | C — Evidence-content؛ مصرف نمایشی به‌عنوان اثر ثانویه در گزارش ثبت شود. | **در fingerprint علمی فعلی نیست**؛ فقط code set hash می‌شود. شکاف high priority است. |
 | `category` و `intensity_level` | category در مدل/seed ذخیره می‌شود؛ در engine scoring call-site مشاهده نشد. | طبقه‌بندی/ویژگی محتوایی محتمل؛ مصرف‌کنندهٔ فعال در مسیر scoring بررسی‌شده احراز نشد. | C یا D پس از scan تکمیلی | در fingerprint فعلی وارد نمی‌شود. |
+
+### 3.5 مصرف‌کنندگان تکمیلیِ کشف‌شده در اسکن سراسری
+
+اسکن تکمیلی مسیرهای runtime، persistence، مشاوره، seed، migration و تست‌ها نشان داد برخی داده‌ها پس از خروجی engine به مصرف‌کننده‌های دیگری می‌رسند:
+
+| فیلد/داده | مصرف‌کنندهٔ اضافه و محل استفاده | طبقه‌بندی دقیق |
+|---|---|---|
+| `archetype`، `dominant_values`، `dominant_traits` و `fulfillment_source` | `ai_counsel_service.py::_arch_bits` این داده‌ها را از نتیجه می‌خواند و برای narrative مشاوره به مؤلفه‌های متنی تبدیل می‌کند (lines 155–183). `operational_store.py` نیز `archetype_info` و `personalized_description` را در نتیجه ذخیره می‌کند (lines 125–150). | D — Interpretation/presentation با مصرف downstream در AI counsel و persistence؛ نه score input. |
+| داده‌های رشته/شاخه در DB | `dual_run_audit.py::materialize_engine_from_db`، فیلدهای name/group/cluster/subgroup/exam_group/high_school_branch، پروفایل‌های S/V، متن motive، archetype/fulfillment/prestige و handcrafted را به snapshot موتور بازمی‌سازد (lines 35–90). | این تابع خودِ scoring را تعیین نمی‌کند؛ مصرف آن parity/materialization برای مقایسهٔ JSON و DB است. فیلدهای serializeشده را نباید به‌خاطر حضور در این تابع، مصرف مستقیم الگوریتم تلقی کرد. |
+| `high_school_branch` | در `seed_reference_data.py` به `Major.high_school_branch` منتقل می‌شود (lines 845–867)، در ORM و migration ستون دارد، در `reference_fingerprints.py` membership projection را تغییر می‌دهد و در staging parity نیز مقایسه می‌شود؛ مصرف مستقیم downstream در engine و admission consumerهای بررسی‌شده پیدا نشد. | B طبق سیاست مصوب، زیرا معنای رشته↔شاخه دارد و تغییر آن باید blocking باشد؛ وضعیت consumer runtime هنوز OPEN و نباید بیش از شواهد ادعا شود. |
+| `exam_group` | `admission_sanjesh_engine.py::_major_target_group` آن را به گروه هدف سنجش نگاشت می‌کند (lines 456–464, 784–801). | B — اثر واقعی guidance/admission. یادداشت: `admission_capacity_record.py` صریحاً می‌گوید گروه منبع ظرفیت با catalog `exam_group` یکی نیست؛ نباید آن دو را یکی فرض کرد. |
+| `source_majors_count` | در seed و مدل ذخیره، و در dual-run audit دوباره materialize می‌شود؛ در موتور scoring استفاده نشد. | B — metadata کنترل شمارش/provenance، نه score. |
+| `handcrafted` | seed validator و تست‌های مرجع وضعیت تدوین آن را کنترل می‌کنند؛ staging verifier هم parity آن را بررسی می‌کند. | Provenance/review metadata؛ نه A، تا زمانی که اثر algorithmic ثابت نشده باشد. |
+
+**نتیجه:** وجود یک فیلد در ORM، seed یا dual-run materializer به‌تنهایی نشانهٔ اثر بر scoring نیست. در نقشهٔ نهایی، `direct consumer`، `persistence/parity consumer` و `review/provenance consumer` از هم جدا گزارش می‌شوند.
 
 ### 3.4 سؤال‌ها، نگاشت صفات و قطب‌های ارزش
 
@@ -120,7 +135,7 @@
 
 ## 6. محدودیت‌ها و موارد باز
 
-1. این سند call-siteهای اصلی مشخص‌شده را تحلیل می‌کند، نه تضمین exhaustive برای همهٔ importها، routeها، admin/reporting jobs و UIهای ثانویه. پیش از فعال‌کردن gate چهارگانه، scan سراسری تکمیل و در همین سند با SHA کدها نسخه‌دار شود.
+1. این دور، فهرست کامل tree در base با 366 entry و 354 blob مرور شد؛ اسکن token/call-site روی مسیرهای اصلی Python runtime، API admission، engine، AI counsel، ORM/seed، fingerprint، verifierهای staging/dual-run، frontend JS، testهای مرتبط و workflowها انجام شد. این کار، یک جست‌وجوی معناییِ اثبات‌کننده برای تمام پویایی‌های runtime نیست: importهای غیرمستقیم، reflection، queryهای خارج از repository یا consumerهای external DB ممکن است در متن literal دیده نشوند. پیش از gate اجرایی، review دوم code-owner و test coverage مصرف‌کننده‌های غیرمستقیم لازم است.
 2. `high_school_branch` در مدل و seed ذخیره می‌شود؛ مصرف downstream آن در کدهای بررسی‌شده احراز نشد. تصمیم GOV-05 همچنان هر تغییر membership را blocking می‌کند، اما implementation باید تمام consumerها را کشف کند.
 3. `reference_fingerprints.py` baselineهای فعلی 194/204/215 و base commit قدیمی‌تر از snapshot ممیزی دارد. این سند expected جدید تولید نمی‌کند و refresh baseline را مجاز نمی‌کند.
 4. root و `docs/data/micro_motives.json` در snapshot برابرند؛ موتور پیش‌فرض root را می‌خواند و UI مسیر docs/data را. برابری دو فایل باید در هر commit داده با assertion مستقل کنترل شود.
