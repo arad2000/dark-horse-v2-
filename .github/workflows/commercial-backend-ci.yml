@@ -87,8 +87,16 @@ jobs:
       - name: Strict seed JSON parsing contracts
         run: python -m unittest -v test_seed_reference_json.py
 
-      - name: Reference-data integrity
+      - name: Reference-data integrity (scientific fingerprint)
         run: python test_reference_data_integrity.py
+
+      - name: Reference-data integrity (membership fingerprint)
+        if: always()
+        run: python test_reference_membership_fingerprint.py
+
+      - name: Dual fingerprint mutation contracts
+        if: always()
+        run: python -m unittest -v test_reference_fingerprint_contract.py
 
       - name: Save-result API contract
         run: python -m pytest -q test_save_result_contract.py

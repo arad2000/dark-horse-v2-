@@ -8,6 +8,11 @@ import json
 import math
 from pathlib import Path
 
+from reference_fingerprints import (
+    EXPECTED_SCIENTIFIC_FINGERPRINTS,
+    scientific_fingerprint,
+)
+
 
 ROOT = Path(__file__).resolve().parent
 
@@ -16,10 +21,33 @@ def load_json(name: str):
     return json.loads((ROOT / name).read_text(encoding="utf-8"))
 
 
+def test_scientific_fingerprints_match_deploy_head():
+    majors = load_json("majors_database_v2.json")
+    branches = load_json("school_branches_v2.json")
+    motives = load_json("micro_motives.json")
+    questions = load_json("docs/data/questions_v2.json")
+    results = {}
+    for end, expected in EXPECTED_SCIENTIFIC_FINGERPRINTS.items():
+        actual = scientific_fingerprint(
+            majors, branches, motives, questions, max_major_id=end
+        )
+        results[end] = actual
+        assert actual == expected, (
+            f"scientific fingerprint mismatch for 1..{end}: "
+            f"expected={expected} actual={actual}"
+        )
+    print("REFERENCE_SCIENTIFIC_FINGERPRINTS=" + json.dumps(
+        results, sort_keys=True
+    ))
+
+
 PHASE2_WAVE1_IDS = frozenset(range(161, 177))
+# Legacy mixed-layer baselines retained only for forensic reporting. They are
+# no longer the active integrity assertions after the scientific/membership split.
 BASELINE_MAJOR_1_194_FINGERPRINT = "5189181b82aab0e6"
 BASELINE_MAJOR_1_204_FINGERPRINT = "749c599468ce116b"
 BASELINE_MAJOR_1_215_FINGERPRINT = "4a75d6d48c2b07ce"
+
 F1_OWNER_APPROVED_STAGING_IDS = frozenset({183, 184, 185, 186, 187, 189})
 F1B_OWNER_APPROVED_STAGING_IDS = frozenset({177, 178, 180, 181, 182})
 F1B_WEIGHTS_VERSION = "dh013_f1b_review_v1"
@@ -233,21 +261,36 @@ def _catalog_fingerprint(major_json_text, marker_id=195):
         value = (value * prime) & mask
     return f"{value:016x}"
 
-def test_wave_c_preserves_entire_existing_catalog_1_to_194():
+
+def legacy_composite_fingerprint_diagnostics():
+    """Report the old mixed hash without using it as the pass/fail gate."""
+    catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
+    return {
+        "status": "LEGACY_MIXED_AUDIT_ONLY",
+        "ranges": {
+            "1..194": {"legacy_expected": BASELINE_MAJOR_1_194_FINGERPRINT, "legacy_actual": _catalog_fingerprint(catalog_text)},
+            "1..204": {"legacy_expected": BASELINE_MAJOR_1_204_FINGERPRINT, "legacy_actual": _catalog_fingerprint(catalog_text, marker_id=205)},
+            "1..215": {"legacy_expected": BASELINE_MAJOR_1_215_FINGERPRINT, "legacy_actual": _catalog_fingerprint(catalog_text, marker_id=216)},
+        },
+        "note": "Retired as a single mixed-layer gate; independent scientific and membership fingerprints are active.",
+    }
+
+
+def legacy_test_wave_c_preserves_entire_existing_catalog_1_to_194():
     majors = load_json("majors_database_v2.json")
     assert len([item for item in majors if 1 <= int(item["id"]) <= 194]) == 194
     catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
     assert _catalog_fingerprint(catalog_text) == BASELINE_MAJOR_1_194_FINGERPRINT
 
 
-def test_wave_d_preserves_entire_existing_catalog_1_to_204():
+def legacy_test_wave_d_preserves_entire_existing_catalog_1_to_204():
     majors = load_json("majors_database_v2.json")
     assert len([item for item in majors if 1 <= int(item["id"]) <= 204]) == 204
     catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
     assert _catalog_fingerprint(catalog_text, marker_id=205) == BASELINE_MAJOR_1_204_FINGERPRINT
 
 
-def test_wave_e_preserves_entire_existing_catalog_1_to_215():
+def legacy_test_wave_e_preserves_entire_existing_catalog_1_to_215():
     majors = load_json("majors_database_v2.json")
     assert len([item for item in majors if 1 <= int(item["id"]) <= 215]) == 215
     catalog_text = (ROOT / "majors_database_v2.json").read_text(encoding="utf-8")
@@ -422,9 +465,10 @@ if __name__ == "__main__":
     test_major_catalog_ids_are_contiguous_1_to_230()
     test_wave_a_deferred_catalog_contract()
     test_wave_b_deferred_catalog_contract()
-    test_wave_c_preserves_entire_existing_catalog_1_to_194()
-    test_wave_d_preserves_entire_existing_catalog_1_to_204()
-    test_wave_e_preserves_entire_existing_catalog_1_to_215()
+    print("LEGACY_COMPOSITE_FINGERPRINT_AUDIT=" + json.dumps(
+        legacy_composite_fingerprint_diagnostics(), ensure_ascii=False, sort_keys=True
+    ))
+    test_scientific_fingerprints_match_deploy_head()
     test_wave_c_deferred_catalog_contract()
     test_wave_c_f2_owner_approved_active_contract()
     test_wave_d_f3_owner_approved_active_contract()
