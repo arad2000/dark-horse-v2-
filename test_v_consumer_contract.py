@@ -10,14 +10,14 @@ from dark_horse_engine_v2 import DarkHorseEngineV2
 class VConsumerTests(unittest.IsolatedAsyncioTestCase):
     async def test_nulls_are_not_ranked_or_persisted_and_metadata_survives(self):
         engine = SimpleNamespace(
-            discover_individuality=lambda *a: {'discovered_majors': [{
+            discover_individuality=lambda *a: {'s_assessment': {'status': 'complete', 'valid_answers': 25, 'expected_answers': 25}, 'discovered_majors': [{
                 'major_id': 1, 'individuality_fit': {'score': 80, 'status': 'no_discriminative_evidence',
                 'raw_components': {'v_score': None}}}], 'method': {'version': '3.1-v-range-norm'}},
-            recommend_school_branch=lambda *a: {'recommended_branches': [{
+            recommend_school_branch=lambda *a: {'s_assessment': {'status': 'complete', 'valid_answers': 25, 'expected_answers': 25}, 'recommended_branches': [{
                 'branch_name': 'null', 'average_score': None, 'status':'no_discriminative_evidence',
                 'avg_components': {'v_score':None}}], 'best_branch':'null',
                 'method': {'version':'3.1-v-range-norm'}})
-        request = DarkHorseDiscoverRequest(micro_motives=[], session_id='v-null-test')
+        request = DarkHorseDiscoverRequest(micro_motives=[], session_id='v-null-test', sjt_answers={f'sjt_{i}': 'A' for i in range(1, 26)})
         with patch('main_v2._require_charged_journey', return_value=7), \
              patch('main_v2._persist_discovery_session', return_value=('test', None)), \
              patch('main_v2._persist_major_results') as major_store, \
