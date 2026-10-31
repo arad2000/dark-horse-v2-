@@ -50,7 +50,6 @@ class FakeEngine:
             ],
             "method": {"name": "test"},
             "summary": {"ok": True},
-            "s_assessment": {"status": "complete", "valid_answers": 25, "expected_answers": 25},
             "next_step": "ادامه",
         }
 
@@ -71,7 +70,6 @@ class FakeEngine:
             "best_branch": "Test Branch",
             "method": {"name": "test"},
             "summary": {"ok": True},
-            "s_assessment": {"status": "complete", "valid_answers": 25, "expected_answers": 25},
             "next_step": "ادامه",
         }
 
@@ -101,7 +99,7 @@ class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
         engine = FakeEngine()
         request = DarkHorseDiscoverRequest(
             micro_motives=["MOT-001"],
-            sjt_answers={f"sjt_{i}": "A" for i in range(1, 26)},
+            sjt_answers={"S01": 2},
             conjoint_choices={"Q1": "A"},
             session_id="p0-session-0001",
         )
@@ -121,7 +119,7 @@ class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
         engine = FakeEngine()
         request = DarkHorseDiscoverRequest(
             micro_motives=["MOT-001"],
-            sjt_answers={f"sjt_{i}": "A" for i in range(1, 26)},
+            sjt_answers={},
             conjoint_choices={},
             session_id="p0-session-0002",
         )
