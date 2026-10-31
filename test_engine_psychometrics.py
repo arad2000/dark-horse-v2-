@@ -129,97 +129,101 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
                 msg=f"Major {major['id']} ({major['name']}) failed to reach 1.0 V-Score ceiling",
             )
 
-    def test_p1_school_branch_m_score_option_2a_neutralizes_pool_scale_bias(self) -> None:
-        sjt = {f"sjt_{i}": "C" for i in range(1, 26)}
-        conj = {f"conj_{i}": f"Q{i}{'A' if i % 2 == 1 else 'B'}" for i in range(1, 16)}
-
-        # 1) Profile A (10 pure Riazi) vs Profile B (10 pure Fani): |m_fani - m_riazi| < 1% (~0%)
-        prof_a = [
-            "AERO-001", "AERO-002", "AERO-003", "AERO-005", "AERO-006",
-            "AERO-007", "AERO-008", "AGM-001", "AGM-002", "AGM-003",
-        ]
-        prof_b = [
-            "ARCHA-001", "ARCHA-002", "ARCHA-003", "ARCHA-004", "ARCHA-005",
-            "ARCHA-006", "ARCHA-007", "FAS-001", "FAS-002", "FAS-003",
-        ]
-        res_a = {b["branch_name"]: b for b in self.engine.recommend_school_branch(prof_a, sjt, conj)["recommended_branches"]}
-        res_b = {b["branch_name"]: b for b in self.engine.recommend_school_branch(prof_b, sjt, conj)["recommended_branches"]}
-        m_riazi = res_a["ریاضی فیزیک"]["avg_components"]["m_score"]
-        m_fani = res_b["فنی و حرفه‌ای"]["avg_components"]["m_score"]
-        self.assertLess(abs(m_fani - m_riazi), 1.0)
-        self.assertEqual(m_riazi, m_fani)
-
-        # 2) Profile C1 (5 Riazi + 5 Fani): both branches M >= 15% and Total >= 30%
-        prof_c1 = prof_a[:5] + prof_b[:5]
-        res_c1 = {b["branch_name"]: b for b in self.engine.recommend_school_branch(prof_c1, sjt, conj)["recommended_branches"]}
-        self.assertGreaterEqual(res_c1["ریاضی فیزیک"]["avg_components"]["m_score"], 15.0)
-        self.assertGreaterEqual(res_c1["فنی و حرفه‌ای"]["avg_components"]["m_score"], 15.0)
+    def test_p1_branch_m_fixed_30_contract_with_real_reference_codes(self) -> None:
+        # Use the actual branch reference data and active micro-motive catalog.
+        branches = self.engine.school_branches
+        self.assertEqual(len(branches), 4)
         self.assertEqual(
-            res_c1["ریاضی فیزیک"]["avg_components"]["m_score"],
-            res_c1["فنی و حرفه‌ای"]["avg_components"]["m_score"],
+            [branch.get("m_score_denom_limit") for branch in branches.values()],
+            [30, 30, 30, 30],
         )
 
-        # 3) Profile C2 (3+3+3+3 across all 4 branches): non-empty UI and all 4 branches M >= 15%
-        prof_c2 = [
-            "ANB-001", "ANB-002", "ANB-003",
-            "AERO-001", "AERO-002", "AERO-003",
-            "ACC-001", "ACC-002", "ACC-003",
-            "ARCHA-001", "ARCHA-002", "ARCHA-003",
-        ]
-        out_c2 = self.engine.recommend_school_branch(prof_c2, sjt, conj)
-        visible_c2 = [
-            b for b in out_c2["recommended_branches"]
-            if b["average_score"] >= 30.0 and b["avg_components"]["m_score"] >= 15.0
-        ]
-        self.assertEqual(len(visible_c2), 4)
-        self.assertIsNotNone(out_c2["best_branch"])
+        fani = self.engine._active_branch_code_set(
+            branches["فنی و حرفه‌ای"]["micro_motive_codes"]
+        )
+        riazi = self.engine._active_branch_code_set(
+            branches["ریاضی فیزیک"]["micro_motive_codes"]
+        )
+        other_branch_codes = set().union(*[
+            self.engine._active_branch_code_set(branch["micro_motive_codes"])
+            for name, branch in branches.items()
+            if name not in {"فنی و حرفه‌ای", "ریاضی فیزیک"}
+        ])
 
-        # 4) Regression guard: 100 fixed-seed profiles have 0 major-score / order diff vs legacy pool_scale
-        def _legacy_pool_scale_branch_m_score(user_motives, branch_data):
-            if not user_motives:
-                return 0.0, []
-            raw_codes = branch_data.get("micro_motive_codes", [])
-            if not raw_codes:
-                return 0.0, []
-            user_set = {str(m).strip().lower() for m in user_motives if m and str(m).strip()}
-            branch_set = self.engine._active_branch_code_set(raw_codes)
-            matched = user_set & branch_set
-            if not matched:
-                return 0.0, []
-            denom_limit = branch_data.get("m_score_denom_limit", 30)
-            pool_sizes = [
-                len(self.engine._active_branch_code_set(b.get("micro_motive_codes", [])))
-                for b in self.engine.school_branches.values()
-                if b.get("micro_motive_codes")
-            ]
-            mean_pool = (sum(pool_sizes) / len(pool_sizes)) if len(pool_sizes) > 1 else float(len(branch_set))
-            pool_scale = (len(branch_set) / mean_pool) if mean_pool > 0 else 1.0
-            denom = min(float(len(branch_set)), max(1.0, float(denom_limit) * pool_scale))
-            return min(1.0, len(matched) / denom), []
+        five_fani = sorted(fani)[:5]
+        five_riazi = sorted(riazi)[:5]
+        padding = sorted(other_branch_codes)
+        self.assertEqual(len(five_fani), 5)
+        self.assertEqual(len(five_riazi), 5)
+        self.assertGreaterEqual(len(padding), 70)
 
-        active_majors = [
-            m for m in self.majors if m.get("motive_driven") is not False and m.get("micro_motive_codes")
-        ]
-        rng = random.Random(20261023)
-        orig_fn = self.engine._compute_branch_m_score
-        try:
-            for _ in range(100):
-                chosen = rng.sample(active_majors, k=4)
-                motives_in = [c for mj in chosen for c in mj["micro_motive_codes"][:4]]
-                sjt_in = {f"sjt_{i}": rng.choice("ABCDE") for i in range(1, 26)}
-                conj_in = {f"conj_{i}": f"Q{i}{rng.choice('AB')}" for i in range(1, 16)}
+        # Five shared sparks in each branch must score equally at profile sizes 20, 30 and 80.
+        for profile_length in (20, 30, 80):
+            profile = five_fani + five_riazi + padding[:profile_length - 10]
+            fani_score, _ = self.engine._compute_branch_m_score(
+                profile, branches["فنی و حرفه‌ای"]
+            )
+            riazi_score, _ = self.engine._compute_branch_m_score(
+                profile, branches["ریاضی فیزیک"]
+            )
+            self.assertAlmostEqual(fani_score, 5 / 30, places=12)
+            self.assertAlmostEqual(riazi_score, 5 / 30, places=12)
+            self.assertAlmostEqual(fani_score, riazi_score, places=12)
 
-                after_res = self.engine.discover_individuality(motives_in, sjt_in, conj_in)
-                self.engine._compute_branch_m_score = _legacy_pool_scale_branch_m_score
-                before_res = self.engine.discover_individuality(motives_in, sjt_in, conj_in)
-                self.engine._compute_branch_m_score = orig_fn
+        # Twenty and thirty sparks with the same five Fani matches remain 5/30.
+        profile_20 = five_fani + five_riazi + padding[:10]
+        profile_30 = five_fani + five_riazi + padding[:20]
+        score_20, _ = self.engine._compute_branch_m_score(
+            profile_20, branches["فنی و حرفه‌ای"]
+        )
+        score_30, _ = self.engine._compute_branch_m_score(
+            profile_30, branches["فنی و حرفه‌ای"]
+        )
+        self.assertAlmostEqual(score_20, 5 / 30, places=12)
+        self.assertAlmostEqual(score_30, 5 / 30, places=12)
+        self.assertAlmostEqual(score_20, score_30, places=12)
 
-                self.assertEqual(
-                    [(m["major_id"], m["individuality_fit"]["score"]) for m in before_res["discovered_majors"]],
-                    [(m["major_id"], m["individuality_fit"]["score"]) for m in after_res["discovered_majors"]],
+        # Three shared sparks in a 20-spark profile stay below the 15% eligibility threshold.
+        profile_three_matches = five_fani[:3] + five_riazi + padding[:12]
+        score_three, _ = self.engine._compute_branch_m_score(
+            profile_three_matches, branches["فنی و حرفه‌ای"]
+        )
+        self.assertAlmostEqual(score_three, 3 / 30, places=12)
+        self.assertLess(score_three, 0.15)
+
+        # Adding one more spark from another branch cannot reduce Fani M.
+        score_before, _ = self.engine._compute_branch_m_score(
+            profile_20, branches["فنی و حرفه‌ای"]
+        )
+        score_after, _ = self.engine._compute_branch_m_score(
+            profile_20 + [padding[10]], branches["فنی و حرفه‌ای"]
+        )
+        self.assertAlmostEqual(score_before, 5 / 30, places=12)
+        self.assertAlmostEqual(score_after, score_before, places=12)
+
+    def test_engine_startup_rejects_non_30_branch_denominator(self) -> None:
+        # Derive a negative startup case from the real reference file; no mocks are used.
+        from tempfile import TemporaryDirectory
+
+        raw_branches = json.loads(
+            (ROOT / "school_branches_v2.json").read_text(encoding="utf-8")
+        )
+        raw_branches[0]["m_score_denom_limit"] = 29
+
+        with TemporaryDirectory() as temp_dir:
+            invalid_branches_path = Path(temp_dir) / "school_branches_v2.json"
+            invalid_branches_path.write_text(
+                json.dumps(raw_branches, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "m_score_denom_limit=30"):
+                DarkHorseEngineV2(
+                    motives_path="docs/data/micro_motives.json",
+                    majors_path="majors_database_v2.json",
+                    trait_map_path="trait_map_v3.json",
+                    value_poles_path="value_poles_v2.json",
+                    school_branches_path=str(invalid_branches_path),
                 )
-        finally:
-            self.engine._compute_branch_m_score = orig_fn
 
 
 if __name__ == "__main__":
