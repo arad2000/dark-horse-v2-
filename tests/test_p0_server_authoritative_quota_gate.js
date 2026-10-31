@@ -665,6 +665,8 @@ async function run() {
   sandbox.startNewJourney();
   assert.equal(sandbox.state.stage, 'realm');
   sandbox.state.likedCodes = [motivesRaw[0].code, motivesRaw[1].code];
+  // Complete the S prerequisite; quota assertions below remain unchanged.
+  sandbox.state.strategyAnswers = Array.from({length: 25}, (_, i) => i % 5);
   sandbox.goTo('choice');
 
   for (const statusCode of [409, 402, 403]) {
@@ -719,6 +721,8 @@ async function run() {
 
   // 6c. Complete that journey (remaining: 1 -> 0), then click «شروع سفر» again -> ONLY Purchase Modal!
   sandbox.state.likedCodes = [motivesRaw[0].code, motivesRaw[1].code];
+  // Complete the S prerequisite; quota assertions below remain unchanged.
+  sandbox.state.strategyAnswers = Array.from({length: 25}, (_, i) => i % 5);
   sandbox.goTo('choice');
   await sandbox.analyzeMajors();
   assert.equal(sandbox.state.stage, 'results');
@@ -764,6 +768,8 @@ async function run() {
   const consumeCountBefore7a = consumeTestRequests;
   sandbox.startNewJourney();
   sandbox.state.likedCodes = [motivesRaw[0].code, motivesRaw[2].code];
+  // Complete the S prerequisite; quota assertions below remain unchanged.
+  sandbox.state.strategyAnswers = Array.from({length: 25}, (_, i) => i % 5);
   sandbox.goTo('choice');
   await sandbox.analyzeMajors();
   assert.equal(sandbox.state.stage, 'results');
@@ -807,6 +813,8 @@ async function run() {
   assert.equal(localStorage.getItem('dh_quota_charged_session_v1'), null, 'CHARGED must be cleared before Journey A starts');
   sandbox.startNewJourney();
   sandbox.state.likedCodes = [motivesRaw[3].code, motivesRaw[4].code];
+  // Complete the S prerequisite; quota assertions below remain unchanged.
+  sandbox.state.strategyAnswers = Array.from({length: 25}, (_, i) => i % 5);
   sandbox.goTo('choice');
   const reqBeforeA = consumeTestRequests;
   const discBeforeA = discoverRequests;
@@ -828,6 +836,8 @@ async function run() {
   // ensureJourneyChargedForResults MUST STILL hit POST /me/consume-test on the server!
   localStorage.setItem('dh_quota_charged_session_v1', journeyBId);
   sandbox.state.likedCodes = [motivesRaw[5].code, motivesRaw[6].code];
+  // Complete the S prerequisite; quota assertions below remain unchanged.
+  sandbox.state.strategyAnswers = Array.from({length: 25}, (_, i) => i % 5);
   sandbox.goTo('choice');
   const reqBeforeB = consumeTestRequests;
   const discBeforeB = discoverRequests;

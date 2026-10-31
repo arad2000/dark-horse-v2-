@@ -62,6 +62,8 @@ function makeEl(id, map) {
 }
 
 async function run() {
+  // Exercise the S policy contract in the existing UI CI lane, without changing workflows.
+  await require('./test_strategy_ui_complete_gate.js');
   const motivesRaw = JSON.parse(fs.readFileSync(path.join(root, 'docs/data/micro_motives.json'), 'utf8'));
   const questionsRaw = JSON.parse(fs.readFileSync(path.join(root, 'docs/data/questions_v2.json'), 'utf8'));
   const traitMapRaw = JSON.parse(fs.readFileSync(path.join(root, 'docs/trait_map_v3.json'), 'utf8'));
@@ -280,7 +282,10 @@ async function run() {
   sandbox.goTo('strategies');
   sandbox.answerStrategy(1);
   sandbox.answerStrategy(2);
-  sandbox.jumpStrategyQ(8); // Question #9 (0-based 8)
+  sandbox.jumpStrategyQ(8);
+  assert.equal(sandbox.state.currentQuestion, 2, 'Cannot jump across unanswered S questions');
+  for (let i = 2; i < 8; i++) sandbox.answerStrategy(i % 5);
+  sandbox.jumpStrategyQ(8); // Question #9 after answering the preceding questions
   assert.equal(sandbox.state.currentQuestion, 8);
   assert.ok(getEl('app').innerHTML.includes('dh-progress-wrap'), 'Strategies must render sticky stage nav header');
   assert.ok(getEl('app').innerHTML.includes('dh-q-jumper'), 'Strategies must render interactive question jumper');

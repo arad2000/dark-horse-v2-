@@ -98,8 +98,8 @@ async function testStartupMarkup() {
   assert.ok(indexSource.indexOf('id="dh-startup-home"') < indexSource.indexOf('data.js?v='),
     'startup shell must be present before deferred data/app scripts');
   assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1/);
-  assert.match(indexSource, /app\.js\?v=72/);
-  assert.match(indexSource, /shell\.js\?v=91/);
+  assert.match(indexSource, /app\.js\?v=73/);
+  assert.match(indexSource, /shell\.js\?v=92/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
   assert.match(indexSource, /pwa-boot\.js\?v=79/);
   assert.match(indexSource, /shell\.css\?v=70&ux=phase4-live-v2(&r=\d+)?" media="print"/);
@@ -113,7 +113,7 @@ async function testStartupMarkup() {
   assert.strictEqual(fs.existsSync(path.join(root, 'docs', 'home_update_banner_1405.css')), false,
     'home_update_banner_1405.css must be completely removed');
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
-  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=72'),
+  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=73'),
     'payment hop bootstrap must precede app.js');
   assert.doesNotMatch(indexSource, /phase3-161-176-1|۱۱۰۰|1100/);
   console.log('startup markup and cache-bust preservation: PASS');
