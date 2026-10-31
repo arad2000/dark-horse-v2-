@@ -1506,7 +1506,7 @@
     if (typeof window.displayResults !== 'function' || window.__dh_shell_quota_patched) return;
     var orig = window.displayResults;
     window.displayResults = function (data, type) {
-      orig(data, type);
+      if (orig(data, type) === false) return false;
       try {
         var summary = extractResultSummary(data, type);
         if (summary && summary.tops && summary.tops.length) saveLastResult(summary);

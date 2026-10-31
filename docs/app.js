@@ -125,10 +125,48 @@ function dhAnsweredCount(arr) {
   return c;
 }
 
+// S UI gate mirrors #334. Numeric 0..4 is the wizard's internal storage;
+// transport values are always trimmed, uppercase A..E (never numeric strings).
+const DH_S_REQUIRED_MESSAGE = 'برای محاسبهٔ بخش راهبرد، باید هر ۲۵ سؤال را پاسخ بدهی.';
+function dhStrategyLetter(answer) {
+  if (Number.isInteger(answer) && answer >= 0 && answer <= 4) return String.fromCharCode(65 + answer);
+  if (typeof answer !== 'string') return null;
+  const letter = answer.trim().toUpperCase();
+  return /^[A-E]$/.test(letter) ? letter : null;
+}
+function dhStrategyAnsweredCount() {
+  return (state.strategyQuestions || []).reduce((n, q, i) => n + (dhStrategyLetter((state.strategyAnswers || [])[i]) ? 1 : 0), 0);
+}
+function dhBuildSjtAnswers() {
+  if (!Array.isArray(state.strategyQuestions) || state.strategyQuestions.length !== 25 || !Array.isArray(state.strategyAnswers)) return null;
+  const answers = {};
+  for (let i = 0; i < 25; i++) {
+    if (!state.strategyQuestions[i]) return null;
+    const id = /^S(0?[1-9]|1[0-9]|2[0-5])$/.exec(String(state.strategyQuestions[i].id || ''));
+    const letter = dhStrategyLetter(state.strategyAnswers[i]);
+    if (!id || !letter) return null;
+    const key = 'sjt_' + Number(id[1]);
+    if (Object.prototype.hasOwnProperty.call(answers, key)) return null;
+    answers[key] = letter;
+  }
+  return answers;
+}
+function dhResponseHasIncompleteS(data) {
+  if (!data || typeof data !== 'object') return false;
+  if (data.status === 'incomplete_s_responses' || data.s_assessment?.status === 'incomplete_s_responses') return true;
+  return [data.discovery_result, data.branch_discovery_result, ...(Array.isArray(data.incomplete_assessments) ? data.incomplete_assessments : [])].some(dhResponseHasIncompleteS);
+}
+function dhRequireCompleteStrategies(response) {
+  if (dhBuildSjtAnswers() && !dhResponseHasIncompleteS(response)) return true;
+  state.stage = 'introStrategies';
+  saveSession();
+  renderIntroStrategies();
+  return false;
+}
+
 function dhIsStageUnlocked(targetId) {
-  const sTotal = (state.strategyQuestions && state.strategyQuestions.length) || 25;
   const vTotal = (state.valueQuestions && state.valueQuestions.length) || 15;
-  const sDone = dhAnsweredCount(state.strategyAnswers);
+  const sDone = dhStrategyAnsweredCount();
   const vDone = dhAnsweredCount(state.valueAnswers);
   switch (targetId) {
     case 'splash':
@@ -149,12 +187,11 @@ function dhIsStageUnlocked(targetId) {
              state.stage === 'strategies' || state.stage === 'introStrategies';
     case 'introValues':
     case 'values':
-      return sDone >= sTotal || vDone > 0 ||
-             state.stage === 'values' || state.stage === 'introValues';
+      return Boolean(dhBuildSjtAnswers());
     case 'choice':
     case 'results':
-      return vDone >= vTotal || Boolean(state.majorsResult || state.branchesResult) ||
-             state.stage === 'choice' || state.stage === 'results';
+      return Boolean(dhBuildSjtAnswers()) && (vDone >= vTotal || Boolean(state.majorsResult || state.branchesResult) ||
+             state.stage === 'choice' || state.stage === 'results');
     default:
       return false;
   }
@@ -185,7 +222,7 @@ function dhStageUnlockHint(targetId) {
 }
 
 function dhStageBadgeText(stageId) {
-  const sDone = dhAnsweredCount(state.strategyAnswers);
+  const sDone = dhStrategyAnsweredCount();
   const vDone = dhAnsweredCount(state.valueAnswers);
   switch (stageId) {
     case 'realm':
@@ -280,6 +317,7 @@ function dhCaptureCurrentScroll() {
 }
 
 function dhGoHomeKeepPlace() {
+  if (state.stage === 'strategies' && !dhBuildSjtAnswers()) dhShowJourneyToast(DH_S_REQUIRED_MESSAGE);
   dhCaptureCurrentScroll();
   if (state.stage === 'results' && (state.majorsResult || state.branchesResult)) {
     window.__dhCachedResultsPlace = {
@@ -595,7 +633,10 @@ function loadSession() {
     state.selectedSubRealms = data.selectedSubRealms || [];
     state.selectedNarrowPaths = data.selectedNarrowPaths || [];
     state.likedCodes = data.likedCodes || [];
-    state.strategyAnswers = data.strategyAnswers || [];
+    state.strategyAnswers = Array.isArray(data.strategyAnswers) ? data.strategyAnswers.map(a => {
+      const letter = dhStrategyLetter(a);
+      return letter ? letter.charCodeAt(0) - 65 : null;
+    }) : [];
     state.valueAnswers = data.valueAnswers || [];
     state.currentQuestion = data.currentQuestion || 0;
     state.currentValueQuestion = data.currentValueQuestion || 0;
@@ -1181,6 +1222,7 @@ function render(opts) {
       }
     }
     ensureUXStyles();
+    if (['introValues', 'values', 'choice', 'results'].includes(state.stage) && !dhRequireCompleteStrategies()) return;
     switch (state.stage) {
       case 'manifesto': state.stage='splash'; renderSplash(); break;
       case 'guide': state.stage='splash'; renderSplash(); break;
@@ -1671,7 +1713,10 @@ function dhResumeFromSplash() {
     state.selectedNarrowPaths = data.selectedNarrowPaths || [];
     state.likedCodes = data.likedCodes || [];
     state.likedCodesSet = new Set(state.likedCodes);
-    state.strategyAnswers = data.strategyAnswers || [];
+    state.strategyAnswers = Array.isArray(data.strategyAnswers) ? data.strategyAnswers.map(a => {
+      const letter = dhStrategyLetter(a);
+      return letter ? letter.charCodeAt(0) - 65 : null;
+    }) : [];
     state.valueAnswers = data.valueAnswers || [];
     state.currentQuestion = data.currentQuestion || 0;
     state.currentValueQuestion = data.currentValueQuestion || 0;
@@ -2441,15 +2486,17 @@ function finishSwipe() {
 function dhQuestionJumperHTML(total, answersArr, currentIdx, clickFnName) {
   let pills = '';
   for (let i = 0; i < total; i++) {
-    const isAns = answersArr[i] !== undefined && answersArr[i] !== null && String(answersArr[i]).trim() !== '';
+    const isStrategy = clickFnName === 'jumpStrategyQ';
+    const isAns = isStrategy ? Boolean(dhStrategyLetter(answersArr[i])) : answersArr[i] !== undefined && answersArr[i] !== null && String(answersArr[i]).trim() !== '';
+    const locked = isStrategy && i > currentIdx && Array.from({length: i}, (_, j) => !dhStrategyLetter(answersArr[j])).some(Boolean);
     const isCur = i === currentIdx;
     const cls = ['dh-q-dot', isAns ? 'is-answered' : '', isCur ? 'is-current' : ''].filter(Boolean).join(' ');
-    pills += `<button type="button" class="${cls}" onclick="${clickFnName}(${i})" aria-label="سؤال ${i + 1}">${dhFaNum(i + 1)}</button>`;
+    pills += `<button type="button" class="${cls}"${locked ? ' disabled aria-disabled="true"' : ''} onclick="${clickFnName}(${i})" aria-label="سؤال ${i + 1}">${dhFaNum(i + 1)}</button>`;
   }
   return `<div class="dh-q-jumper-wrap">
     <div class="dh-q-jumper-head">
       <span>پرش سریع بین سؤالات</span>
-      <span>${dhFaNum(dhAnsweredCount(answersArr))} از ${dhFaNum(total)} پاسخ داده شده</span>
+      <span>${dhFaNum(clickFnName === 'jumpStrategyQ' ? dhStrategyAnsweredCount() : dhAnsweredCount(answersArr))} از ${dhFaNum(total)} پاسخ داده شده</span>
     </div>
     <div class="dh-q-jumper" role="group" aria-label="شماره سؤالات">${pills}</div>
   </div>`;
@@ -2457,7 +2504,10 @@ function dhQuestionJumperHTML(total, answersArr, currentIdx, clickFnName) {
 
 function jumpStrategyQ(idx) {
   const total = (state.strategyQuestions && state.strategyQuestions.length) || 0;
-  if (idx < 0 || idx >= total) return;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= total) return;
+  if (idx > state.currentQuestion) {
+    for (let i = 0; i < idx; i++) if (!dhStrategyLetter(state.strategyAnswers[i])) return;
+  }
   state.stage = 'strategies';
   state.currentQuestion = idx;
   saveSession();
@@ -2466,6 +2516,7 @@ function jumpStrategyQ(idx) {
 window.jumpStrategyQ = jumpStrategyQ;
 
 function nextStrategyStep() {
+  if (!dhStrategyLetter(state.strategyAnswers[state.currentQuestion])) return;
   const total = (state.strategyQuestions && state.strategyQuestions.length) || 0;
   if (state.currentQuestion < total - 1) {
     state.currentQuestion++;
@@ -2476,10 +2527,10 @@ function nextStrategyStep() {
 window.nextStrategyStep = nextStrategyStep;
 
 function renderIntroStrategies() {
-  const answered = dhAnsweredCount(state.strategyAnswers);
+  const answered = dhStrategyAnsweredCount();
   const total = (state.strategyQuestions && state.strategyQuestions.length) || 25;
   const canResume = answered > 0 && answered < total;
-  const allDone = answered >= total;
+  const allDone = Boolean(dhBuildSjtAnswers());
   const startLabel = allDone
     ? 'مرور پاسخ‌ها یا ادامه به ارزش‌ها'
     : (canResume ? `ادامه از سؤال ${dhFaNum(answered + 1)} از ${dhFaNum(total)}` : 'شروع سؤالات راهبرد');
@@ -2494,6 +2545,7 @@ function renderIntroStrategies() {
     <div class="card dh-surface-card">
       <p style="color:#d6d1c4;line-height:1.95;">${dhFaNum(total)} موقعیت واقعی پیش روی توست. پاسخ «درست» یا «غلط» وجود ندارد؛ گزینه‌ای را انتخاب کن که به رفتار واقعی تو نزدیک‌تر است.</p>
       ${resumeHint}
+      <p role="status" class="dh-stage-hint">${DH_S_REQUIRED_MESSAGE}</p>
       <div class="dh-stage-actions">
         <button type="button" class="btn btn-primary" onclick="goTo('strategies')">${startLabel}</button>
         ${canResume ? `<button type="button" class="btn" onclick="state.currentQuestion=0;saveSession();goTo('strategies')">مرور از سؤال اول</button>` : ''}
@@ -2545,15 +2597,18 @@ function renderStrategy() {
     return;
   }
   const total = state.strategyQuestions.length;
+  if (!Number.isInteger(state.currentQuestion) || state.currentQuestion < 0) state.currentQuestion = 0;
   if (state.currentQuestion >= total) {
-    state.currentQuestion = 0;
-    state.currentValueQuestion = state.currentValueQuestion || 0;
-    goTo('introValues');
+    if (dhBuildSjtAnswers()) { goTo('introValues'); return; }
+    syncStrategyCursor();
+  }
+  if (total !== 25) {
+    app.innerHTML = `<div class="card" role="status">${DH_S_REQUIRED_MESSAGE}<button class="btn" onclick="retryLoadQuestions()">تلاش دوباره</button></div>`;
     return;
   }
   const q = state.strategyQuestions[state.currentQuestion];
   const currentAnswer = state.strategyAnswers[state.currentQuestion];
-  const answeredCount = dhAnsweredCount(state.strategyAnswers);
+  const answeredCount = dhStrategyAnsweredCount();
   let html = progressHTML('strategies') +
     dhStrategyChapterHTML(state.currentQuestion) +
     dhStrategyMirrorHTML(answeredCount) +
@@ -2561,12 +2616,12 @@ function renderStrategy() {
     `<div class="card dh-surface-card dh-q-card">
       <div class="dh-q-top">
         <span class="dh-sjt-badge">موقعیت ${dhFaNum(q.number)} از ${dhFaNum(total)}</span>
-        ${currentAnswer !== undefined && currentAnswer !== null ? '<span class="dh-picked-pill">✓ پاسخ ثبت‌شده</span>' : ''}
+        ${dhStrategyLetter(currentAnswer) ? '<span class="dh-picked-pill">✓ پاسخ ثبت‌شده</span>' : ''}
       </div>
       <p class="dh-q-prompt">${escapeHtml(q.question)}</p>
       <div class="dh-answer-list">`;
   q.options.forEach((o, idx) => {
-    const isSelected = currentAnswer === o.index;
+    const isSelected = dhStrategyLetter(currentAnswer) === dhStrategyLetter(o.index);
     const letter = DH_OPT_LETTERS[idx] || String(idx + 1);
     html += `<button type="button" class="dh-answer-option${isSelected ? ' selected' : ''}" aria-pressed="${isSelected ? 'true' : 'false'}" onclick="answerStrategy(${o.index})">
       <span class="dh-opt-letter" aria-hidden="true">${letter}</span>
@@ -2577,19 +2632,22 @@ function renderStrategy() {
   html += `</div></div>
     <div class="dh-q-nav">
       ${state.currentQuestion > 0 ? `<button type="button" class="btn" onclick="previousStrategy()">‹ سؤال قبلی</button>` : ''}
-      ${state.currentQuestion < total - 1 ? `<button type="button" class="btn" onclick="nextStrategyStep()">سؤال بعدی ›</button>` : ''}
-      <button type="button" class="btn btn-primary" onclick="continueStrategy()">${answeredCount >= total ? 'ورود به دوراهی ارزش‌ها ›' : 'ادامه به اولین بی‌پاسخ'}</button>
+      ${state.currentQuestion < total - 1 ? `<button type="button" class="btn" ${!dhStrategyLetter(currentAnswer) ? 'disabled aria-disabled="true"' : ''} onclick="nextStrategyStep()">سؤال بعدی ›</button>` : ''}
+      <button type="button" class="btn btn-primary" ${!dhStrategyLetter(currentAnswer) ? 'disabled aria-disabled="true"' : ''} onclick="continueStrategy()">${answeredCount >= total ? 'ورود به دوراهی ارزش‌ها ›' : 'ادامه به اولین بی‌پاسخ'}</button>
       <button type="button" class="btn" onclick="goBack()">بازگشت</button>
     </div>`;
   app.innerHTML = html;
 }
 
 function answerStrategy(idx) {
-  state.strategyAnswers[state.currentQuestion] = idx;
+  const letter = dhStrategyLetter(idx);
+  if (!letter || !state.strategyQuestions[state.currentQuestion]) return;
+  state.strategyAnswers[state.currentQuestion] = letter.charCodeAt(0) - 65;
   const total = (state.strategyQuestions || []).length;
   let next = state.currentQuestion + 1;
-  while (next < total && state.strategyAnswers[next] !== undefined && state.strategyAnswers[next] !== null) next++;
-  state.currentQuestion = next;
+  while (next < total && dhStrategyLetter(state.strategyAnswers[next])) next++;
+  if (next >= total && !dhBuildSjtAnswers()) next = state.strategyQuestions.findIndex((q, i) => !dhStrategyLetter(state.strategyAnswers[i]));
+  state.currentQuestion = Math.max(0, next);
   saveSession();
   render();
 }
@@ -2601,14 +2659,11 @@ function previousStrategy() {
   }
 }
 function continueStrategy() {
+  if (!dhStrategyLetter(state.strategyAnswers[state.currentQuestion])) return;
   const total = (state.strategyQuestions || []).length;
   if (!total) return;
   syncStrategyCursor();
-  let answered = 0;
-  for (let i = 0; i < total; i++) {
-    if (state.strategyAnswers[i] !== undefined && state.strategyAnswers[i] !== null) answered++;
-  }
-  if (answered >= total) {
+  if (dhBuildSjtAnswers()) {
     state.currentValueQuestion = state.currentValueQuestion || 0;
     goTo('introValues');
     return;
@@ -2621,7 +2676,7 @@ function syncStrategyCursor() {
   const total = (state.strategyQuestions || []).length;
   if (!total) return;
   let i = 0;
-  while (i < total && state.strategyAnswers[i] !== undefined && state.strategyAnswers[i] !== null) i++;
+  while (i < total && dhStrategyLetter(state.strategyAnswers[i])) i++;
   if (i < total) state.currentQuestion = i;
   else state.currentQuestion = Math.min(state.currentQuestion || 0, total - 1);
 }
@@ -2860,15 +2915,14 @@ function renderChoice() {
   `;
 }
 
-// ==================== BUILD PAYLOAD (بدون تغییر) ====================
+// ==================== BUILD PAYLOAD (S exact-25 UI gate) ====================
 function buildPayload() {
-  const sjt = {};
-  state.strategyQuestions.forEach((q, i) => {
-    if (state.strategyAnswers[i] !== undefined) {
-      const num = parseInt(q.id.replace("S", ""), 10);
-      sjt[`sjt_${num}`] = String.fromCharCode(65 + state.strategyAnswers[i]);
-    }
-  });
+  const sjt = dhBuildSjtAnswers();
+  if (!sjt) {
+    const error = new Error(DH_S_REQUIRED_MESSAGE);
+    error.code = 'INCOMPLETE_S_RESPONSES';
+    throw error;
+  }
 
   const conj = {};
   state.valueQuestions.forEach((q, i) => {
@@ -3085,6 +3139,7 @@ function dhNotifyAnalysisGateError(err) {
 }
 
 async function analyzeMajors() {
+  if (!dhRequireCompleteStrategies()) return;
   state.stage = 'results';
   const payload = buildPayload();
   state.lastPayload = payload;
@@ -3103,6 +3158,7 @@ async function analyzeMajors() {
 }
 
 async function analyzeBranches() {
+  if (!dhRequireCompleteStrategies()) return;
   state.stage = 'results';
   const payload = buildPayload();
   state.lastPayload = payload;
@@ -3216,6 +3272,7 @@ async function loadDeepCounsel(mode) {
 
 
 function displayResults(data, type) {
+  if (!dhRequireCompleteStrategies(data)) return false;
   // ===== ۱. استخراج آیتم‌ها =====
   let items = [];
   let isBranch = false;

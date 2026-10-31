@@ -265,12 +265,16 @@ async function run() {
     'function render() { app.innerHTML = "<div data-stage=\\"" + state.stage + "\\"></div>"; }',
     'function progressHTML(st) { return "<div data-progress=\\"" + st + "\\"></div>"; }',
     'function loadingHTML(msg) { return "<div class=\\"loading\\">" + msg + "</div>"; }',
-    'function buildPayload() { return { micro_motives: state.likedCodes.slice(), sjt_answers: { S01: "A" }, conjoint_choices: { conj_1: "B01Q" } }; }',
+    extractBetween(appSource, 'const DH_S_REQUIRED_MESSAGE', '\nfunction dhIsStageUnlocked('),
+    extractBetween(appSource, 'function buildPayload()', '\n\nasync function ensureJourneyChargedForResults('),
     'function displayResults(data, type) { state.stage = "results"; state.journeyFinished = true; saveSession(); app.innerHTML = "<div id=\\"results-ready\\" data-type=\\"" + type + "\\"></div>"; }',
     extractBetween(appSource, 'function durableJourneySessionIdForSave()', '\nfunction resumeJourney()'),
     extractBetween(appSource, 'async function ensureJourneyChargedForResults()', '\n// ==================== DISPLAY RESULTS')
   ].join('\n\n');
   vm.runInContext(appCore, sandbox);
+  const protocolQuestions = JSON.parse(fs.readFileSync(path.join(root, 'docs/data/questions_v2.json'), 'utf8'));
+  sandbox.state.strategyQuestions = protocolQuestions.layers.strategies.questions;
+  sandbox.state.valueQuestions = protocolQuestions.layers.values.questions;
 
   // Provide DHAuth client backed by the same server endpoints
   sandbox.DHAuth = {
@@ -351,6 +355,8 @@ async function run() {
   assert.equal(serverCreditsRemaining(), 1, 'credits_remaining MUST still be 1 right before requesting results');
 
   // ==================== PHASE 3: COMPLETE JOURNEY -> SINGLE CHARGE ON DISCOVER ====================
+  // This quota-specific harness must satisfy the real S gate before discovery.
+  sandbox.state.strategyAnswers = Array.from({length: 25}, (_, i) => i % 5);
   await sandbox.analyzeMajors();
   assert.equal(consumeCalls, 1, 'completing journey and requesting discover MUST consume exactly ONCE');
   assert.equal(discoverCalls, 1, 'discover endpoint reached and succeeded with HTTP 200');
@@ -398,6 +404,8 @@ async function run() {
   // Complete Journey #2 -> credits drop 3 -> 2 (exact -1)!
   sandbox.state.likedCodes = ['SPORT-001'];
   sandbox.goTo('choice');
+  // This quota-specific harness must satisfy the real S gate before discovery.
+  sandbox.state.strategyAnswers = Array.from({length: 25}, (_, i) => i % 5);
   await sandbox.analyzeMajors();
   assert.equal(consumeCalls, 2, 'Journey #2 completion deducts exactly 1 credit');
   assert.equal(discoverCalls, 2);

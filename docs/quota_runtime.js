@@ -377,6 +377,7 @@
         if (sid) setJourneySession(sid);
       } catch (_) {}
       var out = original.apply(this, args);
+      if (out === false) return false; // A blocked/incomplete wizard result is not a completed result.
       var sid2 = SESSION_MEMORY || readJourney().sessionId;
       if (sid2 && loggedIn()) {
         consumeForJourney(String(sid2)).catch(function (err) {
