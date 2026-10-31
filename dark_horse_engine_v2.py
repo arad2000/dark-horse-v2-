@@ -336,29 +336,87 @@ class DarkHorseEngineV2:
 
         return min(1.0, score), matched_details
 
+    # ── S-Score input contract ──
+    @staticmethod
+    def _parse_s_strategy_answers(sjt_answers) -> Tuple[List[int], Dict]:
+        """Accept S only when all 25 protocol keys contain one valid A-E answer."""
+        expected_keys = {f"sjt_{i}" for i in range(1, 26)}
+        input_is_dict = isinstance(sjt_answers, dict)
+        payload = sjt_answers if input_is_dict else {}
+
+        answers = []
+        valid_questions = []
+        missing_questions = []
+        invalid_questions = []
+        for i in range(1, 26):
+            key = f"sjt_{i}"
+            if key not in payload:
+                missing_questions.append(key)
+                answers.append(-1)
+                continue
+
+            raw_answer = payload.get(key)
+            if not isinstance(raw_answer, str):
+                invalid_questions.append(key)
+                answers.append(-1)
+                continue
+
+            answer = raw_answer.strip().upper()
+            if answer not in {"A", "B", "C", "D", "E"}:
+                invalid_questions.append(key)
+                answers.append(-1)
+                continue
+
+            valid_questions.append(key)
+            answers.append(ord(answer) - ord("A"))
+
+        unknown_keys = sorted(str(key) for key in payload if key not in expected_keys)
+        length_matches = input_is_dict and len(payload) == 25
+        complete = (
+            input_is_dict
+            and length_matches
+            and len(valid_questions) == 25
+            and not unknown_keys
+        )
+        assessment = {
+            "status": "complete" if complete else "incomplete_s_responses",
+            "valid_answers": len(valid_questions),
+            "expected_answers": 25,
+            "input_length": len(payload) if input_is_dict else None,
+            "length_matches": bool(length_matches),
+            "missing_questions": missing_questions,
+            "invalid_questions": invalid_questions,
+            "unknown_keys": unknown_keys,
+            "reason": None if complete else "incomplete_s_responses",
+        }
+        if not complete:
+            assessment["score"] = None
+        return answers, assessment
+
     # ── S-Score ──
-    def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[float, List[str]]:
-        if not strategy_weights or not strategy_answers:
-            return 0.0, []
+    def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[Optional[float], List[str]]:
+        # Defensive invariant: no partial profile may be converted into a numeric S score.
+        if (
+            not isinstance(strategy_answers, list)
+            or len(strategy_answers) != 25
+            or any(type(idx) is not int or idx < 0 or idx > 4 for idx in strategy_answers)
+            or not isinstance(strategy_weights, list)
+            or len(strategy_weights) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy_weights)
+        ):
+            return None, []
 
         total_score = 0.0
         highlights = []
 
-        # Keep the denominator fixed to the full S-question protocol.
-        # Unanswered/invalid items contribute zero instead of shrinking the denominator.
-        question_count = len(strategy_weights)
+        # Full-profile formula is unchanged: mean of the 25 selected-weight ratios.
+        question_count = 25
 
         for i, row in enumerate(strategy_weights):
-            if i >= len(strategy_answers):
-                continue
             idx = strategy_answers[i]
-            if idx < 0 or idx >= len(row):
-                continue
-
             max_w = max(row) if row else 1.0
             chosen_w = row[idx] if 0 <= idx < len(row) else 0.0
             normalized = chosen_w / max_w if max_w > 0 else 0.0
-
             total_score += normalized
 
             if normalized >= 0.7:
@@ -371,7 +429,7 @@ class DarkHorseEngineV2:
                 else:
                     highlights.append(f"گزینه {idx+1} با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
 
-        final_score = (total_score / question_count) if question_count > 0 else 0.0
+        final_score = total_score / question_count
         return final_score, highlights
 
     # V range normalization: aggregate evidence, never average pair ratios.
@@ -759,11 +817,7 @@ class DarkHorseEngineV2:
     #  فرمول: Total = 0.55×M + 0.30×V + 0.15×S
     # ──────────────────────────────────────────────────────────────
     def discover_individuality(self, user_motives, sjt_answers, conjoint_choices):
-        strategy_answers = []
-        for i in range(1, 26):
-            key = f"sjt_{i}"
-            ans = (sjt_answers or {}).get(key, "").strip().upper()
-            strategy_answers.append(ord(ans) - ord('A') if len(ans) == 1 and 'A' <= ans <= 'E' else -1)
+        strategy_answers, s_assessment = self._parse_s_strategy_answers(sjt_answers)
 
         value_choices = []
         for i in range(1, 16):
@@ -792,9 +846,16 @@ class DarkHorseEngineV2:
                 s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
                 v_result = self._compute_v_result(value_choices, major_data.get("value_weights", {}))
                 v_score, v_high = v_result["score"], v_result["highlights"]
-                if v_score is None or not any(0 <= a <= 4 for a in strategy_answers) or not major_data.get("strategy_weights"):
-                    incomplete.append({"major_id": major_id, "score": None, "status": "incomplete",
-                                       "v_result": v_result})
+                if s_score is None or v_score is None or not major_data.get("strategy_weights"):
+                    s_incomplete = s_assessment.get("status") != "complete"
+                    incomplete.append({
+                        "major_id": major_id,
+                        "score": None,
+                        "status": "incomplete_s_responses" if s_incomplete else "incomplete",
+                        "reason": s_assessment.get("reason") if s_incomplete else None,
+                        "s_assessment": s_assessment if s_incomplete else None,
+                        "v_result": v_result,
+                    })
                     continue
 
                 total = (0.55 * m_score) + (0.30 * v_score) + (0.15 * s_score)
@@ -882,7 +943,8 @@ class DarkHorseEngineV2:
         return {
             "discovered_majors": discovered,
             "incomplete_assessments": incomplete,
-            "status": "incomplete" if incomplete else "complete",
+            "s_assessment": s_assessment,
+            "status": "incomplete" if incomplete or s_assessment.get("status") != "complete" else "complete",
             "summary": {
                 "total_majors_analyzed": len(self.majors_db),
                 "active_majors_analyzed": active_majors_count,
@@ -910,11 +972,7 @@ class DarkHorseEngineV2:
     #  M-Score denominator = min(30, max(15, |U|))
     # ──────────────────────────────────────────────────────────────
     def recommend_school_branch(self, user_motives, sjt_answers, conjoint_choices) -> Dict:
-        strategy_answers = []
-        for i in range(1, 26):
-            key = f"sjt_{i}"
-            ans = (sjt_answers or {}).get(key, "").strip().upper()
-            strategy_answers.append(ord(ans) - ord('A') if len(ans) == 1 and 'A' <= ans <= 'E' else -1)
+        strategy_answers, s_assessment = self._parse_s_strategy_answers(sjt_answers)
 
         value_choices = []
         for i in range(1, 16):
@@ -933,9 +991,16 @@ class DarkHorseEngineV2:
             s_score, s_high = self._compute_s_score(strategy_answers, branch_data.get("strategy_weights", []))
             v_result = self._compute_v_result(value_choices, branch_data.get("value_weights", {}))
             v_score, v_high = v_result["score"], v_result["highlights"]
-            if v_score is None or not any(0 <= a <= 4 for a in strategy_answers) or not branch_data.get("strategy_weights"):
-                incomplete.append({"branch_name": branch_name, "score": None, "status": "incomplete",
-                                   "v_result": v_result})
+            if s_score is None or v_score is None or not branch_data.get("strategy_weights"):
+                s_incomplete = s_assessment.get("status") != "complete"
+                incomplete.append({
+                    "branch_name": branch_name,
+                    "score": None,
+                    "status": "incomplete_s_responses" if s_incomplete else "incomplete",
+                    "reason": s_assessment.get("reason") if s_incomplete else None,
+                    "s_assessment": s_assessment if s_incomplete else None,
+                    "v_result": v_result,
+                })
                 continue
             total = (0.60 * m_score) + (0.20 * v_score) + (0.20 * s_score)
 
@@ -979,7 +1044,8 @@ class DarkHorseEngineV2:
         return {
             "recommended_branches": branch_scores,
             "incomplete_assessments": incomplete,
-            "status": "incomplete" if incomplete else "complete",
+            "s_assessment": s_assessment,
+            "status": "incomplete" if incomplete or s_assessment.get("status") != "complete" else "complete",
             "best_branch": best_branch,
             "summary": {
                 "total_majors_analyzed": len(self.majors_db),
