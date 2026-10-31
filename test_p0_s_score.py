@@ -29,7 +29,10 @@ class SIncompletePolicyTests(unittest.TestCase):
 
     def test_25_valid_answers_preserve_complete_profile_formula(self):
         weights = [[0.2, 0.4, 0.6, 0.8, 1.0] for _ in range(25)]
-        answers = [i % 5 for i in range(25)]
+        payload = {f"sjt_{i}": "ABCDE"[(i - 1) % 5] for i in range(1, 26)}
+        answers, assessment = self.engine._parse_s_strategy_answers(payload)
+        self.assertEqual(assessment["status"], "complete")
+        self.assertEqual(assessment["valid_answers"], 25)
         expected = sum(row[choice] / max(row) for row, choice in zip(weights, answers)) / 25
         score, _ = self.engine._compute_s_score(answers, weights)
         self.assertAlmostEqual(score, expected, places=12)
