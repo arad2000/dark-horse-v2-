@@ -391,6 +391,9 @@ class DarkHorseEngineV2:
         }
         if not complete:
             assessment["score"] = None
+            # Invalidate the scorer input too: an extra unknown key makes the
+            # whole protocol payload incomplete even if the 25 expected keys exist.
+            return [-1] * 25, assessment
         return answers, assessment
 
     # ── S-Score ──
