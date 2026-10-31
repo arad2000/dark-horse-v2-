@@ -23,7 +23,7 @@ Both POST /api/v2/darkhorse/discover and POST /api/v2/darkhorse/branch-discovery
 
 The API model does not reject a short/long dictionary solely on a minimum/maximum item-count constraint; the engine applies the exact 25-key contract. The existing overall request-body byte cap remains in force. Non-dictionary payloads may still fail request-model validation (HTTP 422).
 
-When S is incomplete, the API does not persist a numeric recommendation result. A session may still be created under the existing journey/session contract.
+Numeric recommendation persistence is allowed only when the engine explicitly reports s_assessment.status=complete. Incomplete or missing S-assessment metadata fails closed and does not persist a numeric recommendation result. A session may still be created under the existing journey/session contract.
 
 ## Regression coverage
 
