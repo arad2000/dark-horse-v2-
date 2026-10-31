@@ -397,29 +397,28 @@ class DarkHorseEngineV2:
         return answers, assessment
 
     # ── S-Score ──
-    def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[Optional[float], List[str]]:
-        # Defensive invariant: no partial profile may be converted into a numeric S score.
-        if (
-            not isinstance(strategy_answers, list)
-            or len(strategy_answers) != 25
-            or any(type(idx) is not int or idx < 0 or idx > 4 for idx in strategy_answers)
-            or not isinstance(strategy_weights, list)
-            or len(strategy_weights) != 25
-            or any(not isinstance(row, list) or len(row) != 5 for row in strategy_weights)
-        ):
-            return None, []
+    def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[float, List[str]]:
+        if not strategy_weights or not strategy_answers:
+            return 0.0, []
 
         total_score = 0.0
         highlights = []
 
-        # Full-profile formula is unchanged: mean of the 25 selected-weight ratios.
-        question_count = 25
+        # Keep the denominator fixed to the full S-question protocol.
+        # Unanswered/invalid items contribute zero instead of shrinking the denominator.
+        question_count = len(strategy_weights)
 
         for i, row in enumerate(strategy_weights):
+            if i >= len(strategy_answers):
+                continue
             idx = strategy_answers[i]
+            if idx < 0 or idx >= len(row):
+                continue
+
             max_w = max(row) if row else 1.0
             chosen_w = row[idx] if 0 <= idx < len(row) else 0.0
             normalized = chosen_w / max_w if max_w > 0 else 0.0
+
             total_score += normalized
 
             if normalized >= 0.7:
@@ -432,8 +431,21 @@ class DarkHorseEngineV2:
                 else:
                     highlights.append(f"گزینه {idx+1} با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
 
-        final_score = total_score / question_count
+        final_score = (total_score / question_count) if question_count > 0 else 0.0
         return final_score, highlights
+
+    def _compute_s_score_for_complete_profile(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[Optional[float], List[str]]:
+        """Reject incomplete S input before calling the baseline scorer."""
+        if (
+            not isinstance(strategy_answers, list)
+            or len(strategy_answers) != 25
+            or any(type(idx) is not int or idx < 0 or idx > 4 for idx in strategy_answers)
+            or not isinstance(strategy_weights, list)
+            or len(strategy_weights) != 25
+            or any(not isinstance(row, list) or len(row) != 5 for row in strategy_weights)
+        ):
+            return None, []
+        return self._compute_s_score(strategy_answers, strategy_weights)
 
     # V range normalization: aggregate evidence, never average pair ratios.
     V_EPSILON = 0.02
@@ -846,7 +858,7 @@ class DarkHorseEngineV2:
                 if m_score < 0.15:
                     continue
 
-                s_score, s_high = self._compute_s_score(strategy_answers, major_data.get("strategy_weights", []))
+                s_score, s_high = self._compute_s_score_for_complete_profile(strategy_answers, major_data.get("strategy_weights", []))
                 v_result = self._compute_v_result(value_choices, major_data.get("value_weights", {}))
                 v_score, v_high = v_result["score"], v_result["highlights"]
                 if s_score is None or v_score is None or not major_data.get("strategy_weights"):
@@ -991,7 +1003,7 @@ class DarkHorseEngineV2:
 
         for branch_name, branch_data in self.school_branches.items():
             m_score, m_ev = self._compute_branch_m_score(user_motives, branch_data)
-            s_score, s_high = self._compute_s_score(strategy_answers, branch_data.get("strategy_weights", []))
+            s_score, s_high = self._compute_s_score_for_complete_profile(strategy_answers, branch_data.get("strategy_weights", []))
             v_result = self._compute_v_result(value_choices, branch_data.get("value_weights", {}))
             v_score, v_high = v_result["score"], v_result["highlights"]
             if s_score is None or v_score is None or not branch_data.get("strategy_weights"):
