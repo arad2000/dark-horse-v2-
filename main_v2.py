@@ -594,7 +594,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
         s_assessment = discovery.get("s_assessment", {}) or {}
         persisted = (
             _persist_major_results(persisted_session_id, recommendations)
-            if s_assessment.get("status") == "complete"
+            if s_assessment.get("status", "complete") == "complete"
             else False
         )
 
@@ -668,7 +668,7 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
         s_assessment = result.get("s_assessment", {}) or {}
         persisted = (
             _persist_branch_results(persisted_session_id, branches)
-            if s_assessment.get("status") == "complete"
+            if s_assessment.get("status", "complete") == "complete"
             else False
         )
 
