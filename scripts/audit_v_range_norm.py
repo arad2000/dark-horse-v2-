@@ -31,11 +31,29 @@ def main():
     old, new = module.DarkHorseEngineV2(), DarkHorseEngineV2()
     old_source = subprocess.check_output(['git','show',BASE+':dark_horse_engine_v2.py'], text=True)
     new_source = (ROOT/'dark_horse_engine_v2.py').read_text()
-    for name in ('_compute_branch_m_score', '_compute_s_score'):
-        def implementation(source):
-            return next(ast.dump(n, include_attributes=False) for n in ast.walk(ast.parse(source))
-                        if isinstance(n, ast.FunctionDef) and n.name == name)
-        assert implementation(old_source) == implementation(new_source), name + ' changed'
+    def implementation(source, name):
+        return next(ast.dump(n, include_attributes=False) for n in ast.walk(ast.parse(source))
+                    if isinstance(n, ast.FunctionDef) and n.name == name)
+
+    # S remains an exact AST match to the pinned BASE implementation.
+    assert implementation(old_source, '_compute_s_score') == implementation(new_source, '_compute_s_score'), '_compute_s_score changed'
+
+    # Branch M is intentionally changed: lock its approved fixed-30 expression.
+    branch_m = next(n for n in ast.walk(ast.parse(new_source))
+                    if isinstance(n, ast.FunctionDef) and n.name == '_compute_branch_m_score')
+    score_values = [ast.dump(n.value, include_attributes=False)
+                    for n in ast.walk(branch_m)
+                    if isinstance(n, ast.Assign)
+                    and any(isinstance(t, ast.Name) and t.id == 'score' for t in n.targets)]
+    expected_score = ast.dump(ast.parse('len(matched) / 30.0', mode='eval').body,
+                              include_attributes=False)
+    expected_return = ast.dump(ast.parse('min(1.0, score)', mode='eval').body,
+                               include_attributes=False)
+    branch_returns = [ast.dump(n.value, include_attributes=False)
+                      for n in ast.walk(branch_m) if isinstance(n, ast.Return)]
+    assert score_values == [expected_score] and expected_return in branch_returns, (
+        '_compute_branch_m_score must use min(1, k / 30)'
+    )
 
     profiles = [(str(k), m) for k, m in new.majors_db.items() if m.get('motive_driven') is not False]
     profiles += [('branch:' + k, m) for k, m in new.school_branches.items()]
