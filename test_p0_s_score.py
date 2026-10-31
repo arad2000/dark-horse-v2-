@@ -42,7 +42,7 @@ class SIncompletePolicyTests(unittest.TestCase):
         answers, assessment = self.engine._parse_s_strategy_answers(payload)
         self.assertEqual(assessment["status"], "incomplete_s_responses")
         self.assertEqual(assessment["valid_answers"], 24)
-        self.assertIsNone(self.engine._compute_s_score(answers, self.weights()))
+        self.assertIsNone(self.engine._compute_s_score(answers, self.weights())[0])
         result = self.engine.discover_individuality([], payload, {})
         self.assertEqual(result["status"], "incomplete")
         self.assertEqual(result["s_assessment"]["status"], "incomplete_s_responses")
@@ -53,7 +53,7 @@ class SIncompletePolicyTests(unittest.TestCase):
         payload = self.answers(5, "A")
         answers, assessment = self.engine._parse_s_strategy_answers(payload)
         self.assertEqual(assessment["status"], "incomplete_s_responses")
-        self.assertIsNone(self.engine._compute_s_score(answers, self.weights()))
+        self.assertIsNone(self.engine._compute_s_score(answers, self.weights())[0])
         result = self.engine.recommend_school_branch([], payload, {})
         self.assertEqual(result["s_assessment"]["status"], "incomplete_s_responses")
         self.assertIsNone(result["s_assessment"]["score"])
@@ -65,20 +65,20 @@ class SIncompletePolicyTests(unittest.TestCase):
         payload["sjt_12"] = None
         answers, assessment = self.engine._parse_s_strategy_answers(payload)
         self.assertIn("sjt_12", assessment["invalid_questions"])
-        self.assertIsNone(self.engine._compute_s_score(answers, self.weights()))
+        self.assertIsNone(self.engine._compute_s_score(answers, self.weights())[0])
 
         payload = self.answers()
         payload["sjt_12"] = "F"
         answers, assessment = self.engine._parse_s_strategy_answers(payload)
         self.assertEqual(assessment["status"], "incomplete_s_responses")
-        self.assertIsNone(self.engine._compute_s_score(answers, self.weights()))
+        self.assertIsNone(self.engine._compute_s_score(answers, self.weights())[0])
 
         payload = self.answers()
         payload["sjt_unknown"] = "A"
         answers, assessment = self.engine._parse_s_strategy_answers(payload)
         self.assertIn("sjt_unknown", assessment["unknown_keys"])
         self.assertEqual(assessment["status"], "incomplete_s_responses")
-        self.assertIsNone(self.engine._compute_s_score(answers, self.weights()))
+        self.assertIsNone(self.engine._compute_s_score(answers, self.weights())[0])
 
 
 class SIncompleteApiContractTests(unittest.TestCase):
