@@ -39,7 +39,7 @@ def main():
     assert implementation(old_source, '_compute_s_score') == implementation(new_source, '_compute_s_score'), '_compute_s_score changed'
 
     # Branch M intentionally differs from BASE: pin one fixed-30 assignment
-    # and the complete successful return tuple, including matched_details.
+    # and validate return counts without comparing a list to a singleton list.
     branch_m = next(n for n in ast.walk(ast.parse(new_source))
                     if isinstance(n, ast.FunctionDef) and n.name == '_compute_branch_m_score')
     score_assignments = [n for n in ast.walk(branch_m)
@@ -49,14 +49,26 @@ def main():
                               include_attributes=False)
     expected_return = ast.dump(ast.parse('(min(1.0, score), matched_details)', mode='eval').body,
                                include_attributes=False)
-    successful_returns = [ast.dump(n.value, include_attributes=False)
-                          for n in ast.walk(branch_m)
-                          if isinstance(n, ast.Return) and isinstance(n.value, ast.Tuple)]
+    expected_early_return = ast.dump(ast.parse('(0.0, [])', mode='eval').body,
+                                     include_attributes=False)
+    branch_returns = [n for n in ast.walk(branch_m)
+                      if isinstance(n, ast.Return)]
+    successful_return_count = sum(
+        ast.dump(n.value, include_attributes=False) == expected_return
+        for n in branch_returns
+    )
+    early_return_count = sum(
+        ast.dump(n.value, include_attributes=False) == expected_early_return
+        for n in branch_returns
+    )
     assert (len(score_assignments) == 1
             and ast.dump(score_assignments[0].value, include_attributes=False) == expected_score
-            and successful_returns == [expected_return]), (
-        '_compute_branch_m_score must assign score = len(matched) / 30.0 exactly once '
-        'and return (min(1.0, score), matched_details)'
+            and successful_return_count == 1
+            and early_return_count == 3
+            and len(branch_returns) == 4), (
+        '_compute_branch_m_score must assign score = len(matched) / 30.0 exactly once, '
+        'have exactly one successful (min(1.0, score), matched_details) return, '
+        'and exactly three early (0.0, []) returns'
     )
 
     profiles = [(str(k), m) for k, m in new.majors_db.items() if m.get('motive_driven') is not False]
