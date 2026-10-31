@@ -2,7 +2,7 @@
 Dark Horse Engine — نسخه نهایی (D_last_final.py)
 - انتخاب رشته دانشگاهی: Total = 0.55×M + 0.30×V + 0.15×S
 - هدایت تحصیلی پایه نهم: Total = 0.60×M + 0.20×S + 0.20×V
-- M-Score شاخه‌ها با مخرج min(30, max(15, |U|)) محاسبه می‌شود
+- M-Score شاخه‌ها با مخرج ثابت ۳۰ محاسبه می‌شود
 - ✅ فقط از فیلدهای archetype و fulfillment_source دیتابیس استفاده می‌کند
 - ✅ هیچ تولید داخلی برای کهن‌الگو و منبع رضایت وجود ندارد
 """
@@ -181,6 +181,22 @@ class DarkHorseEngineV2:
         این دو فایل با فرض ترتیب یکسان S01..S25 به‌هم متصل می‌شوند، بدون شناسهٔ صریح مشترک.
         رشته‌های با motive_driven=False صراحتاً ظرفیت‌محورند و وارد امتیازدهی فردیت نمی‌شوند.
         """
+        # Branch M is calibrated against one fixed 30-spark reference budget.
+        # Reject any incomplete or non-canonical branch configuration at startup.
+        branch_denominators = [
+            branch.get("m_score_denom_limit")
+            for branch in self.school_branches.values()
+        ]
+        if (
+            len(self.school_branches) != 4
+            or len(branch_denominators) != 4
+            or any(type(value) is not int or value != 30 for value in branch_denominators)
+        ):
+            raise ValueError(
+                "Required school_branches_v2 reference must contain exactly four branches "
+                "with m_score_denom_limit=30."
+            )
+
         expected_keys = {f"S{i:02d}" for i in range(1, 26)}
         trait_keys = set(self.trait_map.keys())
         if trait_keys != expected_keys:
@@ -290,7 +306,7 @@ class DarkHorseEngineV2:
         return codes
 
     # ──────────────────────────────────────────────────────────────
-    # محاسبه M-Score برای شاخه‌ها (نرمال‌شده بر اساس بودجه جرقه‌های کاربر - گزینه ۲-الف)
+    # محاسبه M-Score برای شاخه‌ها (مخرج ثابت ۳۰)
     # ──────────────────────────────────────────────────────────────
     def _compute_branch_m_score(self, user_motives: List[str], branch_data: Dict) -> Tuple[float, List[Dict]]:
         if not user_motives:
@@ -307,9 +323,9 @@ class DarkHorseEngineV2:
         if not matched:
             return 0.0, []
 
-        denom_limit = branch_data.get("m_score_denom_limit", 30)
-        denom = min(float(denom_limit), max(15.0, float(len(user_set))))
-        score = len(matched) / denom
+        # The denominator is fixed and does not depend on user profile length
+        # or the size of the branch's motive-code pool.
+        score = len(matched) / 30.0
 
         matched_details = []
         for code in user_motives:
