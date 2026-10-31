@@ -36,6 +36,8 @@ class SIncompletePolicyTests(unittest.TestCase):
         expected = sum(row[choice] / max(row) for row, choice in zip(weights, answers)) / 25
         score, _ = self.engine._compute_s_score(answers, weights)
         self.assertAlmostEqual(score, expected, places=12)
+        all_strong, _ = self.engine._compute_s_score([0] * 25, self.weights())
+        self.assertEqual(all_strong, 1.0)
 
     def test_24_valid_answers_are_incomplete_and_not_numeric(self):
         payload = self.answers(24)
