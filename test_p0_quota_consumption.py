@@ -107,7 +107,7 @@ class P0QuotaConsumptionTests(unittest.TestCase):
                 json={
                     "session_id": session_uuid,
                     "micro_motives": [f"MED-{i:03d}" for i in range(1, 8)],
-                    "sjt_answers": {"sjt_1": "A"},
+                    "sjt_answers": {f"sjt_{i}": "A" for i in range(1, 26)},
                     # A numeric discovery fit requires available V evidence.
                     # Missing-V/null behavior is covered by test_v_consumer_contract.
                     "conjoint_choices": {f"conj_{i}": f"Q{i}A" for i in range(1, 16)},
