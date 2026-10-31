@@ -5,7 +5,7 @@ Base commit: 57698ecb0117f0f0b503fb8a046ad0f00f2cd747.
 
 ## Decision
 
-An S score is numeric only when all 25 Strategy questions have one valid answer each. A valid answer is a string containing exactly one of A, B, C, D, or E after trimming surrounding whitespace and case-normalization. The request must contain exactly the 25 keys sjt_1 through sjt_25. Missing keys, null/empty values, non-A–E values, extra/unknown keys, or a non-dictionary input make the S assessment incomplete.
+An S score is numeric only when all 25 Strategy questions have one valid answer each. A valid answer is a string containing exactly one of A, B, C, D, or E after trimming surrounding whitespace and case-normalization. The request must contain exactly the 25 keys sjt_1 through sjt_25. Missing keys, null/empty values, non-A–E values, extra/unknown keys, or a non-dictionary passed directly to the engine make the S assessment incomplete. At the HTTP layer, the request model requires a dictionary; a non-dictionary payload may be rejected with HTTP 422.
 
 ## Scoring
 
