@@ -176,7 +176,9 @@ def _runtime_module_diagnostics() -> dict:
 
 class DarkHorseDiscoverRequest(BaseModel):
     micro_motives: list = Field(default_factory=list, max_length=100)
-    sjt_answers: dict = Field(default_factory=dict, max_length=25)
+    # Exact 25-key validity is enforced by the engine, not by a dict item-count limit.
+    # This keeps short/extra-key dicts on the HTTP 200 + incomplete response path.
+    sjt_answers: dict = Field(default_factory=dict)
     conjoint_choices: dict = Field(default_factory=dict, max_length=15)
     session_id: str | None = Field(default=None, min_length=8, max_length=64)
 
@@ -539,7 +541,7 @@ def _rankable_score(score, components):
                  and math.isfinite(components["v_score"])))
 
 
-@app.post("/api/v2/darkhorse/discover")
+@app.post("/api/v2/darkhorse/discover", status_code=200)
 async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
     _enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER, "کشف رشته")
     _enforce_payload_limit(
@@ -589,7 +591,12 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
         high = sum(1 for r in recommendations if r["fit_score"] >= 80)
         med = sum(1 for r in recommendations if 60 <= r["fit_score"] < 80)
         low = sum(1 for r in recommendations if r["fit_score"] < 60)
-        persisted = _persist_major_results(persisted_session_id, recommendations)
+        s_assessment = discovery.get("s_assessment", {}) or {}
+        persisted = (
+            _persist_major_results(persisted_session_id, recommendations)
+            if s_assessment.get("status", "complete") == "complete"
+            else False
+        )
 
         return {
             "session_id": session_uuid,
@@ -599,6 +606,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "total_matches": len(recommendations),
                 "status": "incomplete" if incomplete else discovery.get("status", "complete"),
                 "incomplete_assessments": incomplete,
+                "s_assessment": s_assessment,
                 "high_fit_majors": high,
                 "medium_fit_majors": med,
                 "low_fit_majors": low,
@@ -615,7 +623,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
-@app.post("/api/v2/darkhorse/branch-discovery")
+@app.post("/api/v2/darkhorse/branch-discovery", status_code=200)
 async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
     _enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER, "هدایت تحصیلی")
     _enforce_payload_limit(
@@ -657,7 +665,12 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
             branches.append(branch_item)
 
         branches.sort(key=lambda x: x["fit_score"], reverse=True)
-        persisted = _persist_branch_results(persisted_session_id, branches)
+        s_assessment = result.get("s_assessment", {}) or {}
+        persisted = (
+            _persist_branch_results(persisted_session_id, branches)
+            if s_assessment.get("status", "complete") == "complete"
+            else False
+        )
 
         return {
             "session_id": session_uuid,
@@ -667,6 +680,7 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "total_matches": len(branches),
                 "status": "incomplete" if incomplete else result.get("status", "complete"),
                 "incomplete_assessments": incomplete,
+                "s_assessment": s_assessment,
                 "best_branch": result.get("best_branch") if any(b["branch_name_fa"] == result.get("best_branch") for b in branches) else None,
                 "branches": branches,
                 "method": result.get("method", {}),
