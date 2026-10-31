@@ -541,7 +541,7 @@ def _rankable_score(score, components):
                  and math.isfinite(components["v_score"])))
 
 
-@app.post("/api/v2/darkhorse/discover")
+@app.post("/api/v2/darkhorse/discover", status_code=200)
 async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
     _enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER, "کشف رشته")
     _enforce_payload_limit(
@@ -623,7 +623,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
         raise HTTPException(500, detail="خطای داخلی سرور")
 
 
-@app.post("/api/v2/darkhorse/branch-discovery")
+@app.post("/api/v2/darkhorse/branch-discovery", status_code=200)
 async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
     _enforce_public_rate_limit(req, DISCOVERY_RATE_LIMITER, "هدایت تحصیلی")
     _enforce_payload_limit(
