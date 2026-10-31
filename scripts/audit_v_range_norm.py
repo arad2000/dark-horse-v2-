@@ -31,11 +31,45 @@ def main():
     old, new = module.DarkHorseEngineV2(), DarkHorseEngineV2()
     old_source = subprocess.check_output(['git','show',BASE+':dark_horse_engine_v2.py'], text=True)
     new_source = (ROOT/'dark_horse_engine_v2.py').read_text()
-    for name in ('_compute_branch_m_score', '_compute_s_score'):
-        def implementation(source):
-            return next(ast.dump(n, include_attributes=False) for n in ast.walk(ast.parse(source))
-                        if isinstance(n, ast.FunctionDef) and n.name == name)
-        assert implementation(old_source) == implementation(new_source), name + ' changed'
+    def implementation(source, name):
+        return next(ast.dump(n, include_attributes=False) for n in ast.walk(ast.parse(source))
+                    if isinstance(n, ast.FunctionDef) and n.name == name)
+
+    # S remains an exact AST match to the pinned BASE implementation.
+    assert implementation(old_source, '_compute_s_score') == implementation(new_source, '_compute_s_score'), '_compute_s_score changed'
+
+    # Branch M intentionally differs from BASE: pin one fixed-30 assignment
+    # and validate return counts without comparing a list to a singleton list.
+    branch_m = next(n for n in ast.walk(ast.parse(new_source))
+                    if isinstance(n, ast.FunctionDef) and n.name == '_compute_branch_m_score')
+    score_assignments = [n for n in ast.walk(branch_m)
+                         if isinstance(n, ast.Assign)
+                         and any(isinstance(t, ast.Name) and t.id == 'score' for t in n.targets)]
+    expected_score = ast.dump(ast.parse('len(matched) / 30.0', mode='eval').body,
+                              include_attributes=False)
+    expected_return = ast.dump(ast.parse('(min(1.0, score), matched_details)', mode='eval').body,
+                               include_attributes=False)
+    expected_early_return = ast.dump(ast.parse('(0.0, [])', mode='eval').body,
+                                     include_attributes=False)
+    branch_returns = [n for n in ast.walk(branch_m)
+                      if isinstance(n, ast.Return)]
+    successful_return_count = sum(
+        ast.dump(n.value, include_attributes=False) == expected_return
+        for n in branch_returns
+    )
+    early_return_count = sum(
+        ast.dump(n.value, include_attributes=False) == expected_early_return
+        for n in branch_returns
+    )
+    assert (len(score_assignments) == 1
+            and ast.dump(score_assignments[0].value, include_attributes=False) == expected_score
+            and successful_return_count == 1
+            and early_return_count == 3
+            and len(branch_returns) == 4), (
+        '_compute_branch_m_score must assign score = len(matched) / 30.0 exactly once, '
+        'have exactly one successful (min(1.0, score), matched_details) return, '
+        'and exactly three early (0.0, []) returns'
+    )
 
     profiles = [(str(k), m) for k, m in new.majors_db.items() if m.get('motive_driven') is not False]
     profiles += [('branch:' + k, m) for k, m in new.school_branches.items()]
@@ -97,9 +131,9 @@ def main():
             bm = getattr(old,mf)(motives,m)[0]; nm = getattr(new,mf)(motives,m)[0]
             bs = old._compute_s_score(answers,m['strategy_weights'])[0]
             ns = new._compute_s_score(answers,m['strategy_weights'])[0]
-            old_ms.append((key,bm,bs)); new_ms.append((key,nm,ns))
             if key.startswith('branch:'):
                 continue
+            old_ms.append((key,bm,bs)); new_ms.append((key,nm,ns))
             bv=old._compute_v_score(choices,m['value_weights'])[0]
             nv=new._compute_v_score(choices,m['value_weights'])[0]
             before=round(100*(.55*bm+.15*bs+.30*bv),1)
