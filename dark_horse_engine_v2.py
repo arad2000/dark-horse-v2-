@@ -462,17 +462,24 @@ class DarkHorseEngineV2:
         code = value.strip().upper()
         return code if code in {f"Q{i}{side}" for i in range(1, 16) for side in "AB"} else None
 
+    @staticmethod
+    def _valid_value_pair(base, value_weights):
+        try:
+            raw = [value_weights[base + side] for side in "AB"]
+            if any(type(weight) not in (int, float) for weight in raw):
+                return None
+            pair = tuple(float(weight) for weight in raw)
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return None
+        return pair if all(isfinite(weight) and 0 <= weight <= 1 for weight in pair) else None
+
     @classmethod
     def _pairwise_value_score(cls, choice, value_weights):
         code = cls._valid_value_code(choice)
-        if not code:
+        pair = cls._valid_value_pair(code[:-1], value_weights) if code else None
+        if pair is None:
             return 0.0, 0.0
-        try:
-            a, b = (float(value_weights[code[:-1] + side]) for side in "AB")
-        except (KeyError, TypeError, ValueError):
-            return 0.0, 0.0
-        if not all(isfinite(x) and 0 <= x <= 1 for x in (a, b)):
-            return 0.0, 0.0
+        a, b = pair
         span = round(abs(a - b), 12)
         chosen = a if code[-1] == "A" else b
         if span < cls.V_EPSILON:
@@ -480,30 +487,30 @@ class DarkHorseEngineV2:
         return (chosen - min(a, b)) / span, chosen
 
     def _compute_v_result(self, value_choices, value_weights):
-        # Repeated identical answers count once; conflicting answers invalidate
-        # the question rather than making the result depend on input order.
+        # Fifteen cards are the protocol; a repeated pole is not a new witness.
         answers = {}
         for value in value_choices or []:
             code = self._valid_value_code(value)
             if code:
                 answers.setdefault(code[:-1], set()).add(code)
+        bases = [f"Q{i}" for i in range(1, 16)]
         answered = sum(len(codes) == 1 for codes in answers.values())
+        conflicts = [base for base in bases if len(answers.get(base, set())) > 1]
+        missing = [base for base in bases if base not in answers]
+        pairs = {base: self._valid_value_pair(base, value_weights) for base in bases}
+        invalid_reference = [base for base in bases if pairs[base] is None]
+        available = {base for base, pair in pairs.items()
+                     if pair is not None and round(abs(pair[0] - pair[1]), 12) >= self.V_EPSILON}
         numerator = denominator = 0.0
         informative = 0
         highlights = []
-        for base, codes in answers.items():
-            if len(codes) != 1:
+        for base in bases:
+            codes = answers.get(base, set())
+            if len(codes) != 1 or base not in available:
                 continue
             code = next(iter(codes))
-            try:
-                a, b = (float(value_weights[base + side]) for side in "AB")
-            except (KeyError, TypeError, ValueError):
-                continue
-            if not all(isfinite(x) and 0 <= x <= 1 for x in (a, b)):
-                continue
+            a, b = pairs[base]
             span = round(abs(a - b), 12)
-            if span < self.V_EPSILON:
-                continue
             chosen = a if code[-1] == "A" else b
             numerator += chosen - min(a, b)
             denominator += span
@@ -511,14 +518,26 @@ class DarkHorseEngineV2:
             if chosen > min(a, b):
                 pole = self.value_poles.get(code, code)
                 highlights.append(f"ارزش «{pole}»: هم‌راستایی قوی")
-        score = min(1.0, max(0.0, numerator / denominator)) if denominator else None
+        if answered != 15:
+            reason = "value_incomplete"
+        elif invalid_reference:
+            reason = "value_reference_incomplete"
+        elif not denominator:
+            reason = "value_no_evidence"
+        else:
+            reason = None
+        score = min(1.0, max(0.0, numerator / denominator)) if reason is None else None
         return {
             "score": score,
-            "status": ("complete" if answered == 15 else "partial") if score is not None
-                      else ("no_discriminative_evidence" if answered else "incomplete"),
+            "status": reason or "complete",
+            "reason": reason,
             "coverage": {"answered": answered, "total": 15,
-                         "discriminative_answered": informative},
-            "highlights": highlights,
+                         "valid_reference_pairs": 15 - len(invalid_reference),
+                         "discriminative_available": len(available),
+                         "discriminative_answered": informative,
+                         "missing_questions": missing, "conflicting_questions": conflicts,
+                         "invalid_reference_questions": invalid_reference},
+            "highlights": highlights if reason is None else [],
         }
 
     def _compute_v_score(self, value_choices, value_weights):
@@ -527,8 +546,8 @@ class DarkHorseEngineV2:
 
     @classmethod
     def _v_method(cls):
-        return {"version": "3.1-v-range-norm",
-                "v_formula": "sum(w_chosen-min(wA,wB))/sum(max(wA,wB)-min(wA,wB)); answered pairs only; range < 0.02 excluded; zero denominator => null",
+        return {"version": "3.2-v-evidence-floor",
+                "v_formula": "sum(w_chosen-min(wA,wB))/sum(max(wA,wB)-min(wA,wB)); 15 valid answers and 15 valid reference pairs required; range < 0.02 excluded; zero denominator => null",
                 "v_epsilon": cls.V_EPSILON,
                 "v_previous_formula": "mean(w_chosen/max(wA,wB)) at deploy 45e61bc5ed0f83a69ec36aff9de7a24a1ce45b90",
                 "score_label": "امتیاز هم‌خوانی مدل"}
@@ -728,9 +747,17 @@ class DarkHorseEngineV2:
         return [trait for trait, _ in misaligned[:3]]
 
     def _extract_v_misaligned_poles(self, value_choices, value_weights):
+        if self._compute_v_result(value_choices, value_weights)["score"] is None:
+            return []
         poles = []
         for v in value_choices:
-            if not v or not v.strip() or not v.startswith('Q'):
+            if not isinstance(v, str) or not v.strip():
+                continue
+            v = self._valid_value_code(v)
+            if not v:
+                continue
+            pair = self._valid_value_pair(v[:-1], value_weights)
+            if pair is None or round(abs(pair[0] - pair[1]), 12) < self.V_EPSILON:
                 continue
             letter = v[-1]
             q_part = v[:-1]
@@ -808,11 +835,16 @@ class DarkHorseEngineV2:
 
     def _extract_dominant_values(self, value_choices: List[str], value_weights: Dict[str, float],
                                   threshold: float = 0.7, top_n: int = 2) -> List[str]:
+        if self._compute_v_result(value_choices, value_weights)["score"] is None:
+            return []
         value_strength: Dict[str, float] = {}
         for v in value_choices:
-            if not v or not v.strip():
+            if not isinstance(v, str) or not v.strip():
                 continue
-            code = v.strip().upper()
+            code = self._valid_value_code(v)
+            pair = self._valid_value_pair(code[:-1], value_weights) if code else None
+            if pair is None or round(abs(pair[0] - pair[1]), 12) < self.V_EPSILON:
+                continue
             normalized, raw_weight = self._pairwise_value_score(code, value_weights)
             if raw_weight > threshold or (normalized >= 0.85 and raw_weight >= 0.55):
                 pole = self.value_poles.get(code, v.strip())
@@ -873,8 +905,8 @@ class DarkHorseEngineV2:
                     incomplete.append({
                         "major_id": major_id,
                         "score": None,
-                        "status": "incomplete_s_responses" if s_incomplete else ("equal_no_evidence" if s_equal else "incomplete"),
-                        "reason": s_assessment.get("reason") if s_incomplete else ("equal_no_evidence" if s_equal else None),
+                        "status": "incomplete_s_responses" if s_incomplete else ("equal_no_evidence" if s_equal else v_result["status"]),
+                        "reason": s_assessment.get("reason") if s_incomplete else ("equal_no_evidence" if s_equal else v_result["reason"]),
                         "strategy_assessment": s_result,
                         "s_assessment": s_assessment if s_incomplete else None,
                         "v_result": v_result,
@@ -1022,8 +1054,8 @@ class DarkHorseEngineV2:
                 incomplete.append({
                     "branch_name": branch_name,
                     "score": None,
-                    "status": "incomplete_s_responses" if s_incomplete else ("equal_no_evidence" if s_equal else "incomplete"),
-                    "reason": s_assessment.get("reason") if s_incomplete else ("equal_no_evidence" if s_equal else None),
+                    "status": "incomplete_s_responses" if s_incomplete else ("equal_no_evidence" if s_equal else v_result["status"]),
+                    "reason": s_assessment.get("reason") if s_incomplete else ("equal_no_evidence" if s_equal else v_result["reason"]),
                     "strategy_assessment": s_result,
                     "s_assessment": s_assessment if s_incomplete else None,
                     "v_result": v_result,

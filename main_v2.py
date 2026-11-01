@@ -574,6 +574,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "market_demand_level": fit.get("market_demand_level"),
                 "raw_components": fit.get("raw_components", {}),
                 "strategy_assessment": fit.get("strategy_assessment"),
+                "value_assessment": fit.get("value_assessment"),
                 "evidence": fit.get("evidence", {}),
                 "personalized_description": fit.get("personalized_description", ""),
                 "individuality_fit": fit,
