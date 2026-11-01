@@ -1,6 +1,10 @@
-"""Range-V contract tests; reference weights are never modified."""
+"""Range-V and Total-display contracts; reference weights are never modified."""
 import random
 import unittest
+from contextlib import contextmanager, ExitStack
+from copy import copy
+from functools import lru_cache
+from unittest.mock import patch
 from dark_horse_engine_v2 import DarkHorseEngineV2
 
 
@@ -190,6 +194,160 @@ class VRangeTests(unittest.TestCase):
                            and any(isinstance(target, ast.Name) and target.id == 'total' for target in node.targets)]
             self.assertEqual(hashlib.sha256(repr(assignments).encode()).hexdigest(), expected)
 
+
+
+
+
+# Controlled component outputs isolate rounding without changing any reference data.
+
+
+@lru_cache(maxsize=1)
+def _total_reference_engine():
+    return DarkHorseEngineV2()
+
+
+@contextmanager
+def total_boundary_engine(raw, missing=None):
+    engine = copy(_total_reference_engine())
+    key, major = next((k, row) for k, row in engine.majors_db.items() if row['id'] == 1)
+    engine.majors_db = {key: major}
+    name, branch = next(iter(engine.school_branches.items()))
+    engine.school_branches = {name: branch}
+    s = None if missing == 's' else raw
+    v = None if missing == 'v' else raw
+    with ExitStack() as stack:
+        overrides = {
+            '_compute_m_score': (raw, []), '_compute_branch_m_score': (raw, []),
+            '_compute_s_score_for_complete_profile': (s, []),
+            '_compute_s_result': {'score': s, 'status': 'complete' if s is not None else 'equal_no_evidence'},
+            '_compute_v_result': {'score': v, 'highlights': [],
+                'status': 'complete' if v is not None else 'value_incomplete',
+                'reason': None if v is not None else 'value_incomplete', 'coverage': {'answered': 15}},
+            '_find_alternative_paths': [], '_find_branch_alternative_paths': [],
+        }
+        for method, result in overrides.items():
+            stack.enter_context(patch.object(engine, method, return_value=result))
+        yield engine
+
+
+class TotalThresholdTests(unittest.TestCase):
+    sjt = {f'sjt_{i}': 'A' for i in range(1, 26)}
+    values = {f'conj_{i}': f'Q{i}A' for i in range(1, 16)}
+
+    def test_major_30_boundary_is_rounded_not_raw(self):
+        for raw, expected in ((.2990, None), (.2994, None), (.2996, 30.0),
+                              (.3000, 30.0), (.3004, 30.0), (.301, 30.1)):
+            with self.subTest(raw=raw), total_boundary_engine(raw) as engine:
+                result = engine.discover_individuality([], self.sjt, self.values)
+                rows = result['discovered_majors']
+                if expected is None:
+                    self.assertEqual(rows, [])
+                else:
+                    self.assertEqual(len(rows), 1)
+                    self.assertEqual(rows[0]['individuality_fit']['score'], expected)
+                    self.assertEqual(rows[0]['individuality_fit']['level'], 'همخوانی پایین')
+
+    def test_40_60_80_levels_and_summary_use_the_same_rounded_score(self):
+        for threshold, below, above in ((40, 'همخوانی پایین', 'همخوانی متوسط'),
+                                        (60, 'همخوانی متوسط', 'همخوانی بالا'),
+                                        (80, 'همخوانی بالا', 'همخوانی بسیار بالا')):
+            for offset in (-.10, -.04, 0, .04):
+                raw = (threshold + offset) / 100
+                expected = threshold - .1 if offset == -.10 else float(threshold)
+                with self.subTest(threshold=threshold, offset=offset), total_boundary_engine(raw) as engine:
+                    result = engine.discover_individuality([], self.sjt, self.values)
+                    fit = result['discovered_majors'][0]['individuality_fit']
+                    self.assertEqual(fit['score'], expected)
+                    self.assertEqual(fit['level'], below if offset == -.10 else above)
+                    # Summary deliberately has three bands, not four fit levels.
+                    summary = result['summary']
+                    self.assertEqual(summary['high_compatibility'], int(expected >= 80))
+                    self.assertEqual(summary['medium_compatibility'], int(60 <= expected < 80))
+                    self.assertEqual(summary['low_compatibility'], int(expected < 60))
+
+    def test_branch_server_retains_below_30_and_reports_one_decimal(self):
+        cases = [(.2990, 29.9), (.2994, 29.9), (.2996, 30.0), (.3000, 30.0), (.3004, 30.0)]
+        cases += [((threshold + offset) / 100, threshold - .1 if offset == -.10 else float(threshold))
+                  for threshold in (40, 60, 80) for offset in (-.10, -.04, 0, .04)]
+        for raw, expected in cases:
+            with self.subTest(raw=raw), total_boundary_engine(raw) as engine:
+                result = engine.recommend_school_branch([], self.sjt, self.values)
+                self.assertEqual(len(result['recommended_branches']), 1)
+                row = result['recommended_branches'][0]
+                for field in ('average_score', 'max_score', 'min_score'):
+                    self.assertEqual(row[field], expected)
+                self.assertEqual(result['best_branch'], row['branch_name'])
+                self.assertNotIn('level', row)  # Do not invent branch 40/60/80 levels.
+
+    def test_python_binary_float_ties_to_even_is_not_decimal_half_away(self):
+        for raw, expected in ((.3125, 31.2), (.3175, 31.8)):
+            with self.subTest(raw=raw), total_boundary_engine(raw) as engine:
+                major = engine.discover_individuality([], self.sjt, self.values)['discovered_majors'][0]
+                branch = engine.recommend_school_branch([], self.sjt, self.values)['recommended_branches'][0]
+                self.assertEqual(major['individuality_fit']['score'], expected)
+                self.assertEqual(branch['average_score'], expected)
+        self.assertEqual(round(30.05, 1), 30.1)
+        self.assertEqual(round(30.25, 1), 30.2)
+
+    def test_null_s_or_v_never_constructs_a_numeric_total(self):
+        for missing in ('s', 'v'):
+            with self.subTest(missing=missing), total_boundary_engine(.8, missing) as engine:
+                a = engine.discover_individuality([], self.sjt, self.values)
+                b = engine.recommend_school_branch([], self.sjt, self.values)
+                self.assertEqual(a['discovered_majors'], [])
+                self.assertEqual(b['recommended_branches'], [])
+                self.assertIsNone(b['best_branch'])
+                for result in (a, b):
+                    self.assertEqual(len(result['incomplete_assessments']), 1)
+                    self.assertIsNone(result['incomplete_assessments'][0]['score'])
+
+    def test_medical_and_general_recommendation_matches_deploy_snapshot(self):
+        engine = DarkHorseEngineV2()
+        for major_id, expected_score, expected_s in ((1, 100.0, 100.0), (42, 99.6, 97.0)):
+            major = next(row for row in engine.majors_db.values() if row['id'] == major_id)
+            sjt = {f'sjt_{i}': chr(65 + row.index(max(row)))
+                   for i, row in enumerate(major['strategy_weights'], 1)}
+            w = major['value_weights']
+            values = {f'conj_{i}': f'Q{i}' + ('A' if w[f'Q{i}A'] >= w[f'Q{i}B'] else 'B')
+                      for i in range(1, 16)}
+            result = engine.discover_individuality(major['micro_motive_codes'], sjt, values)
+            fit = next(row['individuality_fit'] for row in result['discovered_majors']
+                       if int(row['major_id']) == major_id)
+            self.assertEqual(fit['score'], expected_score)
+            self.assertEqual(fit['raw_components'], {'m_score': 100.0, 's_score': expected_s, 'v_score': 100.0})
+
+
+    def test_total_uses_raw_components_not_rounded_component_percentages(self):
+        with total_boundary_engine(.2994) as engine, patch.object(engine, '_compute_v_result',
+                return_value={'score': .4004, 'highlights': [], 'status': 'complete', 'reason': None}):
+            fit = engine.discover_individuality([], self.sjt, self.values)['discovered_majors'][0]['individuality_fit']
+            self.assertEqual(fit['score'], 33.0)
+            c = fit['raw_components']
+            reconstructed = round(.55*c['m_score'] + .30*c['v_score'] + .15*c['s_score'], 1)
+            self.assertEqual(reconstructed, 32.9)
+            self.assertNotEqual(fit['score'], reconstructed)
+
+    def test_v_contract_ast_matches_current_deploy(self):
+        # M/S and both Total expressions are already pinned by VRangeTests.
+        import ast
+        import hashlib
+        from pathlib import Path
+        tree = ast.parse(Path(__file__).with_name('dark_horse_engine_v2.py').read_text())
+        for node in ast.walk(tree):
+            if hasattr(node, 'type_params') and not node.type_params:
+                delattr(node, 'type_params')
+        methods = {node.name: node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+        expected = {'_compute_v_result': '57de9e2d2864a1d93f68f31c7cab26a90bebdd61e3ddf2aab2c9355b39961afd',
+         '_compute_v_score': 'fce5e640e03bb563f5c53d5d333e89a04e8bf9f2d451db4c38f31f170c26ddad',
+         '_extract_dominant_values': '270e107b9b381012e43a12c9ee6cc458b2d27f55b286b94d607b24eae55ccf2b',
+         '_extract_v_misaligned_poles': '5534faac5205892c61f0b794043c5948f290174f70cefd52cefc1bdea2489d22',
+         '_pairwise_value_score': '9ae2e7557f7414fdccddf1d5c58e27a0f462da52e96b9f7e0b4780e02405a28a',
+         '_v_method': '451fb5d406ed00036d5426aca67f0c41f90d079b4825b9e2897c8181f110a39f',
+         '_valid_value_code': '88242abf40ce80f048db5a660ffab328085a4c692455290d9ad90495400bcaac',
+         '_valid_value_pair': '1cf6e11b3fc6084b5c55c3bd5bcfa09185a204dbc4f5914eb451ecbcc77f8690'}
+        for name, digest in expected.items():
+            actual = hashlib.sha256(ast.dump(methods[name], include_attributes=False).encode()).hexdigest()
+            self.assertEqual(actual, digest, name + ' changed from deploy 46456a6')
 
 
 if __name__ == '__main__':

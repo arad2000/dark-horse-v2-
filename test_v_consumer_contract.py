@@ -127,3 +127,35 @@ class VConsumerTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(row['reason'], 'incomplete_s_responses')
                 self.assertEqual(row['v_result']['reason'], 'value_incomplete')
                 self.assertNotEqual(row['v_result']['reason'], 'equal_no_evidence')
+
+
+class TotalThresholdAPITests(unittest.IsolatedAsyncioTestCase):
+    async def test_real_engine_scores_cross_both_api_adapters_without_rerounding(self):
+        from test_v_range_norm import total_boundary_engine, TotalThresholdTests
+        cases = ((.2990, 29.9), (.2996, 30.0), (.3000, 30.0), (.3004, 30.0),
+                 (.3996, 40.0), (.5990, 59.9), (.5996, 60.0), (.7990, 79.9), (.7996, 80.0))
+        for raw, expected in cases:
+            with self.subTest(raw=raw), total_boundary_engine(raw) as engine, \
+                 patch('main_v2._enforce_public_rate_limit'), \
+                 patch('main_v2._require_charged_journey', return_value=7), \
+                 patch('main_v2._persist_discovery_session', return_value=('test', None)), \
+                 patch('main_v2._persist_major_results', return_value=False) as majors, \
+                 patch('main_v2._persist_branch_results', return_value=False) as branches:
+                request = DarkHorseDiscoverRequest(micro_motives=[], session_id='total-boundary-test',
+                    sjt_answers=TotalThresholdTests.sjt, conjoint_choices=TotalThresholdTests.values)
+                a = (await discover_v2(request, request_for(engine)))['discovery_result']
+                b = (await branch_discovery_v2(request, request_for(engine)))['branch_discovery_result']
+                self.assertEqual(len(a['recommendations']), int(expected >= 30))
+                self.assertEqual(len(b['branches']), 1)  # Server does not filter branch Total<30.
+                self.assertEqual(b['branches'][0]['fit_score'], expected)
+                if expected >= 30:
+                    fit = a['recommendations'][0]
+                    self.assertEqual(fit['fit_score'], expected)
+                    self.assertEqual(fit['individuality_fit']['score'], expected)
+                    self.assertEqual(fit['fit_level'], engine._get_fit_level(expected))
+                for key, count in (('high_fit_majors', int(expected >= 80)),
+                                   ('medium_fit_majors', int(60 <= expected < 80)),
+                                   ('low_fit_majors', int(30 <= expected < 60))):
+                    self.assertEqual(a[key], count)
+                self.assertEqual(majors.call_args.args[1], a['recommendations'])
+                self.assertEqual(branches.call_args.args[1], b['branches'])
