@@ -2,7 +2,7 @@
 Dark Horse Engine — نسخه نهایی (D_last_final.py)
 - انتخاب رشته دانشگاهی: Total = 0.55×M + 0.30×V + 0.15×S
 - هدایت تحصیلی پایه نهم: Total = 0.60×M + 0.20×S + 0.20×V
-- M-Score شاخه‌ها با مخرج ثابت ۳۰ محاسبه می‌شود
+- M-Score شاخه‌ها: اشتراک معتبر تقسیم بر تعداد انتخاب‌های معتبر یکتا (بدون سقف ۳۰)
 - ✅ فقط از فیلدهای archetype و fulfillment_source دیتابیس استفاده می‌کند
 - ✅ هیچ تولید داخلی برای کهن‌الگو و منبع رضایت وجود ندارد
 """
@@ -181,7 +181,8 @@ class DarkHorseEngineV2:
         این دو فایل با فرض ترتیب یکسان S01..S25 به‌هم متصل می‌شوند، بدون شناسهٔ صریح مشترک.
         رشته‌های با motive_driven=False صراحتاً ظرفیت‌محورند و وارد امتیازدهی فردیت نمی‌شوند.
         """
-        # Branch M is calibrated against one fixed 30-spark reference budget.
+        # Legacy reference metadata stays locked for compatibility; Wave B M
+        # does not use this field as a denominator or a profile-size cap.
         # Reject any incomplete or non-canonical branch configuration at startup.
         branch_denominators = [
             branch.get("m_score_denom_limit")
@@ -306,35 +307,30 @@ class DarkHorseEngineV2:
         return codes
 
     # ──────────────────────────────────────────────────────────────
-    # محاسبه M-Score برای شاخه‌ها (مخرج ثابت ۳۰)
+    # محاسبه M-Score برای شاخه‌ها (k/N؛ بدون سقف یا کف مخرج)
     # ──────────────────────────────────────────────────────────────
     def _compute_branch_m_score(self, user_motives: List[str], branch_data: Dict) -> Tuple[float, List[Dict]]:
-        if not user_motives:
+        # Wave B: N counts unique, valid selected catalog codes, not raw inputs.
+        catalog = {code.strip().lower(): (code, description)
+                   for code, description in self.motives_map.items()}
+        user_set = {code.strip().lower() for code in (user_motives or [])
+                    if isinstance(code, str)} & catalog.keys()
+        if not user_set:
             return 0.0, []
 
-        raw_codes = branch_data.get("micro_motive_codes", [])
-        if not raw_codes:
-            return 0.0, []
-
-        user_set = {str(m).strip().lower() for m in user_motives if m and str(m).strip()}
-        branch_set = self._active_branch_code_set(raw_codes)
+        branch_set = self._active_branch_code_set(branch_data.get("micro_motive_codes", [])) & catalog.keys()
         matched = user_set & branch_set
-
-        if not matched:
-            return 0.0, []
-
-        # The denominator is fixed and does not depend on user profile length
-        # or the size of the branch's motive-code pool.
-        score = len(matched) / 30.0
+        score = len(matched) / len(user_set)
 
         matched_details = []
-        for code in user_motives:
-            code_lower = str(code).strip().lower()
-            if code_lower in matched:
-                desc = self.motives_map.get(code, "") or self.motives_map.get(code.upper(), "")
-                matched_details.append({"code": code, "description": desc})
-
-        return min(1.0, score), matched_details
+        seen = set()
+        for code in (user_motives or []):
+            key = code.strip().lower() if isinstance(code, str) else ""
+            if key in matched and key not in seen:
+                seen.add(key)
+                canonical_code, description = catalog[key]
+                matched_details.append({"code": canonical_code, "description": description})
+        return score, matched_details
 
     # ── S-Score input contract ──
     @staticmethod
@@ -984,7 +980,7 @@ class DarkHorseEngineV2:
     # ──────────────────────────────────────────────────────────────
     #  متد ۲: هدایت تحصیلی پایه نهم (توصیه شاخه)
     #  فرمول: Total = 0.60×M + 0.20×S + 0.20×V
-    #  M-Score denominator = min(30, max(15, |U|))
+    #  M-Score denominator = |valid unique user codes| (Wave B; no cap)
     # ──────────────────────────────────────────────────────────────
     def recommend_school_branch(self, user_motives, sjt_answers, conjoint_choices) -> Dict:
         strategy_answers, s_assessment = self._parse_s_strategy_answers(sjt_answers)

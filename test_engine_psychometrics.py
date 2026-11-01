@@ -129,7 +129,7 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
                 msg=f"Major {major['id']} ({major['name']}) failed to reach 1.0 V-Score ceiling",
             )
 
-    def test_p1_branch_m_fixed_30_contract_with_real_reference_codes(self) -> None:
+    def test_p1_branch_m_valid_selection_share_with_real_reference_codes(self) -> None:
         # Use the actual branch reference data and active micro-motive catalog.
         branches = self.engine.school_branches
         self.assertEqual(len(branches), 4)
@@ -157,8 +157,8 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
         self.assertEqual(len(five_riazi), 5)
         self.assertGreaterEqual(len(padding), 70)
 
-        # Five shared sparks in each branch must score equally at profile sizes 20, 30 and 80.
-        for profile_length in (20, 30, 80):
+        # Equal overlaps have equal shares at every required profile size.
+        for profile_length in (20, 25, 29, 30, 31, 40, 80):
             profile = five_fani + five_riazi + padding[:profile_length - 10]
             fani_score, _ = self.engine._compute_branch_m_score(
                 profile, branches["فنی و حرفه‌ای"]
@@ -166,11 +166,11 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
             riazi_score, _ = self.engine._compute_branch_m_score(
                 profile, branches["ریاضی فیزیک"]
             )
-            self.assertAlmostEqual(fani_score, 5 / 30, places=12)
-            self.assertAlmostEqual(riazi_score, 5 / 30, places=12)
+            self.assertAlmostEqual(fani_score, 5 / profile_length, places=12)
+            self.assertAlmostEqual(riazi_score, 5 / profile_length, places=12)
             self.assertAlmostEqual(fani_score, riazi_score, places=12)
 
-        # Twenty and thirty sparks with the same five Fani matches remain 5/30.
+        # Fixed overlap represents a smaller share as valid nonmatching selections grow.
         profile_20 = five_fani + five_riazi + padding[:10]
         profile_30 = five_fani + five_riazi + padding[:20]
         score_20, _ = self.engine._compute_branch_m_score(
@@ -179,27 +179,136 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
         score_30, _ = self.engine._compute_branch_m_score(
             profile_30, branches["فنی و حرفه‌ای"]
         )
-        self.assertAlmostEqual(score_20, 5 / 30, places=12)
+        self.assertAlmostEqual(score_20, 5 / 20, places=12)
         self.assertAlmostEqual(score_30, 5 / 30, places=12)
-        self.assertAlmostEqual(score_20, score_30, places=12)
+        self.assertGreater(score_20, score_30)
 
-        # Three shared sparks in a 20-spark profile stay below the 15% eligibility threshold.
+        # Three shared sparks in a 20-spark profile reach the unchanged 15% gate.
         profile_three_matches = five_fani[:3] + five_riazi + padding[:12]
         score_three, _ = self.engine._compute_branch_m_score(
             profile_three_matches, branches["فنی و حرفه‌ای"]
         )
-        self.assertAlmostEqual(score_three, 3 / 30, places=12)
-        self.assertLess(score_three, 0.15)
+        self.assertAlmostEqual(score_three, 3 / 20, places=12)
+        self.assertEqual(score_three, 0.15)
 
-        # Adding one more spark from another branch cannot reduce Fani M.
+        # Adding a valid nonmatching spark reduces share; unknown codes do not.
         score_before, _ = self.engine._compute_branch_m_score(
             profile_20, branches["فنی و حرفه‌ای"]
         )
         score_after, _ = self.engine._compute_branch_m_score(
             profile_20 + [padding[10]], branches["فنی و حرفه‌ای"]
         )
-        self.assertAlmostEqual(score_before, 5 / 30, places=12)
-        self.assertAlmostEqual(score_after, score_before, places=12)
+        self.assertAlmostEqual(score_before, 5 / 20, places=12)
+        self.assertAlmostEqual(score_after, 5 / 21, places=12)
+
+    def _wave_b_codes(self):
+        branch = next(iter(self.engine.school_branches.values()))
+        catalog = {code.lower() for code in self.engine.motives_map}
+        own = self.engine._active_branch_code_set(branch["micro_motive_codes"]) & catalog
+        return branch, sorted(own), sorted(catalog - own)
+
+    def test_wave_b_normalizes_valid_unique_inputs_and_evidence(self):
+        branch, own, other = self._wave_b_codes()
+        clean = own[:5] + other[:15]
+        noisy = clean + [own[0].upper(), " " + own[0] + " ", "unknown-wave-b", "", " ", None, False, 123]
+        score, evidence = self.engine._compute_branch_m_score(noisy, branch)
+        self.assertAlmostEqual(score, 5 / 20, places=12)
+        self.assertEqual(len(evidence), 5)
+        self.assertEqual(len({row["code"].lower() for row in evidence}), 5)
+        for row in evidence:
+            self.assertEqual(row["description"], self.engine.motives_map[row["code"]])
+        for empty in ([], ["unknown-wave-b", " ", None, True, 7]):
+            self.assertEqual(self.engine._compute_branch_m_score(empty, branch), (0.0, []))
+        self.assertEqual(self.engine._compute_branch_m_score(clean, {"micro_motive_codes": ["unknown-wave-b"]}), (0.0, []))
+
+    def test_wave_b_nested_growth_and_no_30_cap_or_15_floor(self):
+        branch, own, other = self._wave_b_codes()
+        previous = None
+        for n in (20, 25, 29, 30, 31, 40, 80):
+            with self.subTest(N=n):
+                profile = own[:5] + other[:n - 5]
+                score, _ = self.engine._compute_branch_m_score(profile, branch)
+                self.assertAlmostEqual(score, 5 / n, places=12)
+                if previous is not None:
+                    self.assertLess(score, previous)
+                previous = score
+                extended, _ = self.engine._compute_branch_m_score(profile + [own[5]], branch)
+                self.assertAlmostEqual(extended, 6 / (n + 1), places=12)
+                self.assertGreater(extended, score)
+                # Distinguish from both actual fixed-30 base and older capped formula.
+                if n <= 30:
+                    self.assertAlmostEqual(score, 5 / min(30, max(15, n)), places=12)
+                else:
+                    self.assertLess(score, 5 / 30)
+        self.assertAlmostEqual(self.engine._compute_branch_m_score(own[:5] + other[:5], branch)[0], 0.5)
+        self.assertAlmostEqual(self.engine._compute_branch_m_score(own[:40] + other[:40], branch)[0], 0.5)
+        self.assertAlmostEqual(self.engine._compute_branch_m_score(own[:80], branch)[0], 1.0)
+
+    def test_wave_b_15_percent_gate_and_real_best_branch_contract(self):
+        import math
+        branch, own, other = self._wave_b_codes()
+        sjt = {f"sjt_{i}": "A" for i in range(1, 26)}
+        values = {f"conj_{i}": f"Q{i}A" for i in range(1, 16)}
+        for n in (20, 25, 29, 30, 31, 40, 80):
+            minimum = math.ceil(0.15 * n)
+            for k in (minimum - 1, minimum):
+                with self.subTest(N=n, k=k):
+                    profile = own[:k] + other[:n - k]
+                    score, _ = self.engine._compute_branch_m_score(profile, branch)
+                    self.assertEqual(score >= 0.15, k == minimum)
+                    result = self.engine.recommend_school_branch(profile, sjt, values)
+                    ranked = result["recommended_branches"]
+                    self.assertEqual(len(ranked), 4)
+                    expected = next((row["branch_name"] for row in ranked
+                                     if row["avg_components"]["m_score"] >= 15), None)
+                    self.assertEqual(result["best_branch"], expected)
+                    target = next(row for row in ranked if row["branch_name"] == branch["name"])
+                    self.assertEqual(target["avg_components"]["m_score"], round(score * 100, 1))
+                    self.assertEqual("warning" in target, k < minimum)
+                    if k < minimum:
+                        self.assertNotEqual(result["best_branch"], branch["name"])
+
+    def test_wave_b_disjoint_pools_partition_catalog_and_sum_k_equals_n(self):
+        from itertools import combinations
+
+        catalog = {code.strip().lower() for code in self.engine.motives_map}
+        branches = list(self.engine.school_branches.values())
+        pools = [self.engine._active_branch_code_set(row["micro_motive_codes"])
+                 for row in branches]
+        self.assertEqual(set.union(*pools), catalog)
+        for left, right in combinations(pools, 2):
+            self.assertFalse(left & right, "Branch pools must remain disjoint")
+        # Partition + coverage prove the identity for every valid subset;
+        # also exercise real scoring/evidence at the requested sizes and full catalog.
+        rng = random.Random(20261101)
+        for n in (0, 1, 20, 25, 29, 30, 31, 40, 80, len(catalog)):
+            with self.subTest(N=n):
+                profile = rng.sample(sorted(catalog), n)
+                k = [len(set(profile) & pool) for pool in pools]
+                self.assertEqual(sum(k), n)
+                scores = [self.engine._compute_branch_m_score(profile, row)
+                          for row in branches]
+                self.assertEqual([len(evidence) for _, evidence in scores], k)
+                self.assertAlmostEqual(sum(score for score, _ in scores),
+                                       1.0 if n else 0.0, places=12)
+
+    def test_wave_b_does_not_change_seven_motive_major_m(self):
+        major = next(row for row in self.engine.majors_db.values()
+                     if row.get("motive_driven") is True
+                     and isinstance(row.get("micro_motive_codes"), list)
+                     and len(row["micro_motive_codes"]) == 7)
+        codes = major["micro_motive_codes"]
+        self.assertAlmostEqual(self.engine._compute_m_score(codes[:3], major)[0], 3 / 7, places=12)
+        self.assertEqual(self.engine._compute_m_score(codes, major)[0], 1.0)
+
+    def test_wave_b_equal_counts_are_equal_without_pool_size_bias(self):
+        branches = list(self.engine.school_branches.values())
+        for n in (20, 40, 80):
+            each = n // 4
+            profile = [code for branch in branches
+                       for code in sorted(self.engine._active_branch_code_set(branch["micro_motive_codes"]))[:each]]
+            for branch in branches:
+                self.assertAlmostEqual(self.engine._compute_branch_m_score(profile, branch)[0], 0.25, places=12)
 
     def test_engine_startup_rejects_non_30_branch_denominator(self) -> None:
         # Derive a negative startup case from the real reference file; no mocks are used.
