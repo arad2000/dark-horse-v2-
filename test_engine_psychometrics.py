@@ -268,6 +268,30 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
                     if k < minimum:
                         self.assertNotEqual(result["best_branch"], branch["name"])
 
+    def test_wave_b_disjoint_pools_partition_catalog_and_sum_k_equals_n(self):
+        from itertools import combinations
+
+        catalog = {code.strip().lower() for code in self.engine.motives_map}
+        branches = list(self.engine.school_branches.values())
+        pools = [self.engine._active_branch_code_set(row["micro_motive_codes"])
+                 for row in branches]
+        self.assertEqual(set.union(*pools), catalog)
+        for left, right in combinations(pools, 2):
+            self.assertFalse(left & right, "Branch pools must remain disjoint")
+        # Partition + coverage prove the identity for every valid subset;
+        # also exercise real scoring/evidence at the requested sizes and full catalog.
+        rng = random.Random(20261101)
+        for n in (0, 1, 20, 25, 29, 30, 31, 40, 80, len(catalog)):
+            with self.subTest(N=n):
+                profile = rng.sample(sorted(catalog), n)
+                k = [len(set(profile) & pool) for pool in pools]
+                self.assertEqual(sum(k), n)
+                scores = [self.engine._compute_branch_m_score(profile, row)
+                          for row in branches]
+                self.assertEqual([len(evidence) for _, evidence in scores], k)
+                self.assertAlmostEqual(sum(score for score, _ in scores),
+                                       1.0 if n else 0.0, places=12)
+
     def test_wave_b_does_not_change_seven_motive_major_m(self):
         major = next(row for row in self.engine.majors_db.values()
                      if row.get("motive_driven") is True
