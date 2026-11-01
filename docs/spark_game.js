@@ -13,6 +13,7 @@
   var motivesCache = null;
   var timerId = null;
   var overlay = null;
+  var loadGeneration = 0;
 
   function $(id) { return document.getElementById(id); }
 
@@ -75,7 +76,11 @@
   function fetchMotives() {
     if (motivesCache) return Promise.resolve(motivesCache);
     // Same-origin Pages asset only: no credentials, redirects or API fallback.
-    return fetch('data/micro_motives.json', {
+    var timer;
+    var deadline = new Promise(function (_, reject) {
+      timer = setTimeout(function () { reject(new Error('Static spark timeout')); }, 10000);
+    });
+    var request = fetch('data/micro_motives.json', {
       mode: 'same-origin', credentials: 'omit', redirect: 'error'
     })
       .then(function (r) {
@@ -84,9 +89,12 @@
       })
       .then(function (arr) {
         if (!Array.isArray(arr)) throw new Error('Invalid static spark data');
-        motivesCache = filterMotiveDrivenSparks(arr);
-        return motivesCache;
+        return filterMotiveDrivenSparks(arr);
       });
+    return Promise.race([request, deadline]).then(function (items) {
+      motivesCache = items;
+      return items;
+    }).finally(function () { clearTimeout(timer); });
   }
 
   // Locked UI labels: independent of app.js, API and journey initialization.
@@ -351,11 +359,14 @@
       overlay.id = 'dh-spark-lab';
       document.body.appendChild(overlay);
     }
-    overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">در حال بارگذاری جرقه‌ها از فایل‌های سایت…</p></div>';
+    overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">در حال بارگذاری جرقه‌ها از فایل‌های سایت…</p>' +
+      '<button type="button" class="lab-close" id="dh-lab-x">بستن</button></div>';
+    $('dh-lab-x').onclick = closeLab;
 
     var sessionOverlay = overlay;
+    var generation = ++loadGeneration;
     fetchMotives().then(function (all) {
-      if (overlay !== sessionOverlay) return;
+      if (overlay !== sessionOverlay || generation !== loadGeneration) return;
       all = filterMotiveDrivenSparks(all);
       if (!all.length) {
         overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">بارگذاری خرده‌انگیزه‌ها ممکن نشد.</p>' +
@@ -431,9 +442,11 @@
         }
       }, 1000);
     }).catch(function () {
-      if (overlay !== sessionOverlay) return;
+      if (overlay !== sessionOverlay || generation !== loadGeneration) return;
       overlay.innerHTML = '<div class="lab-wrap"><p class="lab-empty">خطا در بارگذاری.</p>' +
+        '<button type="button" class="lab-ghost" id="dh-lab-retry">تلاش مجدد</button>' +
         '<button type="button" class="lab-ghost" id="dh-lab-x">بستن</button></div>';
+      $('dh-lab-retry').onclick = startSession;
       var x = $('dh-lab-x');
       if (x) x.onclick = closeLab;
     });

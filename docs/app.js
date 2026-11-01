@@ -893,13 +893,29 @@ let _motivesLoadPromise = null;
 let _questionsLoadPromise = null;
 let _traitMapLoadPromise = null;
 
+// Bound public JSON loading, including a stalled response body, without API fallback.
+function fetchJourneyJson(url, timeoutMs = 10000) {
+  let timer;
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      if (controller) controller.abort();
+      reject(new Error('Journey static data timeout'));
+    }, timeoutMs);
+  });
+  const request = Promise.resolve().then(() => fetch(url, controller ? { signal: controller.signal } : {})).then(res => {
+    if (res.ok === false) throw new Error('Journey static data unavailable');
+    return res.json();
+  });
+  return Promise.race([request, deadline]).finally(() => clearTimeout(timer));
+}
+
 async function loadMicroMotivesMap() {
   if (state.motivesReady && Array.isArray(state.cachedMotives) && state.cachedMotives.length > 0) return;
   if (_motivesLoadPromise) return _motivesLoadPromise;
   _motivesLoadPromise = (async () => {
     try {
-      const res = await fetch(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
-      const all = await res.json();
+      const all = await fetchJourneyJson(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
       state.cachedMotives = all;
       all.forEach(m => { state.microMotivesMap[m.code] = m.description_fa; });
       state.motivesReady = true;
@@ -920,8 +936,7 @@ async function loadQuestions() {
   if (_questionsLoadPromise) return _questionsLoadPromise;
   _questionsLoadPromise = (async () => {
     try {
-      const res = await fetch(DATA_BASE + 'questions_v2.json');
-      const data = await res.json();
+      const data = await fetchJourneyJson(DATA_BASE + 'questions_v2.json');
       state.strategyQuestions = data.layers.strategies.questions;
       state.valueQuestions = data.layers.values.questions;
       state.questionsReady = true;
@@ -945,9 +960,7 @@ async function loadTraitMap() {
     const candidates = [DATA_BASE + 'trait_map_v3.json', './trait_map_v3.json'];
     for (const url of candidates) {
       try {
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const data = await res.json();
+        const data = await fetchJourneyJson(url, 5000);
         if (data && typeof data === 'object' && (data.S01 || data.s01)) {
           state.traitMap = data;
           state.traitMapReady = true;
@@ -2090,8 +2103,7 @@ async function ensureSwipeDeckHydrated(rerenderWhenReady) {
   try {
     let all = state.cachedMotives;
     if (!all) {
-      const res = await fetch(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
-      all = await res.json();
+      all = await fetchJourneyJson(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
       state.cachedMotives = all;
       if (Array.isArray(all)) {
         all.forEach(m => { if (m && m.code) state.microMotivesMap[m.code] = m.description_fa; });
@@ -2141,8 +2153,7 @@ async function loadSwipeCards() {
     if (state.cachedMotives) {
       all = state.cachedMotives;
     } else {
-      const res = await fetch(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
-      all = await res.json();
+      all = await fetchJourneyJson(DATA_BASE + 'micro_motives.json?v=motives-1393-v1');
       state.cachedMotives = all;
       if (Array.isArray(all)) {
         all.forEach(m => { if (m && m.code) state.microMotivesMap[m.code] = m.description_fa; });

@@ -40,7 +40,7 @@ function makeStorage(seed = {}) {
 
 // 1. Cache-bust contract in docs/index.html
 assert.ok(
-  indexSource.includes('app.js?v=73&poles-fix=1'),
+  indexSource.includes('app.js?v=74&poles-fix=1'),
   'docs/index.html must cache-bust app.js via ?v=73&poles-fix=1'
 );
 
