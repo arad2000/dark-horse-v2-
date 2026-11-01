@@ -1,5 +1,12 @@
 # گزارش اجرای جداسازی دو fingerprint مرجع
 
+> **قرارداد جاری M شاخه — پس از Merge #336**
+> - فرمول برای `N>0`: **`M_b = k_b / N`**؛ معنی: سهم جرقه‌های معتبر کاربر در شاخهٔ b، نه احتمال موفقیت. برای `N=0` خروجی صفر و شاهد خالی است.
+> - `N` تعداد کدهای معتبرِ یکتای کاربر پس از trim و یکسان‌سازی حروف است؛ ناشناخته، تکراری، خالی و غیررشته‌ای شمرده نمی‌شوند. `k_b` اشتراک همین انتخاب‌ها با مخزن معتبر شاخه است.
+> - مخزن‌های چهار شاخه جدا و پوشانندهٔ کاتالوگ‌اند؛ برای پروفایل معتبر `Σk_b = N`.
+> - گیت ۱۵٪ روی همین نسبت است، نه حداقل مطلق «۵ از ۳۰»: در **`N=20`، حداقل ۳ اشتراک** به ۱۵٪ می‌رسد. سایر شروط نمایش، گردکردن و Total در این اصلاح مستندات تغییر نمی‌کنند.
+> - شواهد: [Merge #336](https://github.com/arad2000/dark-horse-v2-/pull/336) و [سند evidence در همان Merge](https://github.com/arad2000/dark-horse-v2-/blob/4603268fc20f18528533e67c58e195a061380f57/docs/weight-review/BRANCH_M_WAVE_B_MERGE_EVIDENCE.md).
+
 **وضعیت:** Draft PR؛ پیاده‌سازی در شاخهٔ مستقل و بدون Merge.  
 **HEAD مبنای محاسبهٔ expectedها:** `deploy/liara-commercial-sandbox` در commit `02f40f16e044219141a1d354d9d1aa30df416d87` (Merge #320).  
 **سیاست ناظر:** `group/cluster/subgroup` در membership؛ `weights_version` در علمی؛ نرمال‌سازی فقط برای stagingهای واقعاً غیرفعال و صریح.
@@ -18,7 +25,7 @@
 | `majors_database_v2.json#/value_weights` | ۳۰ قطب Q1A..Q15B برای V-score و تطبیق پروفایل | علمی |
 | `school_branches_v2.json#/name` | کلید lookup پروفایل شاخه در موتور | کلید هویتی لازم برای علمی |
 | `school_branches_v2.json#/micro_motive_codes` | مجموعهٔ کدهای مؤثر بر M-score شاخه | علمی |
-| `school_branches_v2.json#/m_score_denom_limit` | مخرج M-score شاخه | علمی |
+| `school_branches_v2.json#/m_score_denom_limit` | metadata تاریخیِ مقدار ۳۰؛ پس از #336 مخرج محاسباتی M شاخه نیست (مخرج جاری N است) | علمی؛ حفاظت fingerprint موجود بدون تغییر |
 | `school_branches_v2.json#/strategy_weights`, `#/value_weights`, `#/weights_version` | پروفایل S/V و نسخهٔ پروفایل شاخه برای مسیرهای جایگزین | علمی |
 | `micro_motives.json#/[].code` | فهرست مجاز کدها؛ در فیلتر کدهای مؤثر شاخه استفاده می‌شود | علمی |
 | `docs/data/questions_v2.json#/layers/strategies/questions` (شناسه، ترتیب، متن سؤال و متن/ترتیب گزینه‌ها) | پاسخ‌ها موقعیتی‌اند؛ تغییر معنای گزینه می‌تواند معنای وزن اعمال‌شده بر پاسخ یکسان را عوض کند | قرارداد ورودی علمی |
