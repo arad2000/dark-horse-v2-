@@ -266,7 +266,8 @@ async function run() {
     pageYOffset: 0,
     scrollTo() {},
     requestAnimationFrame: (fn) => { if (typeof fn === 'function') fn(); return 1; },
-    setTimeout: (fn) => { if (typeof fn === 'function') fn(); return 1; },
+    // Long network deadlines are driven in the dedicated loading tests, not inline.
+    setTimeout: (fn, ms) => { if ((!ms || ms < 5000) && typeof fn === 'function') fn(); return 1; },
     clearTimeout() {},
     setInterval: () => 1,
     clearInterval() {},

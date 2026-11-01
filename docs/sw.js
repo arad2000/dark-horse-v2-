@@ -1,8 +1,8 @@
-/* Dark Horse SW v79 — instant cached HTML shell + non-destructive cache migration.
+/* Dark Horse SW v80 — instant cached HTML shell + non-destructive cache migration.
  * Preserves previously cached static assets across SW upgrades instead of wiping
  * the user's cache on every version bump.
  */
-const CACHE = 'darkhorse-v79';
+const CACHE = 'darkhorse-v80';
 
 self.addEventListener('install', function () {
   self.skipWaiting();
@@ -50,24 +50,38 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  // Yehooyi must refresh even when cached HTML still references an old ?v= URL.
-  // Only this script changes strategy; other journey assets keep their policy.
-  if (/\/spark_game\.js$/i.test(url.pathname)) {
-    e.respondWith(
-      fetch(req, { cache: 'no-store', credentials: 'omit', redirect: 'error' }).then(function (res) {
-        if (!res || res.status !== 200 || res.type !== 'basic') return res;
-        return caches.open(CACHE).then(function (c) {
-          return c.put(req, res.clone()).catch(function () {});
-        }).then(function () { return res; });
-      }).catch(function () { return caches.match(req); })
-    );
+  // Only public static boot dependencies may fall back after a slow network.
+  // Keep fresh network-first semantics, but never block forever behind it.
+  if (/\/spark_game\.js$/i.test(url.pathname) ||
+      /\/data\/(micro_motives|questions_v2|trait_map_v3)\.json$/i.test(url.pathname) ||
+      /\/trait_map_v3\.json$/i.test(url.pathname)) {
+    var options = { cache: 'no-store', credentials: 'omit', redirect: 'error' };
+    var staticNetwork = fetch(req, options).then(function (res) {
+      if (!res || res.status !== 200 || res.type !== 'basic') throw new Error('Static asset unavailable');
+      return caches.open(CACHE).then(function (c) {
+        return c.put(req, res.clone()).catch(function () {});
+      }).catch(function () {}).then(function () { return res; });
+    });
+    // A late successful response still refreshes the cache for the next visit.
+    e.waitUntil(staticNetwork.then(function () {}, function () {}));
+    e.respondWith(caches.match(req).catch(function () { return null; }).then(function (cached) {
+      var timer;
+      var deadline = new Promise(function (_, reject) {
+        timer = setTimeout(function () { reject(new Error('Static asset timeout')); }, cached ? 1500 : 8000);
+      });
+      return Promise.race([staticNetwork, deadline]).catch(function (error) {
+        if (cached) return cached;
+        throw error; // Never substitute HTML or API data for a missing JS/JSON asset.
+      }).finally(function () { clearTimeout(timer); });
+    }));
     return;
   }
 
   var isJson = /\.json$/i.test(url.pathname);
 
   // HTML shell: serve the last known home immediately, then refresh it in the background.
-  // Only HTML changes strategy here; JSON remains network-only with cache: 'no-store'.
+  // Other JSON retains no-store network-first; the public boot allowlist above
+  // additionally has a bounded cache fallback.
   if (/index\.html$/i.test(url.pathname) ||
       url.pathname === '/' ||
       /\/docs\/?$/.test(url.pathname)) {

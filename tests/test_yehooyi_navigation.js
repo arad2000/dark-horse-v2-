@@ -15,7 +15,9 @@ function extract(name) {
 const nodes = new Map();
 function element() {
   return {
-    innerHTML: '', parentNode: null, attrs: {},
+    get innerHTML() { return this.html || ''; },
+    set innerHTML(value) { this.html = value; for (const [, id] of value.matchAll(/id="([^"]+)"/g)) nodes.set(id, element()); },
+    parentNode: null, attrs: {},
     setAttribute(k, v) { this.attrs[k] = v; },
     removeAttribute(k) { delete this.attrs[k]; },
     addEventListener() {},
@@ -38,7 +40,7 @@ const document = {
 let starts = 0, history = 0, saved = 0, requests = 0;
 const pending = [];
 const ctx = {
-  document, console, Promise,
+  document, console, Promise, setTimeout, clearTimeout,
   $: id => document.getElementById(id),
   dhHaptic() {}, stopFardiyatTicker() {}, shellScrollTop() {}, dhToast() {},
   saveSession() { saved++; },
@@ -108,7 +110,7 @@ async function run() {
   assert.match(spark, /padding:16px 14px calc\(100px \+ env\(safe-area-inset-bottom, 0px\)\)/);
   const index = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
   assert.match(index, /shell\.js\?v=92&/);
-  assert.match(index, /spark_game\.js\?v=yehooyi-simple-v4&/);
+  assert.match(index, /spark_game\.js\?v=yehooyi-simple-v5&/);
   console.log('Yehooyi navigation: PASS (4 tabs, direct entry, repeat tap, return tab, late response, home/profile/journey, cache-bust)');
 }
 run().catch(err => { console.error(err); process.exitCode = 1; });

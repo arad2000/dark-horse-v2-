@@ -17,6 +17,8 @@ function makeServiceWorker() {
   const listeners = {};
   const store = new Map();
   const fetchCalls = [];
+  const timers = new Map();
+  let timerId = 0;
   let mode = 'online';
   let serverBody = '<main>network-home-v1</main>';
   let pendingResolve = null;
@@ -54,9 +56,12 @@ function makeServiceWorker() {
     if (mode === 'pending') return new Promise(resolve => { pendingResolve = resolve; });
     return Promise.resolve(response(serverBody));
   };
-  vm.runInNewContext(swSource, { self, caches, fetch, URL, Promise });
+  vm.runInNewContext(swSource, { self, caches, fetch, URL, Promise,
+    setTimeout(fn, ms) { const id = ++timerId; timers.set(id, {fn, ms}); return id; },
+    clearTimeout(id) { timers.delete(id); } });
   return {
     caches, fetchCalls,
+    expire(ms) { for (const [id, timer] of [...timers]) if (timer.ms === ms) { timers.delete(id); timer.fn(); } },
     setOnline(body) { mode = 'online'; serverBody = body; },
     setOffline() { mode = 'offline'; },
     setPending() { mode = 'pending'; },
@@ -64,7 +69,7 @@ function makeServiceWorker() {
       assert.ok(pendingResolve, 'expected pending network request');
       const resolve = pendingResolve; pendingResolve = null; resolve(response(body));
     },
-    async cached(url) { return (await caches.open('darkhorse-v79')).match({ url }); },
+    async cached(url) { return (await caches.open('darkhorse-v80')).match({ url }); },
     async triggerLifecycle(name) {
       const waiters = [];
       listeners[name]({ waitUntil(value) { waiters.push(Promise.resolve(value)); } });
@@ -98,10 +103,10 @@ async function testStartupMarkup() {
   assert.ok(indexSource.indexOf('id="dh-startup-home"') < indexSource.indexOf('data.js?v='),
     'startup shell must be present before deferred data/app scripts');
   assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1/);
-  assert.match(indexSource, /app\.js\?v=73/);
+  assert.match(indexSource, /app\.js\?v=74/);
   assert.match(indexSource, /shell\.js\?v=92/);
   assert.match(shellSource, /commercial_ui\.js\?v=46/);
-  assert.match(indexSource, /pwa-boot\.js\?v=79/);
+  assert.match(indexSource, /pwa-boot\.js\?v=80/);
   assert.match(indexSource, /shell\.css\?v=70&ux=phase4-live-v2(&r=\d+)?" media="print"/);
   assert.match(indexSource, /journey_experience\.css\?v=2" media="print"/);
   assert.match(indexSource, /journey_experience\.js\?v=2">/);
@@ -113,7 +118,7 @@ async function testStartupMarkup() {
   assert.strictEqual(fs.existsSync(path.join(root, 'docs', 'home_update_banner_1405.css')), false,
     'home_update_banner_1405.css must be completely removed');
   assert.match(indexSource, /<script defer src="payment_hop_boot\.js\?v=3"/);
-  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=73'),
+  assert.ok(indexSource.indexOf('payment_hop_boot.js?v=3') < indexSource.indexOf('app.js?v=74'),
     'payment hop bootstrap must precede app.js');
   assert.doesNotMatch(indexSource, /phase3-161-176-1|۱۱۰۰|1100/);
   console.log('startup markup and cache-bust preservation: PASS');
@@ -218,7 +223,7 @@ async function testPwaRegistrationAndSingleReload() {
   windowListeners.load();
   await Promise.resolve();
   await Promise.resolve();
-  assert.deepStrictEqual(registered, ['./sw.js?v=79']);
+  assert.deepStrictEqual(registered, ['./sw.js?v=80']);
   swListeners.controllerchange();
   swListeners.controllerchange();
   assert.strictEqual(reloads, 1, 'controller changes must not cause repeated reloads');
@@ -269,7 +274,7 @@ async function testColdWarmOfflineOnline() {
   await Promise.all(json.waiters);
   // A stale HTML document may request the old query string: fresh script wins.
   const sparkUrl = 'https://asbe-siah.ir/spark_game.js?v=yehooyi-static-v2';
-  await (await sw.caches.open('darkhorse-v79')).put({url: sparkUrl}, response('old-lab'));
+  await (await sw.caches.open('darkhorse-v80')).put({url: sparkUrl}, response('old-lab'));
   sw.setOnline('new-exact-lab');
   const freshLab = await sw.dispatch(sparkUrl);
   assert.strictEqual((await freshLab.responsePromise).body, 'new-exact-lab');
@@ -280,7 +285,7 @@ async function testColdWarmOfflineOnline() {
   assert.strictEqual((await cachedLab.responsePromise).body, 'new-exact-lab');
   sw.setOnline('network-restored');
   // Non-destructive SW upgrade contract: install MUST NOT wipe existing caches, and activate
-  // must carry forward unchanged cached assets from darkhorse-v77 into darkhorse-v79.
+  // must carry forward unchanged cached assets from darkhorse-v77 into darkhorse-v80.
   const oldCache = await sw.caches.open('darkhorse-v77');
   const heavyAssetUrl = 'https://asbe-siah.ir/data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=grade9-v1';
   await oldCache.put({ url: heavyAssetUrl }, response('/* cached-data-js */'));
@@ -289,9 +294,88 @@ async function testColdWarmOfflineOnline() {
     'SW install MUST NOT wipe user cache during version upgrade');
   await sw.triggerLifecycle('activate');
   assert.strictEqual((await sw.cached(heavyAssetUrl)).body, '/* cached-data-js */',
-    'SW activate must carry cached static assets forward into darkhorse-v79 without cold re-download');
+    'SW activate must carry cached static assets forward into darkhorse-v80 without cold re-download');
   console.log('non-destructive SW cache migration: PASS');
   console.log('cold/warm open, offline/online recovery, JSON no-store: PASS');
+}
+
+async function testJourneyJsonDeadline() {
+  const app = fs.readFileSync('docs/app.js', 'utf8');
+  assert.doesNotMatch(app, /await fetch\(DATA_BASE \+ '(micro_motives|questions_v2|trait_map_v3)\.json/ ,
+    'Fresh and resumed journeys must use the bounded static loader');
+  const helper = app.slice(app.indexOf('function fetchJourneyJson('), app.indexOf('async function loadMicroMotivesMap()'));
+  for (const mode of ['pending-fetch', 'pending-body', 'healthy', 'http-error']) {
+    const timers = new Map(); let timerId = 0; let signal;
+    const context = { Promise, AbortController,
+      setTimeout(fn) { const id = ++timerId; timers.set(id, fn); return id; },
+      clearTimeout(id) { timers.delete(id); },
+      fetch(url, options) {
+        assert.strictEqual(url, 'data/questions_v2.json'); signal = options.signal;
+        if (mode === 'pending-fetch') return new Promise(() => {});
+        return Promise.resolve({ok: mode !== 'http-error', json() {
+          return mode === 'pending-body' ? new Promise(() => {}) : Promise.resolve({ready: true});
+        }});
+      }
+    };
+    vm.runInNewContext(helper, context);
+    const request = context.fetchJourneyJson('data/questions_v2.json');
+    if (mode.startsWith('pending')) {
+      const rejected = assert.rejects(request, /Journey static data timeout/);
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      for (const fn of [...timers.values()]) fn();
+      await rejected;
+      assert.strictEqual(signal.aborted, true);
+    } else if (mode === 'healthy') {
+      assert.strictEqual((await request).ready, true);
+    } else {
+      await assert.rejects(request, /unavailable/);
+    }
+    assert.strictEqual(timers.size, 0, 'All deadline timers must be released');
+  }
+  console.log('journey JSON: fetch/body deadlines, abort, healthy/error paths, timer cleanup: PASS');
+}
+
+async function testSlowStaticFallback() {
+  const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
+  for (const pathname of ['spark_game.js?v=yehooyi-simple-v5',
+    'data/micro_motives.json', 'data/questions_v2.json', 'data/trait_map_v3.json', 'trait_map_v3.json']) {
+    const sw = makeServiceWorker();
+    const url = 'https://asbe-siah.ir/' + pathname;
+    await (await sw.caches.open('darkhorse-v80')).put({url}, response('valid-cached-static'));
+    sw.setPending();
+    const event = await sw.dispatch(url);
+    let settled = false;
+    event.responsePromise.then(() => { settled = true; });
+    await flush();
+    assert.strictEqual(settled, false, 'Healthy network gets first opportunity');
+    sw.expire(1500); await flush();
+    assert.strictEqual(settled, true, 'Cached static response must settle by the deadline');
+    assert.strictEqual((await event.responsePromise).body, 'valid-cached-static');
+    assert.ok(sw.fetchCalls.every(call => call.options.cache === 'no-store'));
+    sw.resolvePending('late-fresh-static');
+    await Promise.all(event.waiters);
+    assert.strictEqual((await sw.cached(url)).body, 'late-fresh-static');
+  }
+  const sw = makeServiceWorker();
+  await (await sw.caches.open('darkhorse-v80')).put({url:'https://asbe-siah.ir/index.html'}, response('HTML-NOT-JSON'));
+  sw.setPending();
+  const cold = await sw.dispatch('https://asbe-siah.ir/data/questions_v2.json');
+  let coldRejected = false;
+  const rejected = assert.rejects(cold.responsePromise, /Static asset timeout/).then(() => { coldRejected = true; });
+  await flush(); sw.expire(8000); await flush();
+  assert.strictEqual(coldRejected, true, 'Cold static request must fail instead of hanging');
+  await rejected;
+  sw.resolvePending('recovered-json'); await Promise.all(cold.waiters);
+  const apiUrl = 'https://asbe-siah.ir/api/v1/me/quota';
+  await (await sw.caches.open('darkhorse-v80')).put({url:apiUrl}, response('UNTRUSTED-CACHED-QUOTA'));
+  sw.setPending();
+  const api = await sw.dispatch(apiUrl);
+  let apiDone = false; api.responsePromise.then(() => { apiDone = true; });
+  await flush(); sw.expire(1500); sw.expire(8000); await flush();
+  assert.strictEqual(apiDone, false, 'Quota/API must never use static fallback');
+  sw.resolvePending('authoritative-quota');
+  assert.strictEqual((await api.responsePromise).body, 'authoritative-quota');
+  console.log('slow static: cached deadline fallback, late refresh, cold timeout, no HTML substitution, API isolation: PASS');
 }
 
 (async () => {
@@ -300,6 +384,8 @@ async function testColdWarmOfflineOnline() {
   await testSanjeshButtonQueue();
   await testPwaRegistrationAndSingleReload();
   await testColdWarmOfflineOnline();
+  await testSlowStaticFallback();
+  await testJourneyJsonDeadline();
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

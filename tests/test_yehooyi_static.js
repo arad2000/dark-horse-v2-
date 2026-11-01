@@ -14,7 +14,7 @@ const expected = {
   healer: 'درمان و زندگی', builder: 'ساختن و مهندسی', explorer: 'کشف و دانش',
   thinker: 'اندیشه و جامعه', artist: 'خلق و هنر', speaker: 'واژه و فرهنگ'
 };
-function setup({ status = 200, hybrid = false, noThemes = false, noRoutes = false } = {}) {
+function setup({ status = 200, hybrid = false, noThemes = false, noRoutes = false, pending = false } = {}) {
   const nodes = new Map();
   function element() {
     let html = '';
@@ -36,9 +36,14 @@ function setup({ status = 200, hybrid = false, noThemes = false, noRoutes = fals
   ]);
   const originalStorage = new Map(storage);
   const requests = [];
+  const timers = new Map();
+  let timerId = 0;
+  const pendingRequests = [];
   function forbidden() { throw new Error('Backend/paid journey is down and must not be called'); }
   const ctx = {
     console, Promise,
+    setTimeout(fn, ms) { const id = ++timerId; timers.set(id, {fn, ms}); return id; },
+    clearTimeout(id) { timers.delete(id); },
     document: { body: element(), head: element(), createElement: element,
       getElementById(id) { return nodes.get(id) || null; } },
     localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value) },
@@ -57,7 +62,9 @@ function setup({ status = 200, hybrid = false, noThemes = false, noRoutes = fals
       assert.equal(options.mode, 'same-origin');
       assert.equal(options.credentials, 'omit');
       assert.equal(options.redirect, 'error');
-      return Promise.resolve({ ok: status === 200, status, json: () => Promise.resolve(ctx.fixture) });
+      const result = { ok: status === 200, status, json: () => Promise.resolve(ctx.fixture) };
+      if (pending) return new Promise(resolve => pendingRequests.push(() => resolve(result)));
+      return Promise.resolve(result);
     }
   };
   ctx.window = ctx;
@@ -88,7 +95,8 @@ function setup({ status = 200, hybrid = false, noThemes = false, noRoutes = fals
     vm.runInContext("NARROW_PATHS[SUB_REALMS.explorer[0].id].push({id:'test-hybrid',name:'مسیر آزمایشی',majorCodes:[hybridPrefix]}, {id:'invalid-sibling',name:'',motto:'',majorCodes:[hybridPrefix]})", ctx);
   }
   if (noRoutes) vm.runInContext('Object.keys(NARROW_PATHS).forEach(k => delete NARROW_PATHS[k]);', ctx);
-  return { ctx, nodes, requests, storage, originalStorage };
+  return { ctx, nodes, requests, storage, originalStorage, pendingRequests,
+    expire() { for (const [id, timer] of [...timers]) { timers.delete(id); timer.fn(); } } };
 }
 const flush = () => new Promise(resolve => setImmediate(resolve));
 async function run() {
@@ -168,6 +176,23 @@ async function run() {
   assert.equal(f.requests.length, 1, 'No backend fallback on static-asset error');
   f.nodes.get('dh-lab-x').onclick();
   assert.equal(f.ctx.DHSparkGame.isOpen(), false);
+  const slow = setup({ pending: true });
+  slow.ctx.DHSparkGame.open();
+  assert.ok(slow.nodes.get('dh-lab-x').onclick, 'Loading is immediately closable');
+  slow.expire(); await flush();
+  assert.match(slow.nodes.get('dh-spark-lab').innerHTML, /خطا در بارگذاری/);
+  slow.nodes.get('dh-lab-retry').onclick();
+  assert.equal(slow.requests.length, 2);
+  slow.pendingRequests[0](); await flush();
+  assert.match(slow.nodes.get('dh-spark-lab').innerHTML, /در حال بارگذاری/,
+    'Late timed-out request must not repaint the retry');
+  slow.pendingRequests[1](); await flush();
+  assert.match(slow.nodes.get('dh-spark-lab').innerHTML, /lab-card/);
+  slow.ctx.DHSparkGame.close();
+  const closing = setup({ pending: true });
+  closing.ctx.DHSparkGame.open(); closing.nodes.get('dh-lab-x').onclick();
+  closing.pendingRequests[0](); await flush();
+  assert.equal(closing.ctx.DHSparkGame.isOpen(), false, 'Late success must not reopen a closed lab');
   console.log('Yehooyi static: PASS (API down → cards/results OK, six standalone Persian titles, exact path/subrealm labels, strict complete-chain filtering, multi-realm, no billing/session mutation, static error without API fallback)');
 }
 run().catch(err => { console.error(err); process.exitCode = 1; });
