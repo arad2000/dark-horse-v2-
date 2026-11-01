@@ -38,16 +38,16 @@ def main():
     # S remains an exact AST match to the pinned BASE implementation.
     assert implementation(old_source, '_compute_s_score') == implementation(new_source, '_compute_s_score'), '_compute_s_score changed'
 
-    # Branch M intentionally differs from BASE: pin one fixed-30 assignment
-    # and validate return counts without comparing a list to a singleton list.
+    # Wave B intentionally replaces fixed-30 branch M with valid-unique k/N.
+    # Keep the exact formula/return guard; independent S and weight gates remain.
     branch_m = next(n for n in ast.walk(ast.parse(new_source))
                     if isinstance(n, ast.FunctionDef) and n.name == '_compute_branch_m_score')
     score_assignments = [n for n in ast.walk(branch_m)
                          if isinstance(n, ast.Assign)
                          and any(isinstance(t, ast.Name) and t.id == 'score' for t in n.targets)]
-    expected_score = ast.dump(ast.parse('len(matched) / 30.0', mode='eval').body,
+    expected_score = ast.dump(ast.parse('len(matched) / len(user_set)', mode='eval').body,
                               include_attributes=False)
-    expected_return = ast.dump(ast.parse('(min(1.0, score), matched_details)', mode='eval').body,
+    expected_return = ast.dump(ast.parse('(score, matched_details)', mode='eval').body,
                                include_attributes=False)
     expected_early_return = ast.dump(ast.parse('(0.0, [])', mode='eval').body,
                                      include_attributes=False)
@@ -64,11 +64,11 @@ def main():
     assert (len(score_assignments) == 1
             and ast.dump(score_assignments[0].value, include_attributes=False) == expected_score
             and successful_return_count == 1
-            and early_return_count == 3
-            and len(branch_returns) == 4), (
-        '_compute_branch_m_score must assign score = len(matched) / 30.0 exactly once, '
-        'have exactly one successful (min(1.0, score), matched_details) return, '
-        'and exactly three early (0.0, []) returns'
+            and early_return_count == 1
+            and len(branch_returns) == 2), (
+        '_compute_branch_m_score must assign score = len(matched) / len(user_set) exactly once, '
+        'have exactly one successful (score, matched_details) return, '
+        'and exactly one empty-valid-input (0.0, []) return'
     )
 
     profiles = [(str(k), m) for k, m in new.majors_db.items() if m.get('motive_driven') is not False]
