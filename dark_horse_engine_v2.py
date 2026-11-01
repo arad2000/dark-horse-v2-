@@ -393,42 +393,51 @@ class DarkHorseEngineV2:
         return answers, assessment
 
     # ── S-Score ──
-    def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[float, List[str]]:
-        if not strategy_weights or not strategy_answers:
-            return 0.0, []
+    @staticmethod
+    def _s_item_score(row: List[float], idx: int) -> Optional[float]:
+        """S EQUAL: flat rows have no evidence; tied rows use midrank."""
+        if not row or type(idx) is not int or idx < 0 or idx >= len(row) or len(set(row)) == 1:
+            return None
+        chosen = row[idx]
+        if len(set(row)) == len(row):
+            return chosen / max(row) if max(row) > 0 else 0.0
+        lower = sum(weight < chosen for weight in row)
+        equal = sum(weight == chosen for weight in row)
+        return (lower + (equal - 1) / 2) / (len(row) - 1)
 
-        total_score = 0.0
-        highlights = []
-
-        # Keep the denominator fixed to the full S-question protocol.
-        # Unanswered/invalid items contribute zero instead of shrinking the denominator.
-        question_count = len(strategy_weights)
-
-        for i, row in enumerate(strategy_weights):
-            if i >= len(strategy_answers):
+    def _compute_s_result(self, strategy_answers, strategy_weights) -> Dict:
+        scores, highlights = [], []
+        answered = equal_rows = 0
+        for i, row in enumerate(strategy_weights or []):
+            if i >= len(strategy_answers or []):
                 continue
             idx = strategy_answers[i]
-            if idx < 0 or idx >= len(row):
+            if type(idx) is not int or idx < 0 or idx >= len(row):
                 continue
-
-            max_w = max(row) if row else 1.0
-            chosen_w = row[idx] if 0 <= idx < len(row) else 0.0
-            normalized = chosen_w / max_w if max_w > 0 else 0.0
-
-            total_score += normalized
-
+            answered += 1
+            normalized = self._s_item_score(row, idx)
+            if normalized is None:
+                equal_rows += 1
+                continue
+            scores.append(normalized)
             if normalized >= 0.7:
-                q_num = i + 1
-                question_key = f"S{str(q_num).zfill(2)}"
-                traits = self.trait_map.get(question_key, {}).get(idx, [])
-                if traits:
-                    trait_names = "، ".join(traits)
-                    highlights.append(f"سبک «{trait_names}» با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
-                else:
-                    highlights.append(f"گزینه {idx+1} با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
+                traits = self.trait_map.get(f"S{i + 1:02d}", {}).get(idx, [])
+                label = f"سبک «{'، '.join(traits)}»" if traits else f"گزینه {idx + 1}"
+                highlights.append(f"{label} با این رشته هم‌خوانی مدل بالایی دارد ({normalized * 100:.1f}%)")
+        incomplete = not strategy_weights or answered != len(strategy_weights)
+        return {
+            "score": sum(scores) / len(scores) if scores and not incomplete else None,
+            "status": "incomplete_s_responses" if incomplete else ("complete" if scores else "equal_no_evidence"),
+            "reason": "incomplete_s_responses" if incomplete else (None if scores else "equal_no_evidence"),
+            "coverage": {"answered": answered, "total": len(strategy_weights or []),
+                         "informative_answered": len(scores), "equal_answered": equal_rows},
+            "method": "s-equal-midrank-v1",
+            "highlights": [] if incomplete else highlights,
+        }
 
-        final_score = (total_score / question_count) if question_count > 0 else 0.0
-        return final_score, highlights
+    def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[Optional[float], List[str]]:
+        result = self._compute_s_result(strategy_answers, strategy_weights)
+        return result["score"], result["highlights"]
 
     def _compute_s_score_for_complete_profile(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[Optional[float], List[str]]:
         """Reject incomplete S input before calling the baseline scorer."""
@@ -690,9 +699,9 @@ class DarkHorseEngineV2:
             idx = strategy_answers[i]
             if idx < 0 or idx >= len(row):
                 continue
-            max_w = max(row) if row else 1.0
-            chosen_w = row[idx]
-            normalized = (chosen_w / max_w) if max_w > 0 else 0.0
+            normalized = self._s_item_score(row, idx)
+            if normalized is None:
+                continue
             q_num = i + 1
             question_key = f"S{str(q_num).zfill(2)}"
             trait_list = self.trait_map.get(question_key, {}).get(idx, [])
@@ -855,15 +864,18 @@ class DarkHorseEngineV2:
                     continue
 
                 s_score, s_high = self._compute_s_score_for_complete_profile(strategy_answers, major_data.get("strategy_weights", []))
+                s_result = self._compute_s_result(strategy_answers, major_data.get("strategy_weights", [])) if s_assessment["status"] == "complete" else None
                 v_result = self._compute_v_result(value_choices, major_data.get("value_weights", {}))
                 v_score, v_high = v_result["score"], v_result["highlights"]
                 if s_score is None or v_score is None or not major_data.get("strategy_weights"):
                     s_incomplete = s_assessment.get("status") != "complete"
+                    s_equal = s_result is not None and s_result["status"] == "equal_no_evidence"
                     incomplete.append({
                         "major_id": major_id,
                         "score": None,
-                        "status": "incomplete_s_responses" if s_incomplete else "incomplete",
-                        "reason": s_assessment.get("reason") if s_incomplete else None,
+                        "status": "incomplete_s_responses" if s_incomplete else ("equal_no_evidence" if s_equal else "incomplete"),
+                        "reason": s_assessment.get("reason") if s_incomplete else ("equal_no_evidence" if s_equal else None),
+                        "strategy_assessment": s_result,
                         "s_assessment": s_assessment if s_incomplete else None,
                         "v_result": v_result,
                     })
@@ -921,6 +933,7 @@ class DarkHorseEngineV2:
                         "score": final_score,
                         "status": v_result["status"],
                         "value_assessment": v_result,
+                        "strategy_assessment": s_result,
                         "level": self._get_fit_level(final_score),
                         # توجه: فیلد prestige_level در majors_database_v2.json فعلاً وجود ندارد.
                         # قبلاً اینجا مقدار ثابت ۲ برای همهٔ ۱۶۰ رشته برمی‌گشت (داده جعلی).
@@ -1000,15 +1013,18 @@ class DarkHorseEngineV2:
         for branch_name, branch_data in self.school_branches.items():
             m_score, m_ev = self._compute_branch_m_score(user_motives, branch_data)
             s_score, s_high = self._compute_s_score_for_complete_profile(strategy_answers, branch_data.get("strategy_weights", []))
+            s_result = self._compute_s_result(strategy_answers, branch_data.get("strategy_weights", [])) if s_assessment["status"] == "complete" else None
             v_result = self._compute_v_result(value_choices, branch_data.get("value_weights", {}))
             v_score, v_high = v_result["score"], v_result["highlights"]
             if s_score is None or v_score is None or not branch_data.get("strategy_weights"):
                 s_incomplete = s_assessment.get("status") != "complete"
+                s_equal = s_result is not None and s_result["status"] == "equal_no_evidence"
                 incomplete.append({
                     "branch_name": branch_name,
                     "score": None,
-                    "status": "incomplete_s_responses" if s_incomplete else "incomplete",
-                    "reason": s_assessment.get("reason") if s_incomplete else None,
+                    "status": "incomplete_s_responses" if s_incomplete else ("equal_no_evidence" if s_equal else "incomplete"),
+                    "reason": s_assessment.get("reason") if s_incomplete else ("equal_no_evidence" if s_equal else None),
+                    "strategy_assessment": s_result,
                     "s_assessment": s_assessment if s_incomplete else None,
                     "v_result": v_result,
                 })
@@ -1019,6 +1035,7 @@ class DarkHorseEngineV2:
                 "branch_name": branch_name,
                 "status": v_result["status"],
                 "value_assessment": v_result,
+                "strategy_assessment": s_result,
                 "average_score": round(total * 100, 1),
                 "count": len(branch_data.get("micro_motive_codes", [])),
                 "max_score": round(total * 100, 1),

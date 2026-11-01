@@ -310,6 +310,95 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
             for branch in branches:
                 self.assertAlmostEqual(self.engine._compute_branch_m_score(profile, branch)[0], 0.25, places=12)
 
+    def test_s_equal_real_catalog_preserves_untied_rows_and_orders_ties(self):
+        rows = [row for destination in list(self.engine.majors_db.values()) + list(self.engine.school_branches.values())
+                if destination.get("motive_driven") is not False
+                for row in destination["strategy_weights"]]
+        for row in rows:
+            scores = [self.engine._s_item_score(row, i) for i in range(5)]
+            if len(set(row)) == 1:
+                self.assertEqual(scores, [None] * 5)
+                continue
+            self.assertTrue(all(0 <= score <= 1 for score in scores))
+            for i in range(5):
+                for j in range(5):
+                    if row[i] == row[j]:
+                        self.assertEqual(scores[i], scores[j])
+                    if row[i] < row[j]:
+                        self.assertLess(scores[i], scores[j])
+            if len(set(row)) == 5:
+                self.assertEqual(scores, [value / max(row) for value in row])
+            if row.count(max(row)) > 1:
+                self.assertLess(max(scores), 1)
+            else:
+                self.assertEqual(max(scores), 1)
+
+    def test_s_equal_midrank_and_monotonicity(self):
+        from itertools import permutations
+        score = self.engine._s_item_score
+        for row in ([.1, .2, .3, 1, 1], [.1, .2, 1, 1, 1], [.1, .1, .3, .5, 1]):
+            actual = [score(row, i) for i in range(5)]
+            self.assertEqual(actual, sorted(actual))
+            for permuted in set(permutations(row)):
+                self.assertEqual([score(permuted, i) for i in range(5)],
+                                 [actual[row.index(value)] for value in permuted])
+        self.assertEqual(score([.1, .2, .3, 1, 1], 4), .875)
+        self.assertEqual(score([.1, .2, 1, 1, 1], 4), .75)
+        self.assertEqual(score([.1, .1, .3, .5, 1], 4), 1)
+        for i in range(5):
+            self.assertAlmostEqual(score([.1, .2, .3, .4, .5], i), (i + 1) / 5)
+
+    def test_s_equal_flat_rows_have_no_score_or_traits(self):
+        for value in (.4, 1, 0):
+            weights = [[value] * 5 for _ in range(25)]
+            self.assertEqual(self.engine._compute_s_score([0] * 25, weights), (None, []))
+            result = self.engine._compute_s_result([0] * 25, weights)
+            self.assertIsNone(result["score"])
+            self.assertEqual(result["status"], "equal_no_evidence")
+            self.assertEqual(result["coverage"], {"answered": 25, "total": 25,
+                                                "informative_answered": 0, "equal_answered": 25})
+            self.assertEqual(result["highlights"], [])
+            self.assertEqual(self.engine._extract_dominant_traits([0] * 25, weights), [])
+            self.assertEqual(self.engine._extract_s_misaligned_traits([0] * 25, weights), [])
+
+    def test_s_equal_aggregation_excludes_only_flat_not_missing_responses(self):
+        weights = [[.5] * 5 for _ in range(24)] + [[.1, .2, .3, 1, 1]]
+        result = self.engine._compute_s_result([4] * 25, weights)
+        self.assertEqual(result["score"], .875)
+        self.assertEqual(result["coverage"]["informative_answered"], 1)
+        self.assertEqual(len(result["highlights"]), 1)
+        self.assertIsNone(self.engine._compute_s_score_for_complete_profile([4] * 24, weights)[0])
+        self.assertIsNone(self.engine._compute_s_score([4] * 24, weights)[0])
+        tied = [[.1, .2, .3, 1, 1]] * 25
+        self.assertAlmostEqual(self.engine._compute_s_score([4] * 25, tied)[0], .875)
+        dominant = set(self.engine._extract_dominant_traits([4] * 25, tied))
+        misaligned = set(self.engine._extract_s_misaligned_traits([4] * 25, tied))
+        self.assertFalse(dominant & misaligned)
+
+    def test_s_equal_complete_profile_no_evidence_uses_existing_null_ranking_path(self):
+        import copy
+        e = copy.copy(self.engine)
+        e.school_branches = copy.deepcopy(self.engine.school_branches)
+        key, major = next((key, row) for key, row in self.engine.majors_db.items()
+                          if row.get("motive_driven") is not False)
+        e.majors_db = {key: copy.deepcopy(major)}
+        for row in list(e.school_branches.values()) + list(e.majors_db.values()):
+            row["strategy_weights"] = [[.5] * 5 for _ in range(25)]
+        sjt = {f"sjt_{i}": "A" for i in range(1, 26)}
+        values = {f"conj_{i}": f"Q{i}A" for i in range(1, 16)}
+        motives = major["micro_motive_codes"]
+        branch = e.recommend_school_branch(motives, sjt, values)
+        self.assertEqual(branch["s_assessment"]["status"], "complete")
+        self.assertIsNone(branch["best_branch"])
+        self.assertEqual(branch["recommended_branches"], [])
+        self.assertEqual(len(branch["incomplete_assessments"]), 4)
+        major_result = e.discover_individuality(motives, sjt, values)
+        self.assertEqual(len(major_result["incomplete_assessments"]), 1)
+        for row in branch["incomplete_assessments"] + major_result["incomplete_assessments"]:
+            self.assertIsNone(row["score"])
+            self.assertEqual(row["reason"], "equal_no_evidence")
+            self.assertEqual(row["strategy_assessment"]["coverage"]["equal_answered"], 25)
+
     def test_engine_startup_rejects_non_30_branch_denominator(self) -> None:
         # Derive a negative startup case from the real reference file; no mocks are used.
         from tempfile import TemporaryDirectory
