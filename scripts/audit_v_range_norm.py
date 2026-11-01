@@ -32,11 +32,26 @@ def main():
     old_source = subprocess.check_output(['git','show',BASE+':dark_horse_engine_v2.py'], text=True)
     new_source = (ROOT/'dark_horse_engine_v2.py').read_text()
     def implementation(source, name):
-        return next(ast.dump(n, include_attributes=False) for n in ast.walk(ast.parse(source))
+        node = next(n for n in ast.walk(ast.parse(source))
                     if isinstance(n, ast.FunctionDef) and n.name == name)
+        # Python 3.12 adds empty type_params to FunctionDef; canonicalize the
+        # absent generic-parameter field for the same guard on Python 3.11/3.12.
+        for part in ast.walk(node):
+            if hasattr(part, 'type_params') and not part.type_params:
+                delattr(part, 'type_params')
+        return ast.dump(node, include_attributes=False)
 
-    # S remains an exact AST match to the pinned BASE implementation.
-    assert implementation(old_source, '_compute_s_score') == implementation(new_source, '_compute_s_score'), '_compute_s_score changed'
+    # S EQUAL is an independently approved change. Pin its exact AST, rather
+    # than silently removing the former S guard. V comparisons below hold
+    # current S fixed on both sides; the true legacy S is recorded separately.
+    s_contract_ast = {
+        '_s_item_score': '69be3057d517c1c950ee1be87889d5af8409db518b0b7475a2ff420f8382d6b3',
+        '_compute_s_result': '7927ffba6f5d61ca3296652cd08da65148db2587c5faab48f98e8e56c553dc1d',
+        '_compute_s_score': 'a599a5b88a334baae76bc2bb2f5b437d7167de89b667a427ca1139c41dc57dd5',
+    }
+    for name, expected in s_contract_ast.items():
+        assert hashlib.sha256(implementation(new_source, name).encode()).hexdigest() == expected, name + ' changed'
+    assert implementation(old_source, '_compute_m_score') == implementation(new_source, '_compute_m_score'), 'Major M changed'
 
     # Wave B intentionally replaces fixed-30 branch M with valid-unique k/N.
     # Keep the exact formula/return guard; independent S and weight gates remain.
@@ -74,7 +89,7 @@ def main():
     profiles = [(str(k), m) for k, m in new.majors_db.items() if m.get('motive_driven') is not False]
     profiles += [('branch:' + k, m) for k, m in new.school_branches.items()]
     rng = random.Random(420)
-    report = {'baseline_sha': BASE, 'version': new._v_method(), 'profiles': [], 'fixtures': [], 'ms_parity': True, 'database_identity': []}
+    report = {'s_contract': 's-equal-midrank-v1', 's_counterfactual': 'current S held fixed for V-only comparison; legacy S recorded separately', 'baseline_sha': BASE, 'version': new._v_method(), 'profiles': [], 'fixtures': [], 'ms_parity': True, 'database_identity': []}
     for filename in ('majors_database_v2.json', 'school_branches_v2.json'):
         current = (ROOT / filename).read_bytes()
         base = subprocess.check_output(['git', 'show', BASE + ':' + filename])
@@ -129,8 +144,9 @@ def main():
         for key,m in profiles:
             mf = '_compute_branch_m_score' if key.startswith('branch:') else '_compute_m_score'
             bm = getattr(old,mf)(motives,m)[0]; nm = getattr(new,mf)(motives,m)[0]
-            bs = old._compute_s_score(answers,m['strategy_weights'])[0]
+            legacy_s = old._compute_s_score(answers,m['strategy_weights'])[0]
             ns = new._compute_s_score(answers,m['strategy_weights'])[0]
+            bs = ns  # Isolate V; do not attribute the approved S change to V.
             if key.startswith('branch:'):
                 continue
             old_ms.append((key,bm,bs)); new_ms.append((key,nm,ns))
@@ -138,7 +154,7 @@ def main():
             nv=new._compute_v_score(choices,m['value_weights'])[0]
             before=round(100*(.55*bm+.15*bs+.30*bv),1)
             after=round(100*(.55*nm+.15*ns+.30*nv),1) if nv is not None else None
-            rows.append({'id':key,'name':m['name'],'m':nm,'s':ns,'m_before':bm,'m_after':nm,'s_before':bs,'s_after':ns,'v_before':bv,'v_after':nv,
+            rows.append({'id':key,'name':m['name'],'m':nm,'s':ns,'m_before':bm,'m_after':nm,'s_before':bs,'s_after':ns,'s_original_baseline':legacy_s,'v_before':bv,'v_after':nv,
                 'v_coverage':new._compute_v_result(choices,m['value_weights'])['coverage'],
                 'before':before,'after':after,
                 'cross_down': after is not None and before >= 30 and after < 30,
