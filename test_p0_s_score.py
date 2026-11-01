@@ -161,5 +161,66 @@ class SIncompleteApiContractTests(unittest.TestCase):
         self.assertFalse(response["operational_result_persisted"])
 
 
+class SEqualApiContractTests(unittest.IsolatedAsyncioTestCase):
+    async def _call_both(self, engine, motives):
+        from test_main_api_contract import request_for
+        import main_v2
+        payload = main_v2.DarkHorseDiscoverRequest(
+            micro_motives=motives, session_id="s-equal-test",
+            sjt_answers={f"sjt_{i}": "A" for i in range(1, 26)},
+            conjoint_choices={f"conj_{i}": f"Q{i}A" for i in range(1, 16)})
+        with patch("main_v2._enforce_public_rate_limit"), \
+             patch("main_v2._require_charged_journey", return_value=7), \
+             patch("main_v2._persist_discovery_session", return_value=("test", None)), \
+             patch("main_v2._persist_major_results", return_value=False) as majors, \
+             patch("main_v2._persist_branch_results", return_value=False) as branches:
+            a = (await main_v2.discover_v2(payload, request_for(engine)))["discovery_result"]
+            b = (await main_v2.branch_discovery_v2(payload, request_for(engine)))["branch_discovery_result"]
+        return a, b, majors, branches
+
+    async def test_equal_no_evidence_real_engine_reason_survives_api(self):
+        import copy
+        engine = DarkHorseEngineV2()
+        key, major = next((key, row) for key, row in engine.majors_db.items()
+                          if row.get("motive_driven") is not False)
+        motives = major["micro_motive_codes"]
+        engine.majors_db = {key: copy.deepcopy(major)}
+        for row in list(engine.majors_db.values()) + list(engine.school_branches.values()):
+            row["strategy_weights"] = [[.5] * 5 for _ in range(25)]
+        a, b, majors, branches = await self._call_both(engine, motives)
+        self.assertEqual(a["recommendations"], [])
+        self.assertEqual(b["branches"], [])
+        self.assertIsNone(b["best_branch"])
+        for result in (a, b):
+            self.assertEqual(result["s_assessment"]["status"], "complete")
+            self.assertTrue(result["incomplete_assessments"])
+            for row in result["incomplete_assessments"]:
+                self.assertEqual(row["reason"], "equal_no_evidence")
+                self.assertIsNone(row["strategy_assessment"]["score"])
+        self.assertEqual(majors.call_args.args[1], [])
+        self.assertEqual(branches.call_args.args[1], [])
+
+    async def test_ranked_s_coverage_is_not_dropped_by_api_adapters(self):
+        from test_main_api_contract import FakeEngine
+        original = FakeEngine()
+        assessment = {"score": .875, "status": "complete",
+                      "coverage": {"answered": 25, "total": 25,
+                                   "informative_answered": 1, "equal_answered": 24}}
+        def major(*args):
+            result = original.discover_individuality(*args)
+            for row in result["discovered_majors"]:
+                row["individuality_fit"]["strategy_assessment"] = assessment
+            return result
+        def branch(*args):
+            result = original.recommend_school_branch(*args)
+            for row in result["recommended_branches"]:
+                row["strategy_assessment"] = assessment
+            return result
+        engine = SimpleNamespace(discover_individuality=major, recommend_school_branch=branch)
+        a, b, _, _ = await self._call_both(engine, [])
+        for row in a["recommendations"] + b["branches"]:
+            self.assertEqual(row["strategy_assessment"], assessment)
+
+
 if __name__ == "__main__":
     unittest.main()
