@@ -350,5 +350,176 @@ class TotalThresholdTests(unittest.TestCase):
             self.assertEqual(actual, digest, name + ' changed from deploy 46456a6')
 
 
+
+
+def v_epsilon_snapshot(engine):
+    """Read-only census; counts cards, never the two poles as two witnesses."""
+    rows = []
+    for major in engine.majors_db.values():
+        if major.get('motive_driven') is False:
+            continue
+        pairs = [engine._valid_value_pair(f'Q{i}', major['value_weights']) for i in range(1, 16)]
+        if any(pair is None for pair in pairs):
+            raise AssertionError('Invalid reference in census: ' + str(major['id']))
+        spans = [round(abs(a - b), 12) for a, b in pairs]
+        result = engine._compute_v_result([f'Q{i}A' for i in range(1, 16)], major['value_weights'])
+        kept = sum(span >= engine.V_EPSILON for span in spans)
+        if result['coverage']['discriminative_available'] != kept:
+            raise AssertionError('Coverage diverges from span predicate')
+        rows.append({'id': major['id'], 'name': major['name'], 'group': major.get('group'),
+                     'retained': kept, 'excluded': 15 - kept,
+                     'equal': sum(a == b for a, b in pairs),
+                     'positive_subthreshold': sum(a != b and span < engine.V_EPSILON
+                                                 for (a, b), span in zip(pairs, spans)),
+                     'at_boundary': spans.count(engine.V_EPSILON)})
+    return {
+        'active_majors': len(rows), 'total_pairs': 15 * len(rows),
+        'excluded': sum(r['excluded'] for r in rows),
+        'retained': sum(r['retained'] for r in rows),
+        'equal': sum(r['equal'] for r in rows),
+        'positive_subthreshold': sum(r['positive_subthreshold'] for r in rows),
+        'at_boundary': sum(r['at_boundary'] for r in rows),
+        'distribution': {'0': sum(r['retained'] == 0 for r in rows),
+                         '1-3': sum(1 <= r['retained'] <= 3 for r in rows),
+                         '4-7': sum(4 <= r['retained'] <= 7 for r in rows),
+                         '8+': sum(r['retained'] >= 8 for r in rows)},
+        'lowest': sorted(rows, key=lambda r: (r['retained'], r['id']))[:5],
+    }
+
+
+class VEpsilonContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.engine = DarkHorseEngineV2()
+
+    @staticmethod
+    def weights():
+        return {f'Q{i}{side}': .5 for i in range(1, 16) for side in 'AB'}
+
+    @staticmethod
+    def choices():
+        return [f'Q{i}A' for i in range(1, 16)]
+
+    def test_v0_constant_and_rounded_boundary_both_choices(self):
+        self.assertEqual(self.engine.V_EPSILON, .02)
+        self.assertEqual(self.engine._v_method()['v_epsilon'], .02)
+        for diff, retained in ((.019, 0), (.020, 1), (.021, 1),
+                               (.0199999999994, 0), (.0199999999996, 1)):
+            for pole in ('A', 'B'):
+                with self.subTest(diff=diff, pole=pole):
+                    w = self.weights()
+                    w['Q1A'] = .5 + diff
+                    choices = [f'Q1{pole}'] + self.choices()[1:]
+                    result = self.engine._compute_v_result(choices, w)
+                    self.assertEqual(result['coverage']['discriminative_available'], retained)
+                    self.assertEqual(result['coverage']['discriminative_answered'], retained)
+                    if retained:
+                        self.assertEqual(result['status'], 'complete')
+                        self.assertAlmostEqual(result['score'], 1 if pole == 'A' else 0, places=8)
+                    else:
+                        self.assertIsNone(result['score'])
+                        self.assertEqual(result['reason'], 'value_no_evidence')
+                    pairwise, _ = self.engine._pairwise_value_score(f'Q1{pole}', w)
+                    self.assertAlmostEqual(pairwise, int(bool(retained) and pole == 'A'), places=8)
+
+    def test_excluded_pair_is_absent_from_both_sums_and_traits(self):
+        w = self.weights()
+        w.update({'Q1A': .9, 'Q1B': .1, 'Q2A': .99, 'Q2B': .98, 'Q3A': .6, 'Q3B': .4})
+        choices = self.choices()
+        choices[2] = 'Q3B'
+        # Unique test-only pole labels make absence of the excluded card observable.
+        with patch.object(self.engine, 'value_poles', {k: k for k in w}):
+            for q2 in ('Q2A', 'Q2B'):
+                choices[1] = q2
+                result = self.engine._compute_v_result(choices, w)
+                self.assertAlmostEqual(result['score'], .8)  # .8/(.8+.2), not .8/(.8+.01+.2)
+                self.assertEqual(result['coverage']['discriminative_available'], 2)
+                self.assertNotIn('Q2', ' '.join(result['highlights']))
+                self.assertNotIn(q2, self.engine._extract_dominant_values(choices, w))
+                self.assertNotIn(q2, self.engine._extract_v_misaligned_poles(choices, w))
+
+    def test_zero_evidence_full_answers_is_distinct_from_missing_or_conflict(self):
+        w = {f'Q{i}{side}': (.519 if side == 'A' else .5)
+             for i in range(1, 16) for side in 'AB'}
+        for choices, reason in ((self.choices(), 'value_no_evidence'),
+                                (self.choices()[:14], 'value_incomplete'),
+                                (self.choices() + ['Q1B'], 'value_incomplete')):
+            result = self.engine._compute_v_result(choices, w)
+            self.assertIsNone(result['score'])
+            self.assertEqual(result['reason'], reason)
+            self.assertEqual(result['coverage']['valid_reference_pairs'], 15)
+            self.assertEqual(result['coverage']['discriminative_available'], 0)
+            self.assertEqual(result['highlights'], [])
+            self.assertEqual(self.engine._extract_dominant_values(choices, w), [])
+            self.assertEqual(self.engine._extract_v_misaligned_poles(choices, w), [])
+
+    def test_current_reference_coverage_snapshot(self):
+        snapshot = v_epsilon_snapshot(self.engine)
+        for field, expected in {'active_majors': 202, 'total_pairs': 3030, 'excluded': 332,
+                                'retained': 2698, 'equal': 329, 'positive_subthreshold': 3,
+                                'at_boundary': 21}.items():
+            self.assertEqual(snapshot[field], expected, field)
+        self.assertEqual(snapshot['distribution'], {'0': 0, '1-3': 0, '4-7': 14, '8+': 188})
+        self.assertEqual([(r['id'], r['retained']) for r in snapshot['lowest']],
+                         [(170, 4), (164, 5), (166, 6), (169, 6), (205, 6)])
+        # The same reconstruction of exclusions is valid for all four branches too.
+        for profile in list(self.engine.majors_db.values()) + list(self.engine.school_branches.values()):
+            if profile.get('motive_driven') is False:
+                continue
+            w = profile['value_weights']
+            coverage = self.engine._compute_v_result(self.choices(), w)['coverage']
+            excluded = sum(round(abs(w[f'Q{i}A'] - w[f'Q{i}B']), 12) < .02 for i in range(1, 16))
+            self.assertEqual(coverage['valid_reference_pairs'] - coverage['discriminative_available'], excluded)
+            self.assertEqual(coverage['discriminative_answered'], coverage['discriminative_available'])
+
+    def test_low_evidence_major_still_requires_answering_even_equal_cards(self):
+        major = next(m for m in self.engine.majors_db.values() if m['id'] == 164)
+        w = major['value_weights']
+        hi = [f'Q{i}' + ('A' if w[f'Q{i}A'] >= w[f'Q{i}B'] else 'B') for i in range(1, 16)]
+        full = self.engine._compute_v_result(hi, w)
+        self.assertEqual(full['coverage']['discriminative_available'], 5)
+        self.assertAlmostEqual(full['score'], 1)
+        omitted = next(i for i in range(1, 16) if w[f'Q{i}A'] == w[f'Q{i}B'])
+        partial = self.engine._compute_v_result([c for c in hi if c[:-1] != f'Q{omitted}'], w)
+        self.assertEqual(partial['coverage']['answered'], 14)
+        self.assertEqual(partial['coverage']['discriminative_answered'], 5)
+        self.assertIsNone(partial['score'])
+        self.assertEqual(partial['reason'], 'value_incomplete')
+
+    def test_invalid_reference_is_not_a_threshold_exclusion(self):
+        w = self.weights()
+        w['Q15A'] = float('nan')
+        full = self.engine._compute_v_result(self.choices(), w)
+        c = full['coverage']
+        self.assertEqual(c['valid_reference_pairs'], 14)
+        self.assertEqual(c['discriminative_available'], 0)
+        self.assertEqual(c['valid_reference_pairs'] - c['discriminative_available'], 14)
+        self.assertEqual(c['invalid_reference_questions'], ['Q15'])
+        self.assertEqual(full['reason'], 'value_reference_incomplete')
+        self.assertIsNone(full['score'])
+        self.assertEqual(self.engine._compute_v_result(self.choices()[:14], w)['reason'], 'value_incomplete')
+
+    def test_full_medical_technical_and_law_v_matches_deploy(self):
+        # Actual deploy ac02193, alternating A/B for V; not only trivial best-pole scores.
+        cases = ((1, .5432873274780426, 15, 86.3, 100.0),
+                 (42, .7693920335429768, 12, 92.6, 97.0),
+                 (101, .6314199395770391, 15, 88.7, 98.5))
+        choices = [f'Q{i}' + ('A' if i % 2 else 'B') for i in range(1, 16)]
+        for major_id, expected_v, count, total, s in cases:
+            with self.subTest(major_id=major_id):
+                m = next(m for m in self.engine.majors_db.values() if m['id'] == major_id)
+                v = self.engine._compute_v_result(choices, m['value_weights'])
+                self.assertAlmostEqual(v['score'], expected_v, places=12)
+                self.assertEqual(v['coverage']['answered'], 15)
+                self.assertEqual(v['coverage']['discriminative_available'], count)
+                sjt = {f'sjt_{i}': chr(65 + row.index(max(row))) for i, row in enumerate(m['strategy_weights'], 1)}
+                values = {f'conj_{i}': choice for i, choice in enumerate(choices, 1)}
+                rows = self.engine.discover_individuality(m['micro_motive_codes'], sjt, values)['discovered_majors']
+                fit = next(r['individuality_fit'] for r in rows if int(r['major_id']) == major_id)
+                self.assertEqual(fit['score'], total)
+                self.assertEqual(fit['raw_components']['m_score'], 100)
+                self.assertEqual(fit['raw_components']['s_score'], s)
+
+
 if __name__ == '__main__':
     unittest.main()

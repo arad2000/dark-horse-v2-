@@ -129,6 +129,33 @@ class VConsumerTests(unittest.IsolatedAsyncioTestCase):
                 self.assertNotEqual(row['v_result']['reason'], 'equal_no_evidence')
 
 
+    async def test_v0_coverage_is_reconstructible_in_ranked_and_partial_api_outputs(self):
+        reference = DarkHorseEngineV2()
+        for n in (15, 14):
+            values = {f'conj_{i}': f'Q{i}A' for i in range(1, n + 1)}
+            a, b, _, _ = await self._call_values_endpoints(values)
+            for result, key, is_major in ((a, 'recommendations', True), (b, 'branches', False)):
+                rows = result[key] if n == 15 else result['incomplete_assessments']
+                self.assertTrue(rows)
+                if n == 14:
+                    self.assertEqual(result[key], [])
+                for row in rows:
+                    assessment = row['value_assessment'] if n == 15 else row['v_result']
+                    if is_major:
+                        profile = next(p for p in reference.majors_db.values() if str(p['id']) == str(row['major_id']))
+                    else:
+                        profile = reference.school_branches[row['branch_name_fa'] if n == 15 else row['branch_name']]
+                    w = profile['value_weights']
+                    excluded = sum(round(abs(w[f'Q{i}A'] - w[f'Q{i}B']), 12) < .02 for i in range(1, 16))
+                    c = assessment['coverage']
+                    self.assertEqual(c['answered'], n)
+                    self.assertEqual(c['valid_reference_pairs'], 15)
+                    self.assertEqual(c['valid_reference_pairs'] - c['discriminative_available'], excluded)
+                    if n == 14:
+                        self.assertIsNone(assessment['score'])
+                        self.assertEqual(assessment['reason'], 'value_incomplete')
+
+
 class TotalThresholdAPITests(unittest.IsolatedAsyncioTestCase):
     async def test_real_engine_scores_cross_both_api_adapters_without_rerounding(self):
         from test_v_range_norm import total_boundary_engine, TotalThresholdTests
