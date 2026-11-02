@@ -186,3 +186,26 @@ class TotalThresholdAPITests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(a[key], count)
                 self.assertEqual(majors.call_args.args[1], a['recommendations'])
                 self.assertEqual(branches.call_args.args[1], b['branches'])
+
+
+class BranchMethodMetadataAPITests(unittest.IsolatedAsyncioTestCase):
+    async def test_d1_actual_branch_api_omits_legacy_key_and_preserves_other_method_fields(self):
+        from test_engine_psychometrics import branch_metadata_profile_inputs
+        engine = DarkHorseEngineV2()
+        sjt = {f'sjt_{i}': 'A' for i in range(1, 26)}
+        values = {f'conj_{i}': f'Q{i}A' for i in range(1, 16)}
+        for counts in ((0, 0, 0, 0), (3, 4, 5, 8), (40, 20, 10, 10)):
+            with self.subTest(counts=counts), \
+                 patch('main_v2._enforce_public_rate_limit'), \
+                 patch('main_v2._require_charged_journey', return_value=7), \
+                 patch('main_v2._persist_discovery_session', return_value=('test', None)), \
+                 patch('main_v2._persist_branch_results', return_value=False):
+                inputs = [x for x in branch_metadata_profile_inputs(engine, counts) if isinstance(x, str)]
+                expected = engine.recommend_school_branch(inputs, sjt, values)
+                request = DarkHorseDiscoverRequest(micro_motives=inputs, session_id='branch-metadata-test',
+                    sjt_answers=sjt, conjoint_choices=values)
+                data = (await branch_discovery_v2(request, request_for(engine)))['branch_discovery_result']
+                self.assertNotIn('m_denom_limit', data['method'])
+                self.assertEqual(data['method'], expected['method'])
+                self.assertEqual({r['branch_name_fa']: r['avg_components']['m_score'] for r in data['branches']},
+                                 {r['branch_name']: r['avg_components']['m_score'] for r in expected['recommended_branches']})

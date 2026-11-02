@@ -424,5 +424,70 @@ class DarkHorseEnginePsychometricsTests(unittest.TestCase):
                 )
 
 
+
+
+def branch_metadata_profile_inputs(engine, counts):
+    pools = [sorted(engine._active_branch_code_set(row['micro_motive_codes']))
+             for row in engine.school_branches.values()]
+    selected = [code for pool, k in zip(pools, counts) for code in pool[:k]]
+    if selected:
+        selected += [selected[0], ' ' + selected[0].upper() + ' ', 'not-a-valid-motive', '', None, True]
+    return selected
+
+
+class BranchMethodMetadataTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.engine = DarkHorseEngineV2()
+
+    def test_d1_key_absent_in_empty_and_three_nonempty_output_fixtures(self):
+        sjt = {f'sjt_{i}': 'A' for i in range(1, 26)}
+        values = {f'conj_{i}': f'Q{i}A' for i in range(1, 16)}
+        for counts in ((0, 0, 0, 0), (3, 4, 5, 8), (10, 10, 10, 10), (40, 20, 10, 10)):
+            with self.subTest(counts=counts):
+                result = self.engine.recommend_school_branch(
+                    branch_metadata_profile_inputs(self.engine, counts), sjt, values)
+                self.assertNotIn('m_denom_limit', result['method'])
+                self.assertEqual(result['method']['scoring'], 'Total = 0.60×M + 0.20×S + 0.20×V')
+                self.assertEqual(result['method']['v_epsilon'], .02)
+                self.assertEqual(len(result['recommended_branches']), 4)
+                expected = {name: round(100 * k / sum(counts), 1) if sum(counts) else 0.0
+                            for name, k in zip(self.engine.school_branches, counts)}
+                actual = {row['branch_name']: row['avg_components']['m_score']
+                          for row in result['recommended_branches']}
+                self.assertEqual(actual, expected)
+        incomplete = self.engine.recommend_school_branch([], {}, {})
+        self.assertNotIn('m_denom_limit', incomplete['method'])
+        self.assertEqual(incomplete['recommended_branches'], [])
+
+    def test_raw_branch_m_unchanged_for_three_fixed_profiles_and_noisy_inputs(self):
+        for counts in ((3, 4, 5, 8), (10, 10, 10, 10), (40, 20, 10, 10)):
+            inputs = branch_metadata_profile_inputs(self.engine, counts)
+            for (name, branch), k in zip(self.engine.school_branches.items(), counts):
+                with self.subTest(N=sum(counts), branch=name):
+                    score, evidence = self.engine._compute_branch_m_score(inputs, branch)
+                    self.assertEqual(score, k / sum(counts))
+                    self.assertEqual(len(evidence), k)
+
+    def test_m_paths_and_both_recommendations_ast_match_baseline_except_deleted_metadata(self):
+        import ast
+        import hashlib
+        tree = ast.parse((ROOT / 'dark_horse_engine_v2.py').read_text())
+        for node in ast.walk(tree):
+            if hasattr(node, 'type_params') and not node.type_params:
+                delattr(node, 'type_params')
+        # Baseline hashes omit only the exact legacy key/value pair. Current source
+        # must omit it, so no broad AST exemption or live calculation can hide here.
+        methods = {node.name: node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+        expected = {'_active_branch_code_set': 'b3384e0fad22e7a592cbf08a70d4171d81b9120816b28057a81f4b90210f0eae',
+         '_compute_branch_m_score': '05c3da1bfdd20f99e952b0df2640f91795140983279d8733b0e51f9561f14c5b',
+         '_compute_m_score': '33b72a309b85adc5753fd5d249c4c4c4e71bbf7d6411cdbd966d785e10bcc507',
+         'discover_individuality': '73ab2993fad90c086cfb61ffa1441103fe03037c075a5c400292a3c6493e4787',
+         'recommend_school_branch': '04cb1c67efb4b7f8994468d7b5a7a7dd214d4d452e76806eb0edee2d43ba5a57'}
+        for name, digest in expected.items():
+            self.assertEqual(hashlib.sha256(ast.dump(methods[name], include_attributes=False).encode()).hexdigest(),
+                             digest, name + ' changed beyond approved metadata removal')
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
