@@ -29,7 +29,12 @@ EXPECTED = {
 
 
 def path_codes(data_js: str, path_id: str) -> list[str]:
-    match = re.search(rf"id:'{re.escape(path_id)}'[\\s\\S]*?majorCodes:\\s*\\[([^\\]]*)\\]", data_js)
+    # Public route entries are flat objects; never borrow codes from a later entry.
+    match = re.search(
+        rf"\bid\s*:\s*'{re.escape(path_id)}'\s*,[^{{}}]*?"
+        rf"\bmajorCodes\s*:\s*\[([^\]]*)\]",
+        data_js,
+    )
     if not match:
         raise AssertionError(f"path missing: {path_id}")
     return re.findall(r"'([^']+)'", match.group(1))
@@ -71,7 +76,7 @@ class Phase3CityPathTests(unittest.TestCase):
         result = engine.discover_individuality(
             user_motives=user_motives,
             sjt_answers={f"sjt_{i}": "A" for i in range(1, 26)},
-            conjoint_choices={f"conj_{i}": "Q1A" for i in range(1, 16)},
+            conjoint_choices={f"conj_{i}": f"Q{i}A" for i in range(1, 16)},
         )
         discovered = {item["major_id"] for item in result["discovered_majors"]}
         self.assertTrue({int(k) for k in EXPECTED}.issubset(discovered))
