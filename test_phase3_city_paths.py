@@ -53,10 +53,40 @@ class Phase3CityPathTests(unittest.TestCase):
             self.assertEqual(major["micro_motive_codes"], expected_codes)
             self.assertTrue(major["motive_driven"])
             self.assertIn(meta["prefix"], path_codes(data_js, meta["pathId"]))
+            # Ownership is micro_motive_codes (as in _compute_m_score), not
+            # prefix exclusivity: majors 168 and 187 both use CRAFT-.
+            owned_codes = major["micro_motive_codes"]
             self.assertEqual(
-                [m["code"] for m in root if m["code"].startswith(meta["prefix"])],
+                [m["code"] for m in root
+                 if m["code"].startswith(meta["prefix"]) and m["code"] in owned_codes],
                 expected_codes,
             )
+            shared_prefix_majors = [
+                other for other in majors
+                if other["id"] != major_id
+                and any(code.startswith(meta["prefix"])
+                        for code in other["micro_motive_codes"])
+            ]
+            for other in shared_prefix_majors:
+                other_codes = [code for code in other["micro_motive_codes"]
+                               if code.startswith(meta["prefix"])]
+                self.assertEqual(
+                    [m["code"] for m in root
+                     if m["code"].startswith(meta["prefix"]) and m["code"] in other_codes],
+                    other_codes,
+                )
+                self.assertTrue(set(owned_codes).isdisjoint(other_codes))
+                engine = DarkHorseEngineV2(
+                    motives_path="docs/data/micro_motives.json",
+                    majors_path="majors_database_v2.json",
+                    trait_map_path="trait_map_v3.json",
+                    value_poles_path="value_poles_v2.json",
+                    school_branches_path="school_branches_v2.json",
+                )
+                # Real scoring must not attribute a same-prefix peer's cards
+                # to this major, in either direction.
+                self.assertEqual(engine._compute_m_score(other_codes, major), (0.0, []))
+                self.assertEqual(engine._compute_m_score(owned_codes, other), (0.0, []))
         self.assertEqual(path_codes(data_js, "rescue-crisis"), ["MED-", "EMER-"])
         self.assertEqual(path_codes(data_js, "justice-law"), ["LAW-"])
 
