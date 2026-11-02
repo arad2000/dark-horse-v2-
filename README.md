@@ -83,7 +83,7 @@ python scripts/backend_build_smoke.py
 
 خروجی موفق شامل `APP_IMPORT=PASS`، `SCORING_REFERENCES=PASS`، `SHARED_ENGINE=PASS` و `LIFESPAN=PASS` است. این چک import و startup/shutdown موتور را در subprocess جدا و با محیط allowlistشده اجرا می‌کند؛ تنظیمات DB/AI/پرداخت والد به آن منتقل نمی‌شوند و مسیرهای معمول اتصال socket مسدودند. listener، درخواست HTTP، migration یا اتصال DB ایجاد نمی‌کند.
 
-**این smoke test، readiness عملیاتی نیست.** `EXTERNAL_SERVICES=NOT_TESTED` عمدی است؛ عبور آن سلامت auth/DB/پرداخت/AI، گیت canonical یا اعتبار علمی را ثابت نمی‌کند. وابستگی‌های فعلی بازه‌ای‌اند؛ تا قفل مستقل نسخه‌ها، نصب مجدد الزاماً بایت‌به‌بایت یکسان نیست.
+**این smoke test، readiness عملیاتی نیست.** `EXTERNAL_SERVICES=NOT_TESTED` عمدی است؛ عبور آن سلامت auth/DB/پرداخت/AI، گیت canonical یا اعتبار علمی را ثابت نمی‌کند. `requirements.txt` بازه‌های اصلی را با `-c constraints.txt` به نسخه‌های مشخص مقید می‌کند؛ نسخه‌های مستقیم و گذرای ثبت‌شده از نصب تمیز گرفته شده‌اند، نه ارتقای حدسی. این قفلِ نسخه است، نه قفل hash تمام wheelها یا تضمین نصب یکسان روی هر سیستم‌عامل/Python. به‌روزرسانی constraints نیازمند اجرای regression و اعتبارسنجی محیط هدف است؛ محیط تازهٔ Linux/Python 3.11 آزموده شده و Python 3.12 مرجع CI باید جدا تأیید شود.
 
 ### ۳. اجرای دستی، فقط در محیط محلیِ مجاز
 

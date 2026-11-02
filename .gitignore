@@ -1,0 +1,14 @@
+# Local Python/Node environments and generated test output.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+node_modules/
+
+# Local configuration must never enter a build artifact or commit.
+.env
+.env.*
+!.env.example
