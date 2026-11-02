@@ -1,3 +1,5 @@
+# Mandatory runtime version constraints; do not silently resolve newer releases.
+-c constraints.txt
 fastapi>=0.100.0
 uvicorn>=0.20.0
 pydantic>=2.0.0

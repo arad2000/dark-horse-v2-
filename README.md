@@ -45,32 +45,57 @@ dark-horse-v2-/
 
 ---
 
-## نصب و راه‌اندازی
+## نقش شاخه‌ها و نصب backend
 
-### ۱. کلون کردن پروژه
+- **`main/docs` منبع انتشار frontend است.** وجود چند فایل Python در main به معنی کامل‌بودن backend آن نیست؛ checkout فعلی main برای اجرای مستقل backend کافی نیست.
+- **منبع ساخت backend، commit بازبینی‌شدهٔ `deploy/liara-commercial-sandbox` است.** همهٔ deploy را به main کپی نکنید. اختلاف داده‌های مرجع یا گیت قرمز را با sync خودکار برطرف نکنید.
+- قرارداد حاکم: [main/deploy](https://github.com/arad2000/dark-horse-v2-/blob/4b918261f3f7996439e6f9c98fe83f81f7df3c8d/docs/audits/MAIN_DEPLOY_CONTRACT.md). این راهنما نقش فعلی شاخه‌ها را توضیح می‌دهد، نه ممنوعیت دائمیِ backend در main.
+
+### ۱. تعیین SHA و ساخت artifact تمیز
+
+محیط مرجع CI، Python 3.12 است؛ چک محلی این اصلاح با Python 3.11 نیز اجرا شده است. دستورات زیر برای shell سازگار با Bash و ابزارهای git/tar هستند.
 
 ```bash
-git clone https://github.com/arad2000/dark-horse-v2-.git
+git clone --branch deploy/liara-commercial-sandbox --single-branch \
+  https://github.com/arad2000/dark-horse-v2-.git
 cd dark-horse-v2-
+SOURCE_SHA=$(git rev-parse HEAD)
+printf 'Backend source: %s\n' "$SOURCE_SHA"
+# پیش از استفادهٔ عملیاتی، همین SHA باید بازبینی و تأیید شده باشد.
+# برای تکرار ساخت، SOURCE_SHA را از رسید همان ساخت بردارید؛ نه از tip جدید شاخه.
+ARTIFACT="../dark-horse-build-$SOURCE_SHA"
+mkdir "$ARTIFACT"
+git archive "$SOURCE_SHA" | tar -x -C "$ARTIFACT"
+cd "$ARTIFACT"
 ```
 
-### ۲. نصب وابستگی‌ها
+`git archive` فقط فایل‌های commit را وارد artifact می‌کند، نه فایل untracked یا تغییر محلی. ثبت SHA، هویت منبع را مشخص می‌کند؛ به‌تنهایی نسخهٔ نصب وابستگی‌ها یا سلامت سرویس زنده را تضمین نمی‌کند. اسکریپت smoke زیر باید در همان نسخهٔ انتخاب‌شده موجود باشد؛ برای commit قدیمیِ فاقد آن، نتیجهٔ تست نسخهٔ جدید را به آن تعمیم ندهید.
+
+### ۲. نصب در محیط مجزا و بررسی offline
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip check
+python scripts/backend_build_smoke.py
 ```
 
-### ۳. اجرای سرور
+خروجی موفق شامل `APP_IMPORT=PASS`، `SCORING_REFERENCES=PASS`، `SHARED_ENGINE=PASS` و `LIFESPAN=PASS` است. این چک import و startup/shutdown موتور را در subprocess جدا و با محیط allowlistشده اجرا می‌کند؛ تنظیمات DB/AI/پرداخت والد به آن منتقل نمی‌شوند و مسیرهای معمول اتصال socket مسدودند. listener، درخواست HTTP، migration یا اتصال DB ایجاد نمی‌کند.
+
+**این smoke test، readiness عملیاتی نیست.** `EXTERNAL_SERVICES=NOT_TESTED` عمدی است؛ عبور آن سلامت auth/DB/پرداخت/AI، گیت canonical یا اعتبار علمی را ثابت نمی‌کند. `requirements.txt` بازه‌های اصلی را با `-c constraints.txt` به نسخه‌های مشخص مقید می‌کند؛ نسخه‌های مستقیم و گذرای ثبت‌شده از نصب تمیز گرفته شده‌اند، نه ارتقای حدسی. این قفلِ نسخه است، نه قفل hash تمام wheelها یا تضمین نصب یکسان روی هر سیستم‌عامل/Python. به‌روزرسانی constraints نیازمند اجرای regression و اعتبارسنجی محیط هدف است؛ محیط تازهٔ Linux/Python 3.11 آزموده شده و Python 3.12 مرجع CI باید جدا تأیید شود.
+
+### ۳. اجرای دستی، فقط در محیط محلیِ مجاز
+
+پس از پیکربندی مستقل محیط محلی و بدون استفاده از credential عملیاتی:
 
 ```bash
-python main_v2.py
+python -m uvicorn main_v2:app --host 0.0.0.0 --port 8000
 ```
 
-سرور روی آدرس زیر بالا می‌آید:
+`0.0.0.0` آدرس bind است، نه آدرس سایت عمومی. ریشهٔ API جای readiness تمام وابستگی‌ها نیست. برای آزمون صرفاً offline، همان smoke بالا کافی است و نیازی به اجرای سرور نیست.
 
-```
-http://0.0.0.0:8000
-```
+مسیرهای نتیجهٔ deploy به Bearer معتبر و session_id سفر متعلق به کاربر با charge تأییدشده نیاز دارند؛ نمونهٔ بدنهٔ زیر به‌تنهایی درخواست اجرایی کامل نیست. با نبود DB/احراز هویت، محدودیت را با خاموش‌کردن guard دور نزنید. چرخهٔ schema عملیاتی Alembic-only است؛ این دستورات هیچ migration یا استقرار Liara را مجاز نمی‌کنند.
 
 ---
 

@@ -1,0 +1,27 @@
+# Runtime versions resolved from a clean install of baseline requirements.
+# Receipt: source 5caf7dc04a7f524d163b6972c2b0203aedc75ee0, Linux / Python 3.11.
+# Keep requirements.txt ranges; update these pins only with regression evidence.
+# This pins versions, not wheel hashes; other Python/platforms require validation.
+alembic==1.20.1
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.16.0
+certifi==2026.10.23
+click==8.5.0
+fastapi==0.162.0
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+Mako==1.4.3
+MarkupSafe==3.0.4
+opentelemetry-api==1.45.2
+psycopg==3.3.6
+psycopg-binary==3.3.6
+pydantic==2.14.2
+pydantic_core==2.50.2
+SQLAlchemy==2.1.6
+starlette==1.10.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+uvicorn==0.54.0
