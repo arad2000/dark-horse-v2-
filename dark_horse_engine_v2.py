@@ -1114,7 +1114,6 @@ class DarkHorseEngineV2:
             "method": {
                 "principle": "هدایت تحصیلی — توصیه شاخه دبیرستانی",
                 "scoring": "Total = 0.60×M + 0.20×S + 0.20×V",
-                "m_denom_limit": "min(30, max(15, |unique_user_motives|))",
                 "alternative_path_formula": "D = √(0.60×RMS(V)^2 + 0.40×RMS(S)^2), S = 125D",
                 "filter": "بهترین شاخه فقط از بین شاخه‌های با M ≥ 15% انتخاب می‌شود",
                 "features": ["M-Score مستقیم از شاخه", "S و V از شاخه", "مسیرهای جایگزین با پروفایل کامل ۱۲۵بعدی Strategy"],
