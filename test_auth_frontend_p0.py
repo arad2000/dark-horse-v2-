@@ -21,9 +21,14 @@ class AuthFrontendP0ContractTests(unittest.TestCase):
 
     def test_auth_entrypoints_are_single_server_paths(self):
         index = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertEqual(index.count('src="auth_api_client.js?v=5"'), 1)
-        self.assertEqual(index.count('src="commercial_ui.js?v=23"'), 1)
-        self.assertEqual(index.count('src="password_reset_ui.js?v=3"'), 1)
+        # Canonical docs/index.html: cache bumps in 66a3fa68 and 73de65ae.
+        self.assertEqual(index.count('src="auth_api_client.js?v=7"'), 1)
+        self.assertEqual(index.count('src="commercial_ui.js?v=24"'), 1)
+        self.assertEqual(index.count('src="password_reset_ui.js?v=4"'), 1)
+        # A stale second version must not evade the exact-version counts above.
+        self.assertEqual(index.count('src="auth_api_client.js?'), 1)
+        self.assertEqual(index.count('src="commercial_ui.js?'), 1)
+        self.assertEqual(index.count('src="password_reset_ui.js?'), 1)
 
 
 if __name__ == "__main__":
