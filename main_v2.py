@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictStr
 
 from admin_router import router as admin_router
 import admission_chance_api as admission_chance_api_module
@@ -179,7 +179,8 @@ class DarkHorseDiscoverRequest(BaseModel):
     # Exact 25-key validity is enforced by the engine, not by a dict item-count limit.
     # This keeps short/extra-key dicts on the HTTP 200 + incomplete response path.
     sjt_answers: dict = Field(default_factory=dict)
-    conjoint_choices: dict = Field(default_factory=dict, max_length=15)
+    # V answers are text; semantic validity/normalization stays engine-owned.
+    conjoint_choices: dict[str, StrictStr] = Field(default_factory=dict, max_length=15)
     session_id: str | None = Field(default=None, min_length=8, max_length=64)
 
 
