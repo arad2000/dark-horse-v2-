@@ -8,8 +8,10 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.testclient import TestClient
+
+from auth_login_rate_limit import LoginAttemptRateLimiter
 
 import admission_exam_capacity
 import ai_counsel_service
@@ -40,12 +42,17 @@ class ApiSecurityAndReliabilityTests(unittest.TestCase):
     def test_2_commercial_login_separates_401_bad_credentials_from_503_operational_error(self) -> None:
         mock_db = MagicMock()
         req = commercial_api.LoginRequest(phone="09123456789", password="wrong-password")
+        # Contract: commercial_api.login requires Request for atomic login rate limiting.
+        request = Request({"type": "http", "client": ("198.51.100.42", 12345)})
+        limiter = LoginAttemptRateLimiter()  # Test-local state; do not consume global capacity.
 
-        with patch("commercial_api.assert_production_billing_configuration"), patch(
+        with patch.object(commercial_api, "AUTH_LOGIN_RATE_LIMITER", limiter), patch(
+            "commercial_api.assert_production_billing_configuration"
+        ), patch(
             "commercial_api.authenticate_user", side_effect=ValueError("invalid password")
         ):
             with self.assertRaises(HTTPException) as ctx401:
-                commercial_api.login(req=req, db=mock_db)
+                commercial_api.login(req=req, request=request, db=mock_db)
         self.assertEqual(ctx401.exception.status_code, 401)
         self.assertEqual(ctx401.exception.detail, "invalid credentials")
         mock_db.rollback.assert_called_once()
@@ -58,14 +65,16 @@ class ApiSecurityAndReliabilityTests(unittest.TestCase):
             grade="12",
             is_active=True,
         )
-        with patch("commercial_api.assert_production_billing_configuration"), patch(
+        with patch.object(commercial_api, "AUTH_LOGIN_RATE_LIMITER", limiter), patch(
+            "commercial_api.assert_production_billing_configuration"
+        ), patch(
             "commercial_api.authenticate_user", return_value=(fake_user, "tok-123")
         ), patch(
             "commercial_api.ensure_free_entitlement",
             side_effect=ValueError("Active free plan free_1_test is not seeded"),
         ):
             with self.assertRaises(HTTPException) as ctx503:
-                commercial_api.login(req=req, db=mock_db)
+                commercial_api.login(req=req, request=request, db=mock_db)
         self.assertEqual(ctx503.exception.status_code, 503)
         self.assertIn("free_1_test", ctx503.exception.detail)
         mock_db.rollback.assert_called_once()

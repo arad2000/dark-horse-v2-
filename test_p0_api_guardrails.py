@@ -1,18 +1,22 @@
 """P0.3 public discover/counsel payload and quota guard tests."""
 import re
+from contextlib import ExitStack
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from ai_rate_limit import SlidingWindowRateLimiter
+from dark_horse_engine_v2 import DarkHorseEngineV2
 from main_v2 import (
     MAX_COUNSEL_PAYLOAD_BYTES,
     MAX_DISCOVERY_PAYLOAD_BYTES,
     DarkHorseDiscoverRequest,
+    app,
     _enforce_payload_limit,
     _enforce_public_rate_limit,
     _require_charged_journey,
@@ -47,8 +51,53 @@ class PayloadLimitTests(unittest.TestCase):
     def test_discovery_collections_have_protocol_sized_caps(self):
         with self.assertRaises(ValidationError):
             DarkHorseDiscoverRequest(micro_motives=["MED-001"] * 101)
-        with self.assertRaises(ValidationError):
-            DarkHorseDiscoverRequest(sjt_answers={f"sjt_{i}": "A" for i in range(1, 27)})
+        # Contract: S_INCOMPLETE_POLICY_LOCK.md / HTTP API; extra S keys are
+        # accepted as a dict, then return 200 + null S, no ranking or persistence.
+        answers = {f"sjt_{i}": "A" for i in range(1, 27)}
+        model = DarkHorseDiscoverRequest(sjt_answers=answers)
+        self.assertEqual(model.sjt_answers, answers)
+        engine = DarkHorseEngineV2()
+        payload = {
+            "micro_motives": engine.majors_db[1]["micro_motive_codes"],
+            "sjt_answers": answers,
+            "conjoint_choices": {f"conj_{i}": f"Q{i}A" for i in range(1, 16)},
+            "session_id": "p0-s-extra-key-test",
+        }
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(app.state, "engine", engine, create=True))
+            stack.enter_context(patch.object(app.state, "branch_engine", engine, create=True))
+            stack.enter_context(patch("main_v2._enforce_public_rate_limit"))
+            stack.enter_context(patch("main_v2._require_charged_journey", return_value=7))
+            stack.enter_context(patch(
+                "main_v2._persist_discovery_session", return_value=(payload["session_id"], 123),
+            ))
+            major_store = stack.enter_context(patch("main_v2._persist_major_results"))
+            branch_store = stack.enter_context(patch("main_v2._persist_branch_results"))
+            client = TestClient(app, raise_server_exceptions=False)
+            stack.callback(client.close)
+            for path, result_key, items_key in (
+                ("discover", "discovery_result", "recommendations"),
+                ("branch-discovery", "branch_discovery_result", "branches"),
+            ):
+                with self.subTest(path=path):
+                    response = client.post("/api/v2/darkhorse/" + path, json=payload)
+                    self.assertEqual(response.status_code, 200, response.text)
+                    body = response.json()
+                    result = body[result_key]
+                    assessment = result["s_assessment"]
+                    self.assertEqual(assessment["status"], "incomplete_s_responses")
+                    self.assertIsNone(assessment["score"])
+                    self.assertEqual(assessment["valid_answers"], 25)
+                    self.assertEqual(assessment["expected_answers"], 25)
+                    self.assertEqual(assessment["unknown_keys"], ["sjt_26"])
+                    self.assertFalse(assessment["length_matches"])
+                    self.assertEqual(result["status"], "incomplete")
+                    self.assertEqual(result[items_key], [])
+                    self.assertFalse(body["operational_result_persisted"])
+                    if path == "branch-discovery":
+                        self.assertIsNone(result["best_branch"])
+            major_store.assert_not_called()
+            branch_store.assert_not_called()
         with self.assertRaises(ValidationError):
             DarkHorseDiscoverRequest(conjoint_choices={f"conj_{i}": "Q1A" for i in range(1, 17)})
 
