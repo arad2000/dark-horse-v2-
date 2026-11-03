@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 import unittest
 from pathlib import Path
 
-from admission_sanjesh_engine import build_record_results, load_majors, load_programs
+from admission_sanjesh_engine import (
+    _resolve_record_bomi, build_record_results, filter_programs, load_majors, load_programs,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -171,9 +174,26 @@ class RecordTable5BomiTests(unittest.TestCase):
         self.assertEqual([x["program_id"] for x in same], ["PROG_01029"])
         self.assertEqual(other, [])
 
-    def test_null_table5_mapping_has_runtime_note(self):
+    def test_null_table5_mapping_is_excluded_without_dropping_resolved_records(self):
         programs = {p["program_id"]: p for p in load_programs()}
         majors = load_majors()
+        # Contract: SANJESH_RECORD_ENGINE_V2.md G7 and build_record_results:
+        # unresolved_table5 is excluded, without rewriting data or guessing locality.
+        unresolved = programs["PROG_00985"]
+        resolved = programs["PROG_00987"]
+        selected = [unresolved, resolved]
+        original = deepcopy(selected)
+        self.assertIsNone(unresolved["admission_info"]["bomi_type"])
+        self.assertEqual(unresolved["admission_info"]["bomi_type_rule"], "unresolved_table5")
+        self.assertEqual(_resolve_record_bomi(unresolved, majors), (None, "unresolved_table5"))
+        self.assertEqual(_resolve_record_bomi(resolved, majors), ("keshvari", "table5_daily"))
+        # Both real records pass diploma/course/major filters: exclusion is G7,
+        # not an unrelated input mismatch or a blanket empty-results regression.
+        eligible = filter_programs(
+            selected, major_ids=[44, 45], diploma_type="riazi",
+            course_types=["savabegh_dolati"], admission_method="سوابق تحصیلی",
+        )
+        self.assertEqual([row["program_id"] for row in eligible], ["PROG_00985", "PROG_00987"])
         result = build_record_results(
             major_ids=[44],
             diploma_type="riazi",
@@ -186,11 +206,23 @@ class RecordTable5BomiTests(unittest.TestCase):
             majors=majors,
             limit=30,
         )
-        self.assertEqual(len(result), 1)
-        self.assertIsNone(result[0]["bomi_type"])
-        self.assertTrue(
-            any("نوع بومی: نامشخص" in note for note in result[0]["notes"])
+        self.assertEqual(result, [])
+        mixed = build_record_results(
+            major_ids=[44, 45],
+            diploma_type="riazi",
+            gpa_written=18.0,
+            gpa_total=None,
+            province="گیلان",
+            target_field_group="riazi",
+            course_types=["savabegh_dolati"],
+            programs=selected,
+            majors=majors,
+            limit=30,
         )
+        self.assertEqual([row["program_id"] for row in mixed], ["PROG_00987"])
+        self.assertEqual(mixed[0]["bomi_type"], "keshvari")
+        self.assertEqual(mixed[0]["bomi_source"], "table5_daily")
+        self.assertEqual(selected, original)
 
     def test_null_table5_mapping_is_explicitly_unresolved_in_data(self):
         programs = {p["program_id"]: p for p in load_programs()}
