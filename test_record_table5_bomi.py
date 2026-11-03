@@ -47,33 +47,50 @@ class RecordTable5BomiTests(unittest.TestCase):
     def test_record_diploma_filter_accepts_and_rejects(self):
         programs = {p["program_id"]: p for p in load_programs()}
         majors = load_majors()
+        # Contract: _diploma_matches/filter_programs apply diploma requirements;
+        # build_record_results + SANJESH_RECORD_ENGINE_V2.md G7 exclude unresolved.
+        selected = [programs["PROG_00985"], programs["PROG_00987"]]
+        original = deepcopy(selected)
+        self.assertEqual(_resolve_record_bomi(selected[0], majors), (None, "unresolved_table5"))
+        self.assertEqual(_resolve_record_bomi(selected[1], majors), ("keshvari", "table5_daily"))
+        eligible = filter_programs(
+            selected, major_ids=[44, 45], diploma_type="riazi",
+            course_types=["savabegh_dolati"], admission_method="سوابق تحصیلی",
+        )
+        self.assertEqual([row["program_id"] for row in eligible], ["PROG_00985", "PROG_00987"])
+        ineligible = filter_programs(
+            selected, major_ids=[44, 45], diploma_type="tajrobi",
+            course_types=["savabegh_dolati"], admission_method="سوابق تحصیلی",
+        )
+        self.assertEqual(ineligible, [])
 
         allowed = build_record_results(
-            major_ids=[44],
+            major_ids=[44, 45],
             diploma_type="riazi",
             gpa_written=18.0,
             gpa_total=None,
             province="گیلان",
             target_field_group="riazi",
             course_types=["savabegh_dolati"],
-            programs=[programs["PROG_00985"]],
+            programs=selected,
             majors=majors,
             limit=30,
         )
         rejected = build_record_results(
-            major_ids=[44],
+            major_ids=[44, 45],
             diploma_type="tajrobi",
             gpa_written=18.0,
             gpa_total=None,
             province="گیلان",
             target_field_group="riazi",
             course_types=["savabegh_dolati"],
-            programs=[programs["PROG_00985"]],
+            programs=selected,
             majors=majors,
             limit=30,
         )
-        self.assertEqual([x["program_id"] for x in allowed], ["PROG_00985"])
+        self.assertEqual([x["program_id"] for x in allowed], ["PROG_00987"])
         self.assertEqual(rejected, [])
+        self.assertEqual(selected, original)
 
     def test_table5_samples(self):
         programs = {p["program_id"]: p for p in load_programs()}
