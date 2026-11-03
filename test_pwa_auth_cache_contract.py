@@ -8,7 +8,8 @@ class PwaAuthCacheContractTests(unittest.TestCase):
     def test_canonical_index_excludes_legacy_auth_observer_and_bumps_clients(self):
         index = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
         self.assertNotIn("profile_auth_cleanup.js", index)
-        self.assertIn('auth_api_client.js?v=6', index)
+        # Canonical docs/index.html: 73de65ae bumped auth v6 -> v7 after 66a3fa68.
+        self.assertIn('auth_api_client.js?v=7', index)
         self.assertIn('commercial_ui.js?v=24', index)
         self.assertIn('password_reset_ui.js?v=4', index)
         self.assertIn('pwa-boot.js?v=62', index)
