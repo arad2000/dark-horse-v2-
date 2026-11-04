@@ -49,12 +49,38 @@ class FrontendBillingAdminSandboxContractTests(unittest.TestCase):
         self.assertNotIn("createElement('button')", commercial)
         self.assertNotRegex(commercial, r"\.id\s*=\s*['\"]dh-p-buy['\"]")
 
-    def test_fixed_home_admin_entry_is_removed_at_runtime(self):
-        js = (DOCS / "commercial_ui_bridge_v2.js").read_text(encoding="utf-8")
-        self.assertIn("var fixedEntry = byId('dh-admin-entry')", js)
-        self.assertIn("fixedEntry.remove()", js)
-        self.assertIn("dh-profile-admin-entry", js)
-        self.assertIn("admin.html", js)
+    def test_home_has_no_legacy_admin_shortcut_and_admin_page_checks_session(self):
+        # Contract: index/shell/profile_ux_v1 have no fixed home admin link;
+        # profile has role-gated metrics, admin.html gates its separate page via /me.
+        index = (DOCS / "index.html").read_text(encoding="utf-8")
+        shell = (DOCS / "shell.js").read_text(encoding="utf-8")
+        profile = (DOCS / "profile_ux_v1.js").read_text(encoding="utf-8")
+        commercial = (DOCS / "commercial_ui.js").read_text(encoding="utf-8")
+        admin = (DOCS / "admin.html").read_text(encoding="utf-8")
+        self.assertIn('src="shell.js?v=62"', index)
+        self.assertIn('src="profile_ux_v1.js?v=1"', index)
+        for retired in ("commercial_ui_bridge_v2.js", "profile_auth_cleanup.js", "auth_ui_hotfix.js"):
+            self.assertNotIn(retired, index)
+        for name, source in (("index", index), ("shell", shell), ("profile", profile), ("commercial", commercial)):
+            with self.subTest(source=name):
+                self.assertNotIn("dh-admin-entry", source)
+                self.assertNotIn("dh-profile-admin-entry", source)
+                self.assertNotIn("admin.html", source)
+        self.assertIn("user.is_admin === true || user.role === 'admin'", profile)
+        self.assertIn("if (isAdmin(user)) admin = makeAdminPanel();", profile)
+        self.assertIn("if (admin) shell.appendChild(admin);", profile)
+        self.assertIn("/api/v1/admin/dashboard", profile)
+        self.assertIn("Authorization: 'Bearer ' + token", profile)
+        self.assertIn('id="app" class="hide"', admin)
+        token_gate = "if(!auth||!auth.token)throw new Error"
+        identity = "var me=await req('/api/v1/me');"
+        role_gate = "if(role!=='admin'&&role!=='support')throw new Error"
+        reveal = "document.getElementById('app').classList.remove('hide');"
+        for check in ("localStorage.getItem('dh_auth_v1')", "Authorization:'Bearer '", token_gate, identity, role_gate, reveal):
+            self.assertIn(check, admin)
+        self.assertLess(admin.index(token_gate), admin.index(identity))
+        self.assertLess(admin.index(identity), admin.index(role_gate))
+        self.assertLess(admin.index(role_gate), admin.index(reveal))
 
     def test_admin_panel_has_explicit_exit_control(self):
         html = (DOCS / "admin.html").read_text(encoding="utf-8")
