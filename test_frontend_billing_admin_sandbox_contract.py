@@ -1,4 +1,5 @@
 import unittest
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -30,8 +31,21 @@ class FrontendBillingAdminSandboxContractTests(unittest.TestCase):
     def test_admin_panel_has_explicit_exit_control(self):
         html = (DOCS / "admin.html").read_text(encoding="utf-8")
         self.assertIn('id="exit-panel"', html)
-        self.assertIn("خروج از پنل", html)
-        self.assertIn("window.location.assign('index.html')", html)
+        # Contract: docs/admin.html exit-panel onclick (64fc2a94) and
+        # SandboxBillingAdminUITests: clear session/local state, replace to logout=1.
+        self.assertRegex(html, r'<button\b[^>]*id="exit-panel"[^>]*>\s*خروج از حساب\s*</button>')
+        handler = re.search(
+            r"document\.getElementById\('exit-panel'\)\.onclick=function\(\)\{(.*?)\n\};",
+            html, re.S,
+        )
+        self.assertIsNotNone(handler, "Exit button must have a logout handler")
+        logout = handler.group(1)
+        redirect = "window.location.replace('index.html?logout=1')"
+        self.assertIn(redirect, logout)
+        for key in ("dh_auth_v1", "dh_local_user_v1", "dh_local_quota_v1"):
+            clear = "localStorage.removeItem('" + key + "')"
+            self.assertIn(clear, logout)
+            self.assertLess(logout.index(clear), logout.index(redirect))
 
     def test_legacy_offline_label_is_absent_from_static_docs(self):
         legacy_labels = (
