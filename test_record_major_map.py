@@ -77,13 +77,18 @@ class RecordMajorMapTests(unittest.TestCase):
         mapping = load_major_id_name_map()
         source_ids = {str(item["id"]) for item in source if isinstance(item, dict) and item.get("id") is not None}
         self.assertEqual(set(mapping), source_ids)
-        self.assertEqual(len(mapping), 176)
+        # Current coverage: record_major_map.load_major_id_name_map reads the
+        # entire official catalog, independently of historical rollout size.
+        self.assertEqual(len(mapping), len(source))
+        self.assertEqual(mapping, {str(item["id"]): str(item["name"]).strip() for item in source})
 
     def test_phase2_legacy_1_160_name_weight_fingerprint_unchanged(self):
         source = json.loads((ROOT / "majors_database_v2.json").read_text(encoding="utf-8"))
-        self.assertEqual(len(source), 176)
+        # Stable layer: total catalog growth must not relax the locked 1..160
+        # membership/count or either historical name/weight fingerprint below.
         legacy = [item for item in source if 1 <= int(item["id"]) <= 160]
         self.assertEqual(len(legacy), 160)
+        self.assertEqual({int(item["id"]) for item in legacy}, set(range(1, 161)))
         self.assertEqual(
             _legacy_name_weight_fingerprint(legacy),
             "15ce7c0ad63de857",
@@ -93,7 +98,7 @@ class RecordMajorMapTests(unittest.TestCase):
             "e0e81b6b783c1007",
         )
 
-    def test_phase2_wave1_new_majors_are_capacity_stubs(self):
+    def test_phase2_wave1_ids_have_current_motive_driven_profiles(self):
         source = json.loads((ROOT / "majors_database_v2.json").read_text(encoding="utf-8"))
         expected = {
             161: "علوم ورزشی",
@@ -113,18 +118,25 @@ class RecordMajorMapTests(unittest.TestCase):
             175: "زبان و ادبیات فرانسه",
             176: "مترجمی زبان عربی",
         }
-        rows = {int(item["id"]): item for item in source if int(item["id"]) >= 161}
+        # Historical wave1 is exactly 161..176, not every later catalog ID.
+        # Supervisor two-layer contract: these current rows are active profiles,
+        # not capacity stubs; all later IDs remain covered by the mapping test.
+        rows = {int(item["id"]): item for item in source if 161 <= int(item["id"]) <= 176}
         self.assertEqual(set(rows), set(expected))
         for major_id, name in expected.items():
             row = rows[major_id]
             self.assertEqual(row["name"], name)
-            self.assertFalse(row["handcrafted"])
-            self.assertFalse(row["motive_driven"])
-            self.assertIn("phase2_capacity_stub_v1", row["weights_version"])
-            self.assertTrue(
-                all(code.startswith(f"P2-{major_id}-") for code in row["micro_motive_codes"])
-            )
-            self.assertEqual(row["archetype"], "phase2-capacity-stub")
+            self.assertIs(row["handcrafted"], True)
+            self.assertIs(row["motive_driven"], True)
+            self.assertTrue(row["weights_version"].strip())
+            self.assertNotIn("phase2_capacity_stub_v1", row["weights_version"])
+            codes = row["micro_motive_codes"]
+            self.assertEqual(len(codes), 7)
+            self.assertEqual(len(set(codes)), 7)
+            self.assertTrue(all(isinstance(code, str) and code.strip() for code in codes))
+            self.assertFalse(any(code.startswith("P2-") for code in codes))
+            self.assertTrue(row["archetype"].strip())
+            self.assertNotEqual(row["archetype"], "phase2-capacity-stub")
 
     def test_deterministic_sample_ids_return_canonical_names(self):
         mapping = load_major_id_name_map()
