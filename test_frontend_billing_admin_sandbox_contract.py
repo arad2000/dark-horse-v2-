@@ -13,12 +13,12 @@ class FrontendBillingAdminSandboxContractTests(unittest.TestCase):
         index = (DOCS / "index.html").read_text(encoding="utf-8")
         profile = (DOCS / "profile_ux_v1.js").read_text(encoding="utf-8")
         commercial = (DOCS / "commercial_ui.js").read_text(encoding="utf-8")
-        self.assertEqual(index.count('src="profile_ux_v1.js?v=1"'), 1)
+        self.assertEqual(index.count('src="profile_ux_v1.js?v=2"'), 1)
         self.assertEqual(index.count('src="commercial_ui.js?v=24"'), 1)
         for retired in ("commercial_ui_bridge_v2.js", "commercial_ui_bridge_v3.js", "auth_ui_hotfix.js"):
             self.assertNotIn(retired, index)
         self.assertIn("var legacyPrem = card.querySelector('#dh-p-prem')", profile)
-        self.assertRegex(profile, r"else if \(legacyPrem\)\s*\{\s*legacyPrem\.remove\(\);")
+        self.assertRegex(profile, r"if \(legacyPrem\)\s*\{\s*legacyPrem\.remove\(\);")
         self.assertIn("wrap.innerHTML = '';", profile)
         self.assertLess(profile.index("wrap.innerHTML = '';"), profile.index("wrap.appendChild(shell)"))
         self.assertEqual(profile.count("buy.id = 'dh-p-buy'"), 1)
@@ -58,7 +58,7 @@ class FrontendBillingAdminSandboxContractTests(unittest.TestCase):
         commercial = (DOCS / "commercial_ui.js").read_text(encoding="utf-8")
         admin = (DOCS / "admin.html").read_text(encoding="utf-8")
         self.assertIn('src="shell.js?v=62"', index)
-        self.assertIn('src="profile_ux_v1.js?v=1"', index)
+        self.assertIn('src="profile_ux_v1.js?v=2"', index)
         for retired in ("commercial_ui_bridge_v2.js", "profile_auth_cleanup.js", "auth_ui_hotfix.js"):
             self.assertNotIn(retired, index)
         for name, source in (("index", index), ("shell", shell), ("profile", profile), ("commercial", commercial)):

@@ -13,7 +13,7 @@ class ProfileUXContractTests(unittest.TestCase):
         self.assertIn('profile_ux_v1.css?v=1', INDEX)
         shell_pos = INDEX.index('shell.js?v=62')
         commercial_pos = INDEX.index('commercial_ui.js?v=24')
-        ux_pos = INDEX.index('profile_ux_v1.js?v=1')
+        ux_pos = INDEX.index('profile_ux_v1.js?v=2')
         self.assertLess(shell_pos, ux_pos)
         self.assertLess(commercial_pos, ux_pos)
 
@@ -33,14 +33,17 @@ class ProfileUXContractTests(unittest.TestCase):
         self.assertIn("buy.className = 'btn dh-profile-buy'", JS)
         self.assertNotIn("buy.className = 'btn btn-primary", JS)
 
-    def test_legacy_home_and_exit_removed_and_test_subscription_debug_only(self):
+    def test_legacy_home_exit_and_offline_subscription_removed_in_all_modes(self):
         self.assertIn("card.querySelector('#dh-p-home')", JS)
         self.assertIn("card.querySelector('#dh-p-exit')", JS)
         self.assertIn("function clearLegacyProfileControls(card)", JS)
         self.assertIn("function stripGuestLegacyProfileControls()", JS)
-        self.assertIn("global.__DH_DEBUG__ === true", JS)
-        self.assertIn("'اشتراک محلی آفلاین (تست)'", JS)
-        self.assertIn("else if (legacyPrem) {\n      legacyPrem.remove();", JS)
+        # Product contract: remove the legacy premium node in every mode;
+        # the retired offline label/debug-only display must not be recreated.
+        self.assertNotIn("اشتراک محلی آفلاین", JS)
+        self.assertNotIn("debugBox", JS)
+        self.assertNotIn("debugEnabled", JS)
+        self.assertIn("if (legacyPrem) {\n      legacyPrem.remove();", JS)
 
     def test_share_only_when_result_exists(self):
         self.assertIn("var hasResult = !!(last && !last.classList.contains('dh-last-empty'));", JS)

@@ -18,12 +18,6 @@
       .replace(/'/g, '&#39;');
   }
 
-  function debugEnabled() {
-    var env = '';
-    try { env = text(global.APP_ENV || global.__APP_ENV || '').toLowerCase(); } catch (_) {}
-    return global.__DH_DEBUG__ === true || /^(debug|dev|development|test)$/.test(env);
-  }
-
   function isAdmin(user) {
     return !!(user && (user.is_admin === true || user.role === 'admin'));
   }
@@ -223,14 +217,7 @@
       share.remove();
     }
 
-    var debugBox = null;
-    if (debugEnabled() && legacyPrem) {
-      debugBox = document.createElement('div');
-      debugBox.className = 'dh-profile-debug';
-      legacyPrem.textContent = 'اشتراک محلی آفلاین (تست)';
-      legacyPrem.removeAttribute('data-testid');
-      debugBox.appendChild(legacyPrem);
-    } else if (legacyPrem) {
+    if (legacyPrem) {
       legacyPrem.remove();
     }
 
@@ -248,7 +235,6 @@
     shell.appendChild(statsBox);
     if (lastBox) shell.appendChild(lastBox);
     shell.appendChild(actions);
-    if (debugBox) shell.appendChild(debugBox);
     shell.appendChild(support);
     shell.appendChild(account);
     if (admin) shell.appendChild(admin);
