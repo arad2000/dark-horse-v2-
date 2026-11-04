@@ -1,4 +1,5 @@
 import unittest
+import re
 from pathlib import Path
 
 
@@ -14,11 +15,26 @@ class ReleaseHotfixContractTests(unittest.TestCase):
         self.assertIn("/api/v1/auth/register/verify", source)
         self.assertIn("verifyRegistration", source)
 
-    def test_index_loads_auth_hotfix_after_auth_modules(self):
+    def test_index_loads_current_auth_modules_without_legacy_hotfix(self):
+        # Contract: docs/index.html + FrontendAuthPurchaseContractTests:
+        # current deferred auth/reset/commercial modules, no legacy auth_ui_hotfix.
         source = self.read("docs/index.html")
-        self.assertIn('auth_api_client.js?v=2', source)
-        self.assertIn('password_reset_ui.js?v=2', source)
-        self.assertIn('auth_ui_hotfix.js?v=1', source)
+        scripts = re.findall(r'<script\b[^>]*\bsrc="([^"]+)"[^>]*>', source)
+        expected = (
+            "auth_api_client.js?v=7", "commercial_ui.js?v=24",
+            "password_reset_ui.js?v=4", "auth_runtime_guard.js?v=1",
+        )
+        for src in expected:
+            with self.subTest(script=src):
+                name = src.split("?")[0]
+                self.assertEqual([s for s in scripts if s.split("?")[0] == name], [src])
+                self.assertRegex(source, r'<script\s+defer\s+src="' + re.escape(src) + r'"')
+        self.assertTrue(all(src in scripts for src in expected), "All current auth modules must be loaded")
+        positions = [scripts.index(src) for src in expected]
+        self.assertEqual(positions, sorted(positions))
+        self.assertNotIn("auth_ui_hotfix.js", source)
+        self.assertNotIn("commercial_ui_bridge_v2.js", source)
+        self.assertNotIn("commercial_ui_bridge_v3.js", source)
 
     def test_admin_logout_clears_client_session(self):
         source = self.read("docs/admin.html")
