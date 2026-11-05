@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from admission_chance_api import AdmissionChanceRequest, admission_chance
-from admission_exam_capacity import build_exam_capacity_results
+from admission_exam_capacity import build_exam_capacity_results, load_exam_capacity_rows
 
 
 class EnsaniExamCapacityLoaderTests(unittest.TestCase):
@@ -20,14 +21,48 @@ class EnsaniExamCapacityLoaderTests(unittest.TestCase):
         self.assertTrue(all(item["province"] == "تهران" for item in items))
         self.assertTrue(all(item["period"] == "روزانه" for item in items))
 
-    def test_unrelated_province_returns_empty(self):
+    def test_law_hormozgan_daily_preserves_province_filter(self):
+        # The current JSON has this province: /2656, code 35015.
+        # Keep a real-data positive check; do not freeze the total row count.
+        source = next(
+            row for row in load_exam_capacity_rows("ensani")
+            if str(row["sanjesh_code"]) == "35015"
+        )
         items = build_exam_capacity_results(
             group="ensani",
             major_ids=[101],
             province="هرمزگان",
             periods=["روزانه"],
         )
-        self.assertEqual(items, [])
+        self.assertIn("35015", [item["sanjesh_code"] for item in items])
+        self.assertTrue(all(item["sanjesh_code"] for item in items))
+        self.assertTrue(all(item["major_name"] == "حقوق" for item in items))
+        self.assertTrue(all(item["province"] == "هرمزگان" for item in items))
+        self.assertTrue(all(item["period"] == "روزانه" for item in items))
+        self.assertTrue(all(item["capacity"] is not None for item in items))
+        anchor = next(item for item in items if item["sanjesh_code"] == "35015")
+        self.assertEqual(anchor["capacity"], source["capacity"])
+        self.assertEqual(anchor["major_name"], source["major_name"])
+
+        # Controlled contrast: same major/period, different province. Neither
+        # an always-empty selector nor a selector ignoring province can pass.
+        contrast = dict(source, province="تهران", sanjesh_code="__other_province__")
+        with patch("admission_exam_capacity.load_exam_capacity_rows", return_value=(source, contrast)):
+            for requested, expected_code in (
+                ("هرمزگان", "35015"),
+                ("تهران", "__other_province__"),
+            ):
+                with self.subTest(province=requested):
+                    selected = build_exam_capacity_results(
+                        group="ensani",
+                        major_ids=[101],
+                        province=requested,
+                        periods=["روزانه"],
+                    )
+                    self.assertEqual([item["sanjesh_code"] for item in selected], [expected_code])
+                    self.assertEqual(selected[0]["province"], requested)
+                    self.assertEqual(selected[0]["major_name"], source["major_name"])
+                    self.assertEqual(selected[0]["capacity"], source["capacity"])
 
     def test_unrelated_major_stays_empty(self):
         items = build_exam_capacity_results(
