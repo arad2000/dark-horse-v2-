@@ -16,7 +16,9 @@ class ExamCapacityLoaderTests(unittest.TestCase):
         )
         self.assertGreater(len(items), 0)
         self.assertTrue(all(item["sanjesh_code"] for item in items))
-        self.assertTrue(all(item["major_name"] == "مهندسی برق" for item in items))
+        # Matching is canonicalized, but display names remain raw booklet text.
+        # 1405 riazi JSON /646 (36606), and the other matching rows, use Arabic ي.
+        self.assertTrue(all(item["major_name"] == "مهندسي برق" for item in items))
         self.assertTrue(all(item["province"] == "تهران" for item in items))
         self.assertTrue(all(item["period"] == "روزانه" for item in items))
         self.assertTrue(all(item["capacity"] is not None for item in items))
