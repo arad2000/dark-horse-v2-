@@ -31,7 +31,8 @@ def settings(value=None):
 class CorsOriginTests(unittest.TestCase):
     def test_default_production_origins(self):
         self.assertEqual(settings()["allow_origins"],
-                         ["https://asbe-siah.ir", "https://www.asbe-siah.ir"])
+                         ["https://asbe-siah.ir", "https://www.asbe-siah.ir",
+                          "https://asbe-siah-web-test.liara.run"])
 
     def test_empty_env_keeps_defaults(self):
         self.assertEqual(settings(" , ")["allow_origins"], settings()["allow_origins"])
@@ -87,6 +88,13 @@ class CorsOriginTests(unittest.TestCase):
         for origin in settings()["allow_origins"]:
             with self.subTest(origin=origin):
                 self.assert_allowed(origin)
+
+    def test_real_staging_allowed_without_env(self):
+        self.assert_allowed("https://asbe-siah-web-test.liara.run")
+
+    def test_real_staging_env_does_not_duplicate_default(self):
+        self.assertEqual(settings("https://asbe-siah-web-test.liara.run/")["allow_origins"],
+                         settings()["allow_origins"])
 
     def test_configured_exact_staging_preflight_and_response(self):
         origin = "https://cors-test-example.liara.run"

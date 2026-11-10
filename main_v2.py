@@ -312,7 +312,11 @@ def _cors_allowed_origins() -> list[str]:
     Example: CORS_ALLOWED_ORIGINS=https://<exact-static-host>.liara.run
     Wildcards, credentials and non-origin URL components are rejected.
     """
-    origins = ["https://asbe-siah.ir", "https://www.asbe-siah.ir"]
+    origins = [
+        "https://asbe-siah.ir",
+        "https://www.asbe-siah.ir",
+        "https://asbe-siah-web-test.liara.run",
+    ]
     for raw in os.getenv("CORS_ALLOWED_ORIGINS", "").split(","):
         raw = raw.strip()
         if not raw:
