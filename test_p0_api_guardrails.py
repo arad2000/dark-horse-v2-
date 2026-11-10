@@ -167,7 +167,13 @@ class EndpointWiringTests(unittest.TestCase):
         self.assertIn("dh_pending_journey_session_id", shell)
 
     def test_cors_origin_is_explicit_not_wildcard(self):
-        self.assertIn('allow_origins=["https://asbe-siah.ir"]', self.api_source)
+        self.assertIn("allow_origins=_cors_allowed_origins()", self.api_source)
+        for origin in (
+            "https://asbe-siah.ir",
+            "https://www.asbe-siah.ir",
+            "https://asbe-siah-web-test.liara.run",
+        ):
+            self.assertIn(f'"{origin}"', self.api_source)
         self.assertNotRegex(
             self.api_source,
             re.compile(r"""allow_origins\s*=\s*\[\s*["']\*["']"""),
