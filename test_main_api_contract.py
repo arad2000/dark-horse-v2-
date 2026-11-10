@@ -91,7 +91,12 @@ class MainApiContractTests(unittest.IsolatedAsyncioTestCase):
     async def test_cors_contract_is_production_locked(self):
         cors = next((m for m in app.user_middleware if m.cls is CORSMiddleware), None)
         self.assertIsNotNone(cors)
-        self.assertEqual(cors.kwargs["allow_origins"], ["https://asbe-siah.ir"])
+        self.assertEqual(cors.kwargs["allow_origins"][:3], [
+            "https://asbe-siah.ir",
+            "https://www.asbe-siah.ir",
+            "https://asbe-siah-web-test.liara.run",
+        ])
+        self.assertTrue(all("*" not in origin for origin in cors.kwargs["allow_origins"]))
         self.assertNotIn("*", cors.kwargs["allow_origins"])
         self.assertFalse(cors.kwargs["allow_credentials"])
 

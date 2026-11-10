@@ -10,6 +10,7 @@ import os
 import uuid
 import math
 from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -303,9 +304,45 @@ REQUEST_BODY_LIMITS = {
 }
 # Register this first so CORS middleware remains outside and keeps its existing policy.
 app.add_middleware(RequestBodyLimitMiddleware, limits=REQUEST_BODY_LIMITS)
+
+
+def _cors_allowed_origins() -> list[str]:
+    """Keep production origins; append exact comma-separated env origins.
+
+    Example: CORS_ALLOWED_ORIGINS=https://<exact-static-host>.liara.run
+    Wildcards, credentials and non-origin URL components are rejected.
+    """
+    origins = [
+        "https://asbe-siah.ir",
+        "https://www.asbe-siah.ir",
+        "https://asbe-siah-web-test.liara.run",
+    ]
+    for raw in os.getenv("CORS_ALLOWED_ORIGINS", "").split(","):
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            parsed = urlsplit(raw)
+            valid = (
+                parsed.scheme == "https" and parsed.hostname
+                and not any(char in raw for char in ("*", "\\", " ", "\t", "\r", "\n"))
+                and parsed.username is None and parsed.password is None
+                and parsed.path in ("", "/") and not parsed.query and not parsed.fragment
+            )
+            _ = parsed.port  # Validate the numeric range without changing the origin.
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError("CORS_ALLOWED_ORIGINS must contain exact HTTPS origins only")
+        origin = f"https://{parsed.netloc.lower()}"
+        if origin not in origins:
+            origins.append(origin)
+    return origins
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://asbe-siah.ir"],
+    allow_origins=_cors_allowed_origins(),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
