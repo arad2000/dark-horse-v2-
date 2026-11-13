@@ -101,10 +101,15 @@ jobs:
         run: bash scripts/ci/check_no_public_sanjesh_dumps.sh .
 
       - name: Upload docs/ as site root
+        id: upload_pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs
+          name: github-pages
 
       - name: Deploy GitHub Pages
         id: deployment
+        if: ${{ success() && steps.upload_pages.outcome == 'success' }}
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
