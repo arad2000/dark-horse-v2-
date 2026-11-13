@@ -49,6 +49,8 @@ const fnCode = [
   extractFunction(appSource, 'escapeHtml'),
   extractFunction(appSource, 'dhStrategyLetter'),
   extractFunction(appSource, 'durableJourneySessionIdForSave'),
+  extractFunction(appSource, 'dhDisplayShuffleSeed'),
+  extractFunction(appSource, 'dhRestoreDisplayShuffle'),
   extractFunction(appSource, 'saveSession'),
   extractFunction(appSource, 'loadSession'),
   extractFunction(appSource, 'renderIntroValues'),
