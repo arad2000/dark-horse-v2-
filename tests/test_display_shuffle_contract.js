@@ -138,3 +138,19 @@ for (let i = 0; i < 12; i++) {
 }
 assert.ok(variants.size > 1, 'Fresh journeys can have different permutations');
 console.log('Display shuffle: PASS (canonical S/V payloads, immutable catalogs, reload/resume, legacy and fresh journeys)');
+
+// Pages uploads docs/ as site root: the versioned URL must resolve to this app.js.
+const indexSource = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
+const workflow = fs.readFileSync(path.join(root, '.github/workflows/publish-frontend-from-deploy.yml'), 'utf8');
+const appScripts = Array.from(indexSource.matchAll(/<script\b[^>]*\bsrc="([^"]*app\.js[^"]*)"/g), m => m[1]);
+assert.equal(appScripts.length, 1);
+const scriptUrl = new URL(appScripts[0].replace(/&amp;/g, '&'), 'https://example.test/');
+assert.equal(scriptUrl.pathname, '/app.js');
+assert.equal(scriptUrl.searchParams.get('shuffle-v1'), '1');
+assert.match(workflow, /uses: actions\/upload-pages-artifact@v3\s+with:\s+path: docs/);
+assert.equal(fs.existsSync(path.join(root, 'app.js')), false, 'No competing root app.js');
+const publishedSource = fs.readFileSync(path.join(root, 'docs', scriptUrl.pathname.slice(1)), 'utf8');
+assert.equal(publishedSource, source);
+assert.ok(publishedSource.includes('function dhDisplayOrder('));
+assert.ok(publishedSource.includes('displayShuffleSeed'));
+console.log('Pages source-root + shuffle-v1 cache-bust contract: PASS (not a downloaded/live artifact claim)');
