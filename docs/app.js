@@ -16,6 +16,7 @@ const VALUE_SCHEMA_RESET_NOTICE =
 
 const state = {
   sessionId: null,
+  displayShuffleSeed: null,
   stage: 'splash',
   history: [],
   selectedRealms: [],
@@ -553,6 +554,40 @@ function durableJourneySessionIdForSave() {
   return savedSessionId || null;
 }
 
+// Display-only ordering: canonical option index/code and source arrays never change.
+// Persist separately from the commercial journey UUID; never use this seed for billing.
+function dhDisplayShuffleSeed() {
+  if (typeof state.displayShuffleSeed !== 'string' || !state.displayShuffleSeed) {
+    state.displayShuffleSeed = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID() : String(Date.now()) + ':' + String(Math.random());
+  }
+  return state.displayShuffleSeed;
+}
+
+function dhDisplayOrder(items, scope) {
+  const seed = dhDisplayShuffleSeed() + ':' + scope;
+  let word = 2166136261;
+  for (let i = 0; i < seed.length; i++) word = Math.imul(word ^ seed.charCodeAt(i), 16777619);
+  const random = () => {
+    word += 0x6D2B79F5;
+    let n = Math.imul(word ^ (word >>> 15), 1 | word);
+    n ^= n + Math.imul(n ^ (n >>> 7), 61 | n);
+    return ((n ^ (n >>> 14)) >>> 0) / 4294967296;
+  };
+  const display = items.slice();
+  for (let i = display.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [display[i], display[j]] = [display[j], display[i]];
+  }
+  return display;
+}
+
+function dhRestoreDisplayShuffle(data) {
+  // Legacy journeys keep a stable order without clearing answers or rebinding quota.
+  state.displayShuffleSeed = typeof data.displayShuffleSeed === 'string' && data.displayShuffleSeed
+    ? data.displayShuffleSeed : 'legacy:' + String(data.sessionId || 'journey');
+}
+
 function saveSession() {
   const schemaVer = 'v2-canonical-poles-1';
   const stableSessionId = durableJourneySessionIdForSave();
@@ -561,6 +596,7 @@ function saveSession() {
     : (Array.isArray(state.swipeDeckCodes) ? state.swipeDeckCodes : []);
   const sessionData = {
     sessionId: stableSessionId,
+    displayShuffleSeed: dhDisplayShuffleSeed(),
     valueSchemaVersion: schemaVer,
     selectedRealms: state.selectedRealms,
     selectedSubRealms: state.selectedSubRealms,
@@ -629,6 +665,7 @@ function loadSession() {
       if (state.sessionId) data.sessionId = String(state.sessionId);
       try { localStorage.setItem('darkhorse_session_v2', JSON.stringify(data)); } catch (_) {}
     }
+    dhRestoreDisplayShuffle(data);
     state.selectedRealms = data.selectedRealms || [];
     state.selectedSubRealms = data.selectedSubRealms || [];
     state.selectedNarrowPaths = data.selectedNarrowPaths || [];
@@ -726,6 +763,7 @@ function fullResetState(force) {
   }
   clearSession();
   state.sessionId = null;
+  state.displayShuffleSeed = null;
   state.history = [];
   state.selectedRealms = [];
   state.selectedSubRealms = [];
@@ -1721,6 +1759,7 @@ function dhResumeFromSplash() {
       data.valueSchemaVersion = schemaVer;
     }
     state.sessionId = data.sessionId || null;
+    dhRestoreDisplayShuffle(data);
     state.selectedRealms = data.selectedRealms || [];
     state.selectedSubRealms = data.selectedSubRealms || [];
     state.selectedNarrowPaths = data.selectedNarrowPaths || [];
@@ -1808,7 +1847,7 @@ function renderRealm() {
         <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} محله روشن شده</div>
       </div>
       <div class="grid dh-route-grid" id="realmGrid">`;
-    REALMS.forEach((r, idx) => {
+    dhDisplayOrder(REALMS, 'realms').forEach((r, idx) => {
       const selIdx = state.selectedRealms.indexOf(r.id);
       const subLen = (typeof SUB_REALMS !== 'undefined' && SUB_REALMS[r.id]) ? SUB_REALMS[r.id].length : 0;
       html += renderRouteCardHTML({
@@ -2631,7 +2670,7 @@ function renderStrategy() {
       </div>
       <p class="dh-q-prompt">${escapeHtml(q.question)}</p>
       <div class="dh-answer-list">`;
-  q.options.forEach((o, idx) => {
+  dhDisplayOrder(q.options, 'S:' + q.id).forEach((o, idx) => {
     const isSelected = dhStrategyLetter(currentAnswer) === dhStrategyLetter(o.index);
     const letter = DH_OPT_LETTERS[idx] || String(idx + 1);
     html += `<button type="button" class="dh-answer-option${isSelected ? ' selected' : ''}" aria-pressed="${isSelected ? 'true' : 'false'}" onclick="answerStrategy(${o.index})">
@@ -2806,7 +2845,7 @@ function renderValue() {
     return;
   }
   const q = state.valueQuestions[state.currentValueQuestion];
-  const opts = q.options;
+  const opts = dhDisplayOrder(q.options, 'V:' + q.id);
   const currentAnswer = state.valueAnswers[state.currentValueQuestion];
   const answeredCount = cntFn(state.valueAnswers);
   const poleA = DH_VALUE_POLE_TITLES[opts[0].code] || 'قطب اول';
