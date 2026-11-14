@@ -63,11 +63,17 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
 
-      - name: Verify canonical reference data matches main
+      - name: Test reference-data governance guard
+        run: python -m unittest -v test_reference_data_sync_audit.py
+
+      - name: Verify reference-data governance contract
         run: git fetch --no-tags --prune origin main && python reference_data_sync_audit.py --base-ref origin/main
 
       - name: Compile Python sources
         run: python -m compileall -q .
+
+      - name: Verify finite runtime scoring references
+        run: python -m unittest -v test_reference_finite_startup.py
 
       - name: Verify startup engine contract
         run: python -m unittest -v test_startup_engine_contract.py
