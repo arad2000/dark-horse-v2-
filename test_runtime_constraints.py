@@ -32,8 +32,26 @@ class RuntimeConstraintsTests(unittest.TestCase):
 
     def test_constraints_are_mandatory_and_cover_direct_requirements(self):
         source = (ROOT / "requirements.txt").read_text().splitlines()
-        self.assertIn("-c constraints.txt", source)
+        # Build input must work when only requirements.txt has been copied.
+        # Reject all includes/options rather than hiding a missing lock file.
+        self.assertFalse(any(line.lstrip().startswith("-") for line in source))
         versions = pins()
+        embedded = {}
+        for line in source:
+            if "==" not in line or line.lstrip().startswith("#"):
+                continue
+            match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+!-]+)", line)
+            self.assertIsNotNone(match, line)
+            key = normalized(match[1])
+            self.assertNotIn(key, embedded)
+            embedded[key] = match[2]
+        self.assertEqual(embedded, versions, "Embedded pins must exactly mirror constraints.txt")
+        for requirement in (
+            "fastapi>=0.100.0", "uvicorn>=0.20.0", "pydantic>=2.0.0",
+            "SQLAlchemy>=2.0,<3.0", "psycopg[binary]>=3.1,<4.0",
+            "alembic>=1.13,<2.0", "httpx>=0.27,<1.0",
+        ):
+            self.assertIn(requirement, source)
         for line in source:
             if not line.strip() or line.lstrip().startswith(("#", "-")):
                 continue
