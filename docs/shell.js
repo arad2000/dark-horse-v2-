@@ -11,15 +11,11 @@
 
   function $(id) { return document.getElementById(id); }
 
-  function localUser() {
-    try { return JSON.parse(localStorage.getItem(LOCAL_USER_KEY) || 'null'); } catch (e) { return null; }
-  }
-  function saveLocalUser(u) { localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(u)); }
   function localQuota() {
-    try { return JSON.parse(localStorage.getItem(LOCAL_QUOTA_KEY) || '{"used":0,"premium":false}'); }
-    catch (e) { return { used: 0, premium: false }; }
+    try { return JSON.parse(localStorage.getItem(LOCAL_QUOTA_KEY) || '{"used":0}'); }
+    catch (e) { return { used: 0 }; }
   }
-  function saveQuota(q) { localStorage.setItem(LOCAL_QUOTA_KEY, JSON.stringify(q)); }
+  function saveQuota(q) { delete q.premium; delete q.is_premium; localStorage.setItem(LOCAL_QUOTA_KEY, JSON.stringify(q)); }
 
 
   function loadLastResult() {
@@ -67,14 +63,13 @@
     try {
       if (window.DHAuth && DHAuth.isLoggedIn && DHAuth.isLoggedIn()) return DHAuth.getUser();
     } catch (e) {}
-    return localUser();
+    return null;
   }
 
   function canRunTest() {
     var u = getDisplayUser();
     if (u && u.is_premium) return true;
     var q = localQuota();
-    if (q.premium) return true;
     if (typeof q.serverRemaining === 'number' && isFinite(q.serverRemaining) && q.serverRemaining > 0) return true;
     return (q.used || 0) < 1;
   }
@@ -1167,14 +1162,6 @@
         '<p style="color:#c9b896;line-height:1.9;text-align:center;">برای حساب واقعی و پیامک تأیید از دکمه‌های زیر استفاده کنید.</p>' +
         '<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="dh-p-register">ساخت حساب جدید (پیامک)</button>' +
         '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-login">ورود به حساب</button>' +
-        '<div style="height:1px;background:rgba(255,255,255,.08);margin:16px 0;"></div>' +
-        '<p style="color:#8f845f;line-height:1.8;font-size:.85rem;">اختیاری: ذخیره فقط روی همین دستگاه (بدون پیامک)</p>' +
-        '<label style="display:block;margin:8px 0 4px;">نام</label>' +
-        '<input id="dh-p-name" placeholder="مثلاً سارا" style="width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#12121c;color:#eee;font-size:16px;">' +
-        '<label style="display:block;margin:8px 0 4px;">موبایل</label>' +
-        '<input id="dh-p-phone" inputmode="numeric" placeholder="09xxxxxxxxx" style="width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#12121c;color:#eee;font-size:16px;">' +
-        '<p id="dh-p-err" style="color:#f66;min-height:1.2em;font-size:0.85rem;"></p>' +
-        '<button class="btn" style="width:100%;" id="dh-p-save">ثبت پروفایل محلی</button>' +
         '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
         '<div class="card" style="text-align:right;margin-top:12px;border:1px solid rgba(240,192,64,.25);"><h3 style="color:#f0c040;margin:0 0 8px;text-align:center;">پشتیبانی و ارتباط</h3><p style="color:#c9b896;line-height:1.9;font-size:.92rem;margin:0 0 12px;text-align:center;">برای راهنمایی، پیشنهاد و ارتباط با واحد سازنده به کانال رسمی اسب سیاه در ایتا بپیوندید.</p><a href="https://eitaa.com/asbe_siah" target="_blank" rel="noopener" class="btn btn-primary" style="display:block;width:100%;text-align:center;text-decoration:none;box-sizing:border-box;">عضویت در کانال ایتا</a><p style="color:#8f845f;font-size:.8rem;text-align:center;margin:10px 0 0;line-height:1.7;">آدرس کانال: eitaa.com/asbe_siah</p><div style="height:1px;background:rgba(255,255,255,.08);margin:14px 0;"></div><a href="privacy.html" style="display:block;text-align:center;color:#c4b896;font-size:.85rem;text-decoration:none;margin-bottom:6px;">حریم خصوصی</a><div id="enamad-seal" style="text-align:center;margin:18px 0 6px;"><p style="color:#c9b896;font-size:.8rem;margin:0 0 8px;">نماد اعتماد الکترونیکی</p><a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=7638931&Code=B04E6IpO9ivFnOcTrDySvqdKmiG011AS" alt="enamad" loading="lazy" decoding="async" style="cursor:pointer;max-width:125px;" code="B04E6IpO9ivFnOcTrDySvqdKmiG011AS"></a></div><p style="color:#6a6350;font-size:.75rem;text-align:center;margin:0;">اسب سیاه — نسخه ۱.۰.۱</p></div>' +
         '</div></div>';
@@ -1274,20 +1261,11 @@
       if (regBtn) regBtn.onclick = function () { openAuth('register'); };
       var loginBtn = $('dh-p-login');
       if (loginBtn) loginBtn.onclick = function () { openAuth('login'); };
-      $('dh-p-save').onclick = function () {
-        var name = (($('dh-p-name') || {}).value || '').trim();
-        var phone = (($('dh-p-phone') || {}).value || '').trim();
-        var err = $('dh-p-err');
-        if (name.length < 2) { if (err) err.textContent = 'نام را وارد کن'; return; }
-        if (!/^09\d{9}$/.test(phone)) { if (err) err.textContent = 'موبایل را درست وارد کن'; return; }
-        saveLocalUser({ name: name, phone: phone, is_premium: false });
-        renderProfile();
-      };
       return;
     }
 
     var initial = (u.name || '؟').trim().charAt(0);
-    var premium = !!(u.is_premium || q.premium);
+    var premium = !!u.is_premium;
     var remain;
     if (premium) {
       remain = '∞';
@@ -1346,8 +1324,6 @@
         (last && last.tops && last.tops.length ? 'سفر دوباره' : 'شروع اولین سفر') + '</button>' +
       (last && last.tops && last.tops.length ? '<button class="btn" style="width:100%;margin-top:8px;border-color:rgba(212,175,55,0.45);color:#f0c040;" id="dh-p-share">اشتراک‌گذاری نتیجه</button>' : '') +
       '<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="dh-p-buy">خرید بسته ۳ تست</button>' +
-      '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-prem">' +
-        (premium ? 'خاموش کردن اشتراک محلی' : 'اشتراک محلی آفلاین (تست)') + '</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;color:#c08080;border-color:#543;" id="dh-p-exit">خروج از اپ</button>' +
@@ -1398,22 +1374,7 @@
         }
       };
     }
-    $('dh-p-prem').onclick = function () {
-      var qq = localQuota();
-      var lu = localUser();
-      if (premium) {
-        qq.premium = false;
-        saveQuota(qq);
-        if (lu) { lu.is_premium = false; saveLocalUser(lu); }
-        dhToast('اشتراک آزمایشی محلی خاموش شد.');
-      } else {
-        qq.premium = true;
-        saveQuota(qq);
-        if (lu) { lu.is_premium = true; saveLocalUser(lu); }
-        dhToast('اشتراک آزمایشی محلی فعال شد (فقط تست آفلاین).');
-      }
-      renderProfile();
-    };
+
   }
 
   
@@ -1511,7 +1472,7 @@
         var summary = extractResultSummary(data, type);
         if (summary && summary.tops && summary.tops.length) saveLastResult(summary);
         var q = localQuota();
-        if (!q.premium && (q.used || 0) < 1) {
+        if ((q.used || 0) < 1) {
           q.used = (q.used || 0) + 1;
           saveQuota(q);
         }
