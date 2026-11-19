@@ -22,40 +22,13 @@
 
   function authUser() {
     try {
-      if (global.DHAuth && typeof global.DHAuth.getUser === 'function') return global.DHAuth.getUser();
+      if (global.DHAuth && typeof global.DHAuth.isLoggedIn === 'function' && global.DHAuth.isLoggedIn() && typeof global.DHAuth.getUser === 'function') return global.DHAuth.getUser();
     } catch (_) {}
     return null;
   }
 
   function isAdmin(user) {
     return !!(user && (user.is_admin === true || user.role === 'admin'));
-  }
-
-  function removeLocalSubscriptionState() {
-    /* Remove only obsolete LOCAL test entitlement state. Never touch server premium state. */
-    try {
-      var quotaKey = 'dh_local_quota_v1';
-      var rawQuota = localStorage.getItem(quotaKey);
-      if (rawQuota) {
-        var quota = JSON.parse(rawQuota);
-        if (quota && Object.prototype.hasOwnProperty.call(quota, 'premium')) {
-          delete quota.premium;
-          localStorage.setItem(quotaKey, JSON.stringify(quota));
-        }
-      }
-    } catch (_) {}
-
-    try {
-      var userKey = 'dh_local_user_v1';
-      var rawUser = localStorage.getItem(userKey);
-      if (rawUser) {
-        var user = JSON.parse(rawUser);
-        if (user && Object.prototype.hasOwnProperty.call(user, 'is_premium')) {
-          delete user.is_premium;
-          localStorage.setItem(userKey, JSON.stringify(user));
-        }
-      }
-    } catch (_) {}
   }
 
   function removeLegacyProfileControls(card) {
@@ -470,7 +443,6 @@
   }
 
   function cleanupLegacyControlsEverywhere() {
-    removeLocalSubscriptionState();
     var app = document.getElementById('app');
     if (!app) return;
     var home = app.querySelector('#dh-p-home');
