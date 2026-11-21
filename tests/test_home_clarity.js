@@ -102,10 +102,11 @@ function runStartup(saved,authorizedId,pendingId) {
   vm.runInNewContext(startup,ctx);
   return {button,store};
 }
+const startupLabels={splash:'آغاز سفر',realm:'انتخاب محله‌ها',subRealm:'انتخاب گذرها',narrowPath:'انتخاب مسیرها',introSwipe:'آشنایی با جرقه‌ها',swipe:'جرقه‌ها؛ فعالیت‌هایی که دوست داری',introStrategies:'آشنایی با آینه',strategies:'آینه؛ انتخاب در موقعیت واقعی',introValues:'آشنایی با دوراهی',values:'دوراهی؛ ارزش شخصی',choice:'انتخاب نوع نتیجه'};
 for (const stage of resumableStages) {
   const result=runStartup({stage,sessionId:'first-paint-id'},'first-paint-id','first-paint-id');
   assert.strictEqual(result.button.textContent,'ادامهٔ سفر');
-  assert(result.button.parentNode.note.textContent.includes(stage));
+  assert(result.button.parentNode.note.textContent.includes(startupLabels[stage]));
 }
 const firstMismatch=runStartup({stage:'swipe',sessionId:'saved-old-id'},'authorized-new-id','authorized-new-id');
 assert.strictEqual(firstMismatch.button.textContent,'شروع سفر');
