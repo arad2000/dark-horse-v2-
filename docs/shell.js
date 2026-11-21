@@ -160,6 +160,23 @@
     } catch (e) { return false; }
   }
 
+  var HOME_RESUMABLE_STAGES = [
+    'splash', 'realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
+    'introStrategies', 'strategies', 'introValues', 'values', 'choice'
+  ];
+
+  // Keep the home label and the actual journey-entry decision on one predicate.
+  function isResumableJourneyData(data, authorizedSessionId) {
+    if (!data || data.journeyFinished || !data.stage ||
+        HOME_RESUMABLE_STAGES.indexOf(data.stage) < 0) return false;
+    var storedResumeSessionId = data.sessionId ? String(data.sessionId) : '';
+    return !storedResumeSessionId || storedResumeSessionId === String(authorizedSessionId || '');
+  }
+
+  function isCommercialJourneyRuntime() {
+    return typeof window.dhHasCommercialRuntime !== 'function' || window.dhHasCommercialRuntime();
+  }
+
   // Presentation only: read this device's saved journey, never account/quota state.
   function homeSavedJourney() {
     try {
@@ -171,7 +188,11 @@
         introStrategies: 'آشنایی با آینه', strategies: 'آینه؛ انتخاب در موقعیت واقعی',
         introValues: 'آشنایی با دوراهی', values: 'دوراهی؛ ارزش شخصی', choice: 'انتخاب نوع نتیجه'
       };
-      if (!data || data.journeyFinished || !Object.prototype.hasOwnProperty.call(labels, data.stage)) return null;
+      var authorizedSessionId = authorizedCommercialJourneySessionId();
+      // startJourneyFromShell delegates to the commercial gate until this exact ID is authorized.
+      if (isCommercialJourneyRuntime() && !authorizedSessionId) return null;
+      if (!Object.prototype.hasOwnProperty.call(labels, data && data.stage) ||
+          !isResumableJourneyData(data, authorizedSessionId)) return null;
       return { label: labels[data.stage] };
     } catch (_) { return null; }
   }
@@ -941,7 +962,7 @@
 
   async function startJourneyFromShell() {
     if (window.__dhJourneyStarting) return;
-    var commercialRuntime = typeof window.dhHasCommercialRuntime !== 'function' || window.dhHasCommercialRuntime();
+    var commercialRuntime = isCommercialJourneyRuntime();
     var authorizedSessionId = authorizedCommercialJourneySessionId();
     if (commercialRuntime && !authorizedSessionId) {
       try {
@@ -1035,11 +1056,7 @@
         if (raw) data = JSON.parse(raw);
       } catch (e2) { data = null; }
 
-      var storedResumeSessionId = data && data.sessionId ? String(data.sessionId) : '';
-      var unfinished = data && !data.journeyFinished && data.stage &&
-        ['splash', 'realm', 'subRealm', 'narrowPath', 'introSwipe', 'swipe',
-         'introStrategies', 'strategies', 'introValues', 'values', 'choice'].indexOf(data.stage) >= 0 &&
-        (!storedResumeSessionId || storedResumeSessionId === authorizedSessionId);
+      var unfinished = isResumableJourneyData(data, authorizedSessionId);
 
       if (unfinished) {
         // A paid/resumed journey must use the exact UUID charged by the server.
