@@ -16,7 +16,7 @@ function harness(auth) {
   context.window=context;context.addEventListener=()=>{};context.scrollTo=()=>{};context.DHAuth=auth;
   context.dhHasCommercialRuntime=()=>true;
   vm.createContext(context);
-  vm.runInContext(source.replace('  window.DHShell = {','  window.__test = {homeSavedJourney,isResumableJourneyData};\\n  window.DHShell = {'),context);
+  vm.runInContext(source.replace('  window.DHShell = {','  window.__test = {homeSavedJourney,isResumableJourneyData};\n  window.DHShell = {'),context);
   return {context,nodes,values};
 }
 function authorize(h,id,pending=id) {
@@ -91,7 +91,7 @@ console.log('PASS home clarity: authorized UUID match, mismatch preservation, le
 
 // First paint and hydrated shell use the same stage + authorization + UUID rule.
 const index=fs.readFileSync('docs/index.html','utf8');
-const startup=index.match(/<script>\\s*\\/\\/ First paint[\\s\\S]*?<\\/script>/)[0].replace(/^<script>|<\\/script>$/g,'');
+const startup=index.match(/<script>\s*\/\/ First paint[\s\S]*?<\/script>/)[0].replace(/^<script>|<\\/script>$/g,'');
 function runStartup(saved,authorizedId,pendingId) {
   const store=new Map();
   if(saved!==null)store.set('darkhorse_session_v2',JSON.stringify(saved));
