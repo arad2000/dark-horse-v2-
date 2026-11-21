@@ -169,12 +169,19 @@
     </main>
   </div>
   <script>
-    // First paint uses only this browser's save; the shell owns all actions.
+    // First paint uses the same authorization + UUID rule as startJourneyFromShell.
     (function () {
       try {
         var saved = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
         var labels = {splash:'آغاز سفر',realm:'انتخاب محله‌ها',subRealm:'انتخاب گذرها',narrowPath:'انتخاب مسیرها',introSwipe:'آشنایی با جرقه‌ها',swipe:'جرقه‌ها؛ فعالیت‌هایی که دوست داری',introStrategies:'آشنایی با آینه',strategies:'آینه؛ انتخاب در موقعیت واقعی',introValues:'آشنایی با دوراهی',values:'دوراهی؛ ارزش شخصی',choice:'انتخاب نوع نتیجه'};
+        var commercialRuntime = typeof window.dhHasCommercialRuntime !== 'function' || window.dhHasCommercialRuntime();
+        var authorized = String(window.__dhCommercialJourneyAuthorizedSessionId || '');
+        var pending = String(localStorage.getItem('dh_pending_journey_session_id') || '');
+        var authorizedSessionId = authorized && authorized === pending ? authorized : '';
+        var storedResumeSessionId = saved && saved.sessionId ? String(saved.sessionId) : '';
         if (!saved || saved.journeyFinished || !Object.prototype.hasOwnProperty.call(labels, saved.stage)) return;
+        if (commercialRuntime && !authorizedSessionId) return;
+        if (storedResumeSessionId && storedResumeSessionId !== authorizedSessionId) return;
         var button = document.getElementById('dh-startup-start');
         if (!button) return;
         button.textContent = 'ادامهٔ سفر';
@@ -193,7 +200,7 @@
   <script defer src="auth_api_client.js?v=10&timeout-fix=1"></script>
   <script defer src="quota_state_reconciler.js?v=4"></script>
   <script defer src="shell_runtime_fix.js?v=1"></script>
-  <script defer src="shell.js?v=92&quota-fix=4&ux=phase4-live-v2&r=275"></script>
+  <script defer src="shell.js?v=92&quota-fix=4&ux=phase4-live-v2&r=276"></script>
   <script defer src="quota_runtime.js?v=5&quota-fix=4&r=273"></script>
   <script defer src="profile_ux_v1.js?v=7&identity=real-session-1"></script>
   <script defer src="admin_feedback_ui_v1.js?v=2"></script>
