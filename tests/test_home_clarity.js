@@ -91,7 +91,7 @@ console.log('PASS home clarity: authorized UUID match, mismatch preservation, le
 
 // First paint and hydrated shell use the same stage + authorization + UUID rule.
 const index=fs.readFileSync('docs/index.html','utf8');
-const startup=index.match(/<script>\s*\/\/ First paint[\s\S]*?<\/script>/)[0].replace(/^<script>|<\\/script>$/g,'');
+const startup=index.match(/<script>\s*\/\/ First paint[\s\S]*?<\/script>/)[0].replace(/^<script>|<\/script>$/g,'');
 function runStartup(saved,authorizedId,pendingId) {
   const store=new Map();
   if(saved!==null)store.set('darkhorse_session_v2',JSON.stringify(saved));
