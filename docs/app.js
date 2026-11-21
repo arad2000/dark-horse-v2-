@@ -866,7 +866,7 @@ function dhExecuteStartNewJourney(approvedSessionId, prevWasFinished, prevUnchar
 function startNewJourney() {
   try {
     if (isPreResultsInProgress()) {
-      if (!confirm('سفر هنوز به نتیجه نرسیده. اگر از نو شروع کنی، پیشرفت فعلی پاک می‌شود. مطمئنی؟')) {
+      if (!confirm('با شروع دوباره، انتخاب‌های ذخیره‌شدهٔ سفر در همین مرورگر و دستگاه پاک می‌شود. ادامه می‌دهی؟')) {
         try { if (typeof loadSession === 'function') loadSession(); } catch (e) {}
         if (typeof render === 'function') render();
         return;

@@ -160,6 +160,22 @@
     } catch (e) { return false; }
   }
 
+  // Presentation only: read this device's saved journey, never account/quota state.
+  function homeSavedJourney() {
+    try {
+      var data = JSON.parse(localStorage.getItem('darkhorse_session_v2') || 'null');
+      var labels = {
+        splash: 'آغاز سفر', realm: 'انتخاب محله‌ها', subRealm: 'انتخاب گذرها',
+        narrowPath: 'انتخاب مسیرها', introSwipe: 'آشنایی با جرقه‌ها',
+        swipe: 'جرقه‌ها؛ فعالیت‌هایی که دوست داری',
+        introStrategies: 'آشنایی با آینه', strategies: 'آینه؛ انتخاب در موقعیت واقعی',
+        introValues: 'آشنایی با دوراهی', values: 'دوراهی؛ ارزش شخصی', choice: 'انتخاب نوع نتیجه'
+      };
+      if (!data || data.journeyFinished || !Object.prototype.hasOwnProperty.call(labels, data.stage)) return null;
+      return { label: labels[data.stage] };
+    } catch (_) { return null; }
+  }
+
   function journeyProgressPct() {
     try {
       var stageId = null;
@@ -582,6 +598,7 @@
     window.__dhInJourney = false;
     try { if (typeof saveSession === 'function') saveSession(); } catch (e) {}
 
+    var savedJourney = homeSavedJourney();
     var quotesDeck = [];
     var fallbackQuotes = [
       { t: 'هیچ راهی به سوی موفقیت وجود ندارد، موفقیت خود یک راه است.', tag: 'وینستون چرچیل' },
@@ -674,6 +691,12 @@
           '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
         '</div>' +
 
+        '<section aria-label="دربارهٔ سفر اکتشافی">' +
+          '<p>برای دانش‌آموزان در آستانهٔ انتخاب شاخهٔ دبیرستان یا رشتهٔ دانشگاهی.</p>' +
+          '<p>در پایان، پیشنهاد مسیرهای تحصیلی متناسب با علاقه‌ها، راهبردها و ارزش‌هایت می‌گیری؛ نه حکم قطعی.</p>' +
+          '<p>می‌توانی وسط راه توقف کنی و بعد در همین مرورگر و دستگاه ادامه بدهی؛ این ذخیرهٔ محلی، ذخیره در حساب نیست.</p>' +
+        '</section>' +
+
         /* ۲. کارت سفر اکتشافی (تمیز و متمرکز، بدون بج‌های اضافه) */
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
@@ -685,8 +708,13 @@
               '<div class="dh-mk2-hero-sub">کشف رشته و شاخه بر اساس فردیت</div></div>' +
             '</div>' +
             '<button type="button" class="dh-mk2-cta" id="dh-start-journey">' +
-              'شروع سفر <span>›</span></button>' +
+              (savedJourney ? 'ادامهٔ سفر' : 'شروع سفر') + ' <span>›</span></button>' +
+            (savedJourney ? '<p id="dh-home-saved-stage">ذخیره‌شده روی همین دستگاه · مرحله: ' + savedJourney.label + '</p>' +
+              '<button type="button" class="btn" id="dh-restart-journey" aria-describedby="dh-home-restart-note">شروع دوباره</button>' +
+              '<p id="dh-home-restart-note">با شروع دوباره، انتخاب‌های ذخیره‌شدهٔ سفر در همین مرورگر و دستگاه پاک می‌شود.</p>' : '') +
           '</div></section>' +
+
+        '<p aria-label="معنی عنوان‌های سفر">جرقه‌ها: فعالیت‌هایی که دوست داری · آینه: انتخاب در موقعیت واقعی · دوراهی: ارزش شخصی</p>' +
 
         /* ۳. بلافاصله زیر سفر اکتشافی: انتخاب رشته با منطق سنجش */
         '<section class="dh-home-sanjesh-entry" aria-labelledby="dh-home-sanjesh-title">' +
@@ -766,6 +794,15 @@
     on('dh-start-journey', function () {
       dhHaptic('light');
       startJourneyFromShell();
+    });
+
+    on('dh-restart-journey', function () {
+      // Delegate reset and authorization to the existing journey entry point.
+      if (typeof startNewJourney !== 'function' || typeof loadSession !== 'function') return;
+      if (loadSession() === false) return;
+      if (typeof isPreResultsInProgress !== 'function') return;
+      if (!isPreResultsInProgress() && !confirm('با شروع دوباره، انتخاب‌های ذخیره‌شدهٔ سفر در همین مرورگر و دستگاه پاک می‌شود. ادامه می‌دهی؟')) return;
+      startNewJourney();
     });
 
     function paintDailyQuote() {
