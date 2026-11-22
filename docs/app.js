@@ -1814,8 +1814,8 @@ function renderRouteCardHTML(opts) {
   const descText = isComplete && opts.doneDescription
     ? escapeHtml(opts.doneDescription)
     : escapeHtml(opts.description || '');
-  // Explorer examples remain one selectable route; escape each line independently.
-  const descriptionHTML = realmId === 'explorer' && !(isComplete && opts.doneDescription) &&
+  // Explorer and thinker examples remain one selectable route; escape each line independently.
+  const descriptionHTML = (realmId === 'explorer' || realmId === 'thinker') && !(isComplete && opts.doneDescription) &&
       String(opts.description || '').includes('\n')
     ? '<ul class="dh-route-desc">' + String(opts.description).split('\n')
         .map(line => '<li>' + escapeHtml(line) + '</li>').join('') + '</ul>'

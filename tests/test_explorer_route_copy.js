@@ -28,9 +28,9 @@ for (const items of [normalized.REALMS, ...Object.values(normalized.SUB_REALMS),
   }
 }
 assert.equal(changed,20);
-assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), 'f50111e8ed5e229a8fc7745a46ad94db1758b6bddd2c7d8e934d5a6b4972f226');
+assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '53babf328a854a19357138639ea3bcf2d4a35348fac752d91e633da9e7eadef3');
 
-assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=explorer-grade9-v4'));
+assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=thinker-grade9-v5'));
 console.log('PASS: approved explorer copy matches preview; 20 entries; every other field, route order and other neighborhood unchanged; data cache key updated.');
 // Rendering lists must not add choices, leak HTML, or change other realms/completed cards.
 const app = fs.readFileSync('docs/app.js','utf8');
