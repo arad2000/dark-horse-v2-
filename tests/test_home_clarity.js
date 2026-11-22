@@ -35,7 +35,7 @@ for (const stage of resumableStages) {
   assert(html.includes('ادامهٔ سفر'));
   assert(html.includes(h.context.__test.homeSavedJourney().label));
   assert(html.includes('dh-restart-journey'));
-  assert(html.includes('این ذخیرهٔ محلی، ذخیره در حساب نیست'));
+  assert(!html.includes('این ذخیرهٔ محلی، ذخیره در حساب نیست'));
   assert.strictEqual(h.values.get('darkhorse_session_v2'),before);
   let started=0,loaded=0;
   h.context.loadSession=()=>{loaded++;return true;};
