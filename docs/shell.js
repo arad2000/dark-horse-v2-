@@ -707,6 +707,11 @@
           '<p class="dh-regal-tagline">هدایت تحصیلی و انتخاب رشته بر اساس <strong class="dh-fardiyat">فردیت</strong></p>' +
         '</header>' +
 
+        '<div class="dh-fardiyat-ticker" id="dh-fardiyat-ticker" aria-live="polite">' +
+          '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
+          '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
+        '</div>' +
+
         /* ۲. کارت سفر اکتشافی (تمیز و متمرکز، بدون بج‌های اضافه) */
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
