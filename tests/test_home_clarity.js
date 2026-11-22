@@ -86,8 +86,8 @@ let starts=0;restart.context.loadSession=()=>true;restart.context.isPreResultsIn
 restart.context.startNewJourney=()=>starts++;restart.context.confirm=()=>false;
 restart.nodes['dh-restart-journey'].onclick();assert.strictEqual(starts,0);
 restart.context.confirm=()=>true;restart.nodes['dh-restart-journey'].onclick();assert.strictEqual(starts,1);
-for(const text of ['جرقه‌ها: فعالیت‌هایی که دوست داری','آینه: انتخاب در موقعیت واقعی','دوراهی: ارزش شخصی']) assert(restart.nodes.app.innerHTML.includes(text));
-console.log('PASS home clarity: authorized UUID match, mismatch preservation, legacy save compatibility, restart delegation/cancel');
+for(const text of ['جرقه‌ها: فعالیت‌هایی که دوست داری','آینه: انتخاب در موقعیت واقعی','دوراهی: ارزش شخصی']) assert(!restart.nodes.app.innerHTML.includes(text));
+console.log('PASS home clarity: authorized UUID match, mismatch preservation, legacy save compatibility, restart delegation/cancel; no homepage glossary');
 
 // First paint and hydrated shell use the same stage + authorization + UUID rule.
 const index=fs.readFileSync('docs/index.html','utf8');
