@@ -16,7 +16,8 @@ for (const g of copy.groups) { approved.set(g.id,g); for (const p of g.paths) ap
 assert.equal(copy.groups.length,6);
 assert.equal(approved.size,30);
 let changed=0;
-// Fingerprint of the reviewed base routes, excluding ONLY approved text fields.
+// Fingerprint includes approved builder copy; excludes ONLY health text fields.
+// Builder scope is independently locked by test_builder_route_copy.js.
 // This works in Actions checkout's shallow clone without fetching Git history.
 const normalized = JSON.parse(JSON.stringify(actual));
 for (const items of [normalized.REALMS, ...Object.values(normalized.SUB_REALMS), ...Object.values(normalized.NARROW_PATHS)]) {
@@ -28,7 +29,7 @@ for (const items of [normalized.REALMS, ...Object.values(normalized.SUB_REALMS),
   }
 }
 assert.equal(changed,30);
-assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '9d7b9f78ee53cab3bd9aed763c3c0a3de51e6cc9e82c5e7c4be20a297cd7a173');
+assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '0848a29f50b41b1684bddccc930fd8abef23f2251de660eddf71309675435437');
 
-assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=health-grade9-v2'));
+assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=builder-grade9-v3'));
 console.log('PASS: approved health copy matches preview; 30 entries; every other field, route order and other neighborhood unchanged; data cache key updated.');
