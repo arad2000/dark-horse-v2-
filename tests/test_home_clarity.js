@@ -12,12 +12,16 @@ function harness(auth) {
   ]);
   const storage = {getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
   const document = {readyState:'loading',getElementById(id){return nodes[id]||(nodes[id]=node());},querySelectorAll(){return [];},addEventListener(){},body:node(),documentElement:node()};
-  const context = {document,localStorage:storage,console,Date,setTimeout(){},navigator:{},location:{},window:null};
+  const timers=[],pendingTimeouts=[];
+  const context = {document,localStorage:storage,console,Date,
+    setTimeout(fn){pendingTimeouts.push(fn);return pendingTimeouts.length;},
+    setInterval(fn,ms){timers.push({fn,ms});return timers.length;},clearInterval(){},
+    navigator:{},location:{},window:null};
   context.window=context;context.addEventListener=()=>{};context.scrollTo=()=>{};context.DHAuth=auth;
   context.dhHasCommercialRuntime=()=>true;
   vm.createContext(context);
   vm.runInContext(source.replace('  window.DHShell = {','  window.__test = {homeSavedJourney,isResumableJourneyData};\n  window.DHShell = {'),context);
-  return {context,nodes,values};
+  return {context,nodes,values,timers,pendingTimeouts};
 }
 function authorize(h,id,pending=id) {
   h.context.__dhCommercialJourneyAuthorizedSessionId=id;
@@ -35,6 +39,8 @@ for (const stage of resumableStages) {
   assert(html.includes('ادامهٔ سفر'));
   assert(html.includes(h.context.__test.homeSavedJourney().label));
   assert(html.includes('dh-restart-journey'));
+  assert(html.includes('id="dh-fardiyat-ticker"'));
+  assert(html.includes('id="dh-fardiyat-ticker-text"'));
   assert(!html.includes('این ذخیرهٔ محلی، ذخیره در حساب نیست'));
   assert.strictEqual(h.values.get('darkhorse_session_v2'),before);
   let started=0,loaded=0;
@@ -95,10 +101,27 @@ for(const text of [
   'دوراهی: ارزش شخصی',
   'موفقیت شخصی یعنی'
 ]) assert(!restart.nodes.app.innerHTML.includes(text));
-assert(!restart.nodes.app.innerHTML.includes('dh-fardiyat-ticker'));
+assert(restart.nodes.app.innerHTML.includes('id="dh-fardiyat-ticker"'));
 assert(restart.nodes.app.innerHTML.includes('سفر اکتشافی'));
 assert(restart.nodes.app.innerHTML.includes('انتخاب رشته با منطق سنجش'));
-console.log('PASS home clarity: UUID resume/restart preserved; homepage explanatory copy, glossary and ticker removed; core actions retained');
+assert(restart.nodes.app.innerHTML.includes('dh-mk2-hero'));
+assert(restart.nodes.app.innerHTML.includes('dh-daily-wisdom'));
+assert(restart.nodes.app.innerHTML.includes('dh-mk2-row-hot'));
+assert(restart.nodes.app.innerHTML.includes('dh-mk2-tile'));
+
+// The live ticker is present and its existing four-second rotation still advances.
+const rotating=harness();
+rotating.context.DHShell.renderHome();
+const rotatingTicker=rotating.nodes['dh-fardiyat-ticker-text'];
+assert(rotating.nodes.app.innerHTML.includes('id="dh-fardiyat-ticker"'));
+assert(rotatingTicker.innerHTML.includes('مسیرت را با'));
+const tickerInterval=rotating.timers.find(timer=>timer.ms===4000);
+assert(tickerInterval);
+tickerInterval.fn();
+assert(rotating.pendingTimeouts.length>0);
+rotating.pendingTimeouts.pop()();
+assert(rotatingTicker.innerHTML.includes('رتبه مقصد نیست'));
+console.log('PASS home clarity: UUID resume/restart preserved; dynamic ticker restored and rotates; current home hero, Sanjesh, daily message and cards retained; explanatory copy/glossary stay absent');
 
 // First paint and hydrated shell use the same stage + authorization + UUID rule.
 const index=fs.readFileSync('docs/index.html','utf8');
