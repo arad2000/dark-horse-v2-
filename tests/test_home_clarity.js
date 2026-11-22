@@ -35,7 +35,7 @@ for (const stage of resumableStages) {
   assert(html.includes('ادامهٔ سفر'));
   assert(html.includes(h.context.__test.homeSavedJourney().label));
   assert(html.includes('dh-restart-journey'));
-  assert(html.includes('این ذخیرهٔ محلی، ذخیره در حساب نیست'));
+  assert(!html.includes('این ذخیرهٔ محلی، ذخیره در حساب نیست'));
   assert.strictEqual(h.values.get('darkhorse_session_v2'),before);
   let started=0,loaded=0;
   h.context.loadSession=()=>{loaded++;return true;};
@@ -86,8 +86,19 @@ let starts=0;restart.context.loadSession=()=>true;restart.context.isPreResultsIn
 restart.context.startNewJourney=()=>starts++;restart.context.confirm=()=>false;
 restart.nodes['dh-restart-journey'].onclick();assert.strictEqual(starts,0);
 restart.context.confirm=()=>true;restart.nodes['dh-restart-journey'].onclick();assert.strictEqual(starts,1);
-for(const text of ['جرقه‌ها: فعالیت‌هایی که دوست داری','آینه: انتخاب در موقعیت واقعی','دوراهی: ارزش شخصی']) assert(restart.nodes.app.innerHTML.includes(text));
-console.log('PASS home clarity: authorized UUID match, mismatch preservation, legacy save compatibility, restart delegation/cancel');
+for(const text of [
+  'برای دانش‌آموزان در آستانهٔ انتخاب شاخهٔ دبیرستان یا رشتهٔ دانشگاهی.',
+  'در پایان، پیشنهاد مسیرهای تحصیلی متناسب با علاقه‌ها، راهبردها و ارزش‌هایت می‌گیری؛ نه حکم قطعی.',
+  'می‌توانی وسط راه توقف کنی و بعد در همین مرورگر و دستگاه ادامه بدهی؛ این ذخیرهٔ محلی، ذخیره در حساب نیست.',
+  'جرقه‌ها: فعالیت‌هایی که دوست داری',
+  'آینه: انتخاب در موقعیت واقعی',
+  'دوراهی: ارزش شخصی',
+  'موفقیت شخصی یعنی'
+]) assert(!restart.nodes.app.innerHTML.includes(text));
+assert(!restart.nodes.app.innerHTML.includes('dh-fardiyat-ticker'));
+assert(restart.nodes.app.innerHTML.includes('سفر اکتشافی'));
+assert(restart.nodes.app.innerHTML.includes('انتخاب رشته با منطق سنجش'));
+console.log('PASS home clarity: UUID resume/restart preserved; homepage explanatory copy, glossary and ticker removed; core actions retained');
 
 // First paint and hydrated shell use the same stage + authorization + UUID rule.
 const index=fs.readFileSync('docs/index.html','utf8');

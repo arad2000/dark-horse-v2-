@@ -707,17 +707,6 @@
           '<p class="dh-regal-tagline">هدایت تحصیلی و انتخاب رشته بر اساس <strong class="dh-fardiyat">فردیت</strong></p>' +
         '</header>' +
 
-        '<div class="dh-fardiyat-ticker" id="dh-fardiyat-ticker" aria-live="polite">' +
-          '<span class="dh-fardiyat-ticker-dot" aria-hidden="true"></span>' +
-          '<span id="dh-fardiyat-ticker-text" class="dh-ticker-in">مسیرت را با <strong class="dh-fardiyat">فردیت‌ات</strong> بساز</span>' +
-        '</div>' +
-
-        '<section aria-label="دربارهٔ سفر اکتشافی">' +
-          '<p>برای دانش‌آموزان در آستانهٔ انتخاب شاخهٔ دبیرستان یا رشتهٔ دانشگاهی.</p>' +
-          '<p>در پایان، پیشنهاد مسیرهای تحصیلی متناسب با علاقه‌ها، راهبردها و ارزش‌هایت می‌گیری؛ نه حکم قطعی.</p>' +
-          '<p>می‌توانی وسط راه توقف کنی و بعد در همین مرورگر و دستگاه ادامه بدهی؛ این ذخیرهٔ محلی، ذخیره در حساب نیست.</p>' +
-        '</section>' +
-
         /* ۲. کارت سفر اکتشافی (تمیز و متمرکز، بدون بج‌های اضافه) */
         '<section class="dh-mk2-hero">' +
           '<div class="dh-mk2-hero-bg" style="background-image:image-set(url(\'' + heroUrl + '\') 1x, url(\'' + heroUrl2x + '\') 2x);background-image:url(\'' + heroUrl + '\')"></div>' +
@@ -734,8 +723,6 @@
               '<button type="button" class="btn" id="dh-restart-journey" aria-describedby="dh-home-restart-note">شروع دوباره</button>' +
               '<p id="dh-home-restart-note">با شروع دوباره، انتخاب‌های ذخیره‌شدهٔ سفر در همین مرورگر و دستگاه پاک می‌شود.</p>' : '') +
           '</div></section>' +
-
-        '<p aria-label="معنی عنوان‌های سفر">جرقه‌ها: فعالیت‌هایی که دوست داری · آینه: انتخاب در موقعیت واقعی · دوراهی: ارزش شخصی</p>' +
 
         /* ۳. بلافاصله زیر سفر اکتشافی: انتخاب رشته با منطق سنجش */
         '<section class="dh-home-sanjesh-entry" aria-labelledby="dh-home-sanjesh-title">' +
