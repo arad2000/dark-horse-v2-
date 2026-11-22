@@ -287,7 +287,7 @@ async function testColdWarmOfflineOnline() {
   // Non-destructive SW upgrade contract: install MUST NOT wipe existing caches, and activate
   // must carry forward unchanged cached assets from darkhorse-v77 into darkhorse-v80.
   const oldCache = await sw.caches.open('darkhorse-v77');
-  const heavyAssetUrl = 'https://asbe-siah.ir/data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=builder-grade9-v3';
+  const heavyAssetUrl = 'https://asbe-siah.ir/data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=explorer-grade9-v4';
   await oldCache.put({ url: heavyAssetUrl }, response('/* cached-data-js */'));
   await sw.triggerLifecycle('install');
   assert.ok((await sw.caches.open('darkhorse-v77')).match({ url: heavyAssetUrl }),

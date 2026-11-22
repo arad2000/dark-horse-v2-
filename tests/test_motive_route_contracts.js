@@ -14,7 +14,7 @@ const motiveCodes = new Set(motives.map((item) => item.code));
 
 assert.match(
   indexSource,
-  /src="data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=builder-grade9-v3"/,
+  /src="data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=explorer-grade9-v4"/,
   'docs/index.html must load clean cache-busted src for data.js'
 );
 assert.ok(

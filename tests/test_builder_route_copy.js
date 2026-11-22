@@ -28,7 +28,7 @@ for (const items of [normalized.REALMS, ...Object.values(normalized.SUB_REALMS),
   }
 }
 assert.equal(changed,36);
-assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '0f6686e95d38fa1c06425e7254dadb7857c1b06c9367f35b59a83240155903e0');
+assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '3ea24508b551bce38d3201906b469153a35538b46ed50089a7803fd963b8657b');
 
-assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=builder-grade9-v3'));
+assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=explorer-grade9-v4'));
 console.log('PASS: approved builder copy matches preview; 36 entries; every other field, route order and other neighborhood unchanged; data cache key updated.');
