@@ -1814,6 +1814,12 @@ function renderRouteCardHTML(opts) {
   const descText = isComplete && opts.doneDescription
     ? escapeHtml(opts.doneDescription)
     : escapeHtml(opts.description || '');
+  // Explorer examples remain one selectable route; escape each line independently.
+  const descriptionHTML = realmId === 'explorer' && !(isComplete && opts.doneDescription) &&
+      String(opts.description || '').includes('\n')
+    ? '<ul class="dh-route-desc">' + String(opts.description).split('\n')
+        .map(line => '<li>' + escapeHtml(line) + '</li>').join('') + '</ul>'
+    : '<small class="dh-route-desc">' + descText + '</small>';
   const sigilStyle = `width:${boxPx}px;height:${boxPx}px;min-width:${boxPx}px;flex:0 0 ${boxPx}px;display:inline-flex;align-items:center;justify-content:center;border-radius:${compactSigil ? 7 : 9}px;background:${theme.soft};border:1px solid ${theme.border};color:${theme.color}`;
   const metaRight = `<span class="dh-world-tag" style="color:${theme.color}"><span class="dh-sigil-box${compactSigil ? ' dh-sigil-box--sm' : ''}" style="${sigilStyle}">${theme.svg}</span><span>${escapeHtml(opts.tagLabel || theme.title)}</span></span>`;
   const metaLeft = opts.orderNum
@@ -1825,7 +1831,7 @@ function renderRouteCardHTML(opts) {
         <p class="dh-route-motto">${escapeHtml(opts.motto || '')}</p>
         <span class="dh-route-check" aria-hidden="true"></span>
       </div>
-      <small class="dh-route-desc">${descText}</small>${isComplete ? '<span class="dh-route-badge">انجام شد</span>' : ''}</div>`;
+      ${descriptionHTML}${isComplete ? '<span class="dh-route-badge">انجام شد</span>' : ''}</div>`;
 }
 
 function renderRealm() {
