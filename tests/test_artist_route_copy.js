@@ -28,9 +28,9 @@ for (const items of [normalized.REALMS, ...Object.values(normalized.SUB_REALMS),
   }
 }
 assert.equal(changed,23);
-assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '19dff62cb7ba23a8ff87c1db22e5a428131a8de39fa30e0696a4c499501a1955');
+assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '7b3fa3f7ce41a2d6a2a431e198f0f6b09ba1fec3207adfcd29fe76577205ebaa');
 
-assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=artist-grade9-v6'));
+assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=speaker-grade9-v7'));
 console.log('PASS: approved artist copy matches preview; 23 entries; every other field, route order and other neighborhood unchanged; data cache key updated.');
 // Rendering lists must not add choices, leak HTML, or change other realms/completed cards.
 const app = fs.readFileSync('docs/app.js','utf8');
