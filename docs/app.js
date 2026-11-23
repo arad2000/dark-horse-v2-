@@ -1849,7 +1849,9 @@ function renderRealm() {
     const selCount = state.selectedRealms.length;
     let html = progressHTML('realm') + sparkChipHTML() + `<div class="dh-stage-head">
         <h2 class="dh-stage-title">محله‌های شهر رؤیاها</h2>
-        <p class="dh-stage-hint dh-realm-invite">قدم به شهر رؤیاها بگذار؛ هر محله دنیای آدم‌هایی است که از یک جنس کار انرژی می‌گیرند. نجواهای هر محله را بخوان و ۱ تا ${dhFaNum(maxSelect)} محله‌ای را که دلت می‌خواهد واردشان شوی روشن کن.</p>
+        <p class="dh-stage-hint dh-realm-invite">لازم نیست اصطلاحات تخصصی را بدانی یا الان این کارها را بلد باشی. نمونه‌ها را بخوان و تصور کن خودت داری انجامشان می‌دهی. اینجا هنوز رشته‌ات را انتخاب نمی‌کنی.</p>
+        <p class="dh-stage-hint">اگر بعضی از کارهای یک گروه برایت جذاب است، می‌توانی آن را انتخاب کنی؛ لازم نیست همهٔ آن‌ها را دوست داشته باشی.</p>
+        <p class="dh-stage-hint">۱ تا ${dhFaNum(maxSelect)} محله را برای بررسی بیشتر انتخاب کن.</p>
         <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} محله روشن شده</div>
       </div>
       <div class="grid dh-route-grid" id="realmGrid">`;
@@ -1913,7 +1915,8 @@ function renderSubRealm() {
   let cardIdx = 0;
   let html = progressHTML('subRealm') + sparkChipHTML() + dhRouteBreadcrumbHTML('subRealm') + `<div class="dh-stage-head">
       <h2 class="dh-stage-title">گذرهای نیمه‌روشن هر محله</h2>
-      <p class="dh-stage-hint">گذرها بر اساس محلهٔ رنگی‌شان دسته‌بندی شده‌اند — هر گذری که چشمت را گرفت روشن کن.</p>
+      <p class="dh-stage-hint">گذرها بر اساس محله دسته‌بندی شده‌اند. توضیح هر گروه را بخوان و کارهایی را که برایت جذاب‌اند تصور کن.</p>
+      <p class="dh-stage-hint">اگر بعضی از کارهای یک گروه برایت جذاب است، می‌توانی آن را انتخاب کنی؛ لازم نیست همهٔ آن‌ها را دوست داشته باشی.</p>
       <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${dhFaNum(selCount)} از ${dhFaNum(maxSelect)} گذر روشن شده</div>
     </div>
     <div id="subGrid">`;
@@ -1994,7 +1997,8 @@ function renderNarrowPath() {
   let cardIdx = 0;
   let html = progressHTML('narrowPath') + sparkChipHTML() + dhRouteBreadcrumbHTML('narrowPath') + `<div class="dh-stage-head">
       <h2 class="dh-stage-title">کارگاه‌ها و مسیرهای باریک</h2>
-      <p class="dh-stage-hint">اینجا دیگر خبری از کلیشه نیست — هر کارگاهی که دوست داری دست‌به‌کارش شوی تیک بزن تا جرقه‌هایش باز شوند.</p>
+      <p class="dh-stage-hint">لازم نیست الان این کارها را بلد باشی. نمونه‌ها را بخوان و تصور کن خودت داری انجامشان می‌دهی.</p>
+      <p class="dh-stage-hint">اگر بعضی از کارهای یک گروه برایت جذاب است، می‌توانی آن را انتخاب کنی؛ لازم نیست همهٔ آن‌ها را دوست داشته باشی.</p>
       <div class="dh-selection-pill ${selCount > 0 ? 'has-selection' : ''}">${selCount > 0 ? dhFaNum(selCount) + ' مسیر آمادهٔ شکار جرقه' : 'حداقل ۱ مسیر انتخاب کن'}</div>
     </div>
     <div id="pathGrid">`;

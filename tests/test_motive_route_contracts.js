@@ -280,7 +280,7 @@ assert.ok(
 
 uiSandbox.__ui.toggleRealm('explorer');
 assert.ok(appEl.innerHTML.includes('dh-route-grid') && appEl.innerHTML.includes('dh-route-card selected'), 'Realm stage must render selected Gen-Z route card');
-assert.ok(appEl.innerHTML.includes('قدم به شهر رؤیاها بگذار'), 'Realm stage must display warm invitation header before districts');
+assert.ok(appEl.innerHTML.includes('لازم نیست اصطلاحات تخصصی را بدانی یا الان این کارها را بلد باشی.') && appEl.innerHTML.includes('لازم نیست همهٔ آن‌ها را دوست داشته باشی.'), 'Realm stage must display approved exploration guidance before districts');
 const strokeMatches = [...appEl.innerHTML.matchAll(/<svg width="18" height="18"[^>]*stroke="(#[0-9a-fA-F]{6})"/g)].map((m) => m[1].toLowerCase());
 assert.equal(strokeMatches.length, 6, 'All 6 realm cards must render compact 18x18 SVGs');
 assert.equal(new Set(strokeMatches).size, 6, 'All 6 realm cards must have distinct per-realm SVG colors');
