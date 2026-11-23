@@ -28,9 +28,9 @@ for (const items of [normalized.REALMS, ...Object.values(normalized.SUB_REALMS),
   }
 }
 assert.equal(changed,27);
-assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '85e01570d8c80acf33ffdb17fe407715a4d365a800edd37e1941cbd0f69e0a5e');
+assert.equal(crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'), '4d0c4c34553ac3588ff7e9c33a8aab7375d0208927df47bb13c5ca2b9062b636');
 
-assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=thinker-grade9-v5'));
+assert(fs.readFileSync('docs/index.html','utf8').includes('data.js?v=motives-1393-catalog-230-v1&narrow-fix=1&wood-fix=1&copy=artist-grade9-v6'));
 console.log('PASS: approved thinker copy matches preview; 27 entries; every other field, route order and other neighborhood unchanged; data cache key updated.');
 // Rendering lists must not add choices, leak HTML, or change other realms/completed cards.
 const app = fs.readFileSync('docs/app.js','utf8');
