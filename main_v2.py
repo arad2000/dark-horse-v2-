@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from admin_router import router as admin_router
 from commercial_api import router as commercial_router
 from dark_horse_engine_v2 import DarkHorseEngineV2
+from strategy_value_alternatives import METHOD as ALTERNATIVES_METHOD, attach_strategy_value_alternatives
 from feedback_api import router as feedback_router, legacy_router as feedback_legacy_router
 from ai_counsel_service import generate_counseling
 
@@ -262,8 +263,14 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
             request.conjoint_choices or {},
         )
 
+        # Result enrichment only: original discovery scores/order and gates stay intact.
+        enriched_majors = await asyncio.to_thread(
+            attach_strategy_value_alternatives, engine,
+            discovery.get("discovered_majors", []),
+            request.sjt_answers or {}, request.conjoint_choices or {},
+        )
         recommendations = []
-        for item in discovery.get("discovered_majors", []):
+        for item in enriched_majors:
             fit = item.get("individuality_fit", {}) or {}
             rec = {
                 "major_id": item.get("major_id"),
@@ -279,8 +286,8 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
             }
             if fit.get("archetype"):
                 rec["archetype"] = fit["archetype"]
-            if fit.get("alternative_paths"):
-                rec["alternative_paths"] = fit["alternative_paths"]
+            rec["strategy_value_alternatives"] = fit["strategy_value_alternatives"]
+            rec["alternative_paths"] = fit["alternative_paths"]
             recommendations.append(rec)
 
         recommendations.sort(key=lambda x: x["fit_score"], reverse=True)
@@ -299,7 +306,14 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "medium_fit_majors": med,
                 "low_fit_majors": low,
                 "recommendations": recommendations,
-                "method": discovery.get("method", {}),
+                "method": {
+                    **discovery.get("method", {}),
+                    "alternative_path_formula": "S > 0.70 OR V > 0.70; both first; max 3; exclude current major",
+                    "alternative_path_method": ALTERNATIVES_METHOD,
+                    "features": [f for f in discovery.get("method", {}).get("features", [])
+                                 if "مسیرهای جایگزین" not in f]
+                                + ["آلترناتیو بر اساس پاسخ‌های راهبردی یا ارزشی همان کاربر"],
+                },
                 "summary": discovery.get("summary", {}),
                 "next_step": discovery.get("next_step", ""),
             },

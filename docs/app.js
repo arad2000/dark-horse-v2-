@@ -3265,6 +3265,43 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 
 // ==================== DISPLAY RESULTS (نسخه نهایی با UI/UX بهبودیافته) ====================
 
+function renderStrategyValueAlternativesHTML(selection) {
+  if (!selection || selection.method !== 'user_strategy_or_value_gt70_v1') {
+    return '<p class="dh-stage-hint">برای این نتیجه، پیشنهاد مبتنی بر راهبرد و ارزش ثبت نشده است؛ محاسبهٔ تازه لازم است.</p>';
+  }
+  const rows = Array.isArray(selection.items) ? selection.items.slice(0, 3) : [];
+  const labels = {both:'هم‌راستا با پاسخ‌های راهبردی و ارزشی شما', strategy:'هم‌راستا با پاسخ‌های راهبردی شما', value:'هم‌راستا با پاسخ‌های ارزشی شما'};
+  function dimension(label, data) {
+    if (!data || data.status !== 'evaluated' || typeof data.score !== 'number' || !Number.isFinite(data.score)) {
+      return label + ': اطلاعات کافی برای بررسی موجود نیست.';
+    }
+    // Two decimal places for display only; eligibility uses raw backend score.
+    return label + ': ' + escapeHtml(dhFaNum(Number((data.score * 100).toFixed(2)))) + '٪ — ' +
+      (data.qualifies ? 'بالاتر از آستانه' : 'از آستانه عبور نکرده است');
+  }
+  let html = '<section style="margin:10px 0;"><h4>گزینه‌های هم‌راستا با پاسخ‌های راهبردی یا ارزشی</h4>';
+  if (!rows.length) {
+    html += '<p>' + (selection.status === 'insufficient_data'
+      ? 'اطلاعات کافی برای بررسی سازگاری این بخش موجود نیست.'
+      : 'در بخش‌های قابل‌بررسی، رشته‌ای با امتیاز بالاتر از ۷۰٪ پیدا نشد.') + '</p>';
+  }
+  rows.forEach(row => {
+    if (!labels[row.basis]) return;
+    html += '<article style="border:1px solid rgba(240,192,64,.35);border-radius:10px;padding:12px;margin:8px 0;">' +
+      '<strong>' + escapeHtml(row.major_name || '') + '</strong><p>' + labels[row.basis] + '</p>' +
+      '<p>' + dimension('راهبردها', row.strategy) + '<br>' + dimension('ارزش‌ها', row.value) + '</p>';
+    const evidence = row.evidence || {};
+    if (evidence.uniform_strategy_rows > 0 || evidence.equal_value_pairs > 0) {
+      html += '<small>بخشی از وزن‌های این رشته میان گزینه‌ها تفاوتی ندارند؛ نمرهٔ بالا به‌تنهایی شاهد تمایز قوی نیست.</small>';
+    }
+    html += '</article>';
+  });
+  if (selection.coverage && selection.coverage.incomplete) {
+    html += '<p>پوشش داده‌ها برای بخشی از کاتالوگ یا پاسخ‌ها کامل نیست؛ موارد نامشخص، ناسازگار محسوب نشده‌اند.</p>';
+  }
+  return html + '<small>این درصدها امتیاز سازگاری با پاسخ‌ها و وزن‌های سامانه‌اند، نه احتمال موفقیت یا تضمین تناسب نهایی رشته.</small></section>';
+}
+
 // ==================== توضیح مشاوره‌ای (Cloudflare Workers AI) ====================
 async function loadDeepCounselItem(index, mode) {
   mode = mode || 'main';
@@ -3381,7 +3418,8 @@ function displayResults(data, type) {
       personalized_description: fit.personalized_description || item.personalized_description || '',
       archetype: archetypeData,
       fulfillment_source: fit.fulfillment_source || fit.archetype?.fulfillment_source || null,
-      alternative_paths: fit.alternative_paths || item.alternative_paths || [],
+      strategy_value_alternatives: fit.strategy_value_alternatives || item.strategy_value_alternatives || null,
+      alternative_paths: isBranch ? (fit.alternative_paths || item.alternative_paths || []) : ((fit.strategy_value_alternatives || item.strategy_value_alternatives)?.items || []),
       // موتور دو قرارداد مختلف دارد: recommend_school_branch یک رشتهٔ مفرد «warning» می‌دهد،
       // ولی discover_individuality آرایهٔ «evidence.warnings» (شامل پیام مهم «مسیر اسب‌سیاه») می‌دهد.
       // هر دو را جمع می‌کنیم تا هیچ‌کدام گم نشوند.
@@ -3619,7 +3657,7 @@ function displayResults(data, type) {
                 </div>` : ''}
             </div>` : ''}
 
-          ${r.alternative_paths && r.alternative_paths.length > 0 ? `
+          ${!isBranch ? renderStrategyValueAlternativesHTML(r.strategy_value_alternatives) : r.alternative_paths && r.alternative_paths.length > 0 ? `
             <div style="margin:10px 0;">
               <div style="font-size:0.82rem;color:#b8b2a4;margin-bottom:6px;">مسیرهای نزدیک و جایگزین:</div>
               <div style="display:flex;flex-wrap:wrap;gap:8px;">
