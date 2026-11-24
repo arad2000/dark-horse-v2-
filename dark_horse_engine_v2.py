@@ -16,6 +16,27 @@ from math import sqrt
 logger = logging.getLogger("darkhorse_engine_final")
 
 
+# Explicit subject/work neighbors, not personal fit or numeric distance.
+# Proposed content review scope: law/court procedure and philosophy/religious texts.
+# See docs/audits/CONTENT_NEIGHBOR_SOURCE_FIX.md for rationale and coverage limits.
+MAJOR_CONTENT_NEIGHBORS = {
+    101: {"name": "حقوق", "neighbors": (
+        (208, "علوم قضایی"),
+        (215, "کارشناسی ارشد پیوسته علوم قضایی"),
+        (105, "فقه و حقوق اسلامی"),
+    )},
+    208: {"name": "علوم قضایی", "neighbors": (
+        (101, "حقوق"),
+        (215, "کارشناسی ارشد پیوسته علوم قضایی"),
+        (105, "فقه و حقوق اسلامی"),
+    )},
+    133: {"name": "فلسفه", "neighbors": (
+        (173, "ادیان و عرفان"),
+        (164, "علوم قرآن و حدیث"),
+    )},
+}
+
+
 class DarkHorseEngineV2:
     def __init__(
         self,
@@ -327,44 +348,29 @@ class DarkHorseEngineV2:
         return self._compute_alternative_paths(major_id, top_n=top_n)
 
     def _compute_alternative_paths(self, major_id: str, top_n: int = 3) -> List[Dict]:
+        """Content neighbors only; never infer field affinity from scoring weights.
+
+        Coverage is intentionally partial. Missing/unverified entries return no
+        suggestions rather than silently falling back to numeric similarity.
+        Name guards make catalog ID drift fail closed, not point to a new field.
+        """
         target = self.majors_db.get(major_id)
-        if not target:
+        spec = MAJOR_CONTENT_NEIGHBORS.get(major_id)
+        if not target or not spec or target.get("name") != spec["name"]:
             return []
 
-        target_vw = target.get("value_weights", {})
-        target_sw = target.get("strategy_weights", [])
-        target_v_vec = [target_vw.get(f"Q{i}{l}", 0.0) for i in range(1, 16) for l in ["A", "B"]]
-        target_s_vec = self._strategy_profile_vector(target_sw)
-
-        distances = []
-        for other_id, other_data in self.majors_db.items():
-            if other_id == major_id:
+        neighbors = []
+        for other_id, expected_name in spec["neighbors"]:
+            other = self.majors_db.get(other_id)
+            if other_id == major_id or not other or other.get("name") != expected_name:
                 continue
-
-            other_vw = other_data.get("value_weights", {})
-            other_sw = other_data.get("strategy_weights", [])
-            other_v_vec = [other_vw.get(f"Q{i}{l}", 0.0) for i in range(1, 16) for l in ["A", "B"]]
-            other_s_vec = self._strategy_profile_vector(other_sw)
-
-            total_dist, v_dist, s_dist = self._hybrid_profile_distance(
-                target_v_vec, other_v_vec,
-                target_s_vec, other_s_vec,
-                value_weight=0.60,
-                strategy_weight=0.40
-            )
-
-            distances.append({
+            neighbors.append({
                 "major_id": other_id,
-                "major_name": other_data.get("name", ""),
-                "distance": round(total_dist, 3),
-                "value_distance": round(v_dist, 3),
-                "strategy_distance": round(s_dist, 3),
-                "group": other_data.get("group", ""),
-                "matching_method": "hybrid_rms_euclidean_125d_strategy"
+                "major_name": other["name"],
+                "group": other.get("group", ""),
+                "matching_method": "explicit_content_neighbors_v1",
             })
-
-        distances.sort(key=lambda x: x["distance"])
-        return distances[:top_n]
+        return neighbors[:max(0, top_n)]
 
     # ── مسیرهای جایگزین برای شاخه‌های دبیرستانی ──
     def _find_branch_alternative_paths(self, branch_name: str, top_n: int = 3) -> List[Dict]:
