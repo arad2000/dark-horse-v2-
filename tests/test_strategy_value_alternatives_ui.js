@@ -21,5 +21,5 @@ assert(render({...base,status:'insufficient_data',items:[]}).includes('اطلا�
 assert(render({...base,status:'no_matches_in_evaluated_dimensions',items:[]}).includes('پیدا نشد'));
 assert(app.includes('!isBranch ? renderStrategyValueAlternativesHTML(r.strategy_value_alternatives)'));
 assert(app.includes('alternative_paths: isBranch ?'));
-assert(fs.readFileSync('docs/index.html','utf8').includes('&r=281&next-step='));
+assert(fs.readFileSync('docs/index.html','utf8').includes('&r=282&next-step='));
 console.log('PASS S/V results: reasons, scores, unknown/empty/legacy, escaping, coverage, branch isolation');

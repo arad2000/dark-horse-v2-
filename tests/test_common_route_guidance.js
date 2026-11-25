@@ -14,8 +14,8 @@ hints.forEach((hint, i) => {
   normalized = normalized.replace(hint, 'COMMON_HINT_' + i);
 });
 // Full app fingerprint excludes ONLY the three authorized guidance blocks.
-// Baseline includes separately tested, authorized S/V result integration.
+// Baseline includes separately tested, authorized S/V integration and result-action hierarchy.
 // Locks the surrounding application and the unchanged shared guidance.
-assert.equal(crypto.createHash('sha256').update(normalized).digest('hex'), '44aff14078ec6b08c977912e15199888ef6f7d157c37e32179c7168f7d53ba9c');
-assert(fs.readFileSync('docs/index.html', 'utf8').includes('&r=281&next-step='));
+assert.equal(crypto.createHash('sha256').update(normalized).digest('hex'), '9745b083dcfa851e18fc1c252780aafaab72d793bbaa8b053655af28c15414ef');
+assert(fs.readFileSync('docs/index.html', 'utf8').includes('&r=282&next-step='));
 console.log('PASS: approved common guidance; every other byte of app.js unchanged');
