@@ -1037,3 +1037,19 @@
     transition: none !important;
   }
 }
+
+/* One brief, non-alert emphasis; existing counts and selection semantics stay intact. */
+@keyframes dh-count-enter-once {
+  0% { transform: scale(1); opacity: .82; }
+  45% { transform: scale(1.07); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #app .dh-card-subcount.dh-count-enter-once {
+    animation: dh-count-enter-once 360ms ease-out 1;
+    transform-origin: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #app .dh-card-subcount.dh-count-enter-once { animation: none !important; transform: none !important; }
+}
