@@ -3306,7 +3306,7 @@ function renderStrategyValueAlternativesHTML(selection) {
 async function loadDeepCounselItem(index, mode) {
   mode = mode || 'main';
   const box = document.getElementById('dh-counsel-box-' + index);
-  if (!box) return;
+  if (!box || box.dataset.pending === 'true') return;
 
   const tops = state.lastCounselTops || [];
   const item = tops[index];
@@ -3316,6 +3316,15 @@ async function loadDeepCounselItem(index, mode) {
     return;
   }
 
+  const actions = document.getElementById('dh-counsel-actions-' + index);
+  const buttons = actions ? Array.from(actions.querySelectorAll('button')) : [];
+  const previous = buttons.map(button => ({button, text: button.textContent, disabled: button.disabled}));
+  box.dataset.pending = 'true';
+  box.setAttribute('aria-busy', 'true');
+  buttons.forEach(button => { button.disabled = true; });
+  const activeButton = document.getElementById('dh-counsel-' + mode + '-' + index);
+  if (activeButton) activeButton.textContent = 'در حال آماده‌سازی توضیح…';
+  let timeout;
   box.style.display = 'block';
   box.innerHTML = '<p style="color:#f0c040;line-height:1.9;margin:0;text-align:center;">در حال آماده‌سازی توضیح مشاوره‌ای برای «' + escapeHtml(item.name || '') + '»...</p>';
 
@@ -3327,7 +3336,7 @@ async function loadDeepCounselItem(index, mode) {
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 65000);
+    timeout = setTimeout(() => controller.abort(), 65000);
     const res = await fetch(API_BASE + '/api/v2/darkhorse/counsel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3359,6 +3368,14 @@ async function loadDeepCounselItem(index, mode) {
   } catch (e) {
     console.error(e);
     box.innerHTML = '<p style="color:#f88;line-height:1.8;margin:0;text-align:center;">الان نتوانستیم توضیح مشاوره‌ای را بگیریم. کمی بعد دوباره تلاش کنید.</p>';
+  } finally {
+    clearTimeout(timeout);
+    box.dataset.pending = 'false';
+    box.setAttribute('aria-busy', 'false');
+    previous.forEach(({button, text, disabled}) => {
+      button.textContent = text;
+      button.disabled = disabled;
+    });
   }
 }
 
@@ -3670,18 +3687,18 @@ function displayResults(data, type) {
 
           ${isBranch && r.count ? `<div style="font-size:0.77rem;color:#a9a497;margin-top:8px;">تعداد زیرشاخه‌های تحلیل‌شده: ${dhFaNum(r.count)}</div>` : ''}
 
-          <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:8px;">
-            <button type="button" class="btn btn-primary"
+          <div id="dh-counsel-actions-${ri}" class="dh-result-explore-actions" style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:8px;">
+            <button id="dh-counsel-main-${ri}" type="button" class="btn dh-result-action dh-result-action-explore"
               style="width:100%;"
               onclick="loadDeepCounselItem(${ri}, 'main')">
               توضیح مشاوره‌ای این ${isBranch ? 'شاخه' : 'رشته'}
             </button>
-            <button type="button" class="btn"
+            <button id="dh-counsel-alternatives-${ri}" type="button" class="btn dh-result-action dh-result-action-explore"
               style="width:100%;"
               onclick="loadDeepCounselItem(${ri}, 'alternatives')">
               بررسی مسیرهای جایگزین این ${isBranch ? 'شاخه' : 'رشته'}
             </button>
-            <div id="dh-counsel-box-${ri}" style="display:none;margin-top:8px;text-align:right;"></div>
+            <div id="dh-counsel-box-${ri}" role="status" aria-live="polite" aria-busy="false" style="display:none;margin-top:8px;text-align:right;"></div>
           </div>
         </div>`;
     });
@@ -3708,15 +3725,15 @@ function displayResults(data, type) {
   html += `
     <div class="dh-stage-actions" style="margin-top:24px;">
       ${!isBranch && state.branchesResult ? `
-        <button type="button" class="btn btn-primary" onclick="displayResults(state.branchesResult, 'branches')">
+        <button type="button" class="btn btn-primary dh-result-action dh-result-action-primary" onclick="displayResults(state.branchesResult, 'branches')">
           مشاهدهٔ نتایج هدایت تحصیلی (شاخه‌های دبیرستان)
         </button>` : ''}
       ${isBranch && state.majorsResult ? `
-        <button type="button" class="btn btn-primary" onclick="displayResults(state.majorsResult, 'majors')">
+        <button type="button" class="btn btn-primary dh-result-action dh-result-action-primary" onclick="displayResults(state.majorsResult, 'majors')">
           مشاهدهٔ نتایج رشته‌های دانشگاهی
         </button>` : ''}
-      <button type="button" class="btn" onclick="goTo('choice')">بازگشت به صفحهٔ انتخاب تحلیل</button>
-      <button type="button" class="btn" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
+      <button type="button" class="btn dh-result-action dh-result-action-back" onclick="goTo('choice')">بازگشت به صفحهٔ انتخاب تحلیل</button>
+      <button type="button" class="btn dh-result-action dh-result-action-back" onclick="dhGoHomeKeepPlace()">بازگشت به صفحه اول</button>
     </div>
 
     <div id="feedbackSection" class="card dh-surface-card" style="padding:20px;margin:24px 0 15px 0;text-align:right;">

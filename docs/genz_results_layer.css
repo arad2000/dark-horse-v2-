@@ -81,3 +81,42 @@
 #app .dh-bar-fill-m { background: #f0c040; height: 100%; border-radius: 999px; }
 #app .dh-bar-fill-s { background: #56c7c1; height: 100%; border-radius: 999px; }
 #app .dh-bar-fill-v { background: #c9a6ff; height: 100%; border-radius: 999px; }
+
+/* Result actions: one primary destination, matching exploration, quiet returns. */
+#app .btn.dh-result-action {
+  min-height: 48px;
+  white-space: normal;
+  line-height: 1.8;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 100ms ease;
+}
+#app .btn.dh-result-action-explore {
+  background: #191b27 !important;
+  color: #f0d58c !important;
+  border: 1px solid #9c864e !important;
+  box-shadow: none !important;
+}
+#app .btn.dh-result-action-primary {
+  background: #f0c040 !important;
+  color: #19170f !important;
+  border: 1px solid #f0c040 !important;
+  box-shadow: none !important;
+}
+#app .btn.dh-result-action-back {
+  background: #191b25 !important;
+  color: #ded8ca !important;
+  border: 1px solid #555564 !important;
+  box-shadow: none !important;
+}
+#app .btn.dh-result-action:focus-visible {
+  outline: 3px solid #8bd4ff;
+  outline-offset: 3px;
+}
+@media (hover: hover) {
+  #app .btn.dh-result-action-explore:hover:not(:disabled) { background: #262636 !important; border-color: #f0c040 !important; }
+  #app .btn.dh-result-action-back:hover:not(:disabled) { background: #282a36 !important; }
+}
+#app .btn.dh-result-action:active:not(:disabled) { transform: scale(.99); }
+#app .btn.dh-result-action:disabled { opacity: .65; cursor: wait; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  #app .btn.dh-result-action { transition: none; transform: none !important; }
+}
