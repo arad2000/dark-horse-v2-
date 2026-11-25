@@ -1834,6 +1834,19 @@ function renderRouteCardHTML(opts) {
       ${descriptionHTML}${isComplete ? '<span class="dh-route-badge">انجام شد</span>' : ''}</div>`;
 }
 
+// In-memory only: each exploration stage gets at most one count emphasis per app load.
+const dhCountEmphasisSeen = new Set();
+function dhEmphasizeExplorationCounts(stage) {
+  if (!['realm', 'subRealm', 'narrowPath'].includes(stage) || dhCountEmphasisSeen.has(stage)) return;
+  if (!app || typeof app.querySelectorAll !== 'function') return;
+  const badges = app.querySelectorAll('.dh-card-subcount');
+  if (!badges.length) return;
+  dhCountEmphasisSeen.add(stage);
+  // Fail stationary if matchMedia is unavailable; never override reduced motion.
+  if (typeof window.matchMedia !== 'function' || !window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return;
+  badges.forEach(badge => badge.classList.add('dh-count-enter-once'));
+}
+
 function renderRealm() {
   try {
     ensureUXStyles();
@@ -1876,6 +1889,7 @@ function renderRealm() {
         <button type="button" class="btn" onclick="goBack()">بازگشت</button>
       </div>`;
     app.innerHTML = html;
+    dhEmphasizeExplorationCounts('realm');
   } catch (e) {
     console.error('renderRealm', e);
     app.innerHTML = `<div class="card" style="margin:16px;text-align:right"><h2 style="color:#f5efe2">خطای نمایش محله‌ها</h2>
@@ -1961,6 +1975,7 @@ function renderSubRealm() {
       <button type="button" class="btn" onclick="goBack()">‹ بازگشت به محله‌ها</button>
     </div>`;
   app.innerHTML = html;
+  dhEmphasizeExplorationCounts('subRealm');
 }
 
 function toggleSub(id, maxSelect) {
@@ -2045,6 +2060,7 @@ function renderNarrowPath() {
       <button type="button" class="btn" onclick="goBack()">‹ بازگشت به گذرها</button>
     </div>`;
   app.innerHTML = html;
+  dhEmphasizeExplorationCounts('narrowPath');
 }
 
 function togglePath(id) {
