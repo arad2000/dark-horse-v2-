@@ -1,0 +1,2043 @@
+diff --git a/admin_router.py b/admin_router.py
+index 01d7667..3531e73 100644
+--- a/admin_router.py
++++ b/admin_router.py
+@@ -15,6 +15,14 @@ from auth_service import resolve_session
+ from billing_models import User
+ from database import get_db
+ from referral_service import create_referral_code, get_referral_report
++from referral_commission_service import (
++    create_code_for_marketer,
++    marketer_recruitment_report,
++    marketer_statement,
++    register_marketer,
++    settle_commission,
++    signups_of_marketer,
++)
+ from sqlalchemy.exc import IntegrityError
+ 
+ router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+@@ -172,3 +180,155 @@ def referral_report(
+         return get_referral_report(db, actor)
+     except PermissionError as exc:
+         raise HTTPException(status_code=403, detail=str(exc)) from exc
++
++
++# ---------------------------------------------------------------------------
++# Commission ownership. These endpoints record who owns a code and what each
++# paid order owes them; they never move money or touch the credit ledger.
++# ---------------------------------------------------------------------------
++
++
++class MarketerCreateRequest(BaseModel):
++    name: str = Field(min_length=1, max_length=200)
++    phone: str | None = Field(default=None, max_length=32)
++    user_id: int | None = None
++    commission_bps: int = Field(default=0, ge=0, le=10000)
++    note: str | None = Field(default=None, max_length=500)
++
++
++class MarketerCodeRequest(BaseModel):
++    marketer_id: int
++    code: str | None = Field(default=None, max_length=32)
++
++
++class CommissionSettleRequest(BaseModel):
++    note: str | None = Field(default=None, max_length=500)
++
++
++@router.post("/marketers", status_code=201)
++def create_marketer(
++    req: MarketerCreateRequest,
++    actor: User = Depends(current_referral_manager),
++    db: Session = Depends(get_db),
++) -> dict:
++    try:
++        marketer = register_marketer(
++            db,
++            actor,
++            name=req.name,
++            phone=req.phone,
++            user_id=req.user_id,
++            commission_bps=req.commission_bps,
++            note=req.note,
++        )
++        db.commit()
++        return {
++            "id": int(marketer.id),
++            "public_id": marketer.public_id,
++            "name": marketer.name,
++            "phone": marketer.phone,
++            "user_id": int(marketer.user_id) if marketer.user_id else None,
++            "commission_bps": int(marketer.commission_bps),
++            "commission_percent": round(int(marketer.commission_bps) / 100, 2),
++            "is_active": bool(marketer.is_active),
++        }
++    except PermissionError as exc:
++        db.rollback()
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
++    except ValueError as exc:
++        db.rollback()
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++
++@router.post("/marketers/codes", status_code=201)
++def create_marketer_code(
++    req: MarketerCodeRequest,
++    actor: User = Depends(current_referral_manager),
++    db: Session = Depends(get_db),
++) -> dict:
++    try:
++        row = create_code_for_marketer(db, actor, marketer_id=req.marketer_id, code=req.code)
++        db.commit()
++        return {
++            "id": int(row.id),
++            "code": row.code,
++            "marketer_id": int(row.marketer_id),
++            "is_active": bool(row.is_active),
++        }
++    except PermissionError as exc:
++        db.rollback()
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
++    except IntegrityError as exc:
++        db.rollback()
++        raise HTTPException(status_code=409, detail="referral code already exists") from exc
++    except ValueError as exc:
++        db.rollback()
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++
++@router.get("/commission/statement")
++def commission_statement(
++    marketer_id: int | None = None,
++    actor: User = Depends(current_referral_manager),
++    db: Session = Depends(get_db),
++) -> dict:
++    """Who is owed what. Reads snapshots only; never recalculates past orders."""
++    try:
++        return marketer_statement(db, actor, marketer_id=marketer_id)
++    except PermissionError as exc:
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
++
++
++@router.post("/commission/{commission_id}/settle")
++def settle(
++    commission_id: int,
++    req: CommissionSettleRequest | None = None,
++    actor: User = Depends(current_referral_manager),
++    db: Session = Depends(get_db),
++) -> dict:
++    try:
++        row = settle_commission(db, actor, commission_id=commission_id, note=(req.note if req else None))
++        db.commit()
++        return {
++            "id": int(row.id),
++            "order_id": int(row.order_id),
++            "marketer_id": int(row.marketer_id),
++            "amount_minor": int(row.commission_amount_minor),
++            "currency": row.currency,
++            "status": row.status,
++        }
++    except PermissionError as exc:
++        db.rollback()
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
++    except ValueError as exc:
++        db.rollback()
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++
++@router.get("/marketers/report")
++def recruitment_report(
++    actor: User = Depends(current_referral_manager),
++    db: Session = Depends(get_db),
++) -> dict:
++    """How many people each marketer brought, and what they bought.
++
++    This is the answer to "my marketer says he sent ten people, how do I know?":
++    ``signups`` counts registrations carrying his code, independent of purchase.
++    """
++    try:
++        return marketer_recruitment_report(db, actor)
++    except PermissionError as exc:
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
++
++
++@router.get("/marketers/{marketer_id}/signups")
++def marketer_signups(
++    marketer_id: int,
++    actor: User = Depends(current_referral_manager),
++    db: Session = Depends(get_db),
++) -> dict:
++    """The actual list of people brought by one marketer."""
++    try:
++        return signups_of_marketer(db, actor, marketer_id=marketer_id)
++    except PermissionError as exc:
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
+diff --git a/alembic/versions/0012_referral_attribution.py b/alembic/versions/0012_referral_attribution.py
+index 730ab4e..9f759f1 100644
+--- a/alembic/versions/0012_referral_attribution.py
++++ b/alembic/versions/0012_referral_attribution.py
+@@ -5,6 +5,15 @@ Revises: 0011_otp_request_ip
+ 
+ Attribution-only schema. Does not alter payment amounts, product plans,
+ commission economics, wallet, payout, settlement, or scoring data.
++
++Upgrade-safety rules for this revision (attribution must never block a release):
++  * every DDL step is guarded on current inspector state, so the revision is
++    safe to run against a database that already carries part of its schema;
++  * the duplicate-code reconciliation does not delete or rewrite ledger rows.
++    It re-keys only the *older* duplicates so the partial unique index can be
++    created; attribution lineage of the surviving code is unchanged;
++  * if duplicates are still present after reconciliation the revision raises a
++    readable error rather than silently discarding data.
+ """
+ from alembic import op
+ import sqlalchemy as sa
+@@ -14,26 +23,107 @@ down_revision = "0011_otp_request_ip"
+ branch_labels = None
+ depends_on = None
+ 
++INDEX_NAME = "uq_admin_audit_referral_code"
++TABLE = "admin_audit_logs"
++PARTIAL_PREDICATE = "target_type = 'referral_code' AND action = 'create_referral_code'"
++
++
++def _inspector():
++    return sa.inspect(op.get_bind())
++
++
++def _has_index(inspector, table: str, index: str) -> bool:
++    try:
++        return any(i.get("name") == index for i in inspector.get_indexes(table))
++    except Exception:
++        return False
++
++
++def _column_names(inspector, table: str) -> set[str]:
++    try:
++        return {c["name"] for c in inspector.get_columns(table)}
++    except Exception:
++        return set()
++
++
++def _add_column_if_missing(table: str, column: sa.Column) -> None:
++    if column.name not in _column_names(_inspector(), table):
++        op.add_column(table, column)
++
++
++def _reconcile_duplicate_codes() -> None:
++    """Re-key older duplicate codes so the partial unique index can be built.
++
++    A referral code is identified by ``target_id``. If the live ledger already
++    holds the same code more than once, creating the unique index fails and the
++    whole release stops. Rather than deleting ledger rows (which would destroy
++    audit history), the older duplicates are given a distinct, clearly marked
++    ``target_id`` while keeping their ``action``/``target_type``/metadata. The
++    surviving row keeps the original code, so existing attribution is unchanged.
++
++    The re-keyed values are suffixed with their own row id, which is unique,
++    so this is idempotent: a second run finds no duplicates and does nothing.
++    """
++    op.execute(
++        sa.text(
++            f"""
++            WITH ranked AS (
++                SELECT id,
++                       row_number() OVER (PARTITION BY target_id ORDER BY id) AS position
++                FROM {TABLE}
++                WHERE target_type = 'referral_code'
++                  AND action = 'create_referral_code'
++            )
++            UPDATE {TABLE} AS audit
++            SET target_id = audit.target_id || '-ARCHIVED-' || audit.id::text
++            FROM ranked
++            WHERE audit.id = ranked.id
++              AND ranked.position > 1
++            """
++        )
++    )
++
++    remaining = op.get_bind().execute(
++        sa.text(
++            f"""
++            SELECT count(*) FROM (
++                SELECT target_id FROM {TABLE}
++                WHERE target_type = 'referral_code'
++                  AND action = 'create_referral_code'
++                GROUP BY target_id HAVING count(*) > 1
++            ) AS duplicates
++            """
++        )
++    ).scalar_one()
++    if remaining:
++        raise RuntimeError(
++            "duplicate referral_code ledger rows could not be reconciled: "
++            f"{remaining} code(s) still appear more than once. Resolve them manually."
++        )
++
+ 
+ def upgrade() -> None:
++    inspector = _inspector()
++
+     # Reuse the existing admin audit ledger as the code registry. The partial
+     # unique index keeps codes unique without introducing a new Hybrid table.
+-    op.create_index(
+-        "uq_admin_audit_referral_code",
+-        "admin_audit_logs",
+-        ["target_id"],
+-        unique=True,
+-        postgresql_where=sa.text("target_type = 'referral_code' AND action = 'create_referral_code'"),
+-        sqlite_where=sa.text("target_type = 'referral_code' AND action = 'create_referral_code'"),
+-    )
+-
+-    op.add_column("users", sa.Column("referral_code", sa.String(length=64), nullable=True))
+-    op.add_column("users", sa.Column("referral_locked_at", sa.DateTime(timezone=True), nullable=True))
++    if not _has_index(inspector, TABLE, INDEX_NAME):
++        _reconcile_duplicate_codes()
++        op.create_index(
++            INDEX_NAME,
++            TABLE,
++            ["target_id"],
++            unique=True,
++            postgresql_where=sa.text(PARTIAL_PREDICATE),
++            sqlite_where=sa.text(PARTIAL_PREDICATE),
++        )
+ 
+-    op.add_column("orders", sa.Column("referral_code_snapshot", sa.String(length=64), nullable=True))
+-    op.add_column("orders", sa.Column("referral_label_snapshot", sa.String(length=200), nullable=True))
+-    op.add_column("orders", sa.Column("referral_snapshot_at", sa.DateTime(timezone=True), nullable=True))
++    _add_column_if_missing("users", sa.Column("referral_code", sa.String(length=64), nullable=True))
++    _add_column_if_missing("users", sa.Column("referral_locked_at", sa.DateTime(timezone=True), nullable=True))
+ 
++    _add_column_if_missing("orders", sa.Column("referral_code_snapshot", sa.String(length=64), nullable=True))
++    _add_column_if_missing("orders", sa.Column("referral_label_snapshot", sa.String(length=200), nullable=True))
++    _add_column_if_missing("orders", sa.Column("referral_snapshot_at", sa.DateTime(timezone=True), nullable=True))
+ 
+     # Existing paid accounts are already past the edit window. Preserve that
+     # invariant during rollout even though historical orders get no attribution.
+@@ -62,9 +152,15 @@ def upgrade() -> None:
+ 
+ 
+ def downgrade() -> None:
+-    op.drop_column("orders", "referral_snapshot_at")
+-    op.drop_column("orders", "referral_label_snapshot")
+-    op.drop_column("orders", "referral_code_snapshot")
+-    op.drop_column("users", "referral_locked_at")
+-    op.drop_column("users", "referral_code")
+-    op.drop_index("uq_admin_audit_referral_code", table_name="admin_audit_logs")
++    for table, column in (
++        ("orders", "referral_snapshot_at"),
++        ("orders", "referral_label_snapshot"),
++        ("orders", "referral_code_snapshot"),
++        ("users", "referral_locked_at"),
++        ("users", "referral_code"),
++    ):
++        if column in _column_names(_inspector(), table):
++            op.drop_column(table, column)
++
++    if _has_index(_inspector(), TABLE, INDEX_NAME):
++        op.drop_index(INDEX_NAME, table_name=TABLE)
+diff --git a/alembic/versions/0013_referral_ownership.py b/alembic/versions/0013_referral_ownership.py
+new file mode 100644
+index 0000000..c01b946
+--- /dev/null
++++ b/alembic/versions/0013_referral_ownership.py
+@@ -0,0 +1,131 @@
++"""Referral code ownership and commission accounting.
++
++Revision ID: 0013_referral_ownership
++Revises: 0012_referral_attribution
++
++Additive only. Does not alter scoring, pricing, plans, entitlements, or the
++credit ledger. Commission is a *reported accrual*, never a payment: there is no
++wallet, no balance mutation, and no automatic settlement.
++
++Design notes
++  * A code is owned by a marketer row, not by a free-text label. The marketer
++    may be an existing user of this site (``user_id`` set) or an outside person
++    with no account (``phone``/name only). This is why ownership lives in its
++    own table instead of overloading ``admin_audit_logs``.
++  * ``orders.marketer_id_snapshot`` copies the owner onto the order at payment
++    time. Changing a code's owner later therefore cannot move past commission.
++  * ``referral_commissions`` is a one-to-one ledger keyed by order, so
++    recomputation is idempotent and an order can never accrue twice.
++"""
++from alembic import op
++import sqlalchemy as sa
++
++revision = "0013_referral_ownership"
++down_revision = "0012_referral_attribution"
++branch_labels = None
++depends_on = None
++
++
++def _inspector():
++    return sa.inspect(op.get_bind())
++
++
++def _tables():
++    try:
++        return set(_inspector().get_table_names())
++    except Exception:
++        return set()
++
++
++def _columns(table: str) -> set[str]:
++    try:
++        return {c["name"] for c in _inspector().get_columns(table)}
++    except Exception:
++        return set()
++
++
++def _add_if_missing(table: str, column: sa.Column) -> None:
++    if column.name not in _columns(table):
++        op.add_column(table, column)
++
++
++def upgrade() -> None:
++    existing = _tables()
++
++    if "referral_marketers" not in existing:
++        op.create_table(
++            "referral_marketers",
++            sa.Column("id", sa.Integer(), primary_key=True),
++            sa.Column("public_id", sa.String(length=40), nullable=False),
++            # Optional link to a real account; NULL means an outside marketer.
++            sa.Column("user_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
++            sa.Column("name", sa.String(length=200), nullable=False),
++            sa.Column("phone", sa.String(length=32), nullable=True),
++            # Commission rate in basis points: 1500 = 15.00%. Integer math only,
++            # so no floating-point rounding ever reaches a money value.
++            sa.Column("commission_bps", sa.Integer(), nullable=False, server_default="0"),
++            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
++            sa.Column("note", sa.String(length=500), nullable=True),
++            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
++            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
++            sa.UniqueConstraint("public_id", name="uq_referral_marketer_public_id"),
++            sa.CheckConstraint("commission_bps >= 0 AND commission_bps <= 10000", name="ck_commission_bps_range"),
++        )
++        op.create_index("idx_referral_marketer_user", "referral_marketers", ["user_id"])
++        op.create_index("idx_referral_marketer_active", "referral_marketers", ["is_active"])
++
++    if "referral_codes" not in existing:
++        op.create_table(
++            "referral_codes",
++            sa.Column("id", sa.Integer(), primary_key=True),
++            sa.Column("code", sa.String(length=64), nullable=False),
++            sa.Column("marketer_id", sa.Integer(), sa.ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=False),
++            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
++            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
++            sa.UniqueConstraint("code", name="uq_referral_codes_code"),
++        )
++        op.create_index("idx_referral_codes_marketer", "referral_codes", ["marketer_id"])
++
++    # Owner snapshot on the order, frozen at the same moment the code is frozen.
++    _add_if_missing("orders", sa.Column("marketer_id_snapshot", sa.Integer(), nullable=True))
++    _add_if_missing("orders", sa.Column("commission_bps_snapshot", sa.Integer(), nullable=True))
++
++    if "referral_commissions" not in existing:
++        op.create_table(
++            "referral_commissions",
++            sa.Column("id", sa.Integer(), primary_key=True),
++            # One commission per order: the unique constraint is the idempotency guard.
++            sa.Column("order_id", sa.Integer(), sa.ForeignKey("orders.id", ondelete="CASCADE"), nullable=False),
++            sa.Column("marketer_id", sa.Integer(), sa.ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=False),
++            sa.Column("referral_code", sa.String(length=64), nullable=False),
++            sa.Column("gross_amount_minor", sa.BigInteger(), nullable=False),
++            sa.Column("commission_bps", sa.Integer(), nullable=False),
++            # Integer arithmetic only: gross * bps / 10000, truncated down.
++            sa.Column("commission_amount_minor", sa.BigInteger(), nullable=False),
++            sa.Column("currency", sa.String(length=8), nullable=False),
++            sa.Column("status", sa.String(length=16), nullable=False, server_default="accrued"),
++            sa.Column("settled_at", sa.DateTime(timezone=True), nullable=True),
++            sa.Column("note", sa.String(length=500), nullable=True),
++            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
++            sa.UniqueConstraint("order_id", name="uq_referral_commission_order"),
++        )
++        op.create_index("idx_referral_commission_marketer", "referral_commissions", ["marketer_id"])
++        op.create_index("idx_referral_commission_status", "referral_commissions", ["status"])
++
++
++def downgrade() -> None:
++    tables = _tables()
++    if "referral_commissions" in tables:
++        op.drop_index("idx_referral_commission_status", table_name="referral_commissions")
++        op.drop_index("idx_referral_commission_marketer", table_name="referral_commissions")
++        op.drop_table("referral_commissions")
++    for column in ("commission_bps_snapshot", "marketer_id_snapshot"):
++        if column in _columns("orders"):
++            op.drop_column("orders", column)
++    if "referral_codes" in tables:
++        op.drop_index("idx_referral_codes_marketer", table_name="referral_codes")
++        op.drop_table("referral_codes")
++    if "referral_marketers" in tables:
++        op.drop_index("idx_referral_marketer_active", table_name="referral_marketers")
++        op.drop_index("idx_referral_marketer_user", table_name="referral_marketers")
++        op.drop_table("referral_marketers")
+diff --git a/alembic/versions/0014_signup_attribution.py b/alembic/versions/0014_signup_attribution.py
+new file mode 100644
+index 0000000..efd4cb3
+--- /dev/null
++++ b/alembic/versions/0014_signup_attribution.py
+@@ -0,0 +1,75 @@
++"""Signup attribution for referral codes.
++
++Why this table exists
++---------------------
++``orders.referral_code_snapshot`` answers "who bought with this code". It cannot
++answer "how many people did this marketer bring", because most signups never
++buy. This table records the attribution at the moment an account is created, so
++the count is complete and independent of purchases.
++
++Rules
++  * ``user_id`` is unique: an account is attributed exactly once, so re-applying
++    a different code can never inflate a marketer's head-count.
++  * A code that is unknown or inactive at signup is simply not recorded. Signup
++    is never blocked. The rejection reason is kept so an operator can explain a
++    marketer's "missing" person.
++  * Redeemed is self-reported by the marketer; confirmed means the person has a
++    paid order carrying that marketer's snapshot.
++
++Revision: 0014_signup_attribution
++"""
++from alembic import op
++import sqlalchemy as sa
++
++revision = "0014_signup_attribution"
++down_revision = "0013_referral_ownership"
++branch_labels = None
++depends_on = None
++
++
++def _tables():
++    try:
++        return set(sa.inspect(op.get_bind()).get_table_names())
++    except Exception:
++        return set()
++
++
++def upgrade() -> None:
++    if "referral_signups" in _tables():
++        return
++    op.create_table(
++        "referral_signups",
++        sa.Column("id", sa.Integer(), primary_key=True),
++        # One attribution per account, ever.
++        sa.Column("user_id", sa.BigInteger(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True),
++        # Immutable copy of the code as it was at signup.
++        sa.Column("code", sa.String(length=64), nullable=False),
++        # Owner snapshot: survives the code later moving to another marketer.
++        sa.Column("marketer_id", sa.Integer(), sa.ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=True),
++        sa.Column("source", sa.String(length=32), nullable=False, server_default="register"),
++        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
++    )
++    op.create_index("idx_referral_signups_marketer", "referral_signups", ["marketer_id"])
++    op.create_index("idx_referral_signups_code", "referral_signups", ["code"])
++    op.create_index("idx_referral_signups_created", "referral_signups", ["created_at"])
++
++    # Why a signup carried no attribution (unknown/disabled code, typo, ...).
++    # Kept outside the attribution table so a rejected attempt can never be
++    # mistaken for a successful referral.
++    with op.batch_alter_table("phone_verifications") as batch:
++        batch.add_column(sa.Column("referral_code_input", sa.String(length=64), nullable=True))
++        batch.add_column(sa.Column("referral_rejected_reason", sa.String(length=64), nullable=True))
++
++
++def downgrade() -> None:
++    if "referral_signups" in _tables():
++        op.drop_index("idx_referral_signups_created", table_name="referral_signups")
++        op.drop_index("idx_referral_signups_code", table_name="referral_signups")
++        op.drop_index("idx_referral_signups_marketer", table_name="referral_signups")
++        op.drop_table("referral_signups")
++    with op.batch_alter_table("phone_verifications") as batch:
++        for column in ("referral_rejected_reason", "referral_code_input"):
++            try:
++                batch.drop_column(column)
++            except Exception:
++                pass
+diff --git a/alembic/versions/0015_self_service_codes.py b/alembic/versions/0015_self_service_codes.py
+new file mode 100644
+index 0000000..04f4492
+--- /dev/null
++++ b/alembic/versions/0015_self_service_codes.py
+@@ -0,0 +1,60 @@
++"""Every user can own a referral code and share it.
++
++Previously a marketer row was created only by an admin, so an ordinary user had
++no way to hand out a code. This revision adds the two things needed for
++self-service without weakening the admin path:
++
++* ``referral_marketers.self_service`` separates "user minted their own code"
++  from "admin onboarded this marketer", so the admin report can show which is
++  which and the admin still controls commission rates for real partners.
++* ``referral_codes.created_by_user_id`` records who minted the code.
++
++No commission rate is granted implicitly: a self-service owner starts at 0 bps,
++so minting a code can never create a payout obligation by itself.
++
++Revision: 0015_self_service_codes
++"""
++from alembic import op
++import sqlalchemy as sa
++
++revision = "0015_self_service_codes"
++down_revision = "0014_signup_attribution"
++branch_labels = None
++depends_on = None
++
++
++def _columns(table):
++    try:
++        return {c["name"] for c in sa.inspect(op.get_bind()).get_columns(table)}
++    except Exception:
++        return set()
++
++
++def upgrade() -> None:
++    if "self_service" not in _columns("referral_marketers"):
++        op.add_column(
++            "referral_marketers",
++            sa.Column("self_service", sa.Boolean(), nullable=False, server_default=sa.false()),
++        )
++    if "created_by_user_id" not in _columns("referral_codes"):
++        op.add_column("referral_codes", sa.Column("created_by_user_id", sa.BigInteger(), nullable=True))
++
++    # One personal code per account: makes "generate my code" idempotent and
++    # stops a user from minting a stable of codes to farm their own signups.
++    op.execute(
++        sa.text(
++            """
++            CREATE UNIQUE INDEX IF NOT EXISTS uq_referral_marketer_self_service_user
++            ON referral_marketers (user_id)
++            WHERE self_service = true
++            """
++        )
++    )
++
++
++def downgrade() -> None:
++    op.execute(sa.text("DROP INDEX IF EXISTS uq_referral_marketer_self_service_user"))
++    if "created_by_user_id" in _columns("referral_codes"):
++        op.drop_column("referral_codes", "created_by_user_id")
++    if "self_service" in _columns("referral_marketers"):
++        op.drop_column("referral_marketers", "self_service")
+diff --git a/billing_credit_service.py b/billing_credit_service.py
+index fdcd0e8..0d03a9b 100644
+--- a/billing_credit_service.py
++++ b/billing_credit_service.py
+@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
+ 
+ from billing_models import Entitlement, Order, Payment, PaymentEvent, PremiumPlan, User
+ from referral_service import snapshot_order_referral
++from referral_commission_service import accrue_commission, snapshot_order_owner
+ 
+ FREE_PLAN_CODE = "free_1_test"
+ PACK_3_TESTS_CODE = "pack_3_tests"
+@@ -212,6 +213,11 @@ def verify_and_grant(
+ 
+     paid_at = utcnow()
+     snapshot_order_referral(db, order, paid_at=paid_at)
++    # Freeze the code's owner and rate onto this order at the same instant the
++    # code itself is frozen, so a later ownership change cannot move past
++    # commission. The accrual row is then written from that snapshot only.
++    snapshot_order_owner(db, order, order.referral_code_snapshot)
++    accrue_commission(db, order)
+ 
+     payment.status = "verified"
+     payment.provider_transaction_id = str(verification.get("transaction_id")) if verification.get("transaction_id") else None
+diff --git a/billing_models.py b/billing_models.py
+index c93a02d..889e05f 100644
+--- a/billing_models.py
++++ b/billing_models.py
+@@ -64,6 +64,8 @@ class PhoneVerification(Base):
+     expires_at = Column(DateTime(timezone=True), nullable=False)
+     verified_at = Column(DateTime(timezone=True), nullable=True)
+     request_ip = Column(String(45), nullable=True)
++    referral_code_input = Column(String(64), nullable=True)
++    referral_rejected_reason = Column(String(64), nullable=True)
+     created_at = Column(DateTime(timezone=True), server_default=func.now())
+ 
+ 
+@@ -99,6 +101,8 @@ class Order(Base):
+     created_at = Column(DateTime(timezone=True), server_default=func.now())
+     paid_at = Column(DateTime(timezone=True), nullable=True)
+     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
++    marketer_id_snapshot = Column(Integer, nullable=True)
++    commission_bps_snapshot = Column(Integer, nullable=True)
+     referral_code_snapshot = Column(String(64), nullable=True)
+     referral_label_snapshot = Column(String(200), nullable=True)
+     referral_snapshot_at = Column(DateTime(timezone=True), nullable=True)
+@@ -205,4 +209,86 @@ class JourneyCreditConsumption(Base):
+     entitlement_id = Column(BigInteger, ForeignKey("entitlements.id", ondelete="SET NULL"), nullable=True)
+     created_at = Column(DateTime(timezone=True), server_default=func.now())
+     user = relationship("User")
+-    entitlement = relationship("Entitlement")
+\ No newline at end of file
++    entitlement = relationship("Entitlement")
++
++class ReferralMarketer(Base):
++    """Owner of one or more referral codes.
++
++    May be an existing account (``user_id`` set) or an outside person with no
++    account. Commission is expressed in basis points so all money math stays
++    integer-only.
++    """
++
++    __tablename__ = "referral_marketers"
++    __table_args__ = (
++        Index("idx_referral_marketer_user", "user_id"),
++        Index("idx_referral_marketer_active", "is_active"),
++    )
++    id = Column(Integer, primary_key=True)
++    public_id = Column(String(40), nullable=False, unique=True)
++    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
++    name = Column(String(200), nullable=False)
++    phone = Column(String(32), nullable=True)
++    commission_bps = Column(Integer, nullable=False, default=0, server_default="0")
++    is_active = Column(Boolean, nullable=False, default=True, server_default=text("true"))
++    note = Column(String(500), nullable=True)
++    # True when the owner minted this themselves rather than being onboarded.
++    self_service = Column(Boolean, nullable=False, default=False, server_default=text("false"))
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
++
++
++class ReferralCode(Base):
++    """Registry row binding a public code to its marketer."""
++
++    __tablename__ = "referral_codes"
++    __table_args__ = (Index("idx_referral_codes_marketer", "marketer_id"),)
++    id = Column(Integer, primary_key=True)
++    code = Column(String(64), nullable=False, unique=True)
++    marketer_id = Column(Integer, ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=False)
++    is_active = Column(Boolean, nullable=False, default=True, server_default=text("true"))
++    created_by_user_id = Column(BigInteger, nullable=True)
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++
++
++class ReferralCommission(Base):
++    """Accrued commission for exactly one paid order (never a payment)."""
++
++    __tablename__ = "referral_commissions"
++    __table_args__ = (
++        Index("idx_referral_commission_marketer", "marketer_id"),
++        Index("idx_referral_commission_status", "status"),
++    )
++    id = Column(Integer, primary_key=True)
++    order_id = Column(BigInteger, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, unique=True)
++    marketer_id = Column(Integer, ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=False)
++    referral_code = Column(String(64), nullable=False)
++    gross_amount_minor = Column(BigInteger, nullable=False)
++    commission_bps = Column(Integer, nullable=False)
++    commission_amount_minor = Column(BigInteger, nullable=False)
++    currency = Column(String(8), nullable=False)
++    status = Column(String(16), nullable=False, default="accrued", server_default="accrued")
++    settled_at = Column(DateTime(timezone=True), nullable=True)
++    note = Column(String(500), nullable=True)
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
++
++
++class ReferralSignup(Base):
++    """One immutable attribution row per account, written at signup.
++
++    Independent of purchases: this is the "how many people did this marketer
++    bring" counter. ``user_id`` is unique, so it can never double count.
++    """
++
++    __tablename__ = "referral_signups"
++    __table_args__ = (
++        Index("idx_referral_signups_marketer", "marketer_id"),
++        Index("idx_referral_signups_code", "code"),
++        Index("idx_referral_signups_created", "created_at"),
++    )
++    id = Column(Integer, primary_key=True)
++    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
++    code = Column(String(64), nullable=False)
++    marketer_id = Column(Integer, ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=True)
++    source = Column(String(32), nullable=False, default="register", server_default="register")
++    created_at = Column(DateTime(timezone=True), server_default=func.now())
+diff --git a/commercial_api.py b/commercial_api.py
+index e0fce59..3f3f193 100644
+--- a/commercial_api.py
++++ b/commercial_api.py
+@@ -29,6 +29,7 @@ from password_reset_service import attach_router
+ from phone_verification_service import request_registration_otp, verify_registration_otp
+ from production_billing_guard import assert_production_billing_configuration
+ from referral_service import set_user_referral_code
++from referral_commission_service import my_referral_code
+ 
+ router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
+ attach_router(router)
+@@ -40,6 +41,8 @@ class RegisterRequest(BaseModel):
+     name: str = Field(min_length=2, max_length=200)
+     phone: str = Field(min_length=3, max_length=32)
+     password: str = Field(min_length=8, max_length=256)
++    # Optional marketer code. Unknown/inactive codes are ignored, never fatal.
++    referral_code: str | None = Field(default=None, max_length=64)
+ 
+ 
+ class VerifyRegistrationRequest(BaseModel):
+@@ -179,6 +182,7 @@ def register(
+             phone=req.phone,
+             password=req.password,
+             request_ip=request_ip,
++            referral_code=req.referral_code,
+         )
+         db.commit()
+         return result
+@@ -309,7 +313,7 @@ def update_my_referral_code(
+ @router.get("/runtime/quota-health")
+ def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
+     """Non-sensitive runtime check for deployment and migration verification."""
+-    expected_revision = "0011_otp_request_ip"
++    expected_revision = "0015_self_service_codes"
+     try:
+         ledger_table_exists = bool(db.bind and inspect(db.bind).has_table("journey_credit_consumptions"))
+     except Exception:
+@@ -537,4 +541,23 @@ def billing_callback(
+         raise
+     except (ValueError, RuntimeError) as exc:
+         db.rollback()
+-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+\ No newline at end of file
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++@router.get("/me/referral-code")
++def get_my_referral_code(
++    user: User = Depends(_current_user),
++    db: Session = Depends(get_db),
++) -> dict[str, object]:
++    """Return the caller's own shareable code, creating it on first call.
++
++    Every signed-in user can hand a code to friends, the same way exchange
++    invites work. This endpoint is additive: it does not change any existing
++    route or the attribution rules.
++    """
++    try:
++        result = my_referral_code(db, user)
++        db.commit()
++        return result
++    except ValueError as exc:
++        db.rollback()
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
+diff --git a/docs/admin_referrals.html b/docs/admin_referrals.html
+new file mode 100644
+index 0000000..03e0ae8
+--- /dev/null
++++ b/docs/admin_referrals.html
+@@ -0,0 +1,290 @@
++<!DOCTYPE html>
++<html lang="fa" dir="rtl">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width,initial-scale=1.0">
++<meta name="robots" content="noindex,nofollow">
++<title>بازاریابان و پورسانت | اسب سیاه</title>
++<style>
++:root{--bg:#0a0a0f;--card:#161622;--line:rgba(212,175,55,.18);--gold:#f0c040;--dim:#b0a080;--ok:#8fe0a8;--bad:#ff8f8f}
++*{box-sizing:border-box}
++body{margin:0;background:var(--bg);color:#eee;font-family:Vazirmatn,system-ui,sans-serif;padding:16px;line-height:1.8}
++.wrap{max-width:1100px;margin:auto}
++.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
++h1{margin:0 0 4px;color:var(--gold);font-size:1.3rem}
++h2{font-size:1rem;margin:0 0 12px;color:var(--gold)}
++.sub{color:var(--dim);font-size:.85rem}
++button{border:0;border-radius:10px;padding:9px 14px;font:inherit;cursor:pointer;background:var(--gold);color:#0a0a0f;font-weight:700}
++button.ghost{background:#29293a;color:#eee;border:1px solid var(--line)}
++button:disabled{opacity:.5;cursor:not-allowed}
++input,select{background:#10101a;border:1px solid #29293a;border-radius:10px;color:#eee;padding:9px 11px;font:inherit;width:100%}
++input:focus,select:focus{outline:2px solid rgba(240,192,64,.4);outline-offset:1px}
++.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
++.field{display:flex;flex-direction:column;gap:5px;font-size:.82rem;color:var(--dim)}
++.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
++.stat{background:#10101a;border:1px solid #29293a;border-radius:12px;padding:12px;text-align:center}
++.stat .n{font-size:1.4rem;font-weight:800;color:var(--gold)}
++.stat .l{font-size:.75rem;color:var(--dim)}
++table{width:100%;border-collapse:collapse;font-size:.84rem}
++th,td{text-align:right;padding:9px 6px;border-bottom:1px solid #23233a}
++th{color:var(--dim);font-weight:600;font-size:.78rem}
++tbody tr:hover{background:rgba(240,192,64,.04)}
++.mono{direction:ltr;text-align:left;font-family:ui-monospace,monospace;letter-spacing:.5px}
++.code-chip{display:inline-block;background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.35);color:var(--gold);border-radius:8px;padding:2px 8px;font-family:ui-monospace,monospace;direction:ltr}
++.err{color:var(--bad);min-height:1.3em;font-size:.85rem}
++.ok{color:var(--ok);font-size:.85rem}
++.hide{display:none!important}
++.empty{color:var(--dim);text-align:center;padding:16px;font-size:.85rem}
++.tag{font-size:.7rem;padding:2px 7px;border-radius:999px;border:1px solid}
++.tag.on{color:var(--ok);border-color:rgba(143,224,168,.4)}
++.tag.off{color:var(--bad);border-color:rgba(255,143,143,.35)}
++.tag.self{color:#8fb8ff;border-color:rgba(143,184,255,.4)}
++.copy{border:0;background:transparent;color:var(--gold);cursor:pointer;font:inherit;padding:0 4px}
++</style>
++</head>
++<body>
++<div class="wrap">
++
++  <section class="panel">
++    <h1>بازاریابان و پورسانت</h1>
++    <div id="who" class="sub">در حال بررسی دسترسی…</div>
++    <div class="row" style="margin-top:10px">
++      <button type="button" class="ghost" id="logout">خروج</button>
++      <button type="button" class="ghost" id="refresh">به‌روزرسانی</button>
++    </div>
++    <div id="error" class="err"></div>
++  </section>
++
++  <section id="app" class="hide">
++
++    <section class="panel">
++      <h2>خلاصه</h2>
++      <div class="grid">
++        <div class="stat"><div class="n" id="t-marketers">۰</div><div class="l">بازاریاب</div></div>
++        <div class="stat"><div class="n" id="t-signups">۰</div><div class="l">ثبت‌نام با کد</div></div>
++        <div class="stat"><div class="n" id="t-confirmed">۰</div><div class="l">تبدیل به خرید</div></div>
++      </div>
++    </section>
++
++    <section class="panel">
++      <h2>افزودن بازاریاب</h2>
++      <div class="grid">
++        <label class="field">نام<input id="m-name" placeholder="نام مشاور"></label>
++        <label class="field">موبایل (اختیاری)<input id="m-phone" dir="ltr" inputmode="numeric" placeholder="09xxxxxxxxx"></label>
++        <label class="field">درصد پورسانت<input id="m-rate" dir="ltr" inputmode="decimal" type="number" min="0" max="100" step="0.01" placeholder="15"></label>
++        <label class="field">کد (خالی = خودکار)<input id="m-code" class="mono" maxlength="32" placeholder="AHMAD2026"></label>
++      </div>
++      <div class="row" style="margin-top:10px">
++        <button type="button" id="add-marketer">افزودن</button>
++        <span id="add-msg" class="ok"></span>
++      </div>
++      <div class="sub" style="margin-top:8px">درصد را می‌توانید بعداً تغییر دهید؛ پورسانت فروش‌های قبلی جابه‌جا نمی‌شود.</div>
++    </section>
++
++    <section class="panel">
++      <h2>بازاریابان</h2>
++      <div style="overflow:auto">
++        <table>
++          <thead><tr>
++            <th>نام</th><th>موبایل</th><th>درصد</th><th>ثبت‌نام</th><th>خرید</th>
++            <th>طلب (ریال)</th><th>تسویه‌شده</th><th></th>
++          </tr></thead>
++          <tbody id="marketers"></tbody>
++        </table>
++      </div>
++      <div id="mk-empty" class="empty hide">هنوز بازاریابی ثبت نشده است.</div>
++    </section>
++
++    <section class="panel hide" id="detail-panel">
++      <h2 id="detail-title">افراد آورده‌شده</h2>
++      <div style="overflow:auto">
++        <table>
++          <thead><tr><th>نام</th><th>موبایل</th><th>کد</th><th>تاریخ</th><th>خرید</th><th>وضعیت</th></tr></thead>
++          <tbody id="detail-rows"></tbody>
++        </table>
++      </div>
++      <div class="row" style="margin-top:10px"><button type="button" class="ghost" id="detail-close">بستن</button></div>
++    </section>
++
++    <section class="panel">
++      <h2>کدهای ساخته‌شده</h2>
++      <div style="overflow:auto">
++        <table>
++          <thead><tr><th>کد</th><th>مالک</th><th>درصد</th><th>ثبت‌نام</th><th>وضعیت</th></tr></thead>
++          <tbody id="codes"></tbody>
++        </table>
++      </div>
++      <div class="sub" style="margin-top:8px">کدهای «خودساخته» را خود کاربر از پروفایلش ساخته و به دوستانش داده است.</div>
++    </section>
++
++  </section>
++</div>
++
++<script>
++(function () {
++  'use strict';
++
++  var API = 'https://api.asbe-siah.ir';
++  var auth = null;
++  try { auth = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
++
++  function el(id) { return document.getElementById(id); }
++  function toFa(n) { return String(n == null ? '' : n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; }); }
++  function money(n) { return toFa(String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, '٬')); }
++  function text(v) {
++    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
++      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
++    });
++  }
++  function token() { return (auth && auth.token) || ''; }
++
++  function req(path, opts) {
++    opts = opts || {};
++    opts.headers = opts.headers || {};
++    opts.headers['Authorization'] = 'Bearer ' + token();
++    if (opts.body) opts.headers['Content-Type'] = 'application/json';
++    return fetch(API + path, opts).then(function (r) {
++      return r.text().then(function (raw) {
++        var body = null;
++        try { body = raw ? JSON.parse(raw) : null; } catch (_) {}
++        if (!r.ok) {
++          var msg = (body && (body.detail || body.message)) || ('خطا ' + r.status);
++          if (typeof msg !== 'string') msg = JSON.stringify(msg);
++          throw new Error(msg);
++        }
++        return body;
++      });
++    });
++  }
++
++  function fail(msg) { el('error').textContent = msg || ''; }
++
++  el('logout').onclick = function () {
++    try {
++      localStorage.removeItem('dh_auth_v1');
++      localStorage.removeItem('dh_local_user_v1');
++      localStorage.removeItem('dh_local_quota_v1');
++    } catch (_) {}
++    window.location.replace('index.html?logout=1');
++  };
++
++  function loadAll() {
++    fail('');
++    return Promise.all([
++      req('/api/v1/admin/marketers/report'),
++      req('/api/v1/admin/referrals/report')
++    ]).then(function (res) {
++      var report = res[0] || {};
++      var totals = report.totals || {};
++      el('t-marketers').textContent = toFa(totals.marketers || 0);
++      el('t-signups').textContent = toFa(totals.signups || 0);
++      el('t-confirmed').textContent = toFa(totals.confirmed_buyers || 0);
++      paintMarketers(report.marketers || []);
++    }).catch(function (e) { fail(e.message); });
++  }
++
++  function sumCurrencies(list, key) {
++    var total = 0;
++    (list || []).forEach(function (c) { total += Number(c[key] || 0); });
++    return total;
++  }
++
++  function paintMarketers(rows) {
++    var body = el('marketers');
++    body.innerHTML = '';
++    el('mk-empty').classList.toggle('hide', rows.length > 0);
++    rows.forEach(function (m) {
++      var tr = document.createElement('tr');
++      var rate = m.commission_bps ? toFa(m.commission_percent) + '٪' : '—';
++      tr.innerHTML =
++        '<td>' + text(m.name) + (m.self_service ? ' <span class="tag self">خودساخته</span>' : '') + '</td>' +
++        '<td class="mono">' + text(m.phone || '—') + '</td>' +
++        '<td>' + rate + '</td>' +
++        '<td>' + toFa(m.signups) + '</td>' +
++        '<td>' + toFa(m.confirmed_buyers) + '</td>' +
++        '<td>' + money(sumCurrencies(m.currencies, 'accrued_amount_minor')) + '</td>' +
++        '<td>' + money(sumCurrencies(m.currencies, 'settled_amount_minor')) + '</td>' +
++        '<td></td>';
++      var btn = document.createElement('button');
++      btn.type = 'button';
++      btn.className = 'ghost';
++      btn.textContent = 'افراد';
++      btn.onclick = function () { showDetail(m); };
++      tr.lastChild.appendChild(btn);
++      body.appendChild(tr);
++    });
++  }
++
++  function showDetail(m) {
++    el('detail-panel').classList.remove('hide');
++    el('detail-title').textContent = 'افراد آورده‌شده توسط ' + m.name;
++    el('detail-rows').innerHTML = '<tr><td colspan="6" class="empty">در حال بارگذاری…</td></tr>';
++    req('/api/v1/admin/marketers/' + m.marketer_id + '/signups').then(function (d) {
++      var people = d.people || [];
++      if (!people.length) {
++        el('detail-rows').innerHTML = '<tr><td colspan="6" class="empty">هنوز کسی با کد این بازاریاب ثبت‌نام نکرده است.</td></tr>';
++        return;
++      }
++      el('detail-rows').innerHTML = people.map(function (p) {
++        return '<tr>' +
++          '<td>' + text(p.name) + '</td>' +
++          '<td class="mono">' + text(p.phone) + '</td>' +
++          '<td><span class="code-chip">' + text(p.code) + '</span></td>' +
++          '<td>' + text(p.joined_at ? p.joined_at.slice(0, 10) : '—') + '</td>' +
++          '<td>' + toFa(p.paid_orders) + '</td>' +
++          '<td>' + (p.confirmed ? '<span class="tag on">خرید کرده</span>' : '<span class="tag off">فقط ثبت‌نام</span>') + '</td>' +
++          '</tr>';
++      }).join('');
++    }).catch(function (e) {
++      el('detail-rows').innerHTML = '<tr><td colspan="6" class="err">' + text(e.message) + '</td></tr>';
++    });
++  }
++
++  el('detail-close').onclick = function () { el('detail-panel').classList.add('hide'); };
++  el('refresh').onclick = loadAll;
++
++  el('add-marketer').onclick = function () {
++    var name = el('m-name').value.trim();
++    var phone = el('m-phone').value.trim();
++    var rate = parseFloat(el('m-rate').value || '0');
++    var code = el('m-code').value.trim().toUpperCase();
++    el('add-msg').textContent = '';
++    fail('');
++    if (name.length < 2) { fail('نام بازاریاب را وارد کنید.'); return; }
++    if (!(rate >= 0 && rate <= 100)) { fail('درصد باید بین ۰ و ۱۰۰ باشد.'); return; }
++
++    var btn = el('add-marketer');
++    btn.disabled = true;
++    req('/api/v1/admin/marketers', {
++      method: 'POST',
++      body: JSON.stringify({
++        name: name,
++        phone: phone || null,
++        commission_bps: Math.round(rate * 100)
++      })
++    }).then(function (mk) {
++      if (!code) return null;
++      return req('/api/v1/admin/marketers/codes', {
++        method: 'POST',
++        body: JSON.stringify({ marketer_id: mk.id, code: code })
++      });
++    }).then(function () {
++      el('add-msg').textContent = 'ثبت شد.';
++      el('m-name').value = ''; el('m-phone').value = ''; el('m-rate').value = ''; el('m-code').value = '';
++      return loadAll();
++    }).catch(function (e) {
++      fail(e.message);
++    }).then(function () { btn.disabled = false; });
++  };
++
++  req('/api/v1/me').then(function (me) {
++    var role = me && me.user && me.user.role;
++    if (role !== 'admin' && role !== 'support') throw new Error('دسترسی این صفحه برای این حساب مجاز نیست.');
++    el('who').textContent = 'کاربر: ' + ((me.user && me.user.name) || '—') + ' · نقش: ' + role;
++    el('app').classList.remove('hide');
++    loadAll();
++  }).catch(function (e) { fail(e.message); });
++})();
++</script>
++</body>
++</html>
+diff --git a/docs/auth_api_client.js b/docs/auth_api_client.js
+index 565fda5..52a3030 100644
+--- a/docs/auth_api_client.js
++++ b/docs/auth_api_client.js
+@@ -112,10 +112,14 @@
+     getUser() { const s = load(); return s && s.user ? s.user : null; },
+     logout() { clear(); },
+ 
+-    async register(name, phone, password) {
++    async register(name, phone, password, referralCode) {
++      const payload = { name, phone, password };
++      const code = String(referralCode == null ? '' : referralCode).trim();
++      // Optional: an unknown or blank code never blocks registration.
++      if (code) payload.referral_code = code;
+       return req('/api/v1/auth/register', {
+         method: 'POST',
+-        body: JSON.stringify({ name, phone, password })
++        body: JSON.stringify(payload)
+       });
+     },
+ 
+@@ -195,6 +199,26 @@
+       });
+     },
+ 
++    // Optional referral attribution. The backend treats empty/invalid codes as
++    // "direct" and always returns purchase_allowed=true, so this can never
++    // block a purchase. A 409 just means attribution is already locked.
++    // The caller's own shareable code. Created server-side on first call, so
++    // every signed-in user can hand a code to friends like an exchange invite.
++    async myReferralCode() {
++      return req('/api/v1/me/referral-code', { method: 'GET' });
++    },
++
++    async setReferralCode(code) {
++      const value = String(code == null ? '' : code).trim();
++      if (value.length > 64) {
++        throw new Error('کد معرف نباید بیشتر از ۶۴ نویسه باشد.');
++      }
++      return req('/api/v1/me/referral-code', {
++        method: 'PUT',
++        body: JSON.stringify({ code: value })
++      });
++    },
++
+     async createPayment() {
+       return req('/api/v1/billing/create-payment', { method: 'POST', body: '{}' });
+     }
+diff --git a/docs/commercial_ui.js b/docs/commercial_ui.js
+index 72688c5..6ac16de 100644
+--- a/docs/commercial_ui.js
++++ b/docs/commercial_ui.js
+@@ -11,6 +11,7 @@
+ 
+   function el(id) { return document.getElementById(id); }
+   function text(v) { return String(v == null ? '' : v); }
++  function toFa(n) { return String(n == null ? '' : n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; }); }
+   function digits(v) {
+     return text(v).replace(/[۰-۹]/g, function (d) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); });
+   }
+@@ -160,6 +161,7 @@
+         '<h2 class="dh-commercial-title">' + title + '</h2>' +
+         '<p class="dh-commercial-sub">' + (mode === 'login' ? 'با شماره موبایل و رمز عبور وارد حساب خود شوید.' : 'نام، موبایل و رمز را وارد کنید؛ سپس کد پیامکی کاوه‌نگار را تأیید کنید.') + '</p>' +
+         (mode === 'register' ? '<input id="dh-c-name" class="dh-commercial-input" placeholder="نام و نام خانوادگی" autocomplete="name">' : '') +
++        (mode === 'register' ? '<input id="dh-c-ref" class="dh-commercial-input" style="direction:ltr;text-align:left;" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="کد معرف (اختیاری)">' : '') +
+         '<input id="dh-c-phone" class="dh-commercial-input" inputmode="numeric" dir="ltr" placeholder="09xxxxxxxxx" autocomplete="tel">' +
+         '<input id="dh-c-pass" class="dh-commercial-input" type="password" placeholder="رمز عبور (حداقل ۸ کاراکتر)" autocomplete="current-password">' +
+         '<div id="dh-c-err" class="dh-commercial-error"></div>' +
+@@ -193,7 +195,9 @@
+             closeModal();
+             await continueAfterAuth();
+           } else {
+-            var registration = await global.DHAuth.register(name, phone, pass);
++            var refInput = el('dh-c-ref');
++            var refCode = refInput ? String(refInput.value || '').trim() : '';
++            var registration = await global.DHAuth.register(name, phone, pass, refCode);
+             if (!registration || !registration.challenge_id) throw new Error('پاسخ OTP ثبت‌نام معتبر نیست.');
+             closeModal();
+             showOtpModal({ phone: phone, challenge_id: registration.challenge_id, expires_in: registration.expires_in });
+@@ -222,6 +226,64 @@
+     return false;
+   }
+ 
++  function openInviteModal() {
++    if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
++      showAuthModal('login');
++      return;
++    }
++    if (typeof global.DHAuth.myReferralCode !== 'function') {
++      showModal('<h2 class="dh-commercial-title">کد معرف شما</h2><p class="dh-commercial-sub">این قابلیت هنوز فعال نشده است.</p>');
++      return;
++    }
++    showModal(
++      '<h2 class="dh-commercial-title">کد معرف شما</h2>' +
++      '<p class="dh-commercial-sub">این کد را به دوستانت بده. هر کسی با این کد ثبت‌نام کند، به نام تو ثبت می‌شود.</p>' +
++      '<div id="dh-invite-body" class="dh-commercial-sub">در حال دریافت کد…</div>' +
++      '<div class="dh-commercial-actions"><button type="button" class="btn" id="dh-invite-close">بستن</button></div>'
++    );
++    el('dh-invite-close').onclick = closeModal;
++    global.DHAuth.myReferralCode().then(function (data) {
++      var body = el('dh-invite-body');
++      if (!body) return;
++      if (!data || !data.code) {
++        body.textContent = 'کد شما در دسترس نیست.';
++        return;
++      }
++      body.innerHTML =
++        '<div style="margin:10px 0;text-align:center;">' +
++          '<span id="dh-invite-code" style="display:inline-block;direction:ltr;font-family:ui-monospace,monospace;font-size:1.4rem;letter-spacing:2px;color:#f0c040;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.35);border-radius:10px;padding:8px 16px;">' +
++            text(data.code) +
++          '</span>' +
++        '</div>' +
++        '<div style="text-align:center;margin-bottom:8px;">تاکنون ' + toFa(data.signups || 0) + ' نفر با کد شما ثبت‌نام کرده‌اند.</div>' +
++        '<div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-invite-copy">کپی کد</button></div>';
++      var copyBtn = el('dh-invite-copy');
++      if (copyBtn) {
++        copyBtn.onclick = function () {
++          var done = function () { copyBtn.textContent = 'کپی شد ✓'; };
++          try {
++            if (global.navigator && global.navigator.clipboard && global.navigator.clipboard.writeText) {
++              global.navigator.clipboard.writeText(data.code).then(done, done);
++              return;
++            }
++          } catch (_) {}
++          try {
++            var input = el('dh-invite-code');
++            var range = document.createRange();
++            range.selectNodeContents(input);
++            var sel = global.getSelection();
++            sel.removeAllRanges(); sel.addRange(range);
++            document.execCommand('copy');
++            done();
++          } catch (_) {}
++        };
++      }
++    }).catch(function (e) {
++      var body = el('dh-invite-body');
++      if (body) body.textContent = (e && e.message) ? e.message : 'دریافت کد ناموفق بود.';
++    });
++  }
++
+   function openPurchaseModal() {
+     if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
+       showAuthModal('login');
+@@ -230,6 +292,12 @@
+     showModal(
+       '<h2 class="dh-commercial-title">خرید بسته ۳ تست</h2>' +
+       '<div class="dh-commercial-pack"><div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>' +
++      '<div class="dh-referral-entry" style="margin:12px 0 8px;text-align:right;">' +
++        '<label class="dh-commercial-label" for="dh-buy-referral-code">کد معرف (اختیاری)</label>' +
++        '<input id="dh-buy-referral-code" class="dh-commercial-input dh-referral-input" style="user-select:text;direction:ltr;text-align:left;" type="text" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="کد معرف را وارد کنید" aria-describedby="dh-buy-referral-hint dh-buy-referral-message">' +
++        '<p id="dh-buy-referral-hint" style="margin:5px 2px 0;color:#9f957f;font-size:.76rem;line-height:1.7;">کد ندارید؟ این قسمت را خالی بگذارید و ادامه دهید.</p>' +
++        '<div id="dh-buy-referral-message" role="status" aria-live="polite" hidden style="margin-top:7px;font-size:.8rem;line-height:1.8;text-align:right;"></div>' +
++      '</div>' +
+       '<p class="dh-commercial-sub">مبلغ و تعداد اعتبار فقط از سمت سرور تعیین می‌شود.</p>' +
+       '<div id="dh-buy-err" class="dh-commercial-error"></div>' +
+       '<div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-buy-now">ادامه به درگاه</button><button type="button" class="btn" id="dh-buy-close">انصراف</button></div>' +
+@@ -242,6 +310,33 @@
+       var err = el('dh-buy-err');
+       if (err) err.textContent = '';
+       try {
++        var referralInput = el('dh-buy-referral-code');
++        var referralMsg = el('dh-buy-referral-message');
++        var referralCode = referralInput ? String(referralInput.value || '').trim() : '';
++        if (referralMsg) { referralMsg.hidden = true; referralMsg.textContent = ''; }
++        // Referral attribution is optional and must never block checkout: any
++        // failure here (bad code, locked account, network) is reported and the
++        // purchase continues as a direct purchase.
++        if (typeof global.DHAuth.setReferralCode === 'function') {
++          try {
++            var referral = await global.DHAuth.setReferralCode(referralCode);
++            if (referralMsg && referral && referral.status === 'applied') {
++              referralMsg.hidden = false;
++              referralMsg.style.color = '#8fe0a8';
++              referralMsg.textContent = 'کد معرف ثبت شد.';
++            } else if (referralMsg && referralCode) {
++              referralMsg.hidden = false;
++              referralMsg.style.color = '#f0c040';
++              referralMsg.textContent = 'این کد معتبر نبود؛ خرید به‌صورت مستقیم ادامه می‌یابد.';
++            }
++          } catch (referralError) {
++            if (referralMsg && referralCode) {
++              referralMsg.hidden = false;
++              referralMsg.style.color = '#f0c040';
++              referralMsg.textContent = 'ثبت کد معرف انجام نشد؛ خرید به‌صورت مستقیم ادامه می‌یابد.';
++            }
++          }
++        }
+         var payment = await global.DHAuth.createPayment();
+         if (!payment || !payment.payment_url) throw new Error('آدرس درگاه از سرور دریافت نشد.');
+         closeModal();
+@@ -393,7 +488,22 @@
+           showAuthModal('login');
+         };
+       });
++      // Any signed-in user can share their own code. Inserted next to the buy
++      // action so it is discoverable without adding a new page.
+       var buy = el('dh-p-buy');
++      if (buy && buy.parentNode && !el('dh-p-invite')) {
++        var invite = document.createElement('button');
++        invite.type = 'button';
++        invite.className = 'btn';
++        invite.id = 'dh-p-invite';
++        invite.textContent = 'کد معرف من';
++        invite.__dhCommercialHooked = true;
++        invite.onclick = function (e) {
++          if (e) { e.preventDefault(); e.stopPropagation(); }
++          openInviteModal();
++        };
++        buy.parentNode.insertBefore(invite, buy);
++      }
+       if (buy && !buy.__dhCommercialHooked) {
+         buy.__dhCommercialHooked = true;
+         buy.onclick = function (e) {
+@@ -454,6 +564,7 @@
+     global.DHCommercialUI = {
+       showAuth: showAuthModal,
+       showPurchase: openPurchaseModal,
++      showInvite: openInviteModal,
+       startServerAuthorizedJourney: continueAfterAuth,
+       persistFinalResultSummary: persistFinalResultSummary,
+       logout: doLogout,
+diff --git a/docs/index.html b/docs/index.html
+index c97b043..4105bdc 100644
+--- a/docs/index.html
++++ b/docs/index.html
+@@ -39,10 +39,10 @@
+   <script defer src="admission_chance_ui.js?v=3"></script>
+   <script defer src="ux_v2_patch.js"></script>
+   <script defer src="quotes_darkhorse.js"></script>
+-  <script defer src="auth_api_client.js?v=7"></script>
++  <script defer src="auth_api_client.js?v=10"></script>
+   <script defer src="shell_runtime_fix.js?v=1"></script>
+   <script defer src="shell.js?v=62"></script>
+-  <script defer src="commercial_ui.js?v=24"></script>
++  <script defer src="commercial_ui.js?v=27"></script>
+   <script defer src="profile_ux_v1.js?v=2"></script>
+   <script defer src="password_reset_ui.js?v=4"></script>
+   <script defer src="free_journey_mode.js?v=3"></script>
+diff --git a/phone_verification_service.py b/phone_verification_service.py
+index b3fd80f..395fc88 100644
+--- a/phone_verification_service.py
++++ b/phone_verification_service.py
+@@ -123,7 +123,8 @@ def _send_kavenegar_otp(phone: str, code: str) -> None:
+ 
+ 
+ def request_registration_otp(
+-    db: Session, *, name: str, phone: str, password: str, request_ip: str | None = None
++    db: Session, *, name: str, phone: str, password: str, request_ip: str | None = None,
++    referral_code: str | None = None,
+ ) -> dict[str, object]:
+     phone = normalize_phone(phone)
+     name = (name or "").strip()
+@@ -150,6 +151,7 @@ def request_registration_otp(
+ 
+     challenge_id = secrets.token_urlsafe(18)
+     code = f"{secrets.randbelow(1_000_000):06d}"
++    raw_referral = (referral_code or "").strip().upper()[:64] or None
+     challenge = PhoneVerification(
+         challenge_id=challenge_id,
+         phone=phone,
+@@ -160,6 +162,7 @@ def request_registration_otp(
+         expires_at=now + timedelta(seconds=OTP_TTL_SECONDS),
+         attempts=0,
+         request_ip=request_ip,
++        referral_code_input=raw_referral,
+     )
+     db.add(challenge)
+     db.flush()
+@@ -220,5 +223,36 @@ def verify_registration_otp(db: Session, *, challenge_id: str, code: str) -> tup
+     from auth_service import issue_session
+     token, _ = issue_session(db, user)
+     challenge.verified_at = utcnow()
++    _record_signup_attribution(db, user=user, challenge=challenge)
+     db.flush()
+     return user, token
++
++
++def _record_signup_attribution(db: Session, *, user, challenge) -> None:
++    """Attribute this new account to a marketer, once, without blocking signup.
++
++    Runs before the session is handed back, so the head-count is correct even
++    for people who never buy. A bad code never stops a registration: the reason
++    is stored on the challenge instead, for the operator to explain later.
++    """
++    from billing_models import ReferralSignup
++    from referral_commission_service import resolve_owner
++
++    raw = (challenge.referral_code_input or "").strip().upper()
++    if not raw:
++        return
++
++    resolved = resolve_owner(db, raw)
++    if resolved is None:
++        challenge.referral_rejected_reason = "unknown_or_inactive_code"
++        return
++
++    _code_row, marketer = resolved
++    db.add(
++        ReferralSignup(
++            user_id=int(user.id),
++            code=raw,
++            marketer_id=int(marketer.id),
++            source="register",
++        )
++    )
+diff --git a/referral_commission_service.py b/referral_commission_service.py
+new file mode 100644
+index 0000000..e32b0ab
+--- /dev/null
++++ b/referral_commission_service.py
+@@ -0,0 +1,474 @@
++"""Referral code ownership and commission accrual.
++
++Deliberately narrow: this module records who owns a code and what each paid
++order owes that person. It never moves money, never touches the credit ledger,
++and never alters an order's amount. Settlement is a status flag an operator
++sets after paying out of band.
++"""
++from __future__ import annotations
++
++import re
++import secrets
++import string
++from datetime import datetime, timezone
++
++from sqlalchemy import func, select
++from sqlalchemy.orm import Session
++
++from billing_models import (
++    Order,
++    ReferralCode,
++    ReferralCommission,
++    ReferralMarketer,
++    ReferralSignup,
++    User,
++)
++
++CODE_PATTERN = re.compile(r"^[A-Z0-9]{4,32}$")
++ALPHABET = string.ascii_uppercase + string.digits
++BASIS_POINTS = 10_000
++
++
++def utcnow() -> datetime:
++    return datetime.now(timezone.utc)
++
++
++def _require_manager(actor: User) -> None:
++    if actor is None or actor.role != "admin":
++        raise PermissionError("manager access required")
++
++
++def normalize_code(value: str | None) -> str:
++    candidate = (value or "").strip().upper()
++    if not CODE_PATTERN.fullmatch(candidate):
++        raise ValueError("code must contain 4 to 32 ASCII letters or digits")
++    return candidate
++
++
++def register_marketer(
++    db: Session,
++    actor: User,
++    *,
++    name: str,
++    phone: str | None = None,
++    user_id: int | None = None,
++    commission_bps: int = 0,
++    note: str | None = None,
++) -> ReferralMarketer:
++    """Create the commission earner. Link to an account when they have one."""
++    _require_manager(actor)
++    clean_name = (name or "").strip()
++    if not clean_name or len(clean_name) > 200:
++        raise ValueError("name must contain 1 to 200 characters")
++    if not (0 <= int(commission_bps) <= BASIS_POINTS):
++        raise ValueError("commission_bps must be between 0 and 10000")
++    if user_id is not None and db.get(User, int(user_id)) is None:
++        raise ValueError("linked user does not exist")
++
++    marketer = ReferralMarketer(
++        public_id="mk-" + secrets.token_hex(8),
++        user_id=int(user_id) if user_id is not None else None,
++        name=clean_name,
++        phone=(phone or "").strip() or None,
++        commission_bps=int(commission_bps),
++        note=(note or "").strip() or None,
++        is_active=True,
++    )
++    db.add(marketer)
++    db.flush()
++    return marketer
++
++
++def create_code_for_marketer(
++    db: Session,
++    actor: User,
++    *,
++    marketer_id: int,
++    code: str | None = None,
++) -> ReferralCode:
++    _require_manager(actor)
++    marketer = db.get(ReferralMarketer, int(marketer_id))
++    if marketer is None:
++        raise ValueError("marketer does not exist")
++    if not marketer.is_active:
++        raise ValueError("marketer is inactive")
++
++    if code and code.strip():
++        normalized = normalize_code(code)
++    else:
++        normalized = ""
++        for _ in range(10):
++            candidate = "".join(secrets.choice(ALPHABET) for _ in range(8))
++            if db.scalar(select(ReferralCode.id).where(ReferralCode.code == candidate)) is None:
++                normalized = candidate
++                break
++        if not normalized:
++            raise RuntimeError("could not allocate a unique referral code")
++
++    if db.scalar(select(ReferralCode.id).where(ReferralCode.code == normalized)) is not None:
++        raise ValueError("referral code already exists")
++
++    row = ReferralCode(code=normalized, marketer_id=marketer.id, is_active=True)
++    db.add(row)
++    db.flush()
++    return row
++
++
++def resolve_owner(db: Session, code: str | None) -> tuple[ReferralCode, ReferralMarketer] | None:
++    """Return the active code + owner, or None. Never raises for a bad code."""
++    if not code:
++        return None
++    normalized = (code or "").strip().upper()
++    if not CODE_PATTERN.fullmatch(normalized):
++        return None
++    row = db.scalar(select(ReferralCode).where(ReferralCode.code == normalized, ReferralCode.is_active.is_(True)))
++    if row is None:
++        return None
++    marketer = db.get(ReferralMarketer, row.marketer_id)
++    if marketer is None or not marketer.is_active:
++        return None
++    return row, marketer
++
++
++def snapshot_order_owner(db: Session, order: Order, code: str | None) -> None:
++    """Freeze the owner and rate onto the order so later edits cannot move money."""
++    resolved = resolve_owner(db, code)
++    if resolved is None:
++        order.marketer_id_snapshot = None
++        order.commission_bps_snapshot = None
++        return
++    _row, marketer = resolved
++    order.marketer_id_snapshot = int(marketer.id)
++    order.commission_bps_snapshot = int(marketer.commission_bps)
++
++
++def accrue_commission(db: Session, order: Order) -> ReferralCommission | None:
++    """Create the commission row for one paid order. Idempotent by order id.
++
++    Integer math only, truncated down: ``gross * bps // 10000``. A zero-rate
++    owner produces no row at all rather than a meaningless zero record.
++    """
++    if order.marketer_id_snapshot is None:
++        return None
++    existing = db.scalar(select(ReferralCommission).where(ReferralCommission.order_id == order.id))
++    if existing is not None:
++        return existing
++
++    bps = int(order.commission_bps_snapshot or 0)
++    gross = int(order.amount_minor or 0)
++    amount = gross * bps // BASIS_POINTS
++    if bps <= 0 or amount <= 0:
++        return None
++
++    row = ReferralCommission(
++        order_id=int(order.id),
++        marketer_id=int(order.marketer_id_snapshot),
++        referral_code=str(order.referral_code_snapshot or ""),
++        gross_amount_minor=gross,
++        commission_bps=bps,
++        commission_amount_minor=amount,
++        currency=str(order.currency or ""),
++        status="accrued",
++    )
++    db.add(row)
++    db.flush()
++    return row
++
++
++def settle_commission(db: Session, actor: User, *, commission_id: int, note: str | None = None) -> ReferralCommission:
++    """Mark one accrual as paid. Records intent only; no money moves here."""
++    _require_manager(actor)
++    row = db.get(ReferralCommission, int(commission_id))
++    if row is None:
++        raise ValueError("commission does not exist")
++    if row.status == "settled":
++        return row
++    row.status = "settled"
++    row.settled_at = utcnow()
++    if note:
++        row.note = (note or "").strip()[:500]
++    db.flush()
++    return row
++
++
++def marketer_statement(db: Session, actor: User, *, marketer_id: int | None = None) -> dict[str, object]:
++    """Who is owed what, per marketer and per currency."""
++    _require_manager(actor)
++    stmt = (
++        select(
++            ReferralCommission.marketer_id,
++            ReferralMarketer.name,
++            ReferralMarketer.phone,
++            ReferralCommission.currency,
++            ReferralCommission.status,
++            func.count(ReferralCommission.id),
++            func.coalesce(func.sum(ReferralCommission.commission_amount_minor), 0),
++            func.coalesce(func.sum(ReferralCommission.gross_amount_minor), 0),
++        )
++        .join(ReferralMarketer, ReferralMarketer.id == ReferralCommission.marketer_id)
++        .group_by(
++            ReferralCommission.marketer_id,
++            ReferralMarketer.name,
++            ReferralMarketer.phone,
++            ReferralCommission.currency,
++            ReferralCommission.status,
++        )
++        .order_by(ReferralCommission.marketer_id.asc(), ReferralCommission.currency.asc())
++    )
++    if marketer_id is not None:
++        stmt = stmt.where(ReferralCommission.marketer_id == int(marketer_id))
++
++    people: dict[int, dict[str, object]] = {}
++    for mk_id, name, phone, currency, status, count, commission, gross in db.execute(stmt).all():
++        person = people.setdefault(
++            int(mk_id),
++            {"marketer_id": int(mk_id), "name": name, "phone": phone, "currencies": {}},
++        )
++        bucket = person["currencies"].setdefault(
++            str(currency or ""),
++            {"currency": str(currency or ""), "orders": 0, "gross_amount_minor": 0,
++             "accrued_amount_minor": 0, "settled_amount_minor": 0},
++        )
++        bucket["orders"] += int(count or 0)
++        bucket["gross_amount_minor"] += int(gross or 0)
++        if status == "settled":
++            bucket["settled_amount_minor"] += int(commission or 0)
++        else:
++            bucket["accrued_amount_minor"] += int(commission or 0)
++
++    for person in people.values():
++        person["currencies"] = list(person["currencies"].values())
++    return {"marketers": list(people.values())}
++
++
++def marketer_recruitment_report(db: Session, actor: User) -> dict[str, object]:
++    """How many people each marketer brought, and what that turned into.
++
++    Deliberately separates the two questions an operator actually asks:
++      * ``signups``   — people who registered with the code (no purchase needed)
++      * ``confirmed`` — those signups who later bought something
++      * ``commission`` — money owed, from paid orders only
++
++    A signup that never buys still counts toward ``signups``; that is the whole
++    point of recording attribution at registration.
++    """
++    _require_manager(actor)
++
++    # head-count per marketer, straight from the signup ledger
++    signup_rows = db.execute(
++        select(
++            ReferralMarketer.id,
++            ReferralMarketer.name,
++            ReferralMarketer.phone,
++            ReferralMarketer.user_id,
++            ReferralMarketer.commission_bps,
++            ReferralMarketer.is_active,
++            ReferralMarketer.self_service,
++            func.count(ReferralSignup.id),
++            func.max(ReferralSignup.created_at),
++        )
++        .outerjoin(ReferralSignup, ReferralSignup.marketer_id == ReferralMarketer.id)
++        .group_by(
++            ReferralMarketer.id,
++            ReferralMarketer.name,
++            ReferralMarketer.phone,
++            ReferralMarketer.user_id,
++            ReferralMarketer.commission_bps,
++            ReferralMarketer.is_active,
++            ReferralMarketer.self_service,
++        )
++        .order_by(ReferralMarketer.id.asc())
++    ).all()
++
++    # buyers: signups that also produced at least one paid, attributed order
++    confirmed_rows = db.execute(
++        select(
++            ReferralSignup.marketer_id,
++            func.count(func.distinct(ReferralSignup.user_id)),
++        )
++        .join(Order, Order.user_id == ReferralSignup.user_id)
++        .where(
++            Order.status == "paid",
++            Order.paid_at.is_not(None),
++            Order.marketer_id_snapshot == ReferralSignup.marketer_id,
++        )
++        .group_by(ReferralSignup.marketer_id)
++    ).all()
++    confirmed = {int(mid): int(n) for mid, n in confirmed_rows}
++
++    # money owed, from the immutable commission ledger
++    money_rows = db.execute(
++        select(
++            ReferralCommission.marketer_id,
++            ReferralCommission.currency,
++            ReferralCommission.status,
++            func.count(ReferralCommission.id),
++            func.coalesce(func.sum(ReferralCommission.commission_amount_minor), 0),
++        )
++        .group_by(ReferralCommission.marketer_id, ReferralCommission.currency, ReferralCommission.status)
++    ).all()
++    money: dict[int, dict[str, dict[str, int]]] = {}
++    for mid, currency, status, count, amount in money_rows:
++        bucket = money.setdefault(int(mid), {}).setdefault(
++            str(currency or ""),
++            {"orders": 0, "accrued_amount_minor": 0, "settled_amount_minor": 0},
++        )
++        bucket["orders"] += int(count or 0)
++        if status == "settled":
++            bucket["settled_amount_minor"] += int(amount or 0)
++        else:
++            bucket["accrued_amount_minor"] += int(amount or 0)
++
++    marketers: list[dict[str, object]] = []
++    for mk_id, name, phone, user_id, bps, active, self_service, signups, last_signup in signup_rows:
++        mk_id = int(mk_id)
++        marketers.append(
++            {
++                "marketer_id": mk_id,
++                "name": name,
++                "phone": phone,
++                "linked_user_id": int(user_id) if user_id else None,
++                "commission_bps": int(bps or 0),
++                "commission_percent": round(int(bps or 0) / 100, 2),
++                "is_active": bool(active),
++                "self_service": bool(self_service),
++                "signups": int(signups or 0),
++                "confirmed_buyers": confirmed.get(mk_id, 0),
++                "last_signup_at": last_signup.isoformat() if last_signup else None,
++                "currencies": [
++                    {"currency": cur, **vals}
++                    for cur, vals in sorted(money.get(mk_id, {}).items())
++                ],
++            }
++        )
++
++    return {
++        "totals": {
++            "marketers": len(marketers),
++            "signups": sum(m["signups"] for m in marketers),
++            "confirmed_buyers": sum(m["confirmed_buyers"] for m in marketers),
++        },
++        "marketers": marketers,
++    }
++
++
++def signups_of_marketer(db: Session, actor: User, *, marketer_id: int) -> dict[str, object]:
++    """The actual list of people a marketer brought, with their purchase state."""
++    _require_manager(actor)
++    rows = db.execute(
++        select(
++            User.id,
++            User.name,
++            User.phone,
++            User.status,
++            ReferralSignup.code,
++            ReferralSignup.created_at,
++            func.count(Order.id),
++        )
++        .join(User, User.id == ReferralSignup.user_id)
++        .outerjoin(
++            Order,
++            (Order.user_id == ReferralSignup.user_id)
++            & (Order.status == "paid")
++            & (Order.paid_at.is_not(None))
++            & (Order.marketer_id_snapshot == ReferralSignup.marketer_id),
++        )
++        .where(ReferralSignup.marketer_id == int(marketer_id))
++        .group_by(
++            User.id,
++            User.name,
++            User.phone,
++            User.status,
++            ReferralSignup.code,
++            ReferralSignup.created_at,
++        )
++        .order_by(ReferralSignup.created_at.desc())
++    ).all()
++    return {
++        "marketer_id": int(marketer_id),
++        "count": len(rows),
++        "people": [
++            {
++                "user_id": int(uid),
++                "name": name,
++                "phone": phone,
++                "status": status,
++                "code": code,
++                "joined_at": created.isoformat() if created else None,
++                "paid_orders": int(paid or 0),
++                "confirmed": int(paid or 0) > 0,
++            }
++            for uid, name, phone, status, code, created, paid in rows
++        ],
++    }
++
++
++def my_referral_code(db: Session, user: User) -> dict[str, object]:
++    """The caller's own shareable code, created on first call.
++
++    Any signed-in user can hold one. Idempotent: calling twice returns the same
++    code, and the partial unique index prevents a second self-service row.
++    A self-service owner starts at 0 bps, so minting a code never creates a
++    payout obligation by itself; an admin sets the real rate for partners.
++    """
++    existing = db.scalar(
++        select(ReferralMarketer).where(
++            ReferralMarketer.user_id == int(user.id),
++            ReferralMarketer.self_service.is_(True),
++        )
++    )
++    if existing is not None:
++        code_row = db.scalar(
++            select(ReferralCode)
++            .where(ReferralCode.marketer_id == existing.id, ReferralCode.is_active.is_(True))
++            .order_by(ReferralCode.id.asc())
++        )
++        if code_row is None:
++            code_row = _mint_personal_code(db, existing, user)
++        return _my_code_payload(db, existing, code_row)
++
++    marketer = ReferralMarketer(
++        public_id="mk-" + secrets.token_hex(8),
++        user_id=int(user.id),
++        name=(user.name or "کاربر")[:200],
++        phone=user.phone,
++        commission_bps=0,
++        is_active=True,
++        self_service=True,
++    )
++    db.add(marketer)
++    db.flush()
++    code_row = _mint_personal_code(db, marketer, user)
++    return _my_code_payload(db, marketer, code_row)
++
++
++def _mint_personal_code(db: Session, marketer: ReferralMarketer, user: User) -> ReferralCode:
++    for _ in range(10):
++        candidate = "".join(secrets.choice(ALPHABET) for _ in range(8))
++        if db.scalar(select(ReferralCode.id).where(ReferralCode.code == candidate)) is None:
++            row = ReferralCode(
++                code=candidate,
++                marketer_id=int(marketer.id),
++                is_active=True,
++                created_by_user_id=int(user.id),
++            )
++            db.add(row)
++            db.flush()
++            return row
++    raise RuntimeError("could not allocate a unique referral code")
++
++
++def _my_code_payload(db: Session, marketer: ReferralMarketer, code_row: ReferralCode) -> dict[str, object]:
++    signups = db.scalar(
++        select(func.count(ReferralSignup.id)).where(ReferralSignup.marketer_id == marketer.id)
++    ) or 0
++    return {
++        "code": code_row.code,
++        "marketer_id": int(marketer.id),
++        "commission_bps": int(marketer.commission_bps),
++        "is_active": bool(code_row.is_active),
++        "signups": int(signups),
++        "share_text": (
++            "با کد معرف من ثبت‌نام کن: " + code_row.code
++        ),
++    }
+diff --git a/referral_service.py b/referral_service.py
+index 9c2126e..065fed6 100644
+--- a/referral_service.py
++++ b/referral_service.py
+@@ -13,7 +13,7 @@ from datetime import datetime, timezone
+ from sqlalchemy import func, select
+ from sqlalchemy.orm import Session
+ 
+-from billing_models import AdminAuditLog, Order, User
++from billing_models import AdminAuditLog, Order, ReferralCode, ReferralMarketer, User
+ 
+ _CODE_PATTERN = re.compile(r"^[A-Z0-9]{4,32}$")
+ _CODE_ALPHABET = string.ascii_uppercase + string.digits
+@@ -98,6 +98,48 @@ def create_referral_code(
+     return record
+ 
+ 
++def _resolve_active_code(db: Session, code: str) -> AdminAuditLog | None:
++    """Look a code up in the ownership registry first, then the legacy ledger.
++
++    Codes created through the commission registry (``referral_codes``) carry an
++    owner and must resolve there. Codes created before ownership existed live
++    only in ``admin_audit_logs`` and stay valid, so both are accepted and the
++    returned record still carries ``target_id`` + ``metadata_json``.
++    """
++    if not code:
++        return None
++    owned = db.scalar(
++        select(ReferralCode).where(
++            ReferralCode.code == code,
++            ReferralCode.is_active.is_(True),
++        )
++    )
++    if owned is not None:
++        marketer = db.get(ReferralMarketer, owned.marketer_id)
++        if marketer is not None and marketer.is_active:
++            # Surface the owned code through the legacy record shape so callers
++            # (including order snapshots) do not need to branch.
++            return _OwnedCodeRecord(code, marketer)
++        return None
++    return db.scalar(
++        select(AdminAuditLog).where(
++            AdminAuditLog.action == "create_referral_code",
++            AdminAuditLog.target_type == "referral_code",
++            AdminAuditLog.target_id == code,
++        )
++    )
++
++
++class _OwnedCodeRecord:
++    """Adapter so an owned code looks like a legacy ledger row."""
++
++    __slots__ = ("target_id", "metadata_json")
++
++    def __init__(self, code: str, marketer) -> None:
++        self.target_id = code
++        self.metadata_json = {"label": marketer.name, "is_active": True}
++
++
+ def set_user_referral_code(
+     db: Session,
+     *,
+@@ -137,13 +179,7 @@ def set_user_referral_code(
+             "referral_code": None,
+         }
+ 
+-    record = db.scalar(
+-        select(AdminAuditLog).where(
+-            AdminAuditLog.action == "create_referral_code",
+-            AdminAuditLog.target_type == "referral_code",
+-            AdminAuditLog.target_id == normalized,
+-        )
+-    )
++    record = _resolve_active_code(db, normalized)
+     metadata = record.metadata_json if record is not None and isinstance(record.metadata_json, dict) else {}
+     if record is None or metadata.get("is_active", True) is not True:
+         user.referral_code = None
+@@ -196,15 +232,9 @@ def snapshot_order_referral(
+     if user.referral_locked_at is None and previous_paid_order is not None:
+         user.referral_locked_at = previous_paid_order.paid_at or paid_at
+ 
+-    record = None
+-    if user.referral_code:
+-        record = db.scalar(
+-            select(AdminAuditLog).where(
+-                AdminAuditLog.action == "create_referral_code",
+-                AdminAuditLog.target_type == "referral_code",
+-                AdminAuditLog.target_id == user.referral_code,
+-            )
+-        )
++    # Resolve through both registries: an owned code lives in referral_codes and
++    # would otherwise snapshot as empty, silently losing the attribution.
++    record = _resolve_active_code(db, user.referral_code) if user.referral_code else None
+ 
+     metadata = record.metadata_json if record is not None and isinstance(record.metadata_json, dict) else {}
+     if record is not None and metadata.get("is_active", True) is True:
+diff --git a/test_commercial_api.py b/test_commercial_api.py
+index 7990d53..34af376 100644
+--- a/test_commercial_api.py
++++ b/test_commercial_api.py
+@@ -99,8 +99,25 @@ class CommercialApiContractTests(unittest.TestCase):
+             phone="09120000001",
+             password="strong-pass-123",
+             request_ip="testclient",
++            referral_code=None,
+         )
+ 
++    def test_register_forwards_optional_referral_code(self):
++        """The referral code is optional and must reach the OTP request as-is."""
++        expected = {"otp_required": True, "challenge_id": "challenge-abcdef", "expires_in": 300, "resend_after": 60}
++        with patch("commercial_api.request_registration_otp", return_value=expected) as request_otp:
++            response = self.client.post(
++                "/api/v1/auth/register",
++                json={
++                    "name": "Test User",
++                    "phone": "09120000002",
++                    "password": "strong-pass-123",
++                    "referral_code": "AHMAD2026",
++                },
++            )
++        self.assertEqual(response.status_code, 200, response.text)
++        self.assertEqual(request_otp.call_args.kwargs["referral_code"], "AHMAD2026")
++
+     def test_verify_registration_creates_session_and_free_credit(self):
+         user = SimpleNamespace(id=7, public_id="public-7", name="Test User", phone="09120000001", role="user", status="active")
+         with patch("commercial_api.verify_registration_otp", return_value=(user, "raw-token")), patch("commercial_api.ensure_free_entitlement"), patch(
+diff --git a/test_quota_health_migration.py b/test_quota_health_migration.py
+index aea0823..6eeac77 100644
+--- a/test_quota_health_migration.py
++++ b/test_quota_health_migration.py
+@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
+ from commercial_api import quota_health
+ 
+ ROOT = Path(__file__).resolve().parent
+-HEAD = "0011_otp_request_ip"
++HEAD = "0015_self_service_codes"
+ 
+ 
+ class QuotaHealthMigrationTests(unittest.TestCase):
