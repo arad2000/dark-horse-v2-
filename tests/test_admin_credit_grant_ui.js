@@ -109,7 +109,7 @@ async function loadAuth(fetchImpl) {
   assert.doesNotMatch(adminFeedbackSource, /payments_total/);
   assert.match(indexSource, /admin_feedback_ui_v1\.js\?v=2/);
   assert.match(commercialSource, /در حال اعطا/);
-  assert.match(indexSource, /auth_api_client\.js\?v=10/);
+  assert.match(indexSource, /auth_api_client\.js\?v=11/);
 
   assert.match(shellSource, /dh-commercial-ui-loader/);
   assert.match(shellSource, /capturedError/);
