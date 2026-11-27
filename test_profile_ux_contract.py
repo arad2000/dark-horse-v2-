@@ -11,9 +11,11 @@ CSS = (ROOT / "docs" / "profile_ux_v1.css").read_text(encoding="utf-8")
 class ProfileUXContractTests(unittest.TestCase):
     def test_assets_are_loaded_after_shell_and_commercial_ui(self):
         self.assertIn('profile_ux_v1.css?v=1', INDEX)
-        shell_pos = INDEX.index('shell.js?v=62')
-        commercial_pos = INDEX.index('commercial_ui.js?v=24')
-        ux_pos = INDEX.index('profile_ux_v1.js?v=2')
+        # Only the load order matters here; the ?v= suffix is bumped on every
+        # frontend edit, so it is deliberately not pinned.
+        shell_pos = INDEX.index('shell.js?')
+        commercial_pos = INDEX.index('commercial_ui.js?')
+        ux_pos = INDEX.index('profile_ux_v1.js?')
         self.assertLess(shell_pos, ux_pos)
         self.assertLess(commercial_pos, ux_pos)
 
