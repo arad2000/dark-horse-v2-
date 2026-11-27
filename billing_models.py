@@ -72,7 +72,7 @@ class PremiumPlan(Base):
     __tablename__ = "premium_plans"
     __table_args__ = (UniqueConstraint("code", name="uq_premium_plan_code"),)
     id = Column(BigInteger, primary_key=True)
-    code = Column(String(64), nullable=False)
+    code = Column(String(64), nullable=False, unique=True)
     name_fa = Column(String(200), nullable=False)
     plan_type = Column(String(20), nullable=False, default="credits", server_default="credits")
     duration_days = Column(Integer, nullable=True)
@@ -118,7 +118,7 @@ class ReferralCode(Base):
         Index("idx_referral_code_active", "is_active"),
     )
     id = Column(BigInteger, primary_key=True)
-    code = Column(String(64), nullable=False, unique=True)
+    code = Column(String(64), nullable=False)
     label = Column(String(200), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
     created_by_user_id = Column(BigInteger, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
