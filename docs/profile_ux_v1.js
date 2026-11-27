@@ -97,6 +97,7 @@
     panel.setAttribute('aria-label', 'پنل مدیریت');
     panel.innerHTML =
       '<h3 class="dh-admin-title">پنل مدیریت</h3>' +
+      '<a class="dh-admin-link" href="admin_referrals.html">مدیریت کدهای معرف و پورسانت</a>' +
       '<div class="dh-admin-users" data-admin-users>' +
         '<p class="dh-admin-status" data-admin-status>در حال دریافت کاربران…</p>' +
       '</div>';
