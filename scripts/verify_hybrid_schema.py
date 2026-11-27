@@ -15,6 +15,8 @@ EXPECTED_TABLES = {
     "branch_recommendations", "user_feedback", "audit_logs", "users", "auth_sessions",
     "phone_verifications", "premium_plans", "orders", "payments", "entitlements",
     "payment_events", "admin_audit_logs", "journey_credit_consumptions",
+    # referral attribution + commission (migrations 0012-0015)
+    "referral_codes", "referral_marketers", "referral_signups", "referral_commissions",
 }
 EXPECTED_COLUMNS = {
     "micro_motives": {"id", "code", "description_fa", "category", "intensity_level"},
@@ -37,6 +39,13 @@ EXPECTED_COLUMNS = {
     "payment_events": {"id", "payment_id", "event_type", "event_key", "payload"},
     "admin_audit_logs": {"id", "admin_user_id", "action", "target_type", "target_id", "metadata", "ip_address"},
     "journey_credit_consumptions": {"id", "user_id", "session_uuid", "entitlement_id", "created_at"},
+    # referral attribution: the buyer's code is captured on the order and the
+    # commission is frozen per order so a later rate change cannot rewrite history.
+    "referral_codes": {"id", "code", "marketer_id", "is_active"},
+    "referral_marketers": {"id", "user_id", "name", "commission_bps", "is_active"},
+    "referral_signups": {"id", "code", "marketer_id", "user_id", "created_at"},
+    "referral_commissions": {"id", "order_id", "marketer_id", "commission_bps",
+                             "commission_amount_minor", "status", "settled_at"},
 }
 
 def main() -> int:
