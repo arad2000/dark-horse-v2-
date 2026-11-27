@@ -277,7 +277,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(source, /var PREPARE_TIMEOUT_MS = 12000/);
   assert.match(source, /var paymentRequestPromise = null/);
   assert.match(source, /paymentRequestTimedOut \? 'بررسی نتیجه' : 'تلاش دوباره'/);
-  assert.ok(referralPrepareFunction.indexOf('await global.DHAuth.setReferralCode') < referralPrepareFunction.indexOf('return global.DHAuth.createPayment'), 'referral must be set before payment order creation');
+  assert.ok(referralPrepareFunction.indexOf('await global.DHAuth.setReferralCode') < referralPrepareFunction.indexOf('var createdPayment = global.DHAuth.createPayment()'), 'referral must be set before payment order creation');
   assert.match(source, /کد معرف معتبر نیست؛ خرید بدون کد معرف ادامه پیدا می‌کند/);
   assert.match(source, /کد معرف پس از نخستین پرداخت موفق قفل شده است/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
