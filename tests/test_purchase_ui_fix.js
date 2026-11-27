@@ -7,6 +7,7 @@ const commercialSource = fs.readFileSync('docs/commercial_ui.js', 'utf8');
 const indexSource = fs.readFileSync('docs/index.html', 'utf8');
 const hopBootSource = fs.readFileSync('docs/payment_hop_boot.js', 'utf8');
 const externalLinksSource = fs.readFileSync('docs/external_links_fix_v1.js', 'utf8');
+const authApiSource = fs.readFileSync('docs/auth_api_client.js', 'utf8');
 
 function makeElement(id) {
   return {
@@ -66,12 +67,19 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const status = makeElement('dh-buy-status');
   const spin = makeElement('dh-buy-spin');
   const statusText = makeElement('dh-buy-status-text');
+  const referralInput = makeElement('dh-buy-referral-code');
+  referralInput.value = String(arguments[0] && arguments[0].referralCode || '');
+  const referralMessage = makeElement('dh-buy-referral-message');
+  referralMessage.hidden = true;
   const close = makeElement('dh-buy-close');
-  const elements = [overlay, button, error, status, spin, statusText, close];
+  const elements = [overlay, button, error, status, spin, statusText, referralInput, referralMessage, close];
   const map = Object.fromEntries(elements.map((element) => [element.id, element]));
   const location = { href: '', replace(value) { this.href = value; }, assign(value) { this.href = value; } };
   let observerCallback = null;
   const bridgeCalls = [];
+  const referralCalls = [];
+  let createPaymentCalls = 0;
+  const options = arguments[0] || {};
 
   const document = {
     readyState: 'complete',
@@ -93,7 +101,13 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
     DHShell: { startJourney() { journeyCalls.push('startJourney'); } },
     DHAuth: {
       isLoggedIn() { return true; },
+      setReferralCode(code) {
+        referralCalls.push(code);
+        if (options.referralError) return Promise.reject(options.referralError);
+        return Promise.resolve(options.referralResult || { status: code ? 'applied' : 'direct', purchase_allowed: true });
+      },
       createPayment() {
+        createPaymentCalls += 1;
         return new Promise((resolve) => setTimeout(
           () => resolve({ payment_url: 'https://sandbox.zarinpal.com/pg/StartPay/ABC123' }),
           delay
@@ -109,8 +123,12 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   vm.createContext(context);
   vm.runInContext(source, context);
   observerCallback();
-  await new Promise((resolve) => setTimeout(resolve, delay >= 2000 ? 2100 : 100));
-  return { button, error, status, spin, statusText, location, bridgeCalls, journeyCalls };
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  if (options.start !== false && typeof button.onclick === 'function') {
+    button.onclick({ preventDefault() {}, stopPropagation() {} });
+    await new Promise((resolve) => setTimeout(resolve, delay >= 2000 ? 2100 : 100));
+  }
+  return { button, error, status, spin, statusText, referralInput, referralMessage, referralCalls, createPaymentCalls, location, bridgeCalls, journeyCalls };
 }
 
 (async () => {
@@ -122,6 +140,36 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
     'intent://asbe-siah.ir/?dh_pay=https%3A%2F%2Fsandbox.zarinpal.com%2Fpg%2FStartPay%2FABC123&dh_chrome=1' +
     '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=' + expectedFallback + ';end';
   const expectedLegacyIntent = expectedIntent;
+
+  const notStarted = await runPurchase({ delay: 50, start: false });
+  assert.strictEqual(notStarted.button.disabled, false);
+  assert.strictEqual(notStarted.button.textContent, 'ادامه به پرداخت');
+  assert.strictEqual(notStarted.createPaymentCalls, 0, 'opening the purchase modal must not create an order');
+  assert.deepStrictEqual(notStarted.referralCalls, [], 'referral code must not be submitted before user confirmation');
+
+  const invalidReferral = await runPurchase({
+    delay: 50,
+    referralCode: 'BAD!',
+    referralResult: { status: 'invalid_ignored', applied: false, purchase_allowed: true }
+  });
+  assert.deepStrictEqual(invalidReferral.referralCalls, ['BAD!']);
+  assert.strictEqual(invalidReferral.createPaymentCalls, 1, 'invalid referral must not block payment creation');
+  assert.strictEqual(invalidReferral.referralMessage.hidden, false);
+  assert.match(invalidReferral.referralMessage.textContent, /کد معرف معتبر نیست/);
+  invalidReferral.button.onclick({ preventDefault() {}, stopPropagation() {} });
+  assert.strictEqual(invalidReferral.location.href, paymentUrl);
+
+  const directReferral = await runPurchase({ delay: 50, referralCode: '' });
+  assert.deepStrictEqual(directReferral.referralCalls, ['']);
+  assert.strictEqual(directReferral.createPaymentCalls, 1);
+  assert.match(directReferral.referralMessage.textContent, /بدون کد معرف/);
+
+  const lockedError = new Error('referral attribution is locked after the first successful payment');
+  lockedError.status = 409;
+  const lockedReferral = await runPurchase({ delay: 50, referralCode: 'NEWCODE', referralError: lockedError });
+  assert.strictEqual(lockedReferral.createPaymentCalls, 1, 'locked referral must not block a later purchase');
+  assert.strictEqual(lockedReferral.referralInput.disabled, true);
+  assert.match(lockedReferral.referralMessage.textContent, /قفل شده است/);
 
   const journeyCalls = [];
   const desktop = await runPurchase({ delay: 50, journeyCalls });
@@ -199,6 +247,17 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(hopFunction, /dh_chrome.*===.*['"]1['"]/);
   assert.match(hopFunction, /window\.location\.replace\(decoded\)/);
   assert.match(commercialSource, /payment\.zarinpal\.com/);
+  assert.match(commercialSource, /کد معرف \(اختیاری\)/);
+  assert.match(commercialSource, /dh-buy-referral-code/);
+  assert.match(commercialSource, /dh-buy-referral-message/);
+  assert.match(authApiSource, /async setReferralCode\(code\)/);
+  assert.match(authApiSource, /\/api\/v1\/me\/referral-code/);
+  assert.match(authApiSource, /method: 'PUT'/);
+  const referralPrepareFunction = (source.match(/async function prepareReferralAndPayment\([\s\S]*?\n    }\n\n    function startPreparation/) || [])[0];
+  assert.ok(referralPrepareFunction, 'referral-first checkout function not found');
+  assert.ok(referralPrepareFunction.indexOf('await global.DHAuth.setReferralCode') < referralPrepareFunction.indexOf('global.DHAuth.createPayment'), 'referral must be set before payment order creation');
+  assert.match(source, /کد معرف معتبر نیست؛ خرید بدون کد معرف ادامه پیدا می‌کند/);
+  assert.match(source, /کد معرف پس از نخستین پرداخت موفق قفل شده است/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);
   assert.match(commercialSource, /encodeURIComponent\(fallback\)/);
   assert.match(hopBootSource, /dh_pay/);
@@ -221,7 +280,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.doesNotMatch(source, /AndroidBridge\.openExternalUrl\(chromeHopUrl/);
   assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?chromeIntent\(fallback,\s*fallback\)/);
   assert.match(commercialSource, /function openExternalPay\(url\)[\s\S]*?window\.location\.href=fallback/);
-  assert.match(indexSource, /commercial_ui\.js\?v=46/);
+  assert.match(indexSource, /commercial_ui\.js\?v=47/);
   assert.match(indexSource, /purchase_ui_fix.js\?v=11/);
   const paymentHopPosition = indexSource.indexOf('payment_hop_boot.js?v=3');
   const appScriptPosition = indexSource.indexOf('app.js?v=');

@@ -1,4 +1,4 @@
-/* auth_api_client.js — Dark Horse Commercial Auth */
+/* auth_api_client.js v11 — referral attribution + Dark Horse Commercial Auth */
 (function (global) {
   const API = (global.API_BASE || 'https://api.asbe-siah.ir');
   const KEY = 'dh_auth_v1';
@@ -204,6 +204,17 @@
       return req('/api/v1/me/save-result', {
         method: 'POST',
         body: JSON.stringify({ session_uuid: sessionId, result_summary: Object.assign({}, summary || {}, { session_uuid: sessionId }) })
+      });
+    },
+
+    async setReferralCode(code) {
+      const value = String(code == null ? '' : code).trim();
+      if (value.length > 64) {
+        throw new Error('کد معرف نباید بیشتر از ۶۴ نویسه باشد.');
+      }
+      return req('/api/v1/me/referral-code', {
+        method: 'PUT',
+        body: JSON.stringify({ code: value })
       });
     },
 

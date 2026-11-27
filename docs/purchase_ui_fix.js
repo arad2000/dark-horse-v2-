@@ -1,4 +1,4 @@
-/* purchase_ui_fix.js v10 — explicit payment readiness + same-origin gateway hop */
+/* purchase_ui_fix.js v12 — referral-first checkout + explicit payment readiness */
 (function (global) {
   'use strict';
 
@@ -55,6 +55,14 @@
     if (!error) return;
     error.textContent = message || '';
     error.style.color = warning ? '#f0c040' : '';
+  }
+
+  function setReferralNotice(kind, message) {
+    var notice = byId('dh-buy-referral-message');
+    if (!notice) return;
+    notice.textContent = message || '';
+    notice.hidden = !message;
+    notice.style.color = kind === 'success' ? '#80d49a' : '#f0c040';
   }
 
   function paymentErrorText(error) {
@@ -115,7 +123,6 @@
       global.__dhPaymentHandoff = true;
     } catch (_) {}
     // Android: open the same-origin site hop first so ZarinPal receives the site's referrer.
-    // The hop page then redirects to the gateway; never launch the raw gateway as the primary Intent.
     var chromeHop = chromeHopUrl(target);
     try {
       global.location.href = chromeIntent(chromeHop, chromeHop);
@@ -148,17 +155,21 @@
     overlay.dataset.dhPurchaseReadyUx = '1';
 
     var status = ensureStatus();
-    if (status) status.hidden = false;
+    var referralInput = byId('dh-buy-referral-code');
+    if (status) status.hidden = true;
     setError('');
-    setStatus('loading', 'در حال آماده‌سازی لینک پرداخت…');
-    setButton(button, 'در حال آماده‌سازی…', true);
+    setReferralNotice('', '');
+    setButton(button, 'ادامه به پرداخت', false);
 
-    var localSerial = ++patchSerial;
+    var localSerial = 0;
     var readyUrl = null;
+    var referralLocked = false;
 
-    function showFailure(errorValue) {
-      if (localSerial !== patchSerial || !byId('dh-commercial-overlay')) return;
+    function showFailure(errorValue, expectedSerial) {
+      var serial = typeof expectedSerial === 'number' ? expectedSerial : localSerial;
+      if (serial !== patchSerial || !byId('dh-commercial-overlay')) return;
       readyUrl = null;
+      if (referralInput && !referralLocked) referralInput.disabled = false;
       setStatus('error', 'آماده‌سازی پرداخت ناموفق بود.');
       setError(paymentErrorText(errorValue));
       setButton(button, 'تلاش دوباره', false);
@@ -172,8 +183,9 @@
     function showReady(url) {
       if (localSerial !== patchSerial || !byId('dh-commercial-overlay')) return;
       readyUrl = url;
+      if (referralInput) referralInput.disabled = true;
       setError('');
-      setStatus('ready', '✓ آماده پرداخت — برای ورود به درگاه «پرداخت» را بزنید.');
+      setStatus('ready', '✓ لینک پرداخت آماده شد. برای ورود به درگاه «پرداخت» را بزنید.');
       setButton(button, 'پرداخت', false);
       button.onclick = function (event) {
         if (event) { event.preventDefault(); event.stopPropagation(); }
@@ -192,24 +204,88 @@
       };
     }
 
+    async function prepareReferralAndPayment(serial) {
+      if (!global.DHAuth || typeof global.DHAuth.createPayment !== 'function') {
+        throw new Error('کلاینت پرداخت در دسترس نیست.');
+      }
+
+      var code = referralInput ? String(referralInput.value || '').trim() : '';
+      if (typeof global.DHAuth.setReferralCode === 'function') {
+        try {
+          var result = await global.DHAuth.setReferralCode(code);
+          if (serial !== patchSerial) throw new Error('payment_prepare_stale');
+          var state = result && String(result.status || '');
+          if (state === 'invalid_ignored') {
+            setReferralNotice('warning', 'کد معرف معتبر نیست؛ خرید بدون کد معرف ادامه پیدا می‌کند.');
+          } else if (state === 'applied') {
+            setReferralNotice('success', 'کد معرف ثبت شد.');
+          } else if (state === 'direct') {
+            setReferralNotice('success', 'خرید بدون کد معرف ادامه پیدا می‌کند.');
+          } else if (result && result.purchase_allowed === false) {
+            throw new Error('ثبت کد معرف مجاز نیست.');
+          } else {
+            setReferralNotice('', '');
+          }
+        } catch (errorValue) {
+          if (serial !== patchSerial) throw errorValue;
+          if (Number(errorValue && errorValue.status) === 409) {
+            referralLocked = true;
+            if (referralInput) referralInput.disabled = true;
+            setReferralNotice(
+              'warning',
+              'کد معرف پس از نخستین پرداخت موفق قفل شده است؛ تغییر جدید اعمال نشد و خرید با ثبت قبلی ادامه می‌یابد.'
+            );
+          } else {
+            setReferralNotice(
+              'warning',
+              'ثبت کد معرف انجام نشد؛ خرید با وضعیت قبلی حساب ادامه می‌یابد.'
+            );
+          }
+        }
+      } else {
+        setReferralNotice(
+          'warning',
+          'ثبت کد معرف در این نسخه در دسترس نیست؛ خرید با وضعیت قبلی حساب ادامه می‌یابد.'
+        );
+      }
+
+      if (serial !== patchSerial) throw new Error('payment_prepare_stale');
+      return global.DHAuth.createPayment();
+    }
+
     function startPreparation() {
       var nowSerial = ++patchSerial;
       localSerial = nowSerial;
       readyUrl = null;
       setError('');
-      setStatus('loading', 'در حال آماده‌سازی لینک پرداخت…');
+      if (referralInput && !referralLocked) referralInput.disabled = true;
+      setStatus('loading', 'در حال بررسی کد معرف و آماده‌سازی لینک پرداخت…');
       setButton(button, 'در حال آماده‌سازی…', true);
-      if (!global.DHAuth || typeof global.DHAuth.createPayment !== 'function') {
-        showFailure(new Error('کلاینت پرداخت در دسترس نیست.'));
+
+      var request;
+      try {
+        request = prepareReferralAndPayment(nowSerial);
+      } catch (errorValue) {
+        showFailure(errorValue, nowSerial);
         return;
       }
-      var request;
-      try { request = global.DHAuth.createPayment(); } catch (errorValue) { showFailure(errorValue); return; }
-      waitForPayment(request, localSerial).then(showReady).catch(function (errorValue) {
+      waitForPayment(request, nowSerial).then(showReady).catch(function (errorValue) {
         if (/payment_prepare_stale/.test(text(errorValue && errorValue.message ? errorValue.message : errorValue))) return;
-        showFailure(errorValue);
+        if (/payment_prepare_timeout/.test(text(errorValue && errorValue.message ? errorValue.message : errorValue))) {
+          // Invalidate a slow referral request so it cannot create an order after timeout.
+          var failedSerial = ++patchSerial;
+          localSerial = failedSerial;
+          showFailure(errorValue, failedSerial);
+          return;
+        }
+        showFailure(errorValue, nowSerial);
       });
     }
+
+    button.onclick = function (event) {
+      if (event) { event.preventDefault(); event.stopPropagation(); }
+      if (!button.disabled) startPreparation();
+    };
 
     var close = byId('dh-buy-close');
     if (close) {
@@ -219,8 +295,6 @@
         try { overlay.remove(); } catch (_) {}
       };
     }
-
-    startPreparation();
   }
 
   function scan() {

@@ -1,4 +1,4 @@
-/* commercial_ui.js v45 — charged journey UUID persistence + enforced commercial entry */
+/* commercial_ui.js v47 — referral attribution entry + charged journey UUID persistence */
 (function (global) {
   'use strict';
   if (global.__dhCommercialUIReady) return;
@@ -217,6 +217,12 @@
       alertHtml+
       '<div class="dh-commercial-pack"><span class="badge">بسته استاندارد</span>'+
       '<div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>'+
+      '<div class="dh-referral-entry" style="margin:12px 0 8px;text-align:right;">'+
+        '<label class="dh-commercial-label" for="dh-buy-referral-code">کد معرف (اختیاری)</label>'+
+        '<input id="dh-buy-referral-code" class="dh-commercial-input dh-referral-input" style="user-select:text;direction:ltr;text-align:left;" type="text" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="کد معرف را وارد کنید" aria-describedby="dh-buy-referral-hint dh-buy-referral-message">'+
+        '<p id="dh-buy-referral-hint" style="margin:5px 2px 0;color:#9f957f;font-size:.76rem;line-height:1.7;">کد ندارید؟ این قسمت را خالی بگذارید و ادامه دهید.</p>'+
+        '<div id="dh-buy-referral-message" role="status" aria-live="polite" hidden style="margin-top:7px;font-size:.8rem;line-height:1.8;text-align:right;"></div>'+
+      '</div>'+
       '<p class="dh-commercial-sub">مبلغ فقط از سمت سرور تعیین می‌شود.</p>'+
       '<div id="dh-buy-err" class="dh-commercial-error"></div>'+
       '<div id="dh-buy-status" class="dh-commercial-status" hidden><span class="dh-commercial-spinner" id="dh-buy-spin"></span><span id="dh-buy-status-text">در حال دریافت لینک پرداخت…</span></div>'+
