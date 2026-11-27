@@ -99,7 +99,24 @@ class CommercialApiContractTests(unittest.TestCase):
             phone="09120000001",
             password="strong-pass-123",
             request_ip="testclient",
+            referral_code=None,
         )
+
+    def test_register_forwards_optional_referral_code(self):
+        """The referral code is optional and must reach the OTP request as-is."""
+        expected = {"otp_required": True, "challenge_id": "challenge-abcdef", "expires_in": 300, "resend_after": 60}
+        with patch("commercial_api.request_registration_otp", return_value=expected) as request_otp:
+            response = self.client.post(
+                "/api/v1/auth/register",
+                json={
+                    "name": "Test User",
+                    "phone": "09120000002",
+                    "password": "strong-pass-123",
+                    "referral_code": "AHMAD2026",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(request_otp.call_args.kwargs["referral_code"], "AHMAD2026")
 
     def test_verify_registration_creates_session_and_free_credit(self):
         user = SimpleNamespace(id=7, public_id="public-7", name="Test User", phone="09120000001", role="user", status="active")

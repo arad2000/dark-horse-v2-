@@ -29,6 +29,7 @@ from password_reset_service import attach_router
 from phone_verification_service import request_registration_otp, verify_registration_otp
 from production_billing_guard import assert_production_billing_configuration
 from referral_service import set_user_referral_code
+from referral_commission_service import my_referral_code
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
 attach_router(router)
@@ -40,6 +41,8 @@ class RegisterRequest(BaseModel):
     name: str = Field(min_length=2, max_length=200)
     phone: str = Field(min_length=3, max_length=32)
     password: str = Field(min_length=8, max_length=256)
+    # Optional marketer code. Unknown/inactive codes are ignored, never fatal.
+    referral_code: str | None = Field(default=None, max_length=64)
 
 
 class VerifyRegistrationRequest(BaseModel):
@@ -179,6 +182,7 @@ def register(
             phone=req.phone,
             password=req.password,
             request_ip=request_ip,
+            referral_code=req.referral_code,
         )
         db.commit()
         return result
@@ -309,7 +313,7 @@ def update_my_referral_code(
 @router.get("/runtime/quota-health")
 def quota_health(db: Session = Depends(get_db)) -> dict[str, object]:
     """Non-sensitive runtime check for deployment and migration verification."""
-    expected_revision = "0011_otp_request_ip"
+    expected_revision = "0015_self_service_codes"
     try:
         ledger_table_exists = bool(db.bind and inspect(db.bind).has_table("journey_credit_consumptions"))
     except Exception:
@@ -536,5 +540,24 @@ def billing_callback(
         db.rollback()
         raise
     except (ValueError, RuntimeError) as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@router.get("/me/referral-code")
+def get_my_referral_code(
+    user: User = Depends(_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    """Return the caller's own shareable code, creating it on first call.
+
+    Every signed-in user can hand a code to friends, the same way exchange
+    invites work. This endpoint is additive: it does not change any existing
+    route or the attribution rules.
+    """
+    try:
+        result = my_referral_code(db, user)
+        db.commit()
+        return result
+    except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(exc)) from exc

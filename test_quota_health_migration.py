@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from commercial_api import quota_health
 
 ROOT = Path(__file__).resolve().parent
-HEAD = "0011_otp_request_ip"
+HEAD = "0015_self_service_codes"
 
 
 class QuotaHealthMigrationTests(unittest.TestCase):

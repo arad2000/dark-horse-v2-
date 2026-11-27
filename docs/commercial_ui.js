@@ -11,6 +11,7 @@
 
   function el(id) { return document.getElementById(id); }
   function text(v) { return String(v == null ? '' : v); }
+  function toFa(n) { return String(n == null ? '' : n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; }); }
   function digits(v) {
     return text(v).replace(/[۰-۹]/g, function (d) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); });
   }
@@ -160,6 +161,7 @@
         '<h2 class="dh-commercial-title">' + title + '</h2>' +
         '<p class="dh-commercial-sub">' + (mode === 'login' ? 'با شماره موبایل و رمز عبور وارد حساب خود شوید.' : 'نام، موبایل و رمز را وارد کنید؛ سپس کد پیامکی کاوه‌نگار را تأیید کنید.') + '</p>' +
         (mode === 'register' ? '<input id="dh-c-name" class="dh-commercial-input" placeholder="نام و نام خانوادگی" autocomplete="name">' : '') +
+        (mode === 'register' ? '<input id="dh-c-ref" class="dh-commercial-input" style="direction:ltr;text-align:left;" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="کد معرف (اختیاری)">' : '') +
         '<input id="dh-c-phone" class="dh-commercial-input" inputmode="numeric" dir="ltr" placeholder="09xxxxxxxxx" autocomplete="tel">' +
         '<input id="dh-c-pass" class="dh-commercial-input" type="password" placeholder="رمز عبور (حداقل ۸ کاراکتر)" autocomplete="current-password">' +
         '<div id="dh-c-err" class="dh-commercial-error"></div>' +
@@ -193,7 +195,9 @@
             closeModal();
             await continueAfterAuth();
           } else {
-            var registration = await global.DHAuth.register(name, phone, pass);
+            var refInput = el('dh-c-ref');
+            var refCode = refInput ? String(refInput.value || '').trim() : '';
+            var registration = await global.DHAuth.register(name, phone, pass, refCode);
             if (!registration || !registration.challenge_id) throw new Error('پاسخ OTP ثبت‌نام معتبر نیست.');
             closeModal();
             showOtpModal({ phone: phone, challenge_id: registration.challenge_id, expires_in: registration.expires_in });
@@ -222,6 +226,64 @@
     return false;
   }
 
+  function openInviteModal() {
+    if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
+      showAuthModal('login');
+      return;
+    }
+    if (typeof global.DHAuth.myReferralCode !== 'function') {
+      showModal('<h2 class="dh-commercial-title">کد معرف شما</h2><p class="dh-commercial-sub">این قابلیت هنوز فعال نشده است.</p>');
+      return;
+    }
+    showModal(
+      '<h2 class="dh-commercial-title">کد معرف شما</h2>' +
+      '<p class="dh-commercial-sub">این کد را به دوستانت بده. هر کسی با این کد ثبت‌نام کند، به نام تو ثبت می‌شود.</p>' +
+      '<div id="dh-invite-body" class="dh-commercial-sub">در حال دریافت کد…</div>' +
+      '<div class="dh-commercial-actions"><button type="button" class="btn" id="dh-invite-close">بستن</button></div>'
+    );
+    el('dh-invite-close').onclick = closeModal;
+    global.DHAuth.myReferralCode().then(function (data) {
+      var body = el('dh-invite-body');
+      if (!body) return;
+      if (!data || !data.code) {
+        body.textContent = 'کد شما در دسترس نیست.';
+        return;
+      }
+      body.innerHTML =
+        '<div style="margin:10px 0;text-align:center;">' +
+          '<span id="dh-invite-code" style="display:inline-block;direction:ltr;font-family:ui-monospace,monospace;font-size:1.4rem;letter-spacing:2px;color:#f0c040;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.35);border-radius:10px;padding:8px 16px;">' +
+            text(data.code) +
+          '</span>' +
+        '</div>' +
+        '<div style="text-align:center;margin-bottom:8px;">تاکنون ' + toFa(data.signups || 0) + ' نفر با کد شما ثبت‌نام کرده‌اند.</div>' +
+        '<div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-invite-copy">کپی کد</button></div>';
+      var copyBtn = el('dh-invite-copy');
+      if (copyBtn) {
+        copyBtn.onclick = function () {
+          var done = function () { copyBtn.textContent = 'کپی شد ✓'; };
+          try {
+            if (global.navigator && global.navigator.clipboard && global.navigator.clipboard.writeText) {
+              global.navigator.clipboard.writeText(data.code).then(done, done);
+              return;
+            }
+          } catch (_) {}
+          try {
+            var input = el('dh-invite-code');
+            var range = document.createRange();
+            range.selectNodeContents(input);
+            var sel = global.getSelection();
+            sel.removeAllRanges(); sel.addRange(range);
+            document.execCommand('copy');
+            done();
+          } catch (_) {}
+        };
+      }
+    }).catch(function (e) {
+      var body = el('dh-invite-body');
+      if (body) body.textContent = (e && e.message) ? e.message : 'دریافت کد ناموفق بود.';
+    });
+  }
+
   function openPurchaseModal() {
     if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function' || !global.DHAuth.isLoggedIn()) {
       showAuthModal('login');
@@ -230,6 +292,12 @@
     showModal(
       '<h2 class="dh-commercial-title">خرید بسته ۳ تست</h2>' +
       '<div class="dh-commercial-pack"><div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>' +
+      '<div class="dh-referral-entry" style="margin:12px 0 8px;text-align:right;">' +
+        '<label class="dh-commercial-label" for="dh-buy-referral-code">کد معرف (اختیاری)</label>' +
+        '<input id="dh-buy-referral-code" class="dh-commercial-input dh-referral-input" style="user-select:text;direction:ltr;text-align:left;" type="text" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="کد معرف را وارد کنید" aria-describedby="dh-buy-referral-hint dh-buy-referral-message">' +
+        '<p id="dh-buy-referral-hint" style="margin:5px 2px 0;color:#9f957f;font-size:.76rem;line-height:1.7;">کد ندارید؟ این قسمت را خالی بگذارید و ادامه دهید.</p>' +
+        '<div id="dh-buy-referral-message" role="status" aria-live="polite" hidden style="margin-top:7px;font-size:.8rem;line-height:1.8;text-align:right;"></div>' +
+      '</div>' +
       '<p class="dh-commercial-sub">مبلغ و تعداد اعتبار فقط از سمت سرور تعیین می‌شود.</p>' +
       '<div id="dh-buy-err" class="dh-commercial-error"></div>' +
       '<div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-buy-now">ادامه به درگاه</button><button type="button" class="btn" id="dh-buy-close">انصراف</button></div>' +
@@ -242,6 +310,33 @@
       var err = el('dh-buy-err');
       if (err) err.textContent = '';
       try {
+        var referralInput = el('dh-buy-referral-code');
+        var referralMsg = el('dh-buy-referral-message');
+        var referralCode = referralInput ? String(referralInput.value || '').trim() : '';
+        if (referralMsg) { referralMsg.hidden = true; referralMsg.textContent = ''; }
+        // Referral attribution is optional and must never block checkout: any
+        // failure here (bad code, locked account, network) is reported and the
+        // purchase continues as a direct purchase.
+        if (typeof global.DHAuth.setReferralCode === 'function') {
+          try {
+            var referral = await global.DHAuth.setReferralCode(referralCode);
+            if (referralMsg && referral && referral.status === 'applied') {
+              referralMsg.hidden = false;
+              referralMsg.style.color = '#8fe0a8';
+              referralMsg.textContent = 'کد معرف ثبت شد.';
+            } else if (referralMsg && referralCode) {
+              referralMsg.hidden = false;
+              referralMsg.style.color = '#f0c040';
+              referralMsg.textContent = 'این کد معتبر نبود؛ خرید به‌صورت مستقیم ادامه می‌یابد.';
+            }
+          } catch (referralError) {
+            if (referralMsg && referralCode) {
+              referralMsg.hidden = false;
+              referralMsg.style.color = '#f0c040';
+              referralMsg.textContent = 'ثبت کد معرف انجام نشد؛ خرید به‌صورت مستقیم ادامه می‌یابد.';
+            }
+          }
+        }
         var payment = await global.DHAuth.createPayment();
         if (!payment || !payment.payment_url) throw new Error('آدرس درگاه از سرور دریافت نشد.');
         closeModal();
@@ -393,7 +488,22 @@
           showAuthModal('login');
         };
       });
+      // Any signed-in user can share their own code. Inserted next to the buy
+      // action so it is discoverable without adding a new page.
       var buy = el('dh-p-buy');
+      if (buy && buy.parentNode && !el('dh-p-invite')) {
+        var invite = document.createElement('button');
+        invite.type = 'button';
+        invite.className = 'btn';
+        invite.id = 'dh-p-invite';
+        invite.textContent = 'کد معرف من';
+        invite.__dhCommercialHooked = true;
+        invite.onclick = function (e) {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          openInviteModal();
+        };
+        buy.parentNode.insertBefore(invite, buy);
+      }
       if (buy && !buy.__dhCommercialHooked) {
         buy.__dhCommercialHooked = true;
         buy.onclick = function (e) {
@@ -454,6 +564,7 @@
     global.DHCommercialUI = {
       showAuth: showAuthModal,
       showPurchase: openPurchaseModal,
+      showInvite: openInviteModal,
       startServerAuthorizedJourney: continueAfterAuth,
       persistFinalResultSummary: persistFinalResultSummary,
       logout: doLogout,

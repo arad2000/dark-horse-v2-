@@ -64,6 +64,8 @@ class PhoneVerification(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     verified_at = Column(DateTime(timezone=True), nullable=True)
     request_ip = Column(String(45), nullable=True)
+    referral_code_input = Column(String(64), nullable=True)
+    referral_rejected_reason = Column(String(64), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -99,6 +101,8 @@ class Order(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     paid_at = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    marketer_id_snapshot = Column(Integer, nullable=True)
+    commission_bps_snapshot = Column(Integer, nullable=True)
     referral_code_snapshot = Column(String(64), nullable=True)
     referral_label_snapshot = Column(String(200), nullable=True)
     referral_snapshot_at = Column(DateTime(timezone=True), nullable=True)
@@ -206,3 +210,85 @@ class JourneyCreditConsumption(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     user = relationship("User")
     entitlement = relationship("Entitlement")
+
+class ReferralMarketer(Base):
+    """Owner of one or more referral codes.
+
+    May be an existing account (``user_id`` set) or an outside person with no
+    account. Commission is expressed in basis points so all money math stays
+    integer-only.
+    """
+
+    __tablename__ = "referral_marketers"
+    __table_args__ = (
+        Index("idx_referral_marketer_user", "user_id"),
+        Index("idx_referral_marketer_active", "is_active"),
+    )
+    id = Column(Integer, primary_key=True)
+    public_id = Column(String(40), nullable=False, unique=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    name = Column(String(200), nullable=False)
+    phone = Column(String(32), nullable=True)
+    commission_bps = Column(Integer, nullable=False, default=0, server_default="0")
+    is_active = Column(Boolean, nullable=False, default=True, server_default=text("true"))
+    note = Column(String(500), nullable=True)
+    # True when the owner minted this themselves rather than being onboarded.
+    self_service = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class ReferralCode(Base):
+    """Registry row binding a public code to its marketer."""
+
+    __tablename__ = "referral_codes"
+    __table_args__ = (Index("idx_referral_codes_marketer", "marketer_id"),)
+    id = Column(Integer, primary_key=True)
+    code = Column(String(64), nullable=False, unique=True)
+    marketer_id = Column(Integer, ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True, server_default=text("true"))
+    created_by_user_id = Column(BigInteger, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ReferralCommission(Base):
+    """Accrued commission for exactly one paid order (never a payment)."""
+
+    __tablename__ = "referral_commissions"
+    __table_args__ = (
+        Index("idx_referral_commission_marketer", "marketer_id"),
+        Index("idx_referral_commission_status", "status"),
+    )
+    id = Column(Integer, primary_key=True)
+    order_id = Column(BigInteger, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, unique=True)
+    marketer_id = Column(Integer, ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=False)
+    referral_code = Column(String(64), nullable=False)
+    gross_amount_minor = Column(BigInteger, nullable=False)
+    commission_bps = Column(Integer, nullable=False)
+    commission_amount_minor = Column(BigInteger, nullable=False)
+    currency = Column(String(8), nullable=False)
+    status = Column(String(16), nullable=False, default="accrued", server_default="accrued")
+    settled_at = Column(DateTime(timezone=True), nullable=True)
+    note = Column(String(500), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ReferralSignup(Base):
+    """One immutable attribution row per account, written at signup.
+
+    Independent of purchases: this is the "how many people did this marketer
+    bring" counter. ``user_id`` is unique, so it can never double count.
+    """
+
+    __tablename__ = "referral_signups"
+    __table_args__ = (
+        Index("idx_referral_signups_marketer", "marketer_id"),
+        Index("idx_referral_signups_code", "code"),
+        Index("idx_referral_signups_created", "created_at"),
+    )
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    code = Column(String(64), nullable=False)
+    marketer_id = Column(Integer, ForeignKey("referral_marketers.id", ondelete="RESTRICT"), nullable=True)
+    source = Column(String(32), nullable=False, default="register", server_default="register")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

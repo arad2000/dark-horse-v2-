@@ -112,10 +112,14 @@
     getUser() { const s = load(); return s && s.user ? s.user : null; },
     logout() { clear(); },
 
-    async register(name, phone, password) {
+    async register(name, phone, password, referralCode) {
+      const payload = { name, phone, password };
+      const code = String(referralCode == null ? '' : referralCode).trim();
+      // Optional: an unknown or blank code never blocks registration.
+      if (code) payload.referral_code = code;
       return req('/api/v1/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, phone, password })
+        body: JSON.stringify(payload)
       });
     },
 
@@ -192,6 +196,26 @@
       return req('/api/v1/me/save-result', {
         method: 'POST',
         body: JSON.stringify({ session_uuid: sessionId, result_summary: Object.assign({}, summary || {}, { session_uuid: sessionId }) })
+      });
+    },
+
+    // Optional referral attribution. The backend treats empty/invalid codes as
+    // "direct" and always returns purchase_allowed=true, so this can never
+    // block a purchase. A 409 just means attribution is already locked.
+    // The caller's own shareable code. Created server-side on first call, so
+    // every signed-in user can hand a code to friends like an exchange invite.
+    async myReferralCode() {
+      return req('/api/v1/me/referral-code', { method: 'GET' });
+    },
+
+    async setReferralCode(code) {
+      const value = String(code == null ? '' : code).trim();
+      if (value.length > 64) {
+        throw new Error('کد معرف نباید بیشتر از ۶۴ نویسه باشد.');
+      }
+      return req('/api/v1/me/referral-code', {
+        method: 'PUT',
+        body: JSON.stringify({ code: value })
       });
     },
 

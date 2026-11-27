@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from billing_models import AdminAuditLog, Order, User
+from billing_models import AdminAuditLog, Order, ReferralCode, ReferralMarketer, User
 
 _CODE_PATTERN = re.compile(r"^[A-Z0-9]{4,32}$")
 _CODE_ALPHABET = string.ascii_uppercase + string.digits
@@ -98,6 +98,48 @@ def create_referral_code(
     return record
 
 
+def _resolve_active_code(db: Session, code: str) -> AdminAuditLog | None:
+    """Look a code up in the ownership registry first, then the legacy ledger.
+
+    Codes created through the commission registry (``referral_codes``) carry an
+    owner and must resolve there. Codes created before ownership existed live
+    only in ``admin_audit_logs`` and stay valid, so both are accepted and the
+    returned record still carries ``target_id`` + ``metadata_json``.
+    """
+    if not code:
+        return None
+    owned = db.scalar(
+        select(ReferralCode).where(
+            ReferralCode.code == code,
+            ReferralCode.is_active.is_(True),
+        )
+    )
+    if owned is not None:
+        marketer = db.get(ReferralMarketer, owned.marketer_id)
+        if marketer is not None and marketer.is_active:
+            # Surface the owned code through the legacy record shape so callers
+            # (including order snapshots) do not need to branch.
+            return _OwnedCodeRecord(code, marketer)
+        return None
+    return db.scalar(
+        select(AdminAuditLog).where(
+            AdminAuditLog.action == "create_referral_code",
+            AdminAuditLog.target_type == "referral_code",
+            AdminAuditLog.target_id == code,
+        )
+    )
+
+
+class _OwnedCodeRecord:
+    """Adapter so an owned code looks like a legacy ledger row."""
+
+    __slots__ = ("target_id", "metadata_json")
+
+    def __init__(self, code: str, marketer) -> None:
+        self.target_id = code
+        self.metadata_json = {"label": marketer.name, "is_active": True}
+
+
 def set_user_referral_code(
     db: Session,
     *,
@@ -137,13 +179,7 @@ def set_user_referral_code(
             "referral_code": None,
         }
 
-    record = db.scalar(
-        select(AdminAuditLog).where(
-            AdminAuditLog.action == "create_referral_code",
-            AdminAuditLog.target_type == "referral_code",
-            AdminAuditLog.target_id == normalized,
-        )
-    )
+    record = _resolve_active_code(db, normalized)
     metadata = record.metadata_json if record is not None and isinstance(record.metadata_json, dict) else {}
     if record is None or metadata.get("is_active", True) is not True:
         user.referral_code = None
@@ -196,15 +232,9 @@ def snapshot_order_referral(
     if user.referral_locked_at is None and previous_paid_order is not None:
         user.referral_locked_at = previous_paid_order.paid_at or paid_at
 
-    record = None
-    if user.referral_code:
-        record = db.scalar(
-            select(AdminAuditLog).where(
-                AdminAuditLog.action == "create_referral_code",
-                AdminAuditLog.target_type == "referral_code",
-                AdminAuditLog.target_id == user.referral_code,
-            )
-        )
+    # Resolve through both registries: an owned code lives in referral_codes and
+    # would otherwise snapshot as empty, silently losing the attribution.
+    record = _resolve_active_code(db, user.referral_code) if user.referral_code else None
 
     metadata = record.metadata_json if record is not None and isinstance(record.metadata_json, dict) else {}
     if record is not None and metadata.get("is_active", True) is True:

@@ -123,7 +123,8 @@ def _send_kavenegar_otp(phone: str, code: str) -> None:
 
 
 def request_registration_otp(
-    db: Session, *, name: str, phone: str, password: str, request_ip: str | None = None
+    db: Session, *, name: str, phone: str, password: str, request_ip: str | None = None,
+    referral_code: str | None = None,
 ) -> dict[str, object]:
     phone = normalize_phone(phone)
     name = (name or "").strip()
@@ -150,6 +151,7 @@ def request_registration_otp(
 
     challenge_id = secrets.token_urlsafe(18)
     code = f"{secrets.randbelow(1_000_000):06d}"
+    raw_referral = (referral_code or "").strip().upper()[:64] or None
     challenge = PhoneVerification(
         challenge_id=challenge_id,
         phone=phone,
@@ -160,6 +162,7 @@ def request_registration_otp(
         expires_at=now + timedelta(seconds=OTP_TTL_SECONDS),
         attempts=0,
         request_ip=request_ip,
+        referral_code_input=raw_referral,
     )
     db.add(challenge)
     db.flush()
@@ -220,5 +223,36 @@ def verify_registration_otp(db: Session, *, challenge_id: str, code: str) -> tup
     from auth_service import issue_session
     token, _ = issue_session(db, user)
     challenge.verified_at = utcnow()
+    _record_signup_attribution(db, user=user, challenge=challenge)
     db.flush()
     return user, token
+
+
+def _record_signup_attribution(db: Session, *, user, challenge) -> None:
+    """Attribute this new account to a marketer, once, without blocking signup.
+
+    Runs before the session is handed back, so the head-count is correct even
+    for people who never buy. A bad code never stops a registration: the reason
+    is stored on the challenge instead, for the operator to explain later.
+    """
+    from billing_models import ReferralSignup
+    from referral_commission_service import resolve_owner
+
+    raw = (challenge.referral_code_input or "").strip().upper()
+    if not raw:
+        return
+
+    resolved = resolve_owner(db, raw)
+    if resolved is None:
+        challenge.referral_rejected_reason = "unknown_or_inactive_code"
+        return
+
+    _code_row, marketer = resolved
+    db.add(
+        ReferralSignup(
+            user_id=int(user.id),
+            code=raw,
+            marketer_id=int(marketer.id),
+            source="register",
+        )
+    )

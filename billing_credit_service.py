@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from billing_models import Entitlement, Order, Payment, PaymentEvent, PremiumPlan, User
 from referral_service import snapshot_order_referral
+from referral_commission_service import accrue_commission, snapshot_order_owner
 
 FREE_PLAN_CODE = "free_1_test"
 PACK_3_TESTS_CODE = "pack_3_tests"
@@ -212,6 +213,11 @@ def verify_and_grant(
 
     paid_at = utcnow()
     snapshot_order_referral(db, order, paid_at=paid_at)
+    # Freeze the code's owner and rate onto this order at the same instant the
+    # code itself is frozen, so a later ownership change cannot move past
+    # commission. The accrual row is then written from that snapshot only.
+    snapshot_order_owner(db, order, order.referral_code_snapshot)
+    accrue_commission(db, order)
 
     payment.status = "verified"
     payment.provider_transaction_id = str(verification.get("transaction_id")) if verification.get("transaction_id") else None
