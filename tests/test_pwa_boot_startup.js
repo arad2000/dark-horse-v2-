@@ -105,7 +105,7 @@ async function testStartupMarkup() {
   assert.match(indexSource, /data\.js\?v=motives-1393-catalog-230-v1&narrow-fix=1/);
   assert.match(indexSource, /app\.js\?v=74/);
   assert.match(indexSource, /shell\.js\?v=94/);
-  assert.match(shellSource, /commercial_ui\.js\?v=46/);
+  assert.match(shellSource, /commercial_ui\.js\?v=47/);
   assert.match(indexSource, /pwa-boot\.js\?v=80/);
   assert.match(indexSource, /shell\.css\?v=70&ux=phase4-live-v2(&r=\d+)?" media="print"/);
   assert.match(indexSource, /journey_experience\.css\?v=3" media="print"/);
