@@ -80,6 +80,9 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const referralCalls = [];
   let createPaymentCalls = 0;
   const options = arguments[0] || {};
+  const scheduleTimeout = options.scalePreparationTimeout
+    ? (callback, ms) => setTimeout(callback, ms === 12000 ? 20 : ms)
+    : setTimeout;
 
   const document = {
     readyState: 'complete',
@@ -92,7 +95,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   const context = {
     console,
     document,
-    setTimeout,
+    setTimeout: scheduleTimeout,
     Promise,
     location,
     navigator: { userAgent, standalone: false },
@@ -104,11 +107,12 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
       setReferralCode(code) {
         referralCalls.push(code);
         if (options.referralError) return Promise.reject(options.referralError);
-        return Promise.resolve(options.referralResult || { status: code ? 'applied' : 'direct', purchase_allowed: true });
+        const result = options.referralResult || { status: code ? 'applied' : 'direct', purchase_allowed: true };
+        return new Promise((resolve) => scheduleTimeout(() => resolve(result), Number(options.referralDelay) || 0));
       },
       createPayment() {
         createPaymentCalls += 1;
-        return new Promise((resolve) => setTimeout(
+        return new Promise((resolve) => scheduleTimeout(
           () => resolve({ payment_url: 'https://sandbox.zarinpal.com/pg/StartPay/ABC123' }),
           delay
         ));
@@ -126,9 +130,9 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   await new Promise((resolve) => setTimeout(resolve, 0));
   if (options.start !== false && typeof button.onclick === 'function') {
     button.onclick({ preventDefault() {}, stopPropagation() {} });
-    await new Promise((resolve) => setTimeout(resolve, delay >= 2000 ? 2100 : 100));
+    await new Promise((resolve) => setTimeout(resolve, options.scalePreparationTimeout ? 100 : (delay >= 12000 ? 12100 : 100)));
   }
-  return { button, error, status, spin, statusText, referralInput, referralMessage, referralCalls, createPaymentCalls, location, bridgeCalls, journeyCalls };
+  return { button, error, status, spin, statusText, referralInput, referralMessage, referralCalls, createPaymentCalls, createPaymentCallCount: () => createPaymentCalls, location, bridgeCalls, journeyCalls };
 }
 
 (async () => {
@@ -223,12 +227,27 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.deepStrictEqual(evil.href, []);
   assert.deepStrictEqual(evil.replace, []);
 
-  const timeout = await runPurchase({ delay: 2500 });
+  const staleReferral = await runPurchase({ delay: 50, referralDelay: 500, scalePreparationTimeout: true });
+  assert.strictEqual(staleReferral.button.textContent, 'تلاش دوباره');
+  assert.strictEqual(staleReferral.createPaymentCallCount(), 0);
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  assert.strictEqual(staleReferral.createPaymentCallCount(), 0, 'a referral request resolving after timeout must not create an order');
+
+  const timeout = await runPurchase({ delay: 1000, scalePreparationTimeout: true });
   assert.strictEqual(timeout.button.disabled, false);
-  assert.strictEqual(timeout.button.textContent, 'تلاش دوباره');
+  assert.strictEqual(timeout.button.textContent, 'بررسی نتیجه');
   assert.strictEqual(timeout.status.hidden, false);
   assert.strictEqual(timeout.spin.hidden, true);
-  assert.match(timeout.error.textContent, /بیش از ۲ ثانیه/);
+  assert.match(timeout.error.textContent, /بیش از ۱۲ ثانیه/);
+  assert.strictEqual(timeout.createPaymentCallCount(), 1);
+  timeout.button.onclick({ preventDefault() {}, stopPropagation() {} });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.strictEqual(timeout.createPaymentCallCount(), 1, 'checking a timed-out payment must reuse the original POST');
+  await new Promise((resolve) => setTimeout(resolve, 1050));
+  timeout.button.onclick({ preventDefault() {}, stopPropagation() {} });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.strictEqual(timeout.button.textContent, 'پرداخت', 'a late response should expose the original payment link');
+  assert.strictEqual(timeout.createPaymentCallCount(), 1, 'a late payment response must never cause a second order');
 
   const purchaseFunction = (source.match(/function openPayment\([\s\S]*?\n  }\n\n  function waitForPayment/) || [])[0];
   const commercialFunction = (commercialSource.match(/function openExternalPay\([\s\S]*?\n  }\s*\n\s*function showPayFallback/) || [])[0];
@@ -255,6 +274,9 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(authApiSource, /method: 'PUT'/);
   const referralPrepareFunction = (source.match(/async function prepareReferralAndPayment\([\s\S]*?\n    }\n\n    function startPreparation/) || [])[0];
   assert.ok(referralPrepareFunction, 'referral-first checkout function not found');
+  assert.match(source, /var PREPARE_TIMEOUT_MS = 12000/);
+  assert.match(source, /var paymentRequestPromise = null/);
+  assert.match(source, /paymentRequestTimedOut \? 'بررسی نتیجه' : 'تلاش دوباره'/);
   assert.ok(referralPrepareFunction.indexOf('await global.DHAuth.setReferralCode') < referralPrepareFunction.indexOf('return global.DHAuth.createPayment'), 'referral must be set before payment order creation');
   assert.match(source, /کد معرف معتبر نیست؛ خرید بدون کد معرف ادامه پیدا می‌کند/);
   assert.match(source, /کد معرف پس از نخستین پرداخت موفق قفل شده است/);
