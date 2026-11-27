@@ -1251,7 +1251,7 @@
           };
           script.id = 'dh-commercial-ui-loader';
           script.async = false;
-          script.src = 'commercial_ui.js?v=46';
+          script.src = 'commercial_ui.js?v=47';
           script.setAttribute('data-dh-load-state', 'loading');
           window.addEventListener('error', onWindowError, true);
           function cleanup() {
@@ -1369,6 +1369,7 @@
       '<button class="btn btn-primary" style="width:100%;margin-top:14px;" id="dh-p-journey">' +
         (last && last.tops && last.tops.length ? 'سفر دوباره' : 'شروع اولین سفر') + '</button>' +
       (last && last.tops && last.tops.length ? '<button class="btn" style="width:100%;margin-top:8px;border-color:rgba(212,175,55,0.45);color:#f0c040;" id="dh-p-share">اشتراک‌گذاری نتیجه</button>' : '') +
+      '<button class="btn" style="width:100%;margin-top:8px;border-color:rgba(212,175,55,0.45);color:#f0c040;" id="dh-p-invite">کد معرف من</button>' +
       '<button class="btn btn-primary" style="width:100%;margin-top:8px;" id="dh-p-buy">خرید بسته ۳ تست</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;" id="dh-p-home">خانه</button>' +
       '<button class="btn" style="width:100%;margin-top:8px;opacity:0.85;" id="dh-p-out">خروج از حساب</button>' +
@@ -1401,6 +1402,25 @@
     };
     var ex = $('dh-p-exit');
     if (ex) ex.onclick = function () { exitApp(); };
+    var inviteBtn = $('dh-p-invite');
+    if (inviteBtn) {
+      inviteBtn.onclick = function (ev) {
+        if (ev) { try { ev.preventDefault(); ev.stopPropagation(); } catch (_) {} }
+        var opened = false;
+        try {
+          if (window.DHCommercialUI && typeof window.DHCommercialUI.showInvite === 'function') {
+            window.DHCommercialUI.showInvite();
+            opened = true;
+          }
+        } catch (e1) { console.error(e1); }
+        if (!opened) {
+          try { window.dispatchEvent(new CustomEvent('dh-open-invite')); opened = true; } catch (e2) {}
+        }
+        if (!opened) {
+          dhToast('کد معرف در حال آماده‌سازی است؛ یک لحظه دیگر امتحان کنید.');
+        }
+      };
+    }
     var buyBtn = $('dh-p-buy');
     if (buyBtn) {
       buyBtn.onclick = function (ev) {

@@ -100,7 +100,7 @@
       if(!modalRoot) throw new Error('auth-ui-modal-root-missing');
       function paint(){
         var title=mode==='login'?'ورود به حساب':'ساخت حساب',action=mode==='login'?'ورود':'ثبت‌نام';
-        modalRoot.innerHTML='<h2 class="dh-commercial-title">'+title+'</h2><p class="dh-commercial-sub">'+(mode==='login'?'با شماره موبایل و رمز عبور وارد حساب خود شوید.':'برای ساخت حساب، شماره موبایل خود را با کد پیامکی تأیید کنید.')+'</p>'+(mode==='register'?'<label class="dh-commercial-label" for="dh-c-name">نام و نام خانوادگی</label><input id="dh-c-name" class="dh-commercial-input" autocomplete="name" placeholder="نام و نام خانوادگی">':'')+'<label class="dh-commercial-label" for="dh-c-phone">شماره موبایل</label><input id="dh-c-phone" class="dh-commercial-input" type="tel" inputmode="numeric" dir="ltr" placeholder="09xxxxxxxxx" autocomplete="tel"><label class="dh-commercial-label" for="dh-c-pass">رمز عبور</label><div class="dh-commercial-field"><input id="dh-c-pass" class="dh-commercial-input has-toggle" type="password" placeholder="حداقل ۸ کاراکتر" autocomplete="current-password"><button type="button" class="dh-commercial-toggle" id="dh-c-pass-toggle" aria-label="نمایش رمز عبور">◉</button></div><div id="dh-c-err" class="dh-commercial-error"></div><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-c-submit">'+action+'</button><button type="button" class="btn" id="dh-c-close">انصراف</button></div><p class="dh-commercial-note">احراز هویت و اعتباردهی در سرور انجام می‌شود.</p><div style="text-align:center;margin-top:4px"><button type="button" class="dh-commercial-link" id="dh-c-switch">'+(mode==='login'?'ساخت حساب جدید':'حساب دارم؛ ورود')+'</button></div>';addPasswordToggle('dh-c-pass','dh-c-pass-toggle');el('dh-c-close').onclick=function(){if(!BUSY)closeModal();};el('dh-c-switch').onclick=function(){if(!BUSY){mode=mode==='login'?'register':'login';paint();}};el('dh-c-submit').onclick=async function(){if(BUSY)return;BUSY=true;var b=el('dh-c-submit'),err=el('dh-c-err');setBusy(b,mode==='login'?'در حال ورود…':'در حال ارسال کد…',action,true);var phone=digits(el('dh-c-phone').value).replace(/\s+/g,''),pass=el('dh-c-pass').value,name=mode==='register'?el('dh-c-name').value.trim():'';if(mode==='register'&&name.length<2){if(err)err.textContent='نام را کامل وارد کنید.';BUSY=false;setBusy(b,'',action,false);return;}if(!/^09\d{9}$/.test(phone)){if(err)err.textContent='شماره موبایل را به‌صورت 09xxxxxxxxx وارد کنید.';BUSY=false;setBusy(b,'',action,false);return;}if(pass.length<8){if(err)err.textContent='رمز عبور باید حداقل ۸ کاراکتر باشد.';BUSY=false;setBusy(b,'',action,false);return;}try{if(mode==='login'){var d=await global.DHAuth.login(phone,pass);if(d.user)saveLocalUser(d.user);if(typeof d.quota==='number')setLocalQuota({remaining:d.quota});closeModal();await continueAfterAuth();}else{var c=await global.DHAuth.register(name,phone,pass);closeModal();showOtpModal({phone:phone,challenge_id:c.challenge_id,expires_in:c.expires_in});}}catch(e){if(err)err.textContent=text(e&&e.message?e.message:e)||'خطا در ارتباط با سرور.';}finally{BUSY=false;if(el('dh-c-submit'))setBusy(el('dh-c-submit'),'',action,false);};};}paint();
+        modalRoot.innerHTML='<h2 class="dh-commercial-title">'+title+'</h2><p class="dh-commercial-sub">'+(mode==='login'?'با شماره موبایل و رمز عبور وارد حساب خود شوید.':'برای ساخت حساب، شماره موبایل خود را با کد پیامکی تأیید کنید.')+'</p>'+(mode==='register'?'<label class="dh-commercial-label" for="dh-c-name">نام و نام خانوادگی</label><input id="dh-c-name" class="dh-commercial-input" autocomplete="name" placeholder="نام و نام خانوادگی">':'')+(mode==='register'?'<label class="dh-commercial-label" for="dh-c-ref">کد معرف (اختیاری)</label><input id="dh-c-ref" class="dh-commercial-input" style="direction:ltr;text-align:left;" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="اگر کسی کد داده وارد کنید">':'')+'<label class="dh-commercial-label" for="dh-c-phone">شماره موبایل</label><input id="dh-c-phone" class="dh-commercial-input" type="tel" inputmode="numeric" dir="ltr" placeholder="09xxxxxxxxx" autocomplete="tel"><label class="dh-commercial-label" for="dh-c-pass">رمز عبور</label><div class="dh-commercial-field"><input id="dh-c-pass" class="dh-commercial-input has-toggle" type="password" placeholder="حداقل ۸ کاراکتر" autocomplete="current-password"><button type="button" class="dh-commercial-toggle" id="dh-c-pass-toggle" aria-label="نمایش رمز عبور">◉</button></div><div id="dh-c-err" class="dh-commercial-error"></div><div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-c-submit">'+action+'</button><button type="button" class="btn" id="dh-c-close">انصراف</button></div><p class="dh-commercial-note">احراز هویت و اعتباردهی در سرور انجام می‌شود.</p><div style="text-align:center;margin-top:4px"><button type="button" class="dh-commercial-link" id="dh-c-switch">'+(mode==='login'?'ساخت حساب جدید':'حساب دارم؛ ورود')+'</button></div>';addPasswordToggle('dh-c-pass','dh-c-pass-toggle');el('dh-c-close').onclick=function(){if(!BUSY)closeModal();};el('dh-c-switch').onclick=function(){if(!BUSY){mode=mode==='login'?'register':'login';paint();}};el('dh-c-submit').onclick=async function(){if(BUSY)return;BUSY=true;var b=el('dh-c-submit'),err=el('dh-c-err');setBusy(b,mode==='login'?'در حال ورود…':'در حال ارسال کد…',action,true);var phone=digits(el('dh-c-phone').value).replace(/\s+/g,''),pass=el('dh-c-pass').value,name=mode==='register'?el('dh-c-name').value.trim():'';if(mode==='register'&&name.length<2){if(err)err.textContent='نام را کامل وارد کنید.';BUSY=false;setBusy(b,'',action,false);return;}if(!/^09\d{9}$/.test(phone)){if(err)err.textContent='شماره موبایل را به‌صورت 09xxxxxxxxx وارد کنید.';BUSY=false;setBusy(b,'',action,false);return;}if(pass.length<8){if(err)err.textContent='رمز عبور باید حداقل ۸ کاراکتر باشد.';BUSY=false;setBusy(b,'',action,false);return;}try{if(mode==='login'){var d=await global.DHAuth.login(phone,pass);if(d.user)saveLocalUser(d.user);if(typeof d.quota==='number')setLocalQuota({remaining:d.quota});closeModal();await continueAfterAuth();}else{var refEl=el('dh-c-ref');var refCode=refEl?String(refEl.value||'').trim():'';var c=await global.DHAuth.register(name,phone,pass,refCode);closeModal();showOtpModal({phone:phone,challenge_id:c.challenge_id,expires_in:c.expires_in});}}catch(e){if(err)err.textContent=text(e&&e.message?e.message:e)||'خطا در ارتباط با سرور.';}finally{BUSY=false;if(el('dh-c-submit'))setBusy(el('dh-c-submit'),'',action,false);};};}paint();
     } catch (e) {
       try { console.error('[DarkHorse][AuthUI] showAuthModal failed', e); } catch (_) {}
       try {
@@ -200,6 +200,68 @@
     var b3=el('dh-pay-copy');if(b3)b3.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}var done=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(hop).then(function(){alert('لینک کپی شد.');});done=true;}}catch(_){}if(!done){try{var t=el('dh-pay-url');if(t){t.focus();t.select();document.execCommand('copy');alert('لینک کپی شد.');done=true;}}catch(__){}}if(!done)alert('لینک پایین را نگه دارید و Copy کنید.');};
   }
 
+  // Every signed-in account can share its own code (exchange-style invite).
+  // The code is minted server-side on first use, so no admin step is needed.
+  function openInviteModal(){
+    BUSY=false;
+    try{closeModal();}catch(_){}
+    if(!global.DHAuth||typeof global.DHAuth.isLoggedIn!=='function'||!global.DHAuth.isLoggedIn()){
+      showAuthModal('login');
+      return;
+    }
+    showModal(
+      '<h2 class="dh-commercial-title">کد معرف شما</h2>'+
+      '<p class="dh-commercial-sub">این کد را به دوستانت بده. هر کسی با این کد ثبت‌نام کند، به نام تو ثبت می‌شود.</p>'+
+      '<div id="dh-invite-body" class="dh-commercial-sub" style="text-align:center;">در حال دریافت کد…</div>'+
+      '<div class="dh-commercial-actions"><button type="button" class="btn" id="dh-invite-close">بستن</button></div>'
+    );
+    el('dh-invite-close').onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}closeModal();};
+    if(!global.DHAuth||typeof global.DHAuth.myReferralCode!=='function'){
+      var noBody=el('dh-invite-body');
+      if(noBody)noBody.textContent='این قابلیت هنوز روی سرور فعال نشده است.';
+      return;
+    }
+    global.DHAuth.myReferralCode().then(function(data){
+      var body=el('dh-invite-body');
+      if(!body)return;
+      if(!data||!data.code){body.textContent='کد شما در دسترس نیست.';return;}
+      var code=escapeHtml(String(data.code));
+      var count=Number(data.signups||0);
+      var countFa=String(isFinite(count)?count:0).replace(/\d/g,function(d){return '۰۱۲۳۴۵۶۷۸۹'[Number(d)];});
+      body.innerHTML=
+        '<div style="margin:12px 0;text-align:center;">'+
+          '<span id="dh-invite-code" style="display:inline-block;direction:ltr;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.5rem;letter-spacing:3px;color:#f0c040;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.38);border-radius:12px;padding:10px 20px;user-select:text;">'+code+'</span>'+
+        '</div>'+
+        '<div style="margin-bottom:10px;">تاکنون '+countFa+' نفر با کد شما ثبت‌نام کرده‌اند.</div>'+
+        '<div class="dh-commercial-actions"><button type="button" class="btn btn-primary" id="dh-invite-copy">کپی کد</button></div>';
+      var copyBtn=el('dh-invite-copy');
+      if(copyBtn){
+        copyBtn.onclick=function(ev){
+          if(ev){ev.preventDefault();ev.stopPropagation();}
+          var done=function(){copyBtn.textContent='کپی شد ✓';};
+          try{
+            if(global.navigator&&global.navigator.clipboard&&global.navigator.clipboard.writeText){
+              global.navigator.clipboard.writeText(String(data.code)).then(done,done);
+              return;
+            }
+          }catch(_){}
+          try{
+            var input=el('dh-invite-code');
+            var range=document.createRange();
+            range.selectNodeContents(input);
+            var sel=global.getSelection();
+            sel.removeAllRanges();sel.addRange(range);
+            document.execCommand('copy');
+            done();
+          }catch(_){}
+        };
+      }
+    }).catch(function(x){
+      var body=el('dh-invite-body');
+      if(body)body.textContent=(x&&x.message)?x.message:'دریافت کد ناموفق بود.';
+    });
+  }
+
   function openPurchaseModal(reason){
     BUSY=false;
     try{closeModal();}catch(_){}
@@ -218,6 +280,9 @@
       '<div class="dh-commercial-pack"><span class="badge">بسته استاندارد</span>'+
       '<div class="dh-commercial-price">۲۴۹٬۰۰۰ تومان</div><div>۳ تست · بدون تاریخ انقضا</div></div>'+
       '<p class="dh-commercial-sub">مبلغ فقط از سمت سرور تعیین می‌شود.</p>'+
+      '<label class="dh-commercial-label" for="dh-buy-ref">کد معرف (اختیاری)</label>'+
+      '<input id="dh-buy-ref" class="dh-commercial-input" style="direction:ltr;text-align:left;" type="text" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="کد ندارید؟ خالی بگذارید">'+
+      '<p id="dh-buy-ref-msg" role="status" aria-live="polite" hidden style="margin:6px 2px 0;font-size:.8rem;line-height:1.8;text-align:right;"></p>'+
       '<div id="dh-buy-err" class="dh-commercial-error"></div>'+
       '<div id="dh-buy-status" class="dh-commercial-status" hidden><span class="dh-commercial-spinner" id="dh-buy-spin"></span><span id="dh-buy-status-text">در حال دریافت لینک پرداخت…</span></div>'+
       '<div class="dh-commercial-actions">'+
@@ -239,6 +304,23 @@
       BUSY=true;
       if(s){s.hidden=false;s.style.color='';var st=el('dh-buy-status-text');if(st)st.textContent='در حال اتصال…';}
       setBusy(b,'…','پرداخت',true);
+      // Referral attribution is optional and best-effort: a blank code, a bad
+      // code or a network error is reported here and the purchase continues.
+      var refEl=el('dh-buy-ref'),refMsg=el('dh-buy-ref-msg');
+      var refCode=refEl?String(refEl.value||'').trim():'';
+      if(refMsg){refMsg.hidden=true;refMsg.textContent='';}
+      if(refCode&&global.DHAuth&&typeof global.DHAuth.setReferralCode==='function'){
+        try{
+          var ref=await global.DHAuth.setReferralCode(refCode);
+          if(refMsg){
+            refMsg.hidden=false;
+            if(ref&&ref.status==='applied'){refMsg.style.color='#8fe0a8';refMsg.textContent='کد معرف ثبت شد.';}
+            else{refMsg.style.color='#f0c040';refMsg.textContent='این کد معتبر نبود؛ پرداخت به‌صورت مستقیم ادامه می‌یابد.';}
+          }
+        }catch(_){
+          if(refMsg){refMsg.hidden=false;refMsg.style.color='#f0c040';refMsg.textContent='ثبت کد معرف انجام نشد؛ پرداخت به‌صورت مستقیم ادامه می‌یابد.';}
+        }
+      }
       try{
         var p=await global.DHAuth.createPayment();
         payUrl=(p&&(p.payment_url||p.paymentUrl||p.url))||'';
@@ -901,6 +983,7 @@
   var publicApi={
     showAuth:showAuthModal,
     showPurchase:openPurchaseModal,
+    showInvite:openInviteModal,
     startServerAuthorizedJourney:continueAfterAuth,
     ensureCanEnterJourney:ensureCanEnterJourney,
     isActiveStageAuthorized:isActiveStageAuthorized,
@@ -922,5 +1005,6 @@
   if (!global.DHCommercialUI) global.DHCommercialUI=publicApi;
   global.__dhCommercialUIReady = true;
   window.addEventListener('dh-open-purchase',function(){try{openPurchaseModal();}catch(e){console.error(e);}});
+  window.addEventListener('dh-open-invite',function(){try{openInviteModal();}catch(e){console.error(e);}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })(window);
