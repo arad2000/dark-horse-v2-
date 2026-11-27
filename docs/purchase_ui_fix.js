@@ -2,7 +2,7 @@
 (function (global) {
   'use strict';
 
-  var PREPARE_TIMEOUT_MS = 2000;
+  var PREPARE_TIMEOUT_MS = 12000;
   var patchSerial = 0;
 
   function byId(id) { return document.getElementById(id); }
@@ -65,10 +65,12 @@
     notice.style.color = kind === 'success' ? '#80d49a' : '#f0c040';
   }
 
-  function paymentErrorText(error) {
+  function paymentErrorText(error, existingPaymentRequest) {
     var message = text(error && error.message ? error.message : error);
     if (/timeout/i.test(message)) {
-      return 'آماده‌سازی درگاه بیش از ۲ ثانیه طول کشید. برای ادامه، «تلاش دوباره» را بزنید.';
+      return existingPaymentRequest
+        ? 'پاسخ ساخت پرداخت بیش از ۱۲ ثانیه طول کشید؛ برای جلوگیری از سفارش تکراری، همان درخواست قبلی بررسی می‌شود.'
+        : 'آماده‌سازی پرداخت بیش از ۱۲ ثانیه طول کشید. برای ادامه، «تلاش دوباره» را بزنید.';
     }
     if (/merchant|not configured|credential|authority/i.test(message)) {
       return 'درگاه هنوز آماده تراکنش نیست؛ وضعیت Merchant ID و فعال‌سازی زرین‌پال را بررسی کنید.';
@@ -164,15 +166,18 @@
     var localSerial = 0;
     var readyUrl = null;
     var referralLocked = false;
+    // Reuse a payment-creation request after timeout; never POST a second order for this modal.
+    var paymentRequestPromise = null;
+    var paymentRequestTimedOut = false;
 
     function showFailure(errorValue, expectedSerial) {
       var serial = typeof expectedSerial === 'number' ? expectedSerial : localSerial;
       if (serial !== patchSerial || !byId('dh-commercial-overlay')) return;
       readyUrl = null;
-      if (referralInput && !referralLocked) referralInput.disabled = false;
+      if (referralInput && !referralLocked) referralInput.disabled = !!paymentRequestPromise;
       setStatus('error', 'آماده‌سازی پرداخت ناموفق بود.');
-      setError(paymentErrorText(errorValue));
-      setButton(button, 'تلاش دوباره', false);
+      setError(paymentErrorText(errorValue, paymentRequestTimedOut));
+      setButton(button, paymentRequestTimedOut ? 'بررسی نتیجه' : 'تلاش دوباره', false);
       button.onclick = function (event) {
         if (event) { event.preventDefault(); event.stopPropagation(); }
         if (button.disabled) return;
@@ -205,6 +210,8 @@
     }
 
     async function prepareReferralAndPayment(serial) {
+      // A timed-out POST may still complete on the server. Reattach to the same promise.
+      if (paymentRequestPromise) return paymentRequestPromise;
       if (!global.DHAuth || typeof global.DHAuth.createPayment !== 'function') {
         throw new Error('کلاینت پرداخت در دسترس نیست.');
       }
@@ -250,7 +257,16 @@
       }
 
       if (serial !== patchSerial) throw new Error('payment_prepare_stale');
-      return global.DHAuth.createPayment();
+      var createdPayment = global.DHAuth.createPayment();
+      paymentRequestPromise = Promise.resolve(createdPayment);
+      var trackedPaymentRequest = paymentRequestPromise;
+      trackedPaymentRequest.then(null, function () {
+        // Retry only after a pre-timeout, definitive rejection. Once timed out, outcome is unknown.
+        if (!paymentRequestTimedOut && paymentRequestPromise === trackedPaymentRequest) {
+          paymentRequestPromise = null;
+        }
+      });
+      return trackedPaymentRequest;
     }
 
     function startPreparation() {
@@ -272,7 +288,8 @@
       waitForPayment(request, nowSerial).then(showReady).catch(function (errorValue) {
         if (/payment_prepare_stale/.test(text(errorValue && errorValue.message ? errorValue.message : errorValue))) return;
         if (/payment_prepare_timeout/.test(text(errorValue && errorValue.message ? errorValue.message : errorValue))) {
-          // Invalidate a slow referral request so it cannot create an order after timeout.
+          // Invalidate a slow referral request; if the payment POST was already sent, keep its promise locked.
+          if (paymentRequestPromise) paymentRequestTimedOut = true;
           var failedSerial = ++patchSerial;
           localSerial = failedSerial;
           showFailure(errorValue, failedSerial);
