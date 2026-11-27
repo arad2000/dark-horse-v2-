@@ -255,7 +255,7 @@ async function runPurchase({ delay, userAgent = '', journeyCalls = [] }) {
   assert.match(authApiSource, /method: 'PUT'/);
   const referralPrepareFunction = (source.match(/async function prepareReferralAndPayment\([\s\S]*?\n    }\n\n    function startPreparation/) || [])[0];
   assert.ok(referralPrepareFunction, 'referral-first checkout function not found');
-  assert.ok(referralPrepareFunction.indexOf('await global.DHAuth.setReferralCode') < referralPrepareFunction.indexOf('global.DHAuth.createPayment'), 'referral must be set before payment order creation');
+  assert.ok(referralPrepareFunction.indexOf('await global.DHAuth.setReferralCode') < referralPrepareFunction.indexOf('return global.DHAuth.createPayment'), 'referral must be set before payment order creation');
   assert.match(source, /کد معرف معتبر نیست؛ خرید بدون کد معرف ادامه پیدا می‌کند/);
   assert.match(source, /کد معرف پس از نخستین پرداخت موفق قفل شده است/);
   assert.match(commercialSource, /www\.payment\.zarinpal\.com/);

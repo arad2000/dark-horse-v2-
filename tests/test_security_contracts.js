@@ -140,7 +140,7 @@ function runPaymentHop(search) {
   }
 
   // 4. Security & cache-bust contracts on docs/index.html + payment_hop_boot.js + main_v2.py
-  assert.match(indexSource, /src="auth_api_client\.js\?v=10&timeout-fix=1"/);
+  assert.match(indexSource, /src="auth_api_client\.js\?v=11&referral=1&timeout-fix=1"/);
   assert.match(indexSource, /target\.protocol\s*===\s*'https:'\s*&&\s*validHost/);
   for (const host of ['zarinpal.com', 'www.zarinpal.com', 'sandbox.zarinpal.com', 'payment.zarinpal.com', 'www.payment.zarinpal.com']) {
     assert.ok(indexSource.includes(`host === '${host}'`), `Missing Zarinpal host allowlist entry in index.html: ${host}`);
