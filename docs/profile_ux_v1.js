@@ -336,6 +336,7 @@
     var journey = card.querySelector('#dh-p-journey');
     var share = card.querySelector('#dh-p-share');
     var buy = card.querySelector('#dh-p-buy');
+    var invite = card.querySelector('#dh-p-invite');
     var logout = card.querySelector('#dh-p-out');
     var support = findLegacySupportCard(card);
 
@@ -382,6 +383,15 @@
     buy.classList.remove('btn-primary');
     buy.classList.add('dh-profile-buy');
     actions.appendChild(buy);
+
+    // The shareable-code button rides along with the buy button; reflowing the
+    // profile rebuilds the card, so it has to be re-appended here or it would
+    // silently disappear for every signed-in user.
+    if (invite) {
+      invite.classList.remove('btn-primary');
+      invite.classList.add('dh-profile-invite');
+      actions.appendChild(invite);
+    }
 
     if (hasResult && share) {
       share.classList.remove('btn-primary');

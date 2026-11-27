@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>بازاریابان و پورسانت | اسب سیاه</title>
+<style>
+:root{--bg:#0a0a0f;--card:#161622;--line:rgba(212,175,55,.18);--gold:#f0c040;--dim:#b0a080;--ok:#8fe0a8;--bad:#ff8f8f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#eee;font-family:Vazirmatn,system-ui,sans-serif;padding:16px;line-height:1.8}
+.wrap{max-width:1100px;margin:auto}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+h1{margin:0 0 4px;color:var(--gold);font-size:1.3rem}
+h2{font-size:1rem;margin:0 0 12px;color:var(--gold)}
+.sub{color:var(--dim);font-size:.85rem}
+button{border:0;border-radius:10px;padding:9px 14px;font:inherit;cursor:pointer;background:var(--gold);color:#0a0a0f;font-weight:700}
+button.ghost{background:#29293a;color:#eee;border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select{background:#10101a;border:1px solid #29293a;border-radius:10px;color:#eee;padding:9px 11px;font:inherit;width:100%}
+input:focus,select:focus{outline:2px solid rgba(240,192,64,.4);outline-offset:1px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:5px;font-size:.82rem;color:var(--dim)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.stat{background:#10101a;border:1px solid #29293a;border-radius:12px;padding:12px;text-align:center}
+.stat .n{font-size:1.4rem;font-weight:800;color:var(--gold)}
+.stat .l{font-size:.75rem;color:var(--dim)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th,td{text-align:right;padding:9px 6px;border-bottom:1px solid #23233a}
+th{color:var(--dim);font-weight:600;font-size:.78rem}
+tbody tr:hover{background:rgba(240,192,64,.04)}
+.mono{direction:ltr;text-align:left;font-family:ui-monospace,monospace;letter-spacing:.5px}
+.code-chip{display:inline-block;background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.35);color:var(--gold);border-radius:8px;padding:2px 8px;font-family:ui-monospace,monospace;direction:ltr}
+.err{color:var(--bad);min-height:1.3em;font-size:.85rem}
+.ok{color:var(--ok);font-size:.85rem}
+.hide{display:none!important}
+.empty{color:var(--dim);text-align:center;padding:16px;font-size:.85rem}
+.tag{font-size:.7rem;padding:2px 7px;border-radius:999px;border:1px solid}
+.tag.on{color:var(--ok);border-color:rgba(143,224,168,.4)}
+.tag.off{color:var(--bad);border-color:rgba(255,143,143,.35)}
+.tag.self{color:#8fb8ff;border-color:rgba(143,184,255,.4)}
+.copy{border:0;background:transparent;color:var(--gold);cursor:pointer;font:inherit;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="panel">
+    <h1>بازاریابان و پورسانت</h1>
+    <div id="who" class="sub">در حال بررسی دسترسی…</div>
+    <div class="row" style="margin-top:10px">
+      <button type="button" class="ghost" id="logout">خروج</button>
+      <button type="button" class="ghost" id="refresh">به‌روزرسانی</button>
+    </div>
+    <div id="error" class="err"></div>
+  </section>
+
+  <section id="app" class="hide">
+
+    <section class="panel">
+      <h2>خلاصه</h2>
+      <div class="grid">
+        <div class="stat"><div class="n" id="t-marketers">۰</div><div class="l">بازاریاب</div></div>
+        <div class="stat"><div class="n" id="t-signups">۰</div><div class="l">ثبت‌نام با کد</div></div>
+        <div class="stat"><div class="n" id="t-confirmed">۰</div><div class="l">تبدیل به خرید</div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>افزودن بازاریاب</h2>
+      <div class="grid">
+        <label class="field">نام<input id="m-name" placeholder="نام مشاور"></label>
+        <label class="field">موبایل (اختیاری)<input id="m-phone" dir="ltr" inputmode="numeric" placeholder="09xxxxxxxxx"></label>
+        <label class="field">درصد پورسانت<input id="m-rate" dir="ltr" inputmode="decimal" type="number" min="0" max="100" step="0.01" placeholder="15"></label>
+        <label class="field">کد (خالی = خودکار)<input id="m-code" class="mono" maxlength="32" placeholder="AHMAD2026"></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button type="button" id="add-marketer">افزودن</button>
+        <span id="add-msg" class="ok"></span>
+      </div>
+      <div class="sub" style="margin-top:8px">درصد را می‌توانید بعداً تغییر دهید؛ پورسانت فروش‌های قبلی جابه‌جا نمی‌شود.</div>
+    </section>
+
+    <section class="panel">
+      <h2>بازاریابان</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr>
+            <th>نام</th><th>موبایل</th><th>درصد</th><th>ثبت‌نام</th><th>خرید</th>
+            <th>طلب (ریال)</th><th>تسویه‌شده</th><th></th>
+          </tr></thead>
+          <tbody id="marketers"></tbody>
+        </table>
+      </div>
+      <div id="mk-empty" class="empty hide">هنوز بازاریابی ثبت نشده است.</div>
+    </section>
+
+    <section class="panel hide" id="detail-panel">
+      <h2 id="detail-title">افراد آورده‌شده</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>نام</th><th>موبایل</th><th>کد</th><th>تاریخ</th><th>خرید</th><th>وضعیت</th></tr></thead>
+          <tbody id="detail-rows"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:10px"><button type="button" class="ghost" id="detail-close">بستن</button></div>
+    </section>
+
+    <section class="panel">
+      <h2>کدهای ساخته‌شده</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>کد</th><th>مالک</th><th>درصد</th><th>ثبت‌نام</th><th>وضعیت</th></tr></thead>
+          <tbody id="codes"></tbody>
+        </table>
+      </div>
+      <div class="sub" style="margin-top:8px">کدهای «خودساخته» را خود کاربر از پروفایلش ساخته و به دوستانش داده است.</div>
+    </section>
+
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var API = 'https://api.asbe-siah.ir';
+  var auth = null;
+  try { auth = JSON.parse(localStorage.getItem('dh_auth_v1') || 'null'); } catch (_) {}
+
+  function el(id) { return document.getElementById(id); }
+  function toFa(n) { return String(n == null ? '' : n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[Number(d)]; }); }
+  function money(n) { return toFa(String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, '٬')); }
+  function text(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function token() { return (auth && auth.token) || ''; }
+
+  function req(path, opts) {
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    opts.headers['Authorization'] = 'Bearer ' + token();
+    if (opts.body) opts.headers['Content-Type'] = 'application/json';
+    return fetch(API + path, opts).then(function (r) {
+      return r.text().then(function (raw) {
+        var body = null;
+        try { body = raw ? JSON.parse(raw) : null; } catch (_) {}
+        if (!r.ok) {
+          var msg = (body && (body.detail || body.message)) || ('خطا ' + r.status);
+          if (typeof msg !== 'string') msg = JSON.stringify(msg);
+          throw new Error(msg);
+        }
+        return body;
+      });
+    });
+  }
+
+  function fail(msg) { el('error').textContent = msg || ''; }
+
+  el('logout').onclick = function () {
+    try {
+      localStorage.removeItem('dh_auth_v1');
+      localStorage.removeItem('dh_local_user_v1');
+      localStorage.removeItem('dh_local_quota_v1');
+    } catch (_) {}
+    window.location.replace('index.html?logout=1');
+  };
+
+  function loadAll() {
+    fail('');
+    return Promise.all([
+      req('/api/v1/admin/marketers/report'),
+      req('/api/v1/admin/referrals/report')
+    ]).then(function (res) {
+      var report = res[0] || {};
+      var totals = report.totals || {};
+      el('t-marketers').textContent = toFa(totals.marketers || 0);
+      el('t-signups').textContent = toFa(totals.signups || 0);
+      el('t-confirmed').textContent = toFa(totals.confirmed_buyers || 0);
+      paintMarketers(report.marketers || []);
+    }).catch(function (e) { fail(e.message); });
+  }
+
+  function sumCurrencies(list, key) {
+    var total = 0;
+    (list || []).forEach(function (c) { total += Number(c[key] || 0); });
+    return total;
+  }
+
+  function paintMarketers(rows) {
+    var body = el('marketers');
+    body.innerHTML = '';
+    el('mk-empty').classList.toggle('hide', rows.length > 0);
+    rows.forEach(function (m) {
+      var tr = document.createElement('tr');
+      var rate = m.commission_bps ? toFa(m.commission_percent) + '٪' : '—';
+      tr.innerHTML =
+        '<td>' + text(m.name) + (m.self_service ? ' <span class="tag self">خودساخته</span>' : '') + '</td>' +
+        '<td class="mono">' + text(m.phone || '—') + '</td>' +
+        '<td>' + rate + '</td>' +
+        '<td>' + toFa(m.signups) + '</td>' +
+        '<td>' + toFa(m.confirmed_buyers) + '</td>' +
+        '<td>' + money(sumCurrencies(m.currencies, 'accrued_amount_minor')) + '</td>' +
+        '<td>' + money(sumCurrencies(m.currencies, 'settled_amount_minor')) + '</td>' +
+        '<td></td>';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ghost';
+      btn.textContent = 'افراد';
+      btn.onclick = function () { showDetail(m); };
+      tr.lastChild.appendChild(btn);
+      body.appendChild(tr);
+    });
+  }
+
+  function showDetail(m) {
+    el('detail-panel').classList.remove('hide');
+    el('detail-title').textContent = 'افراد آورده‌شده توسط ' + m.name;
+    el('detail-rows').innerHTML = '<tr><td colspan="6" class="empty">در حال بارگذاری…</td></tr>';
+    req('/api/v1/admin/marketers/' + m.marketer_id + '/signups').then(function (d) {
+      var people = d.people || [];
+      if (!people.length) {
+        el('detail-rows').innerHTML = '<tr><td colspan="6" class="empty">هنوز کسی با کد این بازاریاب ثبت‌نام نکرده است.</td></tr>';
+        return;
+      }
+      el('detail-rows').innerHTML = people.map(function (p) {
+        return '<tr>' +
+          '<td>' + text(p.name) + '</td>' +
+          '<td class="mono">' + text(p.phone) + '</td>' +
+          '<td><span class="code-chip">' + text(p.code) + '</span></td>' +
+          '<td>' + text(p.joined_at ? p.joined_at.slice(0, 10) : '—') + '</td>' +
+          '<td>' + toFa(p.paid_orders) + '</td>' +
+          '<td>' + (p.confirmed ? '<span class="tag on">خرید کرده</span>' : '<span class="tag off">فقط ثبت‌نام</span>') + '</td>' +
+          '</tr>';
+      }).join('');
+    }).catch(function (e) {
+      el('detail-rows').innerHTML = '<tr><td colspan="6" class="err">' + text(e.message) + '</td></tr>';
+    });
+  }
+
+  el('detail-close').onclick = function () { el('detail-panel').classList.add('hide'); };
+  el('refresh').onclick = loadAll;
+
+  el('add-marketer').onclick = function () {
+    var name = el('m-name').value.trim();
+    var phone = el('m-phone').value.trim();
+    var rate = parseFloat(el('m-rate').value || '0');
+    var code = el('m-code').value.trim().toUpperCase();
+    el('add-msg').textContent = '';
+    fail('');
+    if (name.length < 2) { fail('نام بازاریاب را وارد کنید.'); return; }
+    if (!(rate >= 0 && rate <= 100)) { fail('درصد باید بین ۰ و ۱۰۰ باشد.'); return; }
+
+    var btn = el('add-marketer');
+    btn.disabled = true;
+    req('/api/v1/admin/marketers', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: name,
+        phone: phone || null,
+        commission_bps: Math.round(rate * 100)
+      })
+    }).then(function (mk) {
+      if (!code) return null;
+      return req('/api/v1/admin/marketers/codes', {
+        method: 'POST',
+        body: JSON.stringify({ marketer_id: mk.id, code: code })
+      });
+    }).then(function () {
+      el('add-msg').textContent = 'ثبت شد.';
+      el('m-name').value = ''; el('m-phone').value = ''; el('m-rate').value = ''; el('m-code').value = '';
+      return loadAll();
+    }).catch(function (e) {
+      fail(e.message);
+    }).then(function () { btn.disabled = false; });
+  };
+
+  req('/api/v1/me').then(function (me) {
+    var role = me && me.user && me.user.role;
+    if (role !== 'admin' && role !== 'support') throw new Error('دسترسی این صفحه برای این حساب مجاز نیست.');
+    el('who').textContent = 'کاربر: ' + ((me.user && me.user.name) || '—') + ' · نقش: ' + role;
+    el('app').classList.remove('hide');
+    loadAll();
+  }).catch(function (e) { fail(e.message); });
+})();
+</script>
+</body>
+</html>

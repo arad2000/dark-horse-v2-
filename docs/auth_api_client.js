@@ -124,10 +124,15 @@
     },
     logout() { clear(); },
 
-    async register(name, phone, password) {
+    async register(name, phone, password, referralCode) {
+      const payload = { name, phone, password };
+      const code = String(referralCode == null ? '' : referralCode).trim();
+      // Optional: a blank or unknown code is treated as a direct signup and
+      // never blocks registration.
+      if (code) payload.referral_code = code;
       return req('/api/v1/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, phone, password })
+        body: JSON.stringify(payload)
       });
     },
 
@@ -204,6 +209,25 @@
       return req('/api/v1/me/save-result', {
         method: 'POST',
         body: JSON.stringify({ session_uuid: sessionId, result_summary: Object.assign({}, summary || {}, { session_uuid: sessionId }) })
+      });
+    },
+
+    // The signed-in user's own shareable code. The server mints it on first
+    // call, so every account can hand a code to friends (exchange-style).
+    async myReferralCode() {
+      return req('/api/v1/me/referral-code', { method: 'GET' });
+    },
+
+    // Optional attribution at checkout. A blank or invalid code is reported
+    // back but never blocks the purchase.
+    async setReferralCode(code) {
+      const value = String(code == null ? '' : code).trim();
+      if (value.length > 64) {
+        throw new Error('کد معرف نباید بیشتر از ۶۴ نویسه باشد.');
+      }
+      return req('/api/v1/me/referral-code', {
+        method: 'PUT',
+        body: JSON.stringify({ code: value })
       });
     },
 
