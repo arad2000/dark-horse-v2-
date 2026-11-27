@@ -14,6 +14,8 @@ from admin_service import list_user_summary
 from auth_service import resolve_session
 from billing_models import User
 from database import get_db
+from referral_service import create_referral_code, get_referral_report
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -36,6 +38,13 @@ def current_admin(
     return user
 
 
+def current_referral_manager(actor: User = Depends(current_admin)) -> User:
+    """Referral code creation and reporting are restricted to active admins."""
+    if actor.role != "admin":
+        raise HTTPException(status_code=403, detail="manager access required")
+    return actor
+
+
 class GrantRequest(BaseModel):
     user_id: int
     plan_code: str = Field(min_length=1, max_length=64)
@@ -45,6 +54,11 @@ class GrantRequest(BaseModel):
 class RevokeRequest(BaseModel):
     entitlement_id: int
     reason: str = Field(min_length=1, max_length=1000)
+
+
+class ReferralCodeCreateRequest(BaseModel):
+    label: str = Field(min_length=1, max_length=200)
+    code: str | None = Field(default=None, max_length=32)
 
 
 @router.get("/dashboard")
@@ -119,3 +133,42 @@ def revoke(req: RevokeRequest, actor: User = Depends(current_admin), db: Session
     except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/referrals/codes", status_code=201)
+def create_referral(
+    req: ReferralCodeCreateRequest,
+    actor: User = Depends(current_referral_manager),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        record = create_referral_code(db, actor, label=req.label, code=req.code)
+        db.commit()
+        metadata = record.metadata_json if isinstance(record.metadata_json, dict) else {}
+        return {
+            "id": int(record.id),
+            "code": record.target_id,
+            "label": str(metadata.get("label") or ""),
+            "is_active": bool(metadata.get("is_active", True)),
+            "created_at": record.created_at.isoformat() if record.created_at else None,
+        }
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="referral code already exists") from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/referrals/report")
+def referral_report(
+    actor: User = Depends(current_referral_manager),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        return get_referral_report(db, actor)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc

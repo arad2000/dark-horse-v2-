@@ -7,7 +7,7 @@ The product is credit-based, not a time subscription:
 """
 from __future__ import annotations
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from models import Base
@@ -26,6 +26,8 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
+    referral_code = Column(String(64), nullable=True)
+    referral_locked_at = Column(DateTime(timezone=True), nullable=True)
     auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     entitlements = relationship("Entitlement", back_populates="user", cascade="all, delete-orphan")
@@ -97,6 +99,9 @@ class Order(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     paid_at = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    referral_code_snapshot = Column(String(64), nullable=True)
+    referral_label_snapshot = Column(String(200), nullable=True)
+    referral_snapshot_at = Column(DateTime(timezone=True), nullable=True)
     user = relationship("User", back_populates="orders")
     plan = relationship("PremiumPlan", back_populates="orders")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
@@ -165,7 +170,16 @@ class PaymentEvent(Base):
 
 class AdminAuditLog(Base):
     __tablename__ = "admin_audit_logs"
-    __table_args__ = (Index("idx_admin_audit_created", "created_at"),)
+    __table_args__ = (
+        Index("idx_admin_audit_created", "created_at"),
+        Index(
+            "uq_admin_audit_referral_code",
+            "target_id",
+            unique=True,
+            postgresql_where=text("target_type = 'referral_code' AND action = 'create_referral_code'"),
+            sqlite_where=text("target_type = 'referral_code' AND action = 'create_referral_code'"),
+        ),
+    )
     id = Column(BigInteger, primary_key=True)
     admin_user_id = Column(BigInteger, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     action = Column(String(50), nullable=False)

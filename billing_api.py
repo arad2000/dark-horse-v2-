@@ -18,7 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from billing_credit_service import create_pack_order, initiate_payment, verify_and_grant
-from billing_models import Order, Payment, PremiumPlan
+from billing_models import Entitlement, Order, Payment, PremiumPlan
 from payment_providers import MockPaymentProvider, PaymentProvider, ZarinPalPaymentProvider
 
 
@@ -108,6 +108,22 @@ def handle_payment_callback(
     )
     if payment is None:
         raise ValueError("unknown payment authority")
+
+    # Once the gateway payment is verified, no later retry (even a conflicting
+    # non-OK status) may downgrade the paid order or change its attribution.
+    if payment.status == "verified" and order.status == "paid":
+        entitlement = db.scalar(
+            select(Entitlement).where(Entitlement.order_id == order.id)
+        )
+        if entitlement is None:
+            raise RuntimeError("verified payment exists without entitlement")
+        return {
+            "verified": True,
+            "status": "paid",
+            "order_id": order.public_id,
+            "credits_added": int(entitlement.credits_granted),
+            "credits_remaining": int(entitlement.credits_remaining),
+        }
 
     # Gateway callbacks commonly include Status=OK. Never verify cancelled/failed
     # callbacks, and never let a client claim a successful payment by inventing it.

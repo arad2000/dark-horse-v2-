@@ -28,6 +28,7 @@ from models import UserSession
 from password_reset_service import attach_router
 from phone_verification_service import request_registration_otp, verify_registration_otp
 from production_billing_guard import assert_production_billing_configuration
+from referral_service import set_user_referral_code
 
 router = APIRouter(prefix="/api/v1", tags=["auth", "credits", "results", "billing"])
 attach_router(router)
@@ -54,6 +55,11 @@ class LoginRequest(BaseModel):
 class ConsumeTestRequest(BaseModel):
     """A credit charge is idempotent for exactly one authenticated journey."""
     session_uuid: str = Field(min_length=8, max_length=64)
+
+
+class ReferralCodeUpdateRequest(BaseModel):
+    """Customer-owned referral attribution; null/empty means direct purchase."""
+    code: str | None = Field(default=None, max_length=64)
 
 
 class SaveResultRequest(BaseModel):
@@ -279,6 +285,25 @@ def quota(user: User = Depends(_current_user), db: Session = Depends(get_db)) ->
             db.rollback()
             raise
     return _quota_details(db, user.id)
+
+
+@router.put("/me/referral-code")
+def update_my_referral_code(
+    req: ReferralCodeUpdateRequest,
+    user: User = Depends(_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    """Set or clear referral attribution until the first successful payment."""
+    try:
+        result = set_user_referral_code(db, user_id=int(user.id), code=req.code)
+        db.commit()
+        return result
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/runtime/quota-health")

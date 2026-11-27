@@ -298,6 +298,7 @@ REQUEST_BODY_LIMITS = {
     ("POST", "/api/v1/admission/chance"): 32 * 1024,
     ("POST", "/api/v1/me/consume-test"): 4 * 1024,
     ("POST", "/api/v1/me/save-result"): 128 * 1024,
+    ("PUT", "/api/v1/me/referral-code"): 2 * 1024,
     ("POST", "/api/v2/darkhorse/discover"): 16 * 1024,
     ("POST", "/api/v2/darkhorse/branch-discovery"): 16 * 1024,
     ("POST", "/api/v2/darkhorse/counsel"): 32 * 1024,
