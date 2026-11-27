@@ -144,11 +144,12 @@ def create_referral(
     try:
         record = create_referral_code(db, actor, label=req.label, code=req.code)
         db.commit()
+        metadata = record.metadata_json if isinstance(record.metadata_json, dict) else {}
         return {
             "id": int(record.id),
-            "code": record.code,
-            "label": record.label,
-            "is_active": bool(record.is_active),
+            "code": record.target_id,
+            "label": str(metadata.get("label") or ""),
+            "is_active": bool(metadata.get("is_active", True)),
             "created_at": record.created_at.isoformat() if record.created_at else None,
         }
     except PermissionError as exc:

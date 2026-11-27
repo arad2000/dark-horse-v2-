@@ -27,7 +27,9 @@ class OtpRateLimitTests(unittest.TestCase):
                     status VARCHAR(20) NOT NULL DEFAULT 'active',
                     created_at DATETIME,
                     updated_at DATETIME,
-                    last_login_at DATETIME
+                    last_login_at DATETIME,
+                    referral_code VARCHAR(64),
+                    referral_locked_at DATETIME
                 )
             """))
             conn.execute(text("""

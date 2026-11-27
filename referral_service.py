@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from billing_models import AdminAuditLog, Order, ReferralCode, User
+from billing_models import AdminAuditLog, Order, User
 
 _CODE_PATTERN = re.compile(r"^[A-Z0-9]{4,32}$")
 _CODE_ALPHABET = string.ascii_uppercase + string.digits
@@ -45,7 +45,7 @@ def create_referral_code(
     *,
     label: str,
     code: str | None = None,
-) -> ReferralCode:
+) -> AdminAuditLog:
     """Create one manager-owned attribution code; generated when omitted."""
     _require_manager(actor)
     clean_label = (label or "").strip()
@@ -57,36 +57,43 @@ def create_referral_code(
         normalized = requested.upper()
         if not _CODE_PATTERN.fullmatch(normalized):
             raise ValueError("code must contain 4 to 32 ASCII letters or digits")
-        if db.scalar(select(ReferralCode.id).where(ReferralCode.code == normalized)) is not None:
+        if db.scalar(
+            select(AdminAuditLog.id).where(
+                AdminAuditLog.action == "create_referral_code",
+                AdminAuditLog.target_type == "referral_code",
+                AdminAuditLog.target_id == normalized,
+            )
+        ) is not None:
             raise ValueError("referral code already exists")
     else:
         normalized = ""
         for _ in range(10):
             candidate = "".join(secrets.choice(_CODE_ALPHABET) for _ in range(10))
-            exists = db.scalar(select(ReferralCode.id).where(ReferralCode.code == candidate))
+            exists = db.scalar(
+                select(AdminAuditLog.id).where(
+                    AdminAuditLog.action == "create_referral_code",
+                    AdminAuditLog.target_type == "referral_code",
+                    AdminAuditLog.target_id == candidate,
+                )
+            )
             if exists is None:
                 normalized = candidate
                 break
         if not normalized:
             raise RuntimeError("could not allocate a unique referral code")
 
-    record = ReferralCode(
-        code=normalized,
-        label=clean_label,
-        is_active=True,
-        created_by_user_id=int(actor.id),
+    record = AdminAuditLog(
+        admin_user_id=int(actor.id),
+        action="create_referral_code",
+        target_type="referral_code",
+        target_id=normalized,
+        metadata_json={
+            "label": clean_label,
+            "generated": not bool(requested),
+            "is_active": True,
+        },
     )
     db.add(record)
-    db.flush()
-    db.add(
-        AdminAuditLog(
-            admin_user_id=int(actor.id),
-            action="create_referral_code",
-            target_type="referral_code",
-            target_id=str(record.id),
-            metadata_json={"label": clean_label, "generated": not bool(requested)},
-        )
-    )
     db.flush()
     return record
 
@@ -131,12 +138,14 @@ def set_user_referral_code(
         }
 
     record = db.scalar(
-        select(ReferralCode).where(
-            ReferralCode.code == normalized,
-            ReferralCode.is_active.is_(True),
+        select(AdminAuditLog).where(
+            AdminAuditLog.action == "create_referral_code",
+            AdminAuditLog.target_type == "referral_code",
+            AdminAuditLog.target_id == normalized,
         )
     )
-    if record is None:
+    metadata = record.metadata_json if record is not None and isinstance(record.metadata_json, dict) else {}
+    if record is None or metadata.get("is_active", True) is not True:
         user.referral_code = None
         db.flush()
         return {
@@ -146,14 +155,14 @@ def set_user_referral_code(
             "referral_code": None,
         }
 
-    user.referral_code = record.code
+    user.referral_code = record.target_id
     db.flush()
     return {
         "status": "applied",
         "applied": True,
         "purchase_allowed": True,
-        "referral_code": record.code,
-        "label": record.label,
+        "referral_code": record.target_id,
+        "label": str(metadata.get("label") or ""),
     }
 
 
@@ -190,15 +199,18 @@ def snapshot_order_referral(
     record = None
     if user.referral_code:
         record = db.scalar(
-            select(ReferralCode).where(ReferralCode.code == user.referral_code)
+            select(AdminAuditLog).where(
+                AdminAuditLog.action == "create_referral_code",
+                AdminAuditLog.target_type == "referral_code",
+                AdminAuditLog.target_id == user.referral_code,
+            )
         )
 
-    if record is not None:
-        order.referral_code_id = record.id
-        order.referral_code_snapshot = record.code
-        order.referral_label_snapshot = record.label
+    metadata = record.metadata_json if record is not None and isinstance(record.metadata_json, dict) else {}
+    if record is not None and metadata.get("is_active", True) is True:
+        order.referral_code_snapshot = record.target_id
+        order.referral_label_snapshot = str(metadata.get("label") or "")
     else:
-        order.referral_code_id = None
         order.referral_code_snapshot = None
         order.referral_label_snapshot = None
 

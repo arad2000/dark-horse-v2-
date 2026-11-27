@@ -14,7 +14,6 @@ from billing_models import (
     Entitlement,
     Order,
     PremiumPlan,
-    ReferralCode,
     User,
 )
 from models import Base
@@ -90,8 +89,8 @@ class ReferralServiceTests(unittest.TestCase):
         with self.SessionLocal() as db:
             admin, support, customer = self._ids(db)
             generated = create_referral_code(db, admin, label="Manager generated")
-            self.assertRegex(generated.code, re.compile(r"^[A-Z0-9]{10}$"))
-            self.assertEqual(generated.created_by_user_id, admin.id)
+            self.assertRegex(generated.target_id, re.compile(r"^[A-Z0-9]{10}$"))
+            self.assertEqual(generated.admin_user_id, admin.id)
             self.assertEqual(db.query(AdminAuditLog).count(), 1)
             with self.assertRaises(PermissionError):
                 create_referral_code(db, support, label="Support must not create")
@@ -151,8 +150,7 @@ class ReferralServiceTests(unittest.TestCase):
 
             order = db.scalar(select(Order).where(Order.public_id == created["order_id"]))
             self.assertEqual(order.status, "paid")
-            self.assertEqual(order.referral_code_id, revised_code.id)
-            self.assertEqual(order.referral_code_snapshot, "FINAL2026")
+            self.assertEqual(order.referral_code_snapshot, revised_code.target_id)
             self.assertEqual(order.referral_label_snapshot, "Final campaign")
             self.assertIsNotNone(order.referral_snapshot_at)
 
@@ -236,9 +234,8 @@ class ReferralServiceTests(unittest.TestCase):
                 currency="IRR",
                 status="paid",
                 paid_at=now,
-                referral_code_id=code.id,
-                referral_code_snapshot=code.code,
-                referral_label_snapshot=code.label,
+                referral_code_snapshot=code.target_id,
+                referral_label_snapshot=(code.metadata_json or {}).get("label"),
                 referral_snapshot_at=now,
             )
             direct = Order(
@@ -249,7 +246,6 @@ class ReferralServiceTests(unittest.TestCase):
                 currency="IRR",
                 status="paid",
                 paid_at=now,
-                referral_code_id=None,
                 referral_code_snapshot=None,
                 referral_label_snapshot=None,
                 referral_snapshot_at=now,
@@ -272,9 +268,8 @@ class ReferralServiceTests(unittest.TestCase):
                 currency="IRR",
                 status="pending",
                 paid_at=None,
-                referral_code_id=code.id,
-                referral_code_snapshot=code.code,
-                referral_label_snapshot=code.label,
+                referral_code_snapshot=code.target_id,
+                referral_label_snapshot=(code.metadata_json or {}).get("label"),
                 referral_snapshot_at=now,
             )
             db.add_all([
