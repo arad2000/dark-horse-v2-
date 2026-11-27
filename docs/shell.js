@@ -1,5 +1,5 @@
 /**
- * shell.js v25 — commercial charge gate + stable charged journey session
+ * shell.js v26 — commercial charge gate + stable charged journey session
  */
 (function () {
   'use strict';
@@ -1251,7 +1251,7 @@
           };
           script.id = 'dh-commercial-ui-loader';
           script.async = false;
-          script.src = 'commercial_ui.js?v=46';
+          script.src = 'commercial_ui.js?v=47';
           script.setAttribute('data-dh-load-state', 'loading');
           window.addEventListener('error', onWindowError, true);
           function cleanup() {
