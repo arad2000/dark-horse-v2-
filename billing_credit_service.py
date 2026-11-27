@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from billing_models import Entitlement, Order, Payment, PaymentEvent, PremiumPlan, User
+from referral_service import snapshot_order_referral
 
 FREE_PLAN_CODE = "free_1_test"
 PACK_3_TESTS_CODE = "pack_3_tests"
@@ -209,13 +210,16 @@ def verify_and_grant(
     if plan.code != PACK_3_TESTS_CODE or plan.credits_granted != PACK_3_CREDITS:
         raise ValueError("unexpected credit-pack configuration")
 
+    paid_at = utcnow()
+    snapshot_order_referral(db, order, paid_at=paid_at)
+
     payment.status = "verified"
     payment.provider_transaction_id = str(verification.get("transaction_id")) if verification.get("transaction_id") else None
     payment.raw_callback = raw_callback
     payment.verification_response = verification
-    payment.verified_at = utcnow()
+    payment.verified_at = paid_at
     order.status = "paid"
-    order.paid_at = utcnow()
+    order.paid_at = paid_at
 
     entitlement = Entitlement(
         user_id=user.id,

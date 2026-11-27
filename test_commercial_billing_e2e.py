@@ -9,7 +9,7 @@ from sqlalchemy import delete, select
 
 from database import engine, get_db
 from main_v2 import app
-from billing_models import AdminAuditLog, Entitlement, JourneyCreditConsumption, Order, Payment, PaymentEvent, PremiumPlan, User
+from billing_models import AdminAuditLog, Entitlement, JourneyCreditConsumption, Order, Payment, PaymentEvent, PremiumPlan, ReferralCode, User
 from models import Base
 
 
@@ -32,6 +32,7 @@ class CommercialBillingE2ETests(unittest.TestCase):
             db.execute(delete(Entitlement))
             db.execute(delete(Payment))
             db.execute(delete(Order))
+            db.execute(delete(ReferralCode))
             db.execute(delete(User))
             db.execute(delete(PremiumPlan))
             db.commit()

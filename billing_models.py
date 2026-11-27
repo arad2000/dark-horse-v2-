@@ -26,10 +26,13 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
+    referral_code = Column(String(64), nullable=True)
+    referral_locked_at = Column(DateTime(timezone=True), nullable=True)
     auth_sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     entitlements = relationship("Entitlement", back_populates="user", cascade="all, delete-orphan")
     admin_audit_logs = relationship("AdminAuditLog", back_populates="admin_user")
+    created_referral_codes = relationship("ReferralCode", back_populates="created_by", foreign_keys="ReferralCode.created_by_user_id")
 
 
 class AuthSession(Base):
@@ -69,7 +72,7 @@ class PremiumPlan(Base):
     __tablename__ = "premium_plans"
     __table_args__ = (UniqueConstraint("code", name="uq_premium_plan_code"),)
     id = Column(BigInteger, primary_key=True)
-    code = Column(String(64), nullable=False, unique=True)
+    code = Column(String(64), nullable=False)
     name_fa = Column(String(200), nullable=False)
     plan_type = Column(String(20), nullable=False, default="credits", server_default="credits")
     duration_days = Column(Integer, nullable=True)
@@ -97,10 +100,31 @@ class Order(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     paid_at = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    referral_code_id = Column(BigInteger, ForeignKey("referral_codes.id", ondelete="SET NULL"), nullable=True)
+    referral_code_snapshot = Column(String(64), nullable=True)
+    referral_label_snapshot = Column(String(200), nullable=True)
+    referral_snapshot_at = Column(DateTime(timezone=True), nullable=True)
     user = relationship("User", back_populates="orders")
     plan = relationship("PremiumPlan", back_populates="orders")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
+    referral_code_record = relationship("ReferralCode", back_populates="orders", foreign_keys=[referral_code_id])
     entitlements = relationship("Entitlement", back_populates="order")
+
+
+class ReferralCode(Base):
+    __tablename__ = "referral_codes"
+    __table_args__ = (
+        UniqueConstraint("code", name="uq_referral_code"),
+        Index("idx_referral_code_active", "is_active"),
+    )
+    id = Column(BigInteger, primary_key=True)
+    code = Column(String(64), nullable=False, unique=True)
+    label = Column(String(200), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True, server_default="true")
+    created_by_user_id = Column(BigInteger, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_by = relationship("User", back_populates="created_referral_codes", foreign_keys=[created_by_user_id])
+    orders = relationship("Order", back_populates="referral_code_record", foreign_keys="Order.referral_code_id")
 
 
 class Payment(Base):
