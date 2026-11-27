@@ -12,13 +12,15 @@ name: Orphaned test closure
 # the code. Those are listed in KNOWN_STALE below and are run in
 # non-blocking mode, so the debt stays visible without breaking the build.
 
+# The test files and the alembic tree live on the deploy branch only; main is
+# the static frontend. This job therefore runs on deploy, plus on pull requests
+# that target deploy. It is deliberately not triggered by pull requests to main.
 on:
   push:
     branches:
       - deploy/liara-commercial-sandbox
   pull_request:
     branches:
-      - main
       - deploy/liara-commercial-sandbox
   workflow_dispatch:
 
@@ -68,33 +70,51 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q .
 
+      - name: Verify backend tree is present
+        id: guard
+        run: |
+          if [ ! -f alembic.ini ] || [ ! -f test_engine_psychometrics.py ]; then
+            echo "No backend on this ref; nothing to run."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Apply Alembic schema
+        if: steps.guard.outputs.skip != 'true'
         run: alembic upgrade head
 
       # ---- blocking: verified green, these must stay green ----
       - name: Psychometric engine contracts
+        if: steps.guard.outputs.skip != 'true'
         run: python -m unittest -v test_engine_psychometrics.py
 
       - name: API security and reliability contracts
+        if: steps.guard.outputs.skip != 'true'
         run: python -m unittest -v test_api_security_reliability.py
 
       - name: Exam capacity loaders (aggregate + ensani)
+        if: steps.guard.outputs.skip != 'true'
         run: |
           python -m unittest -v test_exam_capacity.py
           python -m unittest -v test_exam_capacity_ensani.py
 
       - name: Runtime and deployment constraints
+        if: steps.guard.outputs.skip != 'true'
         run: |
           python -m unittest -v test_runtime_constraints.py
           python -m unittest -v test_backend_build_smoke.py
 
       - name: CORS origin contract
+        if: steps.guard.outputs.skip != 'true'
         run: python -m unittest -v test_cors_origin_config.py
 
       - name: Quota health migration contract
+        if: steps.guard.outputs.skip != 'true'
         run: python -m unittest -v test_quota_health_migration.py
 
       - name: Frontend and journey contracts
+        if: steps.guard.outputs.skip != 'true'
         run: |
           python -m unittest -v test_admission_chance_ui_contract.py
           python -m unittest -v test_auth_runtime_guard.py
@@ -103,15 +123,18 @@ jobs:
           python -m unittest -v test_phase3_city_paths.py
 
       - name: Reference data mapping contracts
+        if: steps.guard.outputs.skip != 'true'
         run: |
           python -m unittest -v test_record_major_map.py
           python -m unittest -v test_record_table5_bomi.py
 
       - name: Request validation contract
+        if: steps.guard.outputs.skip != 'true'
         run: python -m unittest -v test_v_request_validation.py
 
       # ---- non-blocking: known stale, kept visible on purpose ----
       - name: Known-stale tests (reported, does not block)
+        if: steps.guard.outputs.skip != 'true'
         continue-on-error: true
         run: |
           set +e
@@ -138,6 +161,7 @@ jobs:
           exit 0
 
       - name: Summarize known-stale debt
+        if: steps.guard.outputs.skip != 'true'
         continue-on-error: true
         run: |
           if [ -s known_stale_failures.txt ]; then
