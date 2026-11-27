@@ -62,8 +62,12 @@ class PasswordResetContractTests(unittest.TestCase):
 
     def test_home_loads_reset_ui_after_auth_client(self):
         html = (DOCS / "index.html").read_text(encoding="utf-8")
-        auth_pos = html.index('src="auth_api_client.js?v=7"')
-        reset_pos = html.index('src="password_reset_ui.js?v=4"')
+        # Cache-busting suffixes change when a file is edited; the contract is
+        # the load order (auth client must be available before the reset UI).
+        auth_pos = html.index('src="auth_api_client.js')
+        reset_pos = html.index('src="password_reset_ui.js')
+        self.assertNotEqual(auth_pos, -1)
+        self.assertNotEqual(reset_pos, -1)
         self.assertLess(auth_pos, reset_pos)
 
 

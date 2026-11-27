@@ -45,6 +45,8 @@ class OtpRateLimitTests(unittest.TestCase):
                     expires_at DATETIME NOT NULL,
                     verified_at DATETIME,
                     request_ip VARCHAR(45),
+                    referral_code_input VARCHAR(64),
+                    referral_rejected_reason VARCHAR(64),
                     created_at DATETIME
                 )
             """))
