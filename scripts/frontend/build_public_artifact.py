@@ -57,7 +57,7 @@ def validate_config(config: dict) -> tuple[str, list[str]]:
                 or p.suffix not in ALLOWED_SUFFIXES
                 or (p.suffix == ".json" and name not in PUBLIC_JSON)
                 or (p.suffix == ".txt" and name != "31032553.txt")
-                or (p.suffix == ".html" and name not in {"index.html", "privacy.html"})):
+                or (p.suffix == ".html" and name not in {"index.html", "privacy.html", "admin_referrals.html"})):
             raise ValueError(f"Forbidden public asset: {name}")
     required = {"index.html", "app.js", "shell.js", "sw.js", "manifest.json"}
     if not required.issubset(files):
