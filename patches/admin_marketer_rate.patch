@@ -1,0 +1,98 @@
+diff --git a/admin_router.py b/admin_router.py
+--- a/admin_router.py
++++ b/admin_router.py
+@@ -17,6 +17,7 @@
+ from referral_service import create_referral_code, get_referral_report
+ from referral_commission_service import (
+     create_code_for_marketer,
++    set_marketer_rate,
+     marketer_recruitment_report,
+     marketer_statement,
+     register_marketer,
+@@ -205,6 +206,10 @@
+     note: str | None = Field(default=None, max_length=500)
+ 
+ 
++class MarketerRateRequest(BaseModel):
++    commission_bps: int = Field(ge=0, le=10000)
++
++
+ @router.post("/marketers", status_code=201)
+ def create_marketer(
+     req: MarketerCreateRequest,
+@@ -264,6 +269,39 @@
+     except ValueError as exc:
+         db.rollback()
+         raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++
++@router.patch("/marketers/{marketer_id}/commission")
++def update_marketer_commission(
++    marketer_id: int,
++    req: MarketerRateRequest,
++    actor: User = Depends(current_referral_manager),
++    db: Session = Depends(get_db),
++) -> dict:
++    """Set the admin's own rate. Past orders keep their snapshotted rate."""
++    try:
++        marketer = set_marketer_rate(
++            db,
++            actor,
++            marketer_id=marketer_id,
++            commission_bps=req.commission_bps,
++        )
++        db.commit()
++        return {
++            "marketer_id": int(marketer.id),
++            "commission_bps": int(marketer.commission_bps),
++            "commission_percent": round(int(marketer.commission_bps) / 100, 2),
++            "updated": True,
++        }
++    except PermissionError as exc:
++        db.rollback()
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
++    except LookupError as exc:
++        db.rollback()
++        raise HTTPException(status_code=404, detail=str(exc)) from exc
++    except ValueError as exc:
++        db.rollback()
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
+ 
+ 
+ @router.get("/commission/statement")
+diff --git a/referral_commission_service.py b/referral_commission_service.py
+--- a/referral_commission_service.py
++++ b/referral_commission_service.py
+@@ -79,6 +79,32 @@
+     return marketer
+ 
+ 
++def set_marketer_rate(
++    db: Session,
++    actor: User,
++    *,
++    marketer_id: int,
++    commission_bps: int,
++) -> ReferralMarketer:
++    """Change what future orders owe this marketer.
++
++    Orders already placed keep the rate snapshotted on them, so a correction here
++    can never rewrite a settled or accrued amount.
++    """
++    _require_manager(actor)
++    bps = int(commission_bps)
++    if not (0 <= bps <= BASIS_POINTS):
++        raise ValueError("commission_bps must be between 0 and 10000")
++
++    marketer = db.get(ReferralMarketer, int(marketer_id))
++    if marketer is None:
++        raise LookupError("marketer not found")
++
++    marketer.commission_bps = bps
++    db.flush()
++    return marketer
++
++
+ def create_code_for_marketer(
+     db: Session,
+     actor: User,
