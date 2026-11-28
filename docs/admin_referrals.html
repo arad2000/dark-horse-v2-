@@ -49,9 +49,10 @@ tbody tr:hover{background:rgba(240,192,64,.04)}
     <h1>بازاریابان و پورسانت</h1>
     <div id="who" class="sub">در حال بررسی دسترسی…</div>
     <div class="row" style="margin-top:10px">
-      <button type="button" class="ghost" id="logout">خروج</button>
+      <button type="button" class="ghost" id="exit-panel">خروج از پنل</button>
       <button type="button" class="ghost" id="refresh">به‌روزرسانی</button>
     </div>
+    <div class="sub" style="margin-top:6px">«خروج از پنل» فقط شما را به پروفایل برمی‌گرداند؛ حساب شما باز می‌ماند.</div>
     <div id="error" class="err"></div>
   </section>
 
@@ -150,7 +151,9 @@ tbody tr:hover{background:rgba(240,192,64,.04)}
         if (!r.ok) {
           var msg = (body && (body.detail || body.message)) || ('خطا ' + r.status);
           if (typeof msg !== 'string') msg = JSON.stringify(msg);
-          throw new Error(msg);
+          var err = new Error(msg);
+          err.status = r.status;  // lets callers tell "route missing" from "rejected"
+          throw err;
         }
         return body;
       });
@@ -159,13 +162,17 @@ tbody tr:hover{background:rgba(240,192,64,.04)}
 
   function fail(msg) { el('error').textContent = msg || ''; }
 
-  el('logout').onclick = function () {
+  // "Exit panel" is NOT logout. The operator stays signed in; only this view is
+  // left. Clearing dh_auth_v1 here would end the whole account session, which is
+  // what the old handler did. Account logout lives on Profile, nowhere else.
+  el('exit-panel').onclick = function () {
     try {
-      localStorage.removeItem('dh_auth_v1');
-      localStorage.removeItem('dh_local_user_v1');
-      localStorage.removeItem('dh_local_quota_v1');
+      if (window.history && window.history.length > 1) {
+        window.history.back();
+        return;
+      }
     } catch (_) {}
-    window.location.replace('index.html?logout=1');
+    window.location.href = 'index.html?tab=profile';
   };
 
   function loadAll() {
@@ -195,24 +202,94 @@ tbody tr:hover{background:rgba(240,192,64,.04)}
     el('mk-empty').classList.toggle('hide', rows.length > 0);
     rows.forEach(function (m) {
       var tr = document.createElement('tr');
-      var rate = m.commission_bps ? toFa(m.commission_percent) + '٪' : '—';
       tr.innerHTML =
         '<td>' + text(m.name) + (m.self_service ? ' <span class="tag self">خودساخته</span>' : '') + '</td>' +
         '<td class="mono">' + text(m.phone || '—') + '</td>' +
-        '<td>' + rate + '</td>' +
+        '<td></td>' +
         '<td>' + toFa(m.signups) + '</td>' +
         '<td>' + toFa(m.confirmed_buyers) + '</td>' +
         '<td>' + money(sumCurrencies(m.currencies, 'accrued_amount_minor')) + '</td>' +
         '<td>' + money(sumCurrencies(m.currencies, 'settled_amount_minor')) + '</td>' +
         '<td></td>';
+      // The rate cell is a real element so the displayed value and the editor
+      // operate on the same node.
+      var rateCell = document.createElement('span');
+      rateCell.className = 'rate-cell';
+      rateCell.textContent = toFa(m.commission_percent || 0) + '٪';
+      rateCell.setAttribute('data-rate', String(m.commission_percent || 0));
+      tr.children[2].appendChild(rateCell);
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ghost';
       btn.textContent = 'افراد';
       btn.onclick = function () { showDetail(m); };
       tr.lastChild.appendChild(btn);
+      var edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'copy';
+      edit.textContent = 'ویرایش درصد';
+      edit.onclick = function () { editRate(m, tr); };
+      tr.lastChild.appendChild(edit);
       body.appendChild(tr);
     });
+  }
+
+  // The admin sets the rate, here and now. It is not a system default and it is
+  // not inferable: the server stores exactly what is sent. Past orders keep the
+  // rate they were charged at (commission_bps_snapshot), so this only affects
+  // orders placed after saving.
+  function editRate(m, tr) {
+    var cell = tr.children[2];
+    var current = Number(m.commission_percent || 0);
+    cell.innerHTML = '';
+    cell._editorOpen = true;
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.max = '100';
+    input.step = '0.01';
+    input.value = String(current);
+    input.setAttribute('dir', 'ltr');
+    input.style.maxWidth = '5.5em';
+    cell.appendChild(input);
+
+    var save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'copy';
+    save.textContent = 'ذخیره';
+    cell.appendChild(save);
+
+    var cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'copy';
+    cancel.textContent = 'لغو';
+    cell.appendChild(cancel);
+
+    cancel.onclick = function () { return loadAll(); };
+
+    save.onclick = function () {
+      var rate = parseFloat(input.value);
+      if (!(rate >= 0 && rate <= 100)) { fail('درصد باید بین ۰ و ۱۰۰ باشد.'); return; }
+      var bps = Math.round(rate * 100);
+      fail('');
+      save.disabled = true;
+      req('/api/v1/admin/marketers/' + encodeURIComponent(m.marketer_id) + '/commission', {
+        method: 'PATCH',
+        body: JSON.stringify({ commission_bps: bps })
+      }).then(function (saved) {
+        var got = saved && typeof saved.commission_percent === 'number'
+          ? Number(saved.commission_percent) : rate;
+        el('add-msg').textContent = 'درصد ذخیره شد: ' + toFa(got) + '٪';
+        return loadAll();
+      }).catch(function (e) {
+        save.disabled = false;
+        if (e && e.status === 404) {
+          fail('ذخیره نشد: نسخهٔ فعلی API مسیر ویرایش درصد را ندارد. مقدار قبلی دست‌نخورده است.');
+          return;
+        }
+        fail('ذخیره نشد. ' + String(e && e.message || ''));
+      });
+    };
   }
 
   function showDetail(m) {

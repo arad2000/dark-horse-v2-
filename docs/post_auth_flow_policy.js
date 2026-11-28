@@ -157,6 +157,25 @@
     global.DHShell.startJourney = wrapped;
   }
 
+  // A signed-in operator returning from the referral panel asks for profile via
+  // ?tab=profile. Landing on profile is a navigation intent only; it must never
+  // touch the session or the quota cache.
+  function requestedTab() {
+    try {
+      var tab = new URLSearchParams(global.location && global.location.search || '').get('tab');
+      return String(tab || '').toLowerCase();
+    } catch (_) { return ''; }
+  }
+
+  function landOnRequestedTab() {
+    if (requestedTab() !== 'profile') return;
+    if (!global.DHAuth || typeof global.DHAuth.isLoggedIn !== 'function') return;
+    var signedIn = false;
+    try { signedIn = !!global.DHAuth.isLoggedIn(); } catch (_) { signedIn = false; }
+    if (!signedIn) return;
+    renderProfile();
+  }
+
   function watchForAutoPurchase() {
     if (!document.body || typeof MutationObserver === 'undefined') return;
     new MutationObserver(function () {
@@ -177,6 +196,7 @@
     installJourneyClickGuard();
     installJourneyGuard();
     watchForAutoPurchase();
+    landOnRequestedTab();
     var tries = 0;
     var timer = setInterval(function () {
       tries += 1;
